@@ -1,23 +1,14 @@
-<svelte:options runes={false} />
-
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
-	import {
-		Background,
-		BackgroundVariant,
-		SvelteFlow,
-		type Edge,
-		type Node,
-		useSvelteFlow
-	} from '@xyflow/svelte';
+	import { onMount } from 'svelte';
 	import { buildInitialExchanges } from '$lib/chat/initialExchanges';
-	import { computeCanvasLayout, NODE_HEIGHT, NODE_WIDTH } from '$lib/chat/layout';
+	import { computeCanvasLayout, NODE_WIDTH } from '$lib/chat/layout';
+	import type { CanvasNode } from '$lib/chat/layout';
 	import { streamClaudeChat } from '$lib/chat/claude';
 	import { CLAUDE_MODELS, type ActiveModel, type OllamaStatus } from '$lib/chat/models';
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import ExchangeNode from '$lib/components/flow/ExchangeNode.svelte';
-	import FlowBridge from '$lib/components/flow/FlowBridge.svelte';
+	import Canvas from '$lib/components/flow/Canvas.svelte';
 	import {
 		DEFAULT_OLLAMA_URL,
 		fetchAvailableModels,
@@ -51,101 +42,125 @@
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
 
-	let roots: ExchangeMap[] = [withExplicitExchangeOrder(buildInitialExchanges())];
-	let activeRootIndex = 0;
-	let activeExchangeId: string | null = null;
-	let streamingExchangeIds: string[] = [];
-	let operationError: string | null = null;
+	let roots: ExchangeMap[] = $state([withExplicitExchangeOrder(buildInitialExchanges())]);
+	let activeRootIndex = $state(0);
+	let activeExchangeId: string | null = $state(null);
+	let streamingExchangeIds: string[] = $state([]);
+	let operationError: string | null = $state(null);
 
-	let activeModel: ActiveModel | null = null;
-	let contextLength: number | null = null;
-	let ollamaUrl = DEFAULT_OLLAMA_URL;
-	let ollamaStatus: OllamaStatus = 'disconnected';
-	let ollamaModels: string[] = [];
-	let claudeApiKey: string | null = null;
-	let hasStoredKey = false;
+	let activeModel: ActiveModel | null = $state(null);
+	let contextLength: number | null = $state(null);
+	let ollamaUrl = $state(DEFAULT_OLLAMA_URL);
+	let ollamaStatus: OllamaStatus = $state('disconnected');
+	let ollamaModels: string[] = $state([]);
+	let claudeApiKey: string | null = $state(null);
+	let hasStoredKey = $state(false);
 
-	let composerValue = '';
-	let searchQuery = '';
-	let searchAllChats = true;
-	let searchOpen = false;
-	let paletteOpen = false;
-	let claudeMode: 'unlock' | 'setup' | null = null;
-	let pendingClaudeModelId: string | null = null;
-	let expandedSideChatParent: string | null = null;
-	let passwordInput = '';
-	let confirmPasswordInput = '';
-	let apiKeyInput = '';
-	let keyError: string | null = null;
-	let deleteTargetId: string | null = null;
-	let deleteMode: DeleteMode = 'exchange';
-	let flowApi: ReturnType<typeof useSvelteFlow> | null = null;
+	let composerValue = $state('');
+	let searchQuery = $state('');
+	let searchAllChats = $state(true);
+	let searchOpen = $state(false);
+	let paletteOpen = $state(false);
+	let claudeMode: 'unlock' | 'setup' | null = $state(null);
+	let pendingClaudeModelId: string | null = $state(null);
+	let expandedSideChatParent: string | null = $state(null);
+	let hasHydrated = $state(false);
+	let passwordInput = $state('');
+	let confirmPasswordInput = $state('');
+	let apiKeyInput = $state('');
+	let keyError: string | null = $state(null);
+	let deleteTargetId: string | null = $state(null);
+	let deleteMode: DeleteMode = $state('exchange');
+	let measuredNodeHeights: Record<string, number> = $state({});
 
-	let scrollViewport: HTMLDivElement | null = null;
-	const nodeElements = new Map<string, HTMLElement>();
+	let canvasRef: Canvas | null = $state(null);
 
-	$: activeExchanges = roots[activeRootIndex] ?? roots[0];
-	$: exchangesByParentId = activeExchanges ? buildExchangesByParentId(activeExchanges) : {};
-	$: collapsedParentIds = getCollapsedParentIds();
-	$: hiddenExchangeIds = getHiddenExchangeIds();
-	$: canvas = activeExchanges
-		? computeCanvasLayout(activeExchanges, { hiddenExchangeIds })
-		: computeCanvasLayout({});
-	$: nodeLookup = new Map(canvas.nodes.map((node) => [node.id, node]));
-	$: flowNodes = buildFlowNodes();
-	$: flowEdges = buildFlowEdges();
-	$: usedTokens =
-		activeExchanges && activeExchangeId ? getPathTokenTotal(activeExchanges, activeExchangeId) : 0;
-	$: searchItems = searchQuery.trim()
-		? searchChats(roots, searchQuery.trim(), searchAllChats ? roots.map((_, index) => index) : [activeRootIndex])
-		: getDefaultItems(roots, activeRootIndex, searchAllChats);
-	$: submitDisabledReason =
+	let activeExchanges = $derived(roots[activeRootIndex] ?? roots[0]);
+	let exchangesByParentId = $derived(activeExchanges ? buildExchangesByParentId(activeExchanges) : {});
+	let collapsedParentIds = $derived(getCollapsedParentIds());
+	let hiddenExchangeIds = $derived(getHiddenExchangeIds());
+	let canvas = $derived(activeExchanges
+		? computeCanvasLayout(activeExchanges, {
+				hiddenExchangeIds,
+				measuredHeights: measuredNodeHeights
+			})
+		: computeCanvasLayout({}));
+	let nodeLookup = $derived(new Map(canvas.nodes.map((node) => [node.id, node])));
+	let usedTokens = $derived(
+		activeExchanges && activeExchangeId ? getPathTokenTotal(activeExchanges, activeExchangeId) : 0
+	);
+	let searchItems = $derived(searchQuery.trim()
+		? searchChats(roots, searchQuery.trim(), searchAllChats ? roots.map((_: ExchangeMap, index: number) => index) : [activeRootIndex])
+		: getDefaultItems(roots, activeRootIndex, searchAllChats));
+	let submitDisabledReason = $derived(
 		streamingExchangeIds.length > 0
 			? 'Wait for the current response to finish.'
 			: !activeModel
 				? 'Select a model first.'
 				: activeExchangeId && activeExchanges && !canAcceptNewChat(activeExchanges, activeExchangeId, exchangesByParentId)
 					? 'Choose a branch tip or main-chain node to continue.'
-				: null;
-
-	$: localStorage.setItem(
-		STORAGE_KEY,
-		JSON.stringify({
-			roots,
-			activeRootIndex
-		})
+				: null
 	);
 
-	$: if (activeExchanges && (!activeExchangeId || !activeExchanges[activeExchangeId])) {
-		activeExchangeId = getMainChatTail(activeExchanges);
-	}
+	$effect(() => {
+		if (hasHydrated) {
+			localStorage.setItem(
+				STORAGE_KEY,
+				JSON.stringify({ roots, activeRootIndex })
+			);
+		}
+	});
 
-	$: if (expandedSideChatParent && activeExchanges && !activeExchanges[expandedSideChatParent]) {
-		expandedSideChatParent = null;
-	}
+	$effect(() => {
+		if (activeExchanges && (!activeExchangeId || !activeExchanges[activeExchangeId])) {
+			activeExchangeId = getMainChatTail(activeExchanges);
+		}
+	});
 
-	$: if (activeModel?.provider === 'claude') {
-		contextLength =
-			CLAUDE_MODELS.find((model) => model.id === activeModel?.modelId)?.contextLength ?? null;
-	}
-
-	$: if (activeModel?.provider === 'ollama') {
-		const modelId = activeModel.modelId;
-		const url = ollamaUrl;
-
-		(async () => {
-			try {
-				const length = await fetchModelContextLength(modelId, url);
-				if (activeModel?.provider === 'ollama' && activeModel.modelId === modelId && ollamaUrl === url) {
-					contextLength = length;
-				}
-			} catch {
-				if (activeModel?.provider === 'ollama' && activeModel.modelId === modelId && ollamaUrl === url) {
-					contextLength = null;
-				}
+	$effect(() => {
+		if (activeExchanges) {
+			const exchangeIds = new Set(Object.keys(activeExchanges));
+			const filteredHeights = Object.fromEntries(
+				Object.entries(measuredNodeHeights).filter(([exchangeId]) => exchangeIds.has(exchangeId))
+			);
+			if (Object.keys(filteredHeights).length !== Object.keys(measuredNodeHeights).length) {
+				measuredNodeHeights = filteredHeights;
 			}
-		})();
-	}
+		}
+	});
+
+	$effect(() => {
+		if (expandedSideChatParent && activeExchanges && !activeExchanges[expandedSideChatParent]) {
+			expandedSideChatParent = null;
+		}
+	});
+
+	$effect(() => {
+		if (activeModel?.provider === 'claude') {
+			contextLength =
+				CLAUDE_MODELS.find((model) => model.id === activeModel?.modelId)?.contextLength ?? null;
+		}
+	});
+
+	$effect(() => {
+		if (activeModel?.provider === 'ollama') {
+			const modelId = activeModel.modelId;
+			const url = ollamaUrl;
+
+			(async () => {
+				try {
+					const length = await fetchModelContextLength(modelId, url);
+					if (activeModel?.provider === 'ollama' && activeModel.modelId === modelId && ollamaUrl === url) {
+						contextLength = length;
+					}
+				} catch {
+					if (activeModel?.provider === 'ollama' && activeModel.modelId === modelId && ollamaUrl === url) {
+						contextLength = null;
+					}
+				}
+			})();
+		}
+	});
 
 	onMount(() => {
 		hasStoredKey = hasVault();
@@ -166,45 +181,41 @@
 		window.addEventListener('keydown', handleKeyDown);
 
 		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) {
-			activeExchangeId = getMainChatTail(roots[0]);
-			return () => window.removeEventListener('keydown', handleKeyDown);
+		if (raw) {
+			try {
+				const parsed = JSON.parse(raw) as {
+					roots?: ExchangeMap[];
+					activeRootIndex?: number;
+				};
+
+				if (parsed.roots?.length) {
+					const hydratedRoots = parsed.roots.map((root) => withExplicitExchangeOrder(root));
+					if (hasRenderableExchanges(hydratedRoots)) {
+						roots = hydratedRoots;
+					}
+				}
+
+				if (typeof parsed.activeRootIndex === 'number') {
+					activeRootIndex = clampRootIndex(parsed.activeRootIndex, roots.length);
+				}
+			} catch {
+				// ignore invalid persisted state
+			}
 		}
 
-		try {
-			const parsed = JSON.parse(raw) as {
-				roots?: ExchangeMap[];
-				activeRootIndex?: number;
-			};
-
-			if (parsed.roots?.length) {
-				roots = parsed.roots.map((root) => withExplicitExchangeOrder(root));
-			}
-
-			if (typeof parsed.activeRootIndex === 'number') {
-				activeRootIndex = clampRootIndex(parsed.activeRootIndex, roots.length);
-			}
-
-			activeExchangeId = getMainChatTail(roots[activeRootIndex]);
-		} catch {
-			activeExchangeId = getMainChatTail(roots[0]);
-		}
+		activeExchangeId = getMainChatTail(roots[activeRootIndex] ?? roots[0]);
+		hasHydrated = true;
 
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	});
 
-	function bindNode(node: HTMLElement, nodeId: string) {
-		nodeElements.set(nodeId, node);
-		return {
-			destroy() {
-				nodeElements.delete(nodeId);
-			}
-		};
-	}
-
 	function clampRootIndex(index: number, rootCount: number) {
 		if (rootCount <= 0) return 0;
 		return Math.min(Math.max(index, 0), rootCount - 1);
+	}
+
+	function hasRenderableExchanges(rootList: ExchangeMap[]) {
+		return rootList.some((root) => Object.values(root).some((exchange) => !exchange.isAnchor));
 	}
 
 	function getCollapsedParentIds() {
@@ -242,11 +253,24 @@
 		activeRootIndex = clampRootIndex(index, roots.length);
 		activeExchangeId = getMainChatTail(roots[activeRootIndex]);
 		expandedSideChatParent = null;
-		void scrollToNode(activeExchangeId);
+		measuredNodeHeights = {};
+		scrollToNode(activeExchangeId);
 	}
 
 	function replaceActiveRoot(nextRoot: ExchangeMap) {
+		measuredNodeHeights = {};
 		roots = roots.map((root, index) => (index === activeRootIndex ? nextRoot : root));
+	}
+
+	function setMeasuredNodeHeight(exchangeId: string, height: number) {
+		const roundedHeight = Math.ceil(height);
+		if (!Number.isFinite(roundedHeight) || roundedHeight <= 0) return;
+		if (measuredNodeHeights[exchangeId] === roundedHeight) return;
+
+		measuredNodeHeights = {
+			...measuredNodeHeights,
+			[exchangeId]: roundedHeight
+		};
 	}
 
 	function createSideChat(exchangeId: string) {
@@ -293,24 +317,18 @@
 		activeRootIndex = roots.length - 1;
 		activeExchangeId = firstCopiedId;
 		expandedSideChatParent = null;
-		void scrollToNode(firstCopiedId);
+		scrollToNode(firstCopiedId);
 	}
 
-	async function scrollToNode(nodeId: string | null) {
-		if (!nodeId) return;
-		if (flowApi) {
-			const node = nodeLookup.get(nodeId);
-			if (node) {
-				await flowApi.setCenter(node.x + NODE_WIDTH / 2, node.y + NODE_HEIGHT / 2, {
-					zoom: 1,
-					duration: 250
-				});
-				return;
-			}
+	function scrollToNode(nodeId: string | null) {
+		if (!nodeId || !canvasRef) return;
+		const node = nodeLookup.get(nodeId);
+		if (node) {
+			canvasRef.setCenter(node.x + NODE_WIDTH / 2, node.y + node.height / 2, {
+				zoom: 1,
+				duration: 250
+			});
 		}
-		await tick();
-		const node = nodeElements.get(nodeId);
-		node?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
 	}
 
 	function saveToDisk() {
@@ -425,7 +443,7 @@
 		activeExchangeId = created.id;
 		streamingExchangeIds = [...streamingExchangeIds, created.id];
 		composerValue = '';
-		await scrollToNode(created.id);
+		scrollToNode(created.id);
 
 		const abortController = new AbortController();
 
@@ -476,18 +494,6 @@
 		}
 	}
 
-	function deleteActiveExchange() {
-		if (!activeExchanges || !activeExchangeId) return;
-		try {
-			const result = deleteExchangeWithModeResult(activeExchanges, activeExchangeId, 'exchange');
-			replaceActiveRoot(result.exchanges);
-			activeExchangeId = getMainChatTail(result.exchanges);
-			operationError = null;
-		} catch (error) {
-			operationError = error instanceof Error ? error.message : 'Unable to delete exchange.';
-		}
-	}
-
 	function openDeleteDialog(exchangeId: string) {
 		if (!activeExchanges) return;
 		deleteTargetId = exchangeId;
@@ -529,78 +535,39 @@
 			targetRoot
 				? findSideChatParent(targetRoot, result.exchangeId)
 				: null;
-		void scrollToNode(result.exchangeId);
+		scrollToNode(result.exchangeId);
 	}
 
 	function toggleSideChildren(exchangeId: string) {
 		expandedSideChatParent = expandedSideChatParent === exchangeId ? null : exchangeId;
 	}
 
-	function getExchangeState(exchangeId: string) {
+	function getExchangeNodeData(exchangeId: string) {
 		const exchange = activeExchanges?.[exchangeId];
-		const children = exchange && activeExchanges ? getChildExchanges(activeExchanges, exchangeId, exchangesByParentId) : [];
+		if (!exchange) return null;
+		const children = activeExchanges ? getChildExchanges(activeExchanges, exchangeId, exchangesByParentId) : [];
 		const hasSideChildren = canCreateSideChats(activeExchanges, exchangeId, exchangesByParentId) && children.length > 1;
-		const isSideRoot = exchange?.parentId
+		const isSideRoot = exchange.parentId
 			? (getChildExchanges(activeExchanges, exchange.parentId, exchangesByParentId)[0]?.id ?? null) !== exchangeId
 			: false;
 
 		return {
-			exchange,
-			children,
+			prompt: exchange.prompt,
+			response: exchange.response,
+			model: exchange.model,
+			isActive: activeExchangeId === exchangeId,
+			isStreaming: streamingExchangeIds.includes(exchangeId),
+			canCreateSideChat: activeRootIndex === 0,
 			hasSideChildren,
 			isSideRoot,
-			canPromote:
-				!!activeExchanges && canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId)
+			canPromote: !!activeExchanges && canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
+			onMeasure: (height: number) => setMeasuredNodeHeight(exchangeId, height),
+			onSelect: () => { activeExchangeId = exchangeId; },
+			onCreateSideChat: () => createSideChat(exchangeId),
+			onToggleSideChildren: () => toggleSideChildren(exchangeId),
+			onPromote: () => { activeExchangeId = exchangeId; promoteActiveExchange(); },
+			onDelete: () => openDeleteDialog(exchangeId)
 		};
-	}
-
-	function buildFlowNodes(): Node[] {
-		if (!activeExchanges) return [];
-
-		return canvas.nodes.map((node) => {
-			const exchange = activeExchanges[node.id];
-			const state = getExchangeState(node.id);
-
-			return {
-				id: node.id,
-				type: 'exchange',
-				position: { x: node.x, y: node.y },
-				draggable: false,
-				selectable: false,
-				data: {
-					prompt: exchange.prompt,
-					response: exchange.response,
-					model: exchange.model,
-					isActive: activeExchangeId === node.id,
-					isStreaming: streamingExchangeIds.includes(node.id),
-					canCreateSideChat: activeRootIndex === 0,
-					hasSideChildren: state.hasSideChildren,
-					isSideRoot: state.isSideRoot,
-					canPromote: state.canPromote,
-					onSelect: () => {
-						activeExchangeId = node.id;
-					},
-					onCreateSideChat: () => createSideChat(node.id),
-					onToggleSideChildren: () => toggleSideChildren(node.id),
-					onPromote: () => {
-						activeExchangeId = node.id;
-						promoteActiveExchange();
-					},
-					onDelete: () => openDeleteDialog(node.id)
-				},
-				style: `width:${NODE_WIDTH}px;`
-			};
-		});
-	}
-
-	function buildFlowEdges(): Edge[] {
-		return canvas.edges.map((edge) => ({
-			id: edge.id,
-			source: edge.from,
-			target: edge.to,
-			selectable: false,
-			focusable: false
-		}));
 	}
 </script>
 
@@ -629,7 +596,7 @@
 		<Button class="floating-button" variant="outline" size="icon" onclick={() => (searchOpen = true)} ariaLabel="Search">
 			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4" /><path d="M11 11l2.5 2.5" stroke-linecap="round" /></svg>
 		</Button>
-		<Button class="floating-button" variant="outline" size="icon" onclick={() => flowApi?.fitView({ duration: 250, maxZoom: 1 })} ariaLabel="Go to top">
+		<Button class="floating-button" variant="outline" size="icon" onclick={() => canvasRef?.fitView({ duration: 250, maxZoom: 1 })} ariaLabel="Go to top">
 			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12V4M8 4 5.5 6.5M8 4l2.5 2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
 		</Button>
 		<Button class="floating-button" variant="outline" size="icon" onclick={() => scrollToNode(activeExchangeId)} ariaLabel="Go to active exchange">
@@ -641,25 +608,24 @@
 	</div>
 
 	<div class="flow-shell">
-		<SvelteFlow
-			nodes={flowNodes}
-			edges={flowEdges}
-			nodeTypes={{ exchange: ExchangeNode }}
-			fitView
-			panOnScroll
-			zoomOnScroll={false}
-			zoomOnPinch
-			zoomOnDoubleClick={false}
-			nodesDraggable={false}
-			elementsSelectable={false}
-			class="flow-canvas"
+		<Canvas
+			nodes={canvas.nodes}
+			edges={canvas.edges}
+			canvasWidth={canvas.width}
+			canvasHeight={canvas.height}
+			nodeWidth={NODE_WIDTH}
+			bind:this={canvasRef}
 		>
-			<FlowBridge register={(api) => (flowApi = api)} />
-			<Background variant={BackgroundVariant.Dots} gap={18} size={1} patternColor="rgba(0,0,0,0.12)" />
-		</SvelteFlow>
+			{#snippet renderNode(n: CanvasNode)}
+				{@const nodeData = getExchangeNodeData(n.id)}
+				{#if nodeData}
+					<ExchangeNode data={nodeData} />
+				{/if}
+			{/snippet}
+		</Canvas>
 	</div>
 
-	<form class="composer" on:submit|preventDefault={submitPrompt}>
+	<form class="composer" onsubmit={(e: Event) => { e.preventDefault(); submitPrompt(); }}>
 		<div class="composer-shell">
 			<div class="composer-row">
 				<Input bind:value={composerValue} class="composer-input" placeholder={submitDisabledReason ?? 'Message...'} />
@@ -695,12 +661,12 @@
 			class="modal-scrim"
 			type="button"
 			aria-label="Close model palette"
-			on:click={() => ((paletteOpen = false), (claudeMode = null))}
+			onclick={() => { paletteOpen = false; claudeMode = null; }}
 		></button>
 		<div class="modal-panel">
 				<div class="modal-header">
 					<h2>Select a model</h2>
-					<Button class="ghost-button" variant="ghost" size="sm" onclick={() => ((paletteOpen = false), (claudeMode = null))}>
+					<Button class="ghost-button" variant="ghost" size="sm" onclick={() => { paletteOpen = false; claudeMode = null; }}>
 						Close
 					</Button>
 				</div>
@@ -771,7 +737,7 @@
 	{/if}
 
 	{#if searchOpen}
-		<button class="modal-scrim" type="button" aria-label="Close search" on:click={() => (searchOpen = false)}></button>
+		<button class="modal-scrim" type="button" aria-label="Close search" onclick={() => (searchOpen = false)}></button>
 		<div class="search-dialog">
 			<div class="search-dialog-header">
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7.5" cy="7.5" r="5" /><path d="M13 13l3 3" stroke-linecap="round" /></svg>
@@ -786,7 +752,7 @@
 					<div class="search-empty">{searchQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}</div>
 				{/if}
 				{#each searchItems.slice(0, 40) as result (result.rootIndex + ':' + result.exchangeId)}
-					<button class="search-result" type="button" on:click={() => { handleSearchSelect(result); searchOpen = false; }}>
+					<button class="search-result" type="button" onclick={() => { handleSearchSelect(result); searchOpen = false; }}>
 						<div class="search-result-title">{result.prompt}</div>
 						{#if result.snippets[0]}
 							<div class="search-result-snippet">{result.snippets[0].text}</div>
@@ -799,7 +765,7 @@
 
 	{#if deleteTargetId}
 		{@const children = activeExchanges ? getChildExchanges(activeExchanges, deleteTargetId, exchangesByParentId) : []}
-		<button class="modal-scrim" type="button" aria-label="Close delete dialog" on:click={() => (deleteTargetId = null)}></button>
+		<button class="modal-scrim" type="button" aria-label="Close delete dialog" onclick={() => (deleteTargetId = null)}></button>
 		<div class="modal-panel delete-panel">
 			<div class="modal-header">
 				<h2>Delete exchange</h2>

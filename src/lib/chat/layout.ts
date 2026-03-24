@@ -1,9 +1,10 @@
 import { buildExchangesByParentId, getChildExchanges, type ExchangeMap } from './tree';
 
 export const NODE_WIDTH = 768;
-export const NODE_HEIGHT = 220;
+export const NODE_MIN_HEIGHT = 260;
+export const NODE_MAX_HEIGHT = 560;
 export const COLUMN_GAP = 80;
-export const ROW_GAP = 42;
+export const ROW_GAP = 210;
 export const PADDING_X = 48;
 export const PADDING_Y = 48;
 
@@ -12,6 +13,7 @@ export interface CanvasNode {
 	x: number;
 	y: number;
 	depth: number;
+	height: number;
 }
 
 export interface CanvasEdge {
@@ -29,11 +31,13 @@ export interface CanvasLayout {
 
 interface LayoutOptions {
 	hiddenExchangeIds?: Set<string>;
+	measuredHeights?: Record<string, number>;
 }
 
 export function computeCanvasLayout(exchanges: ExchangeMap, options: LayoutOptions = {}): CanvasLayout {
 	const anchor = Object.values(exchanges).find((exchange) => exchange.isAnchor);
 	const hiddenExchangeIds = options.hiddenExchangeIds ?? new Set<string>();
+	const measuredHeights = options.measuredHeights ?? {};
 
 	if (!anchor) {
 		return { nodes: [], edges: [], width: 1200, height: 800 };
@@ -42,39 +46,63 @@ export function computeCanvasLayout(exchanges: ExchangeMap, options: LayoutOptio
 	const exchangesByParentId = buildExchangesByParentId(exchanges);
 	const nodes: CanvasNode[] = [];
 	const edges: CanvasEdge[] = [];
-	let row = 0;
+	const columnBottoms = new Map<number, number>();
 	let maxDepth = 0;
+	let maxColumn = 0;
 
-	function visit(exchangeId: string, depth: number) {
+	function getNodeHeight(exchangeId: string) {
+		return Math.max(NODE_MIN_HEIGHT, measuredHeights[exchangeId] ?? NODE_MIN_HEIGHT);
+	}
+
+	function visit(exchangeId: string, depth: number, column: number, y: number) {
 		const exchange = exchanges[exchangeId];
 		if (!exchange || hiddenExchangeIds.has(exchangeId)) return;
+		const height = getNodeHeight(exchange.id);
+		const nextY = Math.max(y, columnBottoms.get(column) ?? PADDING_Y);
 
 		nodes.push({
 			id: exchange.id,
-			x: PADDING_X + depth * (NODE_WIDTH + COLUMN_GAP),
-			y: PADDING_Y + row * (NODE_HEIGHT + ROW_GAP),
-			depth
+			x: PADDING_X + column * (NODE_WIDTH + COLUMN_GAP),
+			y: nextY,
+			depth,
+			height
 		});
+		columnBottoms.set(column, nextY + height + ROW_GAP);
 
 		maxDepth = Math.max(maxDepth, depth);
-		row += 1;
+		maxColumn = Math.max(maxColumn, column);
 
-		for (const child of getChildExchanges(exchanges, exchange.id, exchangesByParentId)) {
+		const children = getChildExchanges(exchanges, exchange.id, exchangesByParentId).filter(
+			(child) => !hiddenExchangeIds.has(child.id)
+		);
+
+		for (let index = 0; index < children.length; index += 1) {
+			const child = children[index]!;
 			if (hiddenExchangeIds.has(child.id)) continue;
 			edges.push({ id: `${exchange.id}->${child.id}`, from: exchange.id, to: child.id });
-			visit(child.id, depth + 1);
+			visit(child.id, depth + 1, column + index, nextY + height + ROW_GAP);
 		}
 	}
 
-	for (const child of getChildExchanges(exchanges, anchor.id, exchangesByParentId)) {
+	const rootChildren = getChildExchanges(exchanges, anchor.id, exchangesByParentId).filter(
+		(child) => !hiddenExchangeIds.has(child.id)
+	);
+
+	for (let index = 0; index < rootChildren.length; index += 1) {
+		const child = rootChildren[index]!;
 		if (hiddenExchangeIds.has(child.id)) continue;
-		visit(child.id, 0);
+		visit(child.id, 0, index, PADDING_Y);
 	}
+
+	const maxBottom = nodes.reduce((bottom, node) => Math.max(bottom, node.y + node.height), PADDING_Y);
 
 	return {
 		nodes,
 		edges,
-		width: Math.max(1200, PADDING_X * 2 + (maxDepth + 1) * NODE_WIDTH + maxDepth * COLUMN_GAP),
-		height: Math.max(900, PADDING_Y * 2 + Math.max(1, row) * NODE_HEIGHT + Math.max(0, row - 1) * ROW_GAP)
+		width: Math.max(
+			1200,
+			PADDING_X * 2 + (maxColumn + 1) * NODE_WIDTH + Math.max(0, maxColumn) * COLUMN_GAP
+		),
+		height: Math.max(900, maxBottom + PADDING_Y)
 	};
 }
