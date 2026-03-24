@@ -32,9 +32,9 @@
 		return Math.min(Math.max(v, min), max);
 	}
 
-	function computeEdgePath(edge: CanvasEdge): string {
-		const source = nodeLookup.get(edge.from);
-		const target = nodeLookup.get(edge.to);
+	function computeEdgePath(edge: CanvasEdge, lookup: Map<string, CanvasNode>): string {
+		const source = lookup.get(edge.from);
+		const target = lookup.get(edge.to);
 		if (!source || !target) return '';
 		const sx = source.x + nodeWidth / 2;
 		const sy = source.y + source.height;
@@ -108,6 +108,27 @@
 		}
 	}
 
+	export function scrollNodeToTop(nodeY: number, nodeCenterX: number, opts?: { zoom?: number; duration?: number; topOffset?: number }) {
+		if (!containerEl) return;
+		const targetScale = opts?.zoom ?? scale;
+		const topOffset = opts?.topOffset ?? 60;
+		const rect = containerEl.getBoundingClientRect();
+		const targetTx = rect.width / 2 - nodeCenterX * targetScale;
+		const targetTy = topOffset - nodeY * targetScale;
+
+		if (opts?.duration && opts.duration > 0) {
+			animating = true;
+			tx = targetTx;
+			ty = targetTy;
+			scale = targetScale;
+			setTimeout(() => { animating = false; }, opts.duration);
+		} else {
+			tx = targetTx;
+			ty = targetTy;
+			scale = targetScale;
+		}
+	}
+
 	export function fitView(opts?: { duration?: number; maxZoom?: number }) {
 		if (!containerEl || nodes.length === 0) return;
 		const rect = containerEl.getBoundingClientRect();
@@ -152,7 +173,7 @@
 			height={canvasHeight}
 		>
 			{#each edges as edge (edge.id)}
-				<path d={computeEdgePath(edge)} class="edge-path" />
+				<path d={computeEdgePath(edge, nodeLookup)} class="edge-path" />
 			{/each}
 		</svg>
 		{#each nodes as n (n.id)}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { buildInitialExchanges } from '$lib/chat/initialExchanges';
 	import { computeCanvasLayout, NODE_WIDTH } from '$lib/chat/layout';
 	import type { CanvasNode } from '$lib/chat/layout';
@@ -206,6 +206,20 @@
 		activeExchangeId = getMainChatTail(roots[activeRootIndex] ?? roots[0]);
 		hasHydrated = true;
 
+		(async () => {
+			try {
+				const models = await fetchAvailableModels(DEFAULT_OLLAMA_URL);
+				if (models.length > 0) {
+					ollamaUrl = DEFAULT_OLLAMA_URL;
+					ollamaModels = models;
+					ollamaStatus = 'connected';
+					activeModel = { provider: 'ollama', modelId: models[0] };
+				}
+			} catch {
+				// Ollama not running, silently ignore
+			}
+		})();
+
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	});
 
@@ -324,10 +338,7 @@
 		if (!nodeId || !canvasRef) return;
 		const node = nodeLookup.get(nodeId);
 		if (node) {
-			canvasRef.setCenter(node.x + NODE_WIDTH / 2, node.y + node.height / 2, {
-				zoom: 1,
-				duration: 250
-			});
+			canvasRef.scrollNodeToTop(node.y, node.x + NODE_WIDTH / 2, { zoom: 1, duration: 250, topOffset: 60 });
 		}
 	}
 
@@ -438,11 +449,20 @@
 		if (activeExchangeId && getChildExchanges(activeExchanges, activeExchangeId, exchangesByParentId).length > 0) {
 			expandedSideChatParent = activeExchangeId;
 		}
-		const created = addExchangeResult(activeExchanges, parentId, prompt, '', activeModel.modelId);
+
+		let created: { id: string; exchanges: import('$lib/chat/tree').ExchangeMap };
+		try {
+			created = addExchangeResult(activeExchanges, parentId, prompt, '', activeModel.modelId);
+		} catch (error) {
+			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
+			return;
+		}
+
 		replaceActiveRoot(created.exchanges);
 		activeExchangeId = created.id;
 		streamingExchangeIds = [...streamingExchangeIds, created.id];
 		composerValue = '';
+		await tick();
 		scrollToNode(created.id);
 
 		const abortController = new AbortController();
@@ -629,7 +649,7 @@
 		<div class="composer-shell">
 			<div class="composer-row">
 				<Input bind:value={composerValue} class="composer-input" placeholder={submitDisabledReason ?? 'Message...'} />
-				<Button class="composer-send" size="icon" disabled={!!submitDisabledReason || !composerValue.trim()} ariaLabel="Send message">
+				<Button class="composer-send" type="submit" size="icon" disabled={!!submitDisabledReason || !composerValue.trim()} ariaLabel="Send message">
 					<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v7M5 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</Button>
 			</div>

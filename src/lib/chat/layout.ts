@@ -4,7 +4,7 @@ export const NODE_WIDTH = 768;
 export const NODE_MIN_HEIGHT = 260;
 export const NODE_MAX_HEIGHT = 560;
 export const COLUMN_GAP = 80;
-export const ROW_GAP = 210;
+export const ROW_GAP = 48;
 export const PADDING_X = 48;
 export const PADDING_Y = 48;
 
