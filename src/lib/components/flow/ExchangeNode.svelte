@@ -7,13 +7,13 @@
 		model?: string;
 		isActive: boolean;
 		isStreaming: boolean;
-		canCreateSideChat: boolean;
+		canFork: boolean;
 		hasSideChildren: boolean;
 		isSideRoot: boolean;
 		canPromote: boolean;
 		onMeasure: (height: number) => void;
 		onSelect: () => void;
-		onCreateSideChat: () => void;
+		onFork: () => void;
 		onToggleSideChildren: () => void;
 		onPromote: () => void;
 		onDelete: () => void;
@@ -58,24 +58,36 @@
 	}}
 >
 	<div class="exchange-actions">
-		{#if data.canCreateSideChat}
-			<Button class="icon-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onCreateSideChat(); }} ariaLabel="Create side chat">
-				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg>
-			</Button>
+		{#if data.canFork}
+			<span class="action-tip-wrap">
+				<Button class="icon-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onFork(); }} ariaLabel="Fork">
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg>
+				</Button>
+				<span class="action-tip">Fork</span>
+			</span>
 		{/if}
 		{#if data.hasSideChildren}
-			<Button class="icon-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onToggleSideChildren(); }} ariaLabel="Toggle side branches">
-				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v8M3 7h4M7 7v4M7 7h4" stroke-linecap="round" stroke-linejoin="round" /></svg>
-			</Button>
+			<span class="action-tip-wrap">
+				<Button class="icon-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onToggleSideChildren(); }} ariaLabel="Side chats">
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v8M3 7h4M7 7v4M7 7h4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				</Button>
+				<span class="action-tip">Side chats</span>
+			</span>
 		{/if}
 		{#if data.isSideRoot}
-			<Button class="icon-chip" variant="ghost" size="icon" disabled={!data.canPromote} onclick={(event: MouseEvent) => { event.stopPropagation(); data.onPromote(); }} ariaLabel="Promote to main">
-				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12V2M7 2l-2 2M7 2l2 2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-			</Button>
+			<span class="action-tip-wrap">
+				<Button class="icon-chip" variant="ghost" size="icon" disabled={!data.canPromote} onclick={(event: MouseEvent) => { event.stopPropagation(); data.onPromote(); }} ariaLabel="Promote">
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12V2M7 2l-2 2M7 2l2 2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				</Button>
+				<span class="action-tip">Promote</span>
+			</span>
 		{/if}
-		<Button class="icon-chip delete-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onDelete(); }} ariaLabel="Delete exchange">
-			<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.5 4.5h7M5.5 4.5v6M8.5 4.5v6M4.5 4.5l.4-1.2A1 1 0 0 1 5.85 2.6h2.3a1 1 0 0 1 .95.7l.4 1.2M4.5 4.5v6.8c0 .39.31.7.7.7h3.6a.7.7 0 0 0 .7-.7V4.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-		</Button>
+		<span class="action-tip-wrap">
+			<Button class="icon-chip delete-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onDelete(); }} ariaLabel="Delete">
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.5 4.5h7M5.5 4.5v6M8.5 4.5v6M4.5 4.5l.4-1.2A1 1 0 0 1 5.85 2.6h2.3a1 1 0 0 1 .95.7l.4 1.2M4.5 4.5v6.8c0 .39.31.7.7.7h3.6a.7.7 0 0 0 .7-.7V4.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+			</Button>
+			<span class="action-tip">Delete</span>
+		</span>
 	</div>
 
 	<div class="exchange-section prompt-section">
@@ -95,18 +107,21 @@
 				{#if data.isStreaming}
 					<div class="streaming-dot"></div>
 				{/if}
-				<button
-					class="collapse-toggle"
-					type="button"
-					aria-label={collapsed ? 'Expand response' : 'Collapse response'}
-					onclick={(e: MouseEvent) => { e.stopPropagation(); collapsed = !collapsed; }}
-				>
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-						class:collapse-rotated={!collapsed}
+				<span class="action-tip-wrap">
+					<button
+						class="collapse-toggle"
+						type="button"
+						aria-label={collapsed ? 'Expand' : 'Collapse'}
+						onclick={(e: MouseEvent) => { e.stopPropagation(); collapsed = !collapsed; }}
 					>
-						<path d="M4 5.5l3 3 3-3" />
-					</svg>
-				</button>
+						<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+							class:collapse-rotated={!collapsed}
+						>
+							<path d="M4 5.5l3 3 3-3" />
+						</svg>
+					</button>
+					<span class="action-tip">{collapsed ? 'Expand' : 'Collapse'}</span>
+				</span>
 			</div>
 		</div>
 		{#if !collapsed}

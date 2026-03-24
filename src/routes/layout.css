@@ -145,6 +145,7 @@
 	transition:
 		opacity 150ms ease,
 		transform 150ms ease;
+	overflow: visible;
 }
 
 .exchange-card:hover .exchange-actions,
@@ -163,6 +164,33 @@
 
 .delete-chip {
 	color: hsl(var(--destructive));
+}
+
+.action-tip-wrap {
+	position: relative;
+	display: inline-flex;
+}
+
+.action-tip {
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.375rem;
+	background: #171717;
+	color: #fff;
+	font-size: 0.7rem;
+	line-height: 1;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 120ms ease;
+	z-index: 50;
+}
+
+.action-tip-wrap:hover .action-tip {
+	opacity: 1;
 }
 
 .exchange-section {

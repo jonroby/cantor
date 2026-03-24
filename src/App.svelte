@@ -40,6 +40,7 @@
 	} from '$lib/chat/tree';
 	import { clearVault, hasVault, loadApiKey, saveApiKey } from '$lib/chat/vault';
 	import * as SidebarPrimitive from '@/components/ui/sidebar/index.js';
+	import * as Tooltip from '@/components/ui/tooltip/index.js';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import type { ChatSession } from '$lib/chat/tree';
 
@@ -367,9 +368,9 @@
 		};
 	}
 
-	function createSideChat(exchangeId: string) {
+	function forkChat(exchangeId: string) {
 		const sourceExchanges = activeExchanges;
-		if (!sourceExchanges || activeRootIndex !== 0) return;
+		if (!sourceExchanges) return;
 
 		const path: Exchange[] = [];
 		let current: Exchange | undefined = sourceExchanges[exchangeId];
@@ -657,13 +658,13 @@
 			model: exchange.model,
 			isActive: activeExchangeId === exchangeId,
 			isStreaming: streamingExchangeIds.includes(exchangeId),
-			canCreateSideChat: activeRootIndex === 0,
+			canFork: true,
 			hasSideChildren,
 			isSideRoot,
 			canPromote: !!activeExchanges && canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
 			onMeasure: (height: number) => setMeasuredNodeHeight(exchangeId, height),
 			onSelect: () => { activeExchangeId = exchangeId; },
-			onCreateSideChat: () => createSideChat(exchangeId),
+			onFork: () => forkChat(exchangeId),
 			onToggleSideChildren: () => toggleSideChildren(exchangeId),
 			onPromote: () => { activeExchangeId = exchangeId; promoteActiveExchange(); },
 			onDelete: () => openDeleteDialog(exchangeId)
@@ -691,7 +692,7 @@
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2L4 7l5 5" /></svg>
 			</Button>
 		{/if}
-		<div class="chat-header-label">{activeRootIndex === 0 ? 'Main Chat' : `Side Chat ${activeRootIndex}`}</div>
+		<div class="chat-header-label">{activeRootIndex === 0 ? 'Main Chat' : `Fork ${activeRootIndex}`}</div>
 		{#if roots.length > 1}
 			<Button class="chat-nav" variant="outline" size="icon" disabled={activeRootIndex === roots.length - 1} onclick={() => selectRoot(activeRootIndex + 1)}>
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 2l5 5-5 5" /></svg>
@@ -704,18 +705,56 @@
 	{/if}
 
 	<div class="floating-actions">
-		<Button class="floating-button" variant="outline" size="icon" onclick={() => (searchOpen = true)} ariaLabel="Search">
-			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4" /><path d="M11 11l2.5 2.5" stroke-linecap="round" /></svg>
-		</Button>
-		<Button class="floating-button" variant="outline" size="icon" onclick={() => canvasRef?.fitView({ duration: 250, maxZoom: 1 })} ariaLabel="Go to top">
-			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12V4M8 4 5.5 6.5M8 4l2.5 2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-		</Button>
-		<Button class="floating-button" variant="outline" size="icon" onclick={() => scrollToNode(activeExchangeId)} ariaLabel="Go to active exchange">
-			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5" /><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" /></svg>
-		</Button>
-		<Button class="floating-button" variant="outline" size="icon" onclick={saveToDisk} ariaLabel="Export">
-			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" /></svg>
-		</Button>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				{#snippet child({ props })}
+					<Button {...props} class="floating-button" variant="outline" size="icon" onclick={() => (searchOpen = true)} ariaLabel="Search">
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4" /><path d="M11 11l2.5 2.5" stroke-linecap="round" /></svg>
+					</Button>
+				{/snippet}
+			</Tooltip.Trigger>
+			<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none">Search</Tooltip.Content>
+		</Tooltip.Root>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				{#snippet child({ props })}
+					<Button {...props} class="floating-button" variant="outline" size="icon" onclick={() => canvasRef?.fitView({ duration: 250, maxZoom: 1 })} ariaLabel="Fit view">
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10" rx="1.5" /><path d="M6 6h4M6 8h4M6 10h2" stroke-linecap="round" /></svg>
+					</Button>
+				{/snippet}
+			</Tooltip.Trigger>
+			<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none">Fit view</Tooltip.Content>
+		</Tooltip.Root>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				{#snippet child({ props })}
+					<Button {...props} class="floating-button" variant="outline" size="icon" onclick={() => { const first = canvas.nodes[0]; if (first && canvasRef) canvasRef.scrollNodeToTop(first.y, first.x + NODE_WIDTH / 2, { zoom: 1, duration: 250, topOffset: 60 }); }} ariaLabel="Go to top">
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12V4M8 4 5.5 6.5M8 4l2.5 2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+					</Button>
+				{/snippet}
+			</Tooltip.Trigger>
+			<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none">Go to top</Tooltip.Content>
+		</Tooltip.Root>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				{#snippet child({ props })}
+					<Button {...props} class="floating-button" variant="outline" size="icon" onclick={() => scrollToNode(activeExchangeId)} ariaLabel="Go to active">
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5" /><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" /></svg>
+					</Button>
+				{/snippet}
+			</Tooltip.Trigger>
+			<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none">Go to active</Tooltip.Content>
+		</Tooltip.Root>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				{#snippet child({ props })}
+					<Button {...props} class="floating-button" variant="outline" size="icon" onclick={saveToDisk} ariaLabel="Download chat">
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+					</Button>
+				{/snippet}
+			</Tooltip.Trigger>
+			<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none">Download chat</Tooltip.Content>
+		</Tooltip.Root>
 	</div>
 
 	<div class="flow-shell">

@@ -1,42 +1,25 @@
-# sv
+# Superset Svelte
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A visual canvas app for exploring branching chat conversations. Built with Svelte 5 + Vite.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- Chat with Claude (via API) or local Ollama models
+- Visual node graph renders conversations on a pan/zoom canvas
+- **Forks** — copy a conversation into a new independent tree
+- **Side chats** — branch off any main-path node for a quick thread (1 level deep)
+- Promote side chats back to the main path
+- In-browser search across all conversations
+- Encrypted API key storage (PBKDF2 + AES-GCM)
+- All state stored in browser localStorage
 
-```sh
-# create a new project
-npx sv create my-app
+## Getting Started
+
+```bash
+bun install
+bun run dev
 ```
 
-To recreate this project with the same configuration:
+## Architecture
 
-```sh
-# recreate this project
-bun x sv@0.12.8 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" tailwindcss="plugins:none" devtools-json --install bun superset-svelte
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+See [CLAUDE.md](./CLAUDE.md) for detailed architecture, data model, branching concepts, and working rules.

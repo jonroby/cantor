@@ -11,8 +11,10 @@
 		class?: string;
 		disabled?: boolean;
 		ariaLabel?: string;
+		title?: string;
 		onclick?: (event: MouseEvent) => void;
 		children?: import('svelte').Snippet;
+		[key: string]: unknown;
 	}
 
 	let {
@@ -22,8 +24,10 @@
 		class: className = '',
 		disabled = false,
 		ariaLabel,
+		title,
 		onclick,
-		children
+		children,
+		...restProps
 	}: Props = $props();
 
 	const variants: Record<Variant, string> = {
@@ -45,9 +49,11 @@
 <button
 	{type}
 	{disabled}
+	{title}
 	aria-label={ariaLabel}
 	class={cn('ui-button', variants[variant], sizes[size], className)}
 	onclick={onclick}
+	{...restProps}
 >
 	{@render children?.()}
 </button>

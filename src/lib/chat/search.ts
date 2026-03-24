@@ -132,7 +132,7 @@ export function groupResults(
         const groupItems = itemsByRootIndex.get(rootIndex) ?? [];
         if (groupItems.length === 0) return acc;
 
-        const base = rootIndex === 0 ? "Main Chat" : `Side Chat ${rootIndex}`;
+        const base = rootIndex === 0 ? "Main Chat" : `Fork ${rootIndex}`;
         const label = rootIndex === activeRootIndex ? `${base} (current)` : base;
         acc.push({ label, items: groupItems });
         return acc;
