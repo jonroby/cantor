@@ -1,8 +1,8 @@
 import { buildExchangesByParentId, getChildExchanges, type ExchangeMap } from './tree';
 
-export const NODE_WIDTH = 420;
-export const NODE_HEIGHT = 172;
-export const COLUMN_GAP = 72;
+export const NODE_WIDTH = 768;
+export const NODE_HEIGHT = 220;
+export const COLUMN_GAP = 80;
 export const ROW_GAP = 42;
 export const PADDING_X = 48;
 export const PADDING_Y = 48;

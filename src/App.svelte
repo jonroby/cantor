@@ -1,12 +1,23 @@
 <svelte:options runes={false} />
 
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { onMount, tick } from 'svelte';
+	import {
+		Background,
+		BackgroundVariant,
+		SvelteFlow,
+		type Edge,
+		type Node,
+		useSvelteFlow
+	} from '@xyflow/svelte';
 	import { buildInitialExchanges } from '$lib/chat/initialExchanges';
 	import { computeCanvasLayout, NODE_HEIGHT, NODE_WIDTH } from '$lib/chat/layout';
 	import { streamClaudeChat } from '$lib/chat/claude';
 	import { CLAUDE_MODELS, type ActiveModel, type OllamaStatus } from '$lib/chat/models';
+	import Button from '$lib/components/ui/button.svelte';
+	import Input from '$lib/components/ui/input.svelte';
+	import ExchangeNode from '$lib/components/flow/ExchangeNode.svelte';
+	import FlowBridge from '$lib/components/flow/FlowBridge.svelte';
 	import {
 		DEFAULT_OLLAMA_URL,
 		fetchAvailableModels,
@@ -57,6 +68,7 @@
 	let composerValue = '';
 	let searchQuery = '';
 	let searchAllChats = true;
+	let searchOpen = false;
 	let paletteOpen = false;
 	let claudeMode: 'unlock' | 'setup' | null = null;
 	let pendingClaudeModelId: string | null = null;
@@ -67,6 +79,7 @@
 	let keyError: string | null = null;
 	let deleteTargetId: string | null = null;
 	let deleteMode: DeleteMode = 'exchange';
+	let flowApi: ReturnType<typeof useSvelteFlow> | null = null;
 
 	let scrollViewport: HTMLDivElement | null = null;
 	const nodeElements = new Map<string, HTMLElement>();
@@ -79,6 +92,8 @@
 		? computeCanvasLayout(activeExchanges, { hiddenExchangeIds })
 		: computeCanvasLayout({});
 	$: nodeLookup = new Map(canvas.nodes.map((node) => [node.id, node]));
+	$: flowNodes = buildFlowNodes();
+	$: flowEdges = buildFlowEdges();
 	$: usedTokens =
 		activeExchanges && activeExchangeId ? getPathTokenTotal(activeExchanges, activeExchangeId) : 0;
 	$: searchItems = searchQuery.trim()
@@ -93,15 +108,13 @@
 					? 'Choose a branch tip or main-chain node to continue.'
 				: null;
 
-	$: if (browser) {
-		localStorage.setItem(
-			STORAGE_KEY,
-			JSON.stringify({
-				roots,
-				activeRootIndex
-			})
-		);
-	}
+	$: localStorage.setItem(
+		STORAGE_KEY,
+		JSON.stringify({
+			roots,
+			activeRootIndex
+		})
+	);
 
 	$: if (activeExchanges && (!activeExchangeId || !activeExchanges[activeExchangeId])) {
 		activeExchangeId = getMainChatTail(activeExchanges);
@@ -111,12 +124,12 @@
 		expandedSideChatParent = null;
 	}
 
-	$: if (browser && activeModel?.provider === 'claude') {
+	$: if (activeModel?.provider === 'claude') {
 		contextLength =
 			CLAUDE_MODELS.find((model) => model.id === activeModel?.modelId)?.contextLength ?? null;
 	}
 
-	$: if (browser && activeModel?.provider === 'ollama') {
+	$: if (activeModel?.provider === 'ollama') {
 		const modelId = activeModel.modelId;
 		const url = ollamaUrl;
 
@@ -137,10 +150,25 @@
 	onMount(() => {
 		hasStoredKey = hasVault();
 
+		function handleKeyDown(event: KeyboardEvent) {
+			const target = event.target;
+			const isEditable =
+				target instanceof HTMLElement &&
+				(target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+
+			if (isEditable) return;
+			if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+				event.preventDefault();
+				searchOpen = !searchOpen;
+			}
+		}
+
+		window.addEventListener('keydown', handleKeyDown);
+
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) {
 			activeExchangeId = getMainChatTail(roots[0]);
-			return;
+			return () => window.removeEventListener('keydown', handleKeyDown);
 		}
 
 		try {
@@ -161,6 +189,8 @@
 		} catch {
 			activeExchangeId = getMainChatTail(roots[0]);
 		}
+
+		return () => window.removeEventListener('keydown', handleKeyDown);
 	});
 
 	function bindNode(node: HTMLElement, nodeId: string) {
@@ -268,6 +298,16 @@
 
 	async function scrollToNode(nodeId: string | null) {
 		if (!nodeId) return;
+		if (flowApi) {
+			const node = nodeLookup.get(nodeId);
+			if (node) {
+				await flowApi.setCenter(node.x + NODE_WIDTH / 2, node.y + NODE_HEIGHT / 2, {
+					zoom: 1,
+					duration: 250
+				});
+				return;
+			}
+		}
 		await tick();
 		const node = nodeElements.get(nodeId);
 		node?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
@@ -513,208 +553,142 @@
 				!!activeExchanges && canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId)
 		};
 	}
+
+	function buildFlowNodes(): Node[] {
+		if (!activeExchanges) return [];
+
+		return canvas.nodes.map((node) => {
+			const exchange = activeExchanges[node.id];
+			const state = getExchangeState(node.id);
+
+			return {
+				id: node.id,
+				type: 'exchange',
+				position: { x: node.x, y: node.y },
+				draggable: false,
+				selectable: false,
+				data: {
+					prompt: exchange.prompt,
+					response: exchange.response,
+					model: exchange.model,
+					isActive: activeExchangeId === node.id,
+					isStreaming: streamingExchangeIds.includes(node.id),
+					canCreateSideChat: activeRootIndex === 0,
+					hasSideChildren: state.hasSideChildren,
+					isSideRoot: state.isSideRoot,
+					canPromote: state.canPromote,
+					onSelect: () => {
+						activeExchangeId = node.id;
+					},
+					onCreateSideChat: () => createSideChat(node.id),
+					onToggleSideChildren: () => toggleSideChildren(node.id),
+					onPromote: () => {
+						activeExchangeId = node.id;
+						promoteActiveExchange();
+					},
+					onDelete: () => openDeleteDialog(node.id)
+				},
+				style: `width:${NODE_WIDTH}px;`
+			};
+		});
+	}
+
+	function buildFlowEdges(): Edge[] {
+		return canvas.edges.map((edge) => ({
+			id: edge.id,
+			source: edge.from,
+			target: edge.to,
+			selectable: false,
+			focusable: false
+		}));
+	}
 </script>
 
 <svelte:head>
 	<title>Superset Svelte</title>
 </svelte:head>
 
-<div class="app-shell">
-	<aside class="sidebar">
-		<div class="sidebar-section">
-			<div class="sidebar-title-row">
-				<h2>Chats</h2>
-				<button class="ghost-button" type="button" on:click={saveToDisk}>Export</button>
-			</div>
-
-			<div class="root-switcher">
-				<button type="button" class="ghost-button" on:click={() => selectRoot(activeRootIndex - 1)}>
-					Prev
-				</button>
-				<div class="root-label">
-					{activeRootIndex === 0 ? 'Main chat' : `Side chat ${activeRootIndex}`}
-				</div>
-				<button type="button" class="ghost-button" on:click={() => selectRoot(activeRootIndex + 1)}>
-					Next
-				</button>
-			</div>
+<div class="page-shell">
+	{#if roots.length > 1}
+		<div class="chat-header">
+			<Button class="chat-nav" variant="outline" size="icon" disabled={activeRootIndex === 0} onclick={() => selectRoot(activeRootIndex - 1)}>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2L4 7l5 5" /></svg>
+			</Button>
+			<div class="chat-header-label">{activeRootIndex === 0 ? 'Main Chat' : `Side Chat ${activeRootIndex}`}</div>
+			<Button class="chat-nav" variant="outline" size="icon" disabled={activeRootIndex === roots.length - 1} onclick={() => selectRoot(activeRootIndex + 1)}>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 2l5 5-5 5" /></svg>
+			</Button>
 		</div>
+	{/if}
 
-		<div class="sidebar-section">
-			<label class="field-label" for="search">Search</label>
-			<input id="search" bind:value={searchQuery} class="sidebar-input" placeholder="Search prompts and responses" />
-			<label class="check-row">
-				<input type="checkbox" bind:checked={searchAllChats} />
-				<span>Search all chats</span>
-			</label>
-			<div class="search-results">
-				{#each searchItems.slice(0, 40) as result (result.rootIndex + ':' + result.exchangeId)}
-					<button class="search-result" type="button" on:click={() => handleSearchSelect(result)}>
-						<div class="search-result-title">{result.prompt}</div>
-						{#if result.snippets[0]}
-							<div class="search-result-snippet">{result.snippets[0].text}</div>
-						{/if}
-					</button>
-				{/each}
-			</div>
-		</div>
+	{#if operationError}
+		<div class="error-banner">{operationError}</div>
+	{/if}
 
-		<div class="sidebar-section">
-			<div class="sidebar-title-row">
-				<h2>Model</h2>
-				<button class="ghost-button" type="button" on:click={() => (paletteOpen = true)}>Select</button>
-			</div>
-			<div class="model-pill">
-				{#if activeModel}
-					<span>{activeModel.provider}:{activeModel.modelId}</span>
-				{:else}
-					<span>No model selected</span>
-				{/if}
-			</div>
-			{#if contextLength}
-				<div class="token-meta">{usedTokens.toLocaleString()} / {contextLength.toLocaleString()} tokens</div>
-				<div class="progress-track">
-					<div
-						class="progress-fill"
-						style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}
-					></div>
-				</div>
-			{/if}
-			{#if claudeApiKey || hasStoredKey}
-				<button class="ghost-button danger-text" type="button" on:click={forgetClaudeKey}>
-					Forget Claude key
-				</button>
-			{/if}
-		</div>
-	</aside>
+	<div class="floating-actions">
+		<Button class="floating-button" variant="outline" size="icon" onclick={() => (searchOpen = true)} ariaLabel="Search">
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4" /><path d="M11 11l2.5 2.5" stroke-linecap="round" /></svg>
+		</Button>
+		<Button class="floating-button" variant="outline" size="icon" onclick={() => flowApi?.fitView({ duration: 250, maxZoom: 1 })} ariaLabel="Go to top">
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12V4M8 4 5.5 6.5M8 4l2.5 2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+		</Button>
+		<Button class="floating-button" variant="outline" size="icon" onclick={() => scrollToNode(activeExchangeId)} ariaLabel="Go to active exchange">
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5" /><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" /></svg>
+		</Button>
+		<Button class="floating-button" variant="outline" size="icon" onclick={saveToDisk} ariaLabel="Export">
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13h10M8 3v7M5 7l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+		</Button>
+	</div>
 
-	<main class="canvas-shell">
-		{#if operationError}
-			<div class="error-banner">{operationError}</div>
-		{/if}
-
-		<div class="toolbar">
-			<button class="toolbar-button" type="button" on:click={() => scrollViewport?.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}>
-				Top
-			</button>
-			<button class="toolbar-button" type="button" on:click={() => scrollToNode(activeExchangeId)}>
-				Active
-			</button>
-			<button class="toolbar-button" type="button" disabled={!activeExchangeId} on:click={deleteActiveExchange}>
-				Delete
-			</button>
-			<button
-				class="toolbar-button"
-				type="button"
-				disabled={!activeExchangeId || !activeExchanges || !canPromoteSideChatToMainChat(activeExchanges, activeExchangeId)}
-				on:click={promoteActiveExchange}
-			>
-				Promote
-			</button>
-		</div>
-
-		<div class="canvas-viewport" bind:this={scrollViewport}>
-			<div class="canvas-surface" style={`width:${canvas.width}px; height:${canvas.height}px;`}>
-				<svg class="edges-layer" width={canvas.width} height={canvas.height}>
-					{#each canvas.edges as edge (edge.id)}
-						{@const fromNode = nodeLookup.get(edge.from)}
-						{@const toNode = nodeLookup.get(edge.to)}
-						{#if fromNode && toNode}
-							<path
-								d={`M ${fromNode.x + NODE_WIDTH} ${fromNode.y + NODE_HEIGHT / 2} C ${fromNode.x + NODE_WIDTH + 36} ${fromNode.y + NODE_HEIGHT / 2}, ${toNode.x - 36} ${toNode.y + NODE_HEIGHT / 2}, ${toNode.x} ${toNode.y + NODE_HEIGHT / 2}`}
-								class="edge-path"
-							></path>
-						{/if}
-					{/each}
-				</svg>
-
-				{#each canvas.nodes as node (node.id)}
-					{@const exchange = activeExchanges[node.id]}
-					{@const state = getExchangeState(node.id)}
-					<div
-						class:active-node={activeExchangeId === node.id}
-						class="exchange-card"
-						style={`transform: translate(${node.x}px, ${node.y}px); width:${NODE_WIDTH}px;`}
-						role="button"
-						tabindex="0"
-						use:bindNode={node.id}
-						on:click={() => (activeExchangeId = node.id)}
-						on:keydown={(event) => {
-							if (event.key === 'Enter' || event.key === ' ') {
-								event.preventDefault();
-								activeExchangeId = node.id;
-							}
-						}}
-					>
-						<div class="exchange-card-header">
-							<div>
-								<div class="exchange-card-kicker">Depth {node.depth + 1}</div>
-								<h3>{exchange.model ?? 'Unsaved prompt'}</h3>
-							</div>
-							{#if streamingExchangeIds.includes(node.id)}
-								<div class="streaming-dot"></div>
-							{/if}
-						</div>
-						<div class="exchange-actions">
-							{#if activeRootIndex === 0}
-								<button class="chip-button" type="button" on:click|stopPropagation={() => createSideChat(node.id)}>
-									Side chat
-								</button>
-							{/if}
-							{#if state.hasSideChildren}
-								<button class="chip-button" type="button" on:click|stopPropagation={() => toggleSideChildren(node.id)}>
-									{collapsedParentIds.has(node.id) ? 'Show branches' : 'Hide branches'}
-								</button>
-							{/if}
-							{#if state.isSideRoot}
-								<button
-									class="chip-button"
-									type="button"
-									disabled={!state.canPromote}
-									on:click|stopPropagation={() => {
-										activeExchangeId = node.id;
-										promoteActiveExchange();
-									}}
-								>
-									Promote
-								</button>
-							{/if}
-							<button class="chip-button danger-text" type="button" on:click|stopPropagation={() => openDeleteDialog(node.id)}>
-								Delete
-							</button>
-						</div>
-						<div class="exchange-prompt">{exchange.prompt}</div>
-						<div class="exchange-response">{exchange.response || 'Waiting for response…'}</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-
-		<form
-			class="composer"
-			on:submit|preventDefault={submitPrompt}
+	<div class="flow-shell">
+		<SvelteFlow
+			nodes={flowNodes}
+			edges={flowEdges}
+			nodeTypes={{ exchange: ExchangeNode }}
+			fitView
+			panOnScroll
+			zoomOnScroll={false}
+			zoomOnPinch
+			zoomOnDoubleClick={false}
+			nodesDraggable={false}
+			elementsSelectable={false}
+			class="flow-canvas"
 		>
+			<FlowBridge register={(api) => (flowApi = api)} />
+			<Background variant={BackgroundVariant.Dots} gap={18} size={1} patternColor="rgba(0,0,0,0.12)" />
+		</SvelteFlow>
+	</div>
+
+	<form class="composer" on:submit|preventDefault={submitPrompt}>
+		<div class="composer-shell">
 			<div class="composer-row">
-				<input
-					bind:value={composerValue}
-					class="composer-input"
-					placeholder={submitDisabledReason ?? 'Message the selected branch'}
-				/>
-				<button class="composer-button" type="submit" disabled={!!submitDisabledReason || !composerValue.trim()}>
-					Send
-				</button>
+				<Input bind:value={composerValue} class="composer-input" placeholder={submitDisabledReason ?? 'Message...'} />
+				<Button class="composer-send" size="icon" disabled={!!submitDisabledReason || !composerValue.trim()} ariaLabel="Send message">
+					<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v7M5 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				</Button>
 			</div>
-			<div class="composer-meta">
-				<span>{activeExchangeId ? `Selected: ${activeExchangeId}` : 'Starting a new main-chain exchange'}</span>
-				{#if activeExchangeId && activeExchanges && !canAcceptNewChat(activeExchanges, activeExchangeId, exchangesByParentId)}
-					<span>Choose a branch tip or main-chain node to continue.</span>
+			<div class="composer-footer">
+				<Button class="model-chip" variant="outline" size="sm" onclick={() => (paletteOpen = true)}>
+					{activeModel ? activeModel.modelId : 'Connect a model'}
+				</Button>
+				{#if activeModel}
+					<div class="composer-divider"></div>
+					<div class="context-meta">
+						<span>Context</span>
+						{#if contextLength != null}
+							<div class="progress-track compact">
+								<div class="progress-fill" style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}></div>
+							</div>
+						{/if}
+						<span>{usedTokens.toLocaleString()}{contextLength != null ? ` / ${contextLength.toLocaleString()}` : ''}</span>
+					</div>
 				{/if}
 				{#if submitDisabledReason}
-					<span>{submitDisabledReason}</span>
+					<span class="composer-hint">{submitDisabledReason}</span>
 				{/if}
 			</div>
-		</form>
-	</main>
+		</div>
+	</form>
 
 	{#if paletteOpen}
 		<button
@@ -724,22 +698,22 @@
 			on:click={() => ((paletteOpen = false), (claudeMode = null))}
 		></button>
 		<div class="modal-panel">
-			<div class="modal-header">
-				<h2>Select a model</h2>
-				<button class="ghost-button" type="button" on:click={() => ((paletteOpen = false), (claudeMode = null))}>
-					Close
-				</button>
-			</div>
+				<div class="modal-header">
+					<h2>Select a model</h2>
+					<Button class="ghost-button" variant="ghost" size="sm" onclick={() => ((paletteOpen = false), (claudeMode = null))}>
+						Close
+					</Button>
+				</div>
 
 			{#if claudeMode}
 				<div class="modal-section">
 					<h3>{claudeMode === 'unlock' ? 'Unlock Claude key' : 'Save Claude key'}</h3>
 					{#if claudeMode === 'setup'}
-						<input class="sidebar-input" bind:value={apiKeyInput} placeholder="Claude API key" />
+						<Input class="sidebar-input" bind:value={apiKeyInput} placeholder="Claude API key" />
 					{/if}
-					<input class="sidebar-input" bind:value={passwordInput} placeholder="Password" type="password" />
+					<Input class="sidebar-input" bind:value={passwordInput} placeholder="Password" type="password" />
 					{#if claudeMode === 'setup'}
-						<input
+						<Input
 							class="sidebar-input"
 							bind:value={confirmPasswordInput}
 							placeholder="Confirm password"
@@ -750,14 +724,13 @@
 						<div class="error-inline">{keyError}</div>
 					{/if}
 					<div class="modal-actions">
-						<button class="toolbar-button" type="button" on:click={() => (claudeMode = null)}>Back</button>
-						<button
+						<Button class="toolbar-button" variant="outline" size="sm" onclick={() => (claudeMode = null)}>Back</Button>
+						<Button
 							class="primary-button"
-							type="button"
-							on:click={claudeMode === 'unlock' ? unlockClaudeKey : saveClaudeCredentials}
+							onclick={claudeMode === 'unlock' ? unlockClaudeKey : saveClaudeCredentials}
 						>
 							{claudeMode === 'unlock' ? 'Unlock' : 'Save'}
-						</button>
+						</Button>
 					</div>
 				</div>
 			{:else}
@@ -765,35 +738,62 @@
 					<section class="modal-section">
 						<h3>Claude</h3>
 						{#each CLAUDE_MODELS as model (model.id)}
-							<button class="model-option" type="button" on:click={() => startClaudeFlow(model.id)}>
+							<Button class="model-option" variant="outline" onclick={() => startClaudeFlow(model.id)}>
 								<span>{model.label}</span>
 								<span>{Math.round(model.contextLength / 1000)}k</span>
-							</button>
+							</Button>
 						{/each}
 					</section>
 
 					<section class="modal-section">
 						<h3>Ollama</h3>
-						<input class="sidebar-input" bind:value={ollamaUrl} placeholder="http://localhost:11434" />
-						<button class="primary-button" type="button" on:click={() => connectOllama(ollamaUrl)}>
+						<Input class="sidebar-input" bind:value={ollamaUrl} placeholder="http://localhost:11434" />
+						<Button class="primary-button" onclick={() => connectOllama(ollamaUrl)}>
 							{ollamaStatus === 'connecting' ? 'Connecting…' : 'Connect'}
-						</button>
+						</Button>
 						{#each ollamaModels as model (model)}
-							<button
+							<Button
 								class="model-option"
-								type="button"
-								on:click={() => {
+								variant="outline"
+								onclick={() => {
 									activeModel = { provider: 'ollama', modelId: model };
 									paletteOpen = false;
 								}}
 							>
 								<span>{model}</span>
 								<span>local</span>
-							</button>
+							</Button>
 						{/each}
 					</section>
 				</div>
 			{/if}
+		</div>
+	{/if}
+
+	{#if searchOpen}
+		<button class="modal-scrim" type="button" aria-label="Close search" on:click={() => (searchOpen = false)}></button>
+		<div class="search-dialog">
+			<div class="search-dialog-header">
+				<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7.5" cy="7.5" r="5" /><path d="M13 13l3 3" stroke-linecap="round" /></svg>
+				<Input id="search" bind:value={searchQuery} class="search-input" placeholder="Search chats and projects" />
+				<label class="check-row compact">
+					<input type="checkbox" bind:checked={searchAllChats} />
+					<span>All chats</span>
+				</label>
+			</div>
+			<div class="search-results search-dialog-results">
+				{#if searchItems.length === 0}
+					<div class="search-empty">{searchQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}</div>
+				{/if}
+				{#each searchItems.slice(0, 40) as result (result.rootIndex + ':' + result.exchangeId)}
+					<button class="search-result" type="button" on:click={() => { handleSearchSelect(result); searchOpen = false; }}>
+						<div class="search-result-title">{result.prompt}</div>
+						{#if result.snippets[0]}
+							<div class="search-result-snippet">{result.snippets[0].text}</div>
+						{/if}
+					</button>
+				{/each}
+			</div>
 		</div>
 	{/if}
 
@@ -803,7 +803,7 @@
 		<div class="modal-panel delete-panel">
 			<div class="modal-header">
 				<h2>Delete exchange</h2>
-				<button class="ghost-button" type="button" on:click={() => (deleteTargetId = null)}>Close</button>
+				<Button class="ghost-button" variant="ghost" size="sm" onclick={() => (deleteTargetId = null)}>Close</Button>
 			</div>
 			<div class="modal-section">
 				<p class="field-label">
@@ -824,8 +824,8 @@
 					</label>
 				{/if}
 				<div class="modal-actions">
-					<button class="ghost-button" type="button" on:click={() => (deleteTargetId = null)}>Cancel</button>
-					<button class="primary-button" type="button" on:click={confirmDelete}>Confirm delete</button>
+					<Button class="ghost-button" variant="ghost" size="sm" onclick={() => (deleteTargetId = null)}>Cancel</Button>
+					<Button class="primary-button" variant="destructive" onclick={confirmDelete}>Confirm delete</Button>
 				</div>
 			</div>
 		</div>
