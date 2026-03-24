@@ -126,6 +126,7 @@
 								</Sidebar.MenuButton>
 								{#if sessions.length > 1}
 									<Sidebar.MenuAction
+										showOnHover
 										onclick={(e: MouseEvent) => { e.stopPropagation(); onDeleteSession(index); }}
 										aria-label="Delete chat"
 										class="text-sidebar-foreground/40 hover:text-sidebar-foreground"

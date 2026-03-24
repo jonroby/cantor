@@ -667,17 +667,19 @@
 />
 <SidebarPrimitive.Inset>
 <div class="page-shell">
-	{#if roots.length > 1}
-		<div class="chat-header">
+	<div class="chat-header">
+		{#if roots.length > 1}
 			<Button class="chat-nav" variant="outline" size="icon" disabled={activeRootIndex === 0} onclick={() => selectRoot(activeRootIndex - 1)}>
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2L4 7l5 5" /></svg>
 			</Button>
-			<div class="chat-header-label">{activeRootIndex === 0 ? 'Main Chat' : `Side Chat ${activeRootIndex}`}</div>
+		{/if}
+		<div class="chat-header-label">{activeRootIndex === 0 ? 'Main Chat' : `Side Chat ${activeRootIndex}`}</div>
+		{#if roots.length > 1}
 			<Button class="chat-nav" variant="outline" size="icon" disabled={activeRootIndex === roots.length - 1} onclick={() => selectRoot(activeRootIndex + 1)}>
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 2l5 5-5 5" /></svg>
 			</Button>
-		</div>
-	{/if}
+		{/if}
+	</div>
 
 	{#if operationError}
 		<div class="error-banner">{operationError}</div>
