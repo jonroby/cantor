@@ -81,6 +81,21 @@
 	let expandedSideChatParent: string | null = $state(null);
 	let hasHydrated = $state(false);
 	let passwordInput = $state('');
+	let headerVisible = $state(true);
+	let headerTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function handleCanvasWheel(e: WheelEvent) {
+		if (e.deltaY < 0) {
+			// Scrolling up — show header
+			headerVisible = true;
+			if (headerTimer) clearTimeout(headerTimer);
+			headerTimer = setTimeout(() => { headerVisible = false; }, 2000);
+		} else if (e.deltaY > 0) {
+			// Scrolling down — hide header
+			if (headerTimer) clearTimeout(headerTimer);
+			headerVisible = false;
+		}
+	}
 	let confirmPasswordInput = $state('');
 	let apiKeyInput = $state('');
 	let keyError: string | null = $state(null);
@@ -194,6 +209,9 @@
 		}
 
 		window.addEventListener('keydown', handleKeyDown);
+
+		// Auto-hide header after initial display
+		headerTimer = setTimeout(() => { headerVisible = false; }, 2000);
 
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (raw) {
@@ -666,8 +684,8 @@
 	onDeleteSession={deleteSession}
 />
 <SidebarPrimitive.Inset>
-<div class="page-shell">
-	<div class="chat-header">
+<div class="page-shell" onwheel={handleCanvasWheel}>
+	<div class="chat-header" class:chat-header-hidden={!headerVisible}>
 		{#if roots.length > 1}
 			<Button class="chat-nav" variant="outline" size="icon" disabled={activeRootIndex === 0} onclick={() => selectRoot(activeRootIndex - 1)}>
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 2L4 7l5 5" /></svg>
