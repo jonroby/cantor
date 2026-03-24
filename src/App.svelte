@@ -39,11 +39,26 @@
 		withExplicitExchangeOrder
 	} from '$lib/chat/tree';
 	import { clearVault, hasVault, loadApiKey, saveApiKey } from '$lib/chat/vault';
+	import * as SidebarPrimitive from '@/components/ui/sidebar/index.js';
+	import AppSidebar from '$lib/components/AppSidebar.svelte';
+	import type { ChatSession } from '$lib/chat/tree';
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
 
-	let roots: ExchangeMap[] = $state([withExplicitExchangeOrder(buildInitialExchanges())]);
-	let activeRootIndex = $state(0);
+	function makeSession(roots: ExchangeMap[], name?: string): ChatSession {
+		return {
+			id: crypto.randomUUID(),
+			name: name ?? `Chat ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`,
+			roots,
+			activeRootIndex: 0
+		};
+	}
+
+	let sessions: ChatSession[] = $state([makeSession([withExplicitExchangeOrder(buildInitialExchanges())], 'Chat 1')]);
+	let activeSessionIndex = $state(0);
+
+	let roots: ExchangeMap[] = $derived(sessions[activeSessionIndex]?.roots ?? sessions[0]?.roots ?? []);
+	let activeRootIndex = $derived(sessions[activeSessionIndex]?.activeRootIndex ?? 0);
 	let activeExchangeId: string | null = $state(null);
 	let streamingExchangeIds: string[] = $state([]);
 	let operationError: string | null = $state(null);
@@ -106,7 +121,7 @@
 		if (hasHydrated) {
 			localStorage.setItem(
 				STORAGE_KEY,
-				JSON.stringify({ roots, activeRootIndex })
+				JSON.stringify({ sessions, activeSessionIndex })
 			);
 		}
 	});
@@ -184,26 +199,39 @@
 		if (raw) {
 			try {
 				const parsed = JSON.parse(raw) as {
+					// new format
+					sessions?: ChatSession[];
+					activeSessionIndex?: number;
+					// legacy format
 					roots?: ExchangeMap[];
 					activeRootIndex?: number;
 				};
 
-				if (parsed.roots?.length) {
+				if (parsed.sessions?.length) {
+					const hydratedSessions = parsed.sessions.map((s) => ({
+						...s,
+						roots: s.roots.map((r) => withExplicitExchangeOrder(r))
+					}));
+					if (hydratedSessions.some((s) => hasRenderableExchanges(s.roots))) {
+						sessions = hydratedSessions;
+					}
+					if (typeof parsed.activeSessionIndex === 'number') {
+						activeSessionIndex = Math.min(Math.max(parsed.activeSessionIndex, 0), sessions.length - 1);
+					}
+				} else if (parsed.roots?.length) {
+					// migrate legacy format
 					const hydratedRoots = parsed.roots.map((root) => withExplicitExchangeOrder(root));
 					if (hasRenderableExchanges(hydratedRoots)) {
-						roots = hydratedRoots;
+						sessions = [makeSession(hydratedRoots, 'Chat 1')];
+						activeSessionIndex = 0;
 					}
-				}
-
-				if (typeof parsed.activeRootIndex === 'number') {
-					activeRootIndex = clampRootIndex(parsed.activeRootIndex, roots.length);
 				}
 			} catch {
 				// ignore invalid persisted state
 			}
 		}
 
-		activeExchangeId = getMainChatTail(roots[activeRootIndex] ?? roots[0]);
+		activeExchangeId = getMainChatTail(sessions[activeSessionIndex]?.roots[sessions[activeSessionIndex]?.activeRootIndex ?? 0] ?? sessions[0]?.roots[0]);
 		hasHydrated = true;
 
 		(async () => {
@@ -263,9 +291,16 @@
 		return hidden;
 	}
 
+	function updateActiveSession(patch: Partial<Pick<ChatSession, 'roots' | 'activeRootIndex'>>) {
+		sessions = sessions.map((s, i) =>
+			i === activeSessionIndex ? { ...s, ...patch } : s
+		);
+	}
+
 	function selectRoot(index: number) {
-		activeRootIndex = clampRootIndex(index, roots.length);
-		activeExchangeId = getMainChatTail(roots[activeRootIndex]);
+		const clamped = clampRootIndex(index, roots.length);
+		updateActiveSession({ activeRootIndex: clamped });
+		activeExchangeId = getMainChatTail(roots[clamped]);
 		expandedSideChatParent = null;
 		measuredNodeHeights = {};
 		scrollToNode(activeExchangeId);
@@ -273,7 +308,34 @@
 
 	function replaceActiveRoot(nextRoot: ExchangeMap) {
 		measuredNodeHeights = {};
-		roots = roots.map((root, index) => (index === activeRootIndex ? nextRoot : root));
+		updateActiveSession({ roots: roots.map((root, index) => (index === activeRootIndex ? nextRoot : root)) });
+	}
+
+	function newChat() {
+		const session = makeSession([withExplicitExchangeOrder(buildInitialExchanges())]);
+		sessions = [...sessions, session];
+		activeSessionIndex = sessions.length - 1;
+		activeExchangeId = getMainChatTail(session.roots[0]);
+		expandedSideChatParent = null;
+		measuredNodeHeights = {};
+	}
+
+	function selectSession(index: number) {
+		activeSessionIndex = Math.min(Math.max(index, 0), sessions.length - 1);
+		const session = sessions[activeSessionIndex];
+		activeExchangeId = getMainChatTail(session.roots[session.activeRootIndex ?? 0]);
+		expandedSideChatParent = null;
+		measuredNodeHeights = {};
+	}
+
+	function deleteSession(index: number) {
+		if (sessions.length <= 1) return;
+		sessions = sessions.filter((_, i) => i !== index);
+		activeSessionIndex = Math.min(activeSessionIndex, sessions.length - 1);
+		const session = sessions[activeSessionIndex];
+		activeExchangeId = getMainChatTail(session.roots[session.activeRootIndex ?? 0]);
+		expandedSideChatParent = null;
+		measuredNodeHeights = {};
 	}
 
 	function setMeasuredNodeHeight(exchangeId: string, height: number) {
@@ -327,8 +389,8 @@
 			};
 		}
 
-		roots = [...roots, withExplicitExchangeOrder(copiedExchanges)];
-		activeRootIndex = roots.length - 1;
+		const newRoots = [...roots, withExplicitExchangeOrder(copiedExchanges)];
+		updateActiveSession({ roots: newRoots, activeRootIndex: newRoots.length - 1 });
 		activeExchangeId = firstCopiedId;
 		expandedSideChatParent = null;
 		scrollToNode(firstCopiedId);
@@ -343,7 +405,7 @@
 	}
 
 	function saveToDisk() {
-		const payload = JSON.stringify({ roots, activeRootIndex }, null, 2);
+		const payload = JSON.stringify({ sessions, activeSessionIndex }, null, 2);
 		const blob = new Blob([payload], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -595,6 +657,15 @@
 	<title>Superset Svelte</title>
 </svelte:head>
 
+<SidebarPrimitive.Provider>
+<AppSidebar
+	{sessions}
+	{activeSessionIndex}
+	onSelectSession={selectSession}
+	onNewChat={newChat}
+	onDeleteSession={deleteSession}
+/>
+<SidebarPrimitive.Inset>
 <div class="page-shell">
 	{#if roots.length > 1}
 		<div class="chat-header">
@@ -817,3 +888,5 @@
 		</div>
 	{/if}
 </div>
+</SidebarPrimitive.Inset>
+</SidebarPrimitive.Provider>

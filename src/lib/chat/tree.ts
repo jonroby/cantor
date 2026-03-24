@@ -21,6 +21,13 @@ export const ROOT_ANCHOR_ID = "__root_anchor__";
 
 export type DeleteMode = "exchange" | "exchangeAndMainChat" | "exchangeAndSideChats";
 
+export interface ChatSession {
+    id: string;
+    name: string;
+    roots: ExchangeMap[];
+    activeRootIndex: number;
+}
+
 export interface DeleteResult {
     exchanges: ExchangeMap;
     removedExchangeIds: string[];
