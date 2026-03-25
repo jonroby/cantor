@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button.svelte';
 	import type { Provider } from '$lib/chat/models';
+	import { renderMath, containsMath } from '$lib/chat/katex';
 	import claudeLogo from '../../../assets/claude.svg';
 	import deepseekLogo from '../../../assets/deepseek.svg';
 	import geminiLogo from '../../../assets/gemini-color.svg';
@@ -45,6 +46,14 @@
 	let { data }: { data: ExchangeNodeData } = $props();
 	let cardElement: HTMLDivElement | null = $state(null);
 	let collapsed = $state(false);
+
+	// Render math via KaTeX only after streaming is complete.
+	let promptHtml = $derived(
+		containsMath(data.prompt) ? renderMath(data.prompt) : ''
+	);
+	let responseHtml = $derived(
+		!data.isStreaming && containsMath(data.response) ? renderMath(data.response) : ''
+	);
 
 	$effect(() => {
 		if (!cardElement || typeof ResizeObserver === 'undefined') return;
@@ -115,7 +124,11 @@
 
 	<div class="exchange-section prompt-section">
 		<div class="exchange-kicker">You</div>
-		<div class="exchange-prompt">{data.prompt}</div>
+		{#if promptHtml}
+			<div class="exchange-prompt">{@html promptHtml}</div>
+		{:else}
+			<div class="exchange-prompt">{data.prompt}</div>
+		{/if}
 	</div>
 
 	<div class="exchange-section response-section">
@@ -151,7 +164,11 @@
 			</div>
 		</div>
 		{#if !collapsed}
-			<div class="exchange-response">{data.response || 'Waiting for response…'}</div>
+			{#if responseHtml}
+				<div class="exchange-response">{@html responseHtml}</div>
+			{:else}
+				<div class="exchange-response">{data.response || 'Waiting for response…'}</div>
+			{/if}
 		{/if}
 	</div>
 </div>

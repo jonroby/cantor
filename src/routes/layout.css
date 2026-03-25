@@ -290,6 +290,19 @@
 	color: hsl(var(--muted-foreground));
 }
 
+/* KaTeX overrides inside exchange cards */
+.exchange-prompt .katex-display,
+.exchange-response .katex-display {
+	margin: 0.5em 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.exchange-prompt .katex,
+.exchange-response .katex {
+	font-size: 1em;
+}
+
 .streaming-dot {
 	width: 0.55rem;
 	height: 0.55rem;
