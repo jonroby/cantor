@@ -46,7 +46,6 @@
 	},
 	"dependencies": {
 		"@mlc-ai/web-llm": "^0.2.82",
-		"@xyflow/svelte": "^1.5.1",
 		"clsx": "^2.1.1",
 		"katex": "^0.16.42",
 		"marked": "^17.0.5",

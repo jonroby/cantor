@@ -10,6 +10,9 @@ export async function* streamGeminiChat(
 	apiKey: string,
 	signal: AbortSignal
 ): AsyncGenerator<StreamChunk> {
+	// CLEANUP: API key is passed as a URL query parameter per Google's API design. This means it
+	// appears in browser history, DevTools network tab, and request logs. Google requires this —
+	// moving it to a header won't work. Consider adding a note in docs about this tradeoff.
 	const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
 	const contents = messages.map((m) => ({

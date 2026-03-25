@@ -14,6 +14,8 @@ interface ClaudeResponse {
 	};
 }
 
+// CLEANUP: This function is non-streaming despite its name. It should send `stream: true` and
+// parse SSE events (content_block_delta), same pattern as streamGeminiChat/streamOpenAICompatChat.
 export async function* streamClaudeChat(
 	model: string,
 	messages: Message[],
@@ -30,7 +32,7 @@ export async function* streamClaudeChat(
 		},
 		body: JSON.stringify({
 			model,
-			max_tokens: 8096,
+			max_tokens: 8192,
 			messages: messages.map((message) => ({
 				role: message.role,
 				content: message.content

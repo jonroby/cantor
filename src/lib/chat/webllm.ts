@@ -53,6 +53,7 @@ function buildAppConfig(modelId: string, contextWindowSize: number) {
 }
 
 let engine: WebWorkerMLCEngine | null = null;
+let engineWorker: Worker | null = null;
 let currentModelId: string | null = null;
 
 export function getWebLLMEngine(): WebWorkerMLCEngine | null {
@@ -79,9 +80,10 @@ export async function loadWebLLMModel(
 	if (engine && currentModelId === modelId) return;
 
 	// Terminate previous engine if switching models
-	if (engine) {
-		try { engine.terminate(); } catch { /* ignore */ }
+	if (engineWorker) {
+		try { engineWorker.terminate(); } catch { /* ignore */ }
 		engine = null;
+		engineWorker = null;
 		currentModelId = null;
 	}
 
@@ -94,16 +96,18 @@ export async function loadWebLLMModel(
 		appConfig: buildAppConfig(modelId, contextWindowSize),
 		initProgressCallback: progressCallback
 	});
+	engineWorker = worker;
 	currentModelId = modelId;
 }
 
 /** Unload the current model and terminate the worker. */
 export function unloadWebLLM(): void {
-	if (engine) {
-		try { engine.terminate(); } catch { /* ignore */ }
-		engine = null;
-		currentModelId = null;
+	if (engineWorker) {
+		try { engineWorker.terminate(); } catch { /* ignore */ }
 	}
+	engine = null;
+	engineWorker = null;
+	currentModelId = null;
 }
 
 /** Check if a model is cached in the browser. */

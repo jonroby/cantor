@@ -58,7 +58,10 @@ function requireExchange(exchanges: ExchangeMap, exchangeId: string, message: st
 }
 
 function finalizeChatTree(exchanges: ExchangeMap): ExchangeMap {
-    return validateChatTree(exchanges);
+    if (import.meta.env.DEV) {
+        return validateChatTree(exchanges);
+    }
+    return exchanges;
 }
 
 function isSideExchange(
@@ -535,6 +538,13 @@ export function findSideChatParent(exchanges: ExchangeMap, exchangeId: string): 
     }
 
     return outermostSideChatParent;
+}
+
+export function hasExplicitExchangeOrder(exchanges: ExchangeMap): boolean {
+    const parentIds = new Set(
+        Object.values(exchanges).map((e) => e.parentId).filter((id): id is string => id !== null),
+    );
+    return [...parentIds].every((id) => exchanges[id]?.childIds !== undefined);
 }
 
 export function withExplicitExchangeOrder(exchanges: ExchangeMap): ExchangeMap {

@@ -45,6 +45,7 @@
 		getHistory,
 		getMainChatTail,
 		getPathTokenTotal,
+		hasExplicitExchangeOrder,
 		promoteSideChatToMainChat,
 		type DeleteMode,
 		type Exchange,
@@ -247,7 +248,7 @@
 				if (parsed.sessions?.length) {
 					const hydratedSessions = parsed.sessions.map((s) => ({
 						...s,
-						roots: s.roots.map((r) => withExplicitExchangeOrder(r))
+						roots: s.roots.map((r) => hasExplicitExchangeOrder(r) ? r : withExplicitExchangeOrder(r))
 					}));
 					if (hydratedSessions.some((s) => hasRenderableExchanges(s.roots))) {
 						sessions = hydratedSessions;
@@ -285,7 +286,10 @@
 			}
 		})();
 
-		return () => window.removeEventListener('keydown', handleKeyDown);
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+			if (headerTimer) clearTimeout(headerTimer);
+		};
 	});
 
 	function clampRootIndex(index: number, rootCount: number) {
@@ -540,7 +544,7 @@
 			return streamGeminiChat(model.modelId, history, key, signal);
 		}
 		// All others: OpenAI-compatible
-		const config = PROVIDER_CONFIG[model.provider as Exclude<Provider, 'ollama'>];
+		const config = PROVIDER_CONFIG[model.provider as Exclude<Provider, 'ollama' | 'webllm'>];
 		return streamOpenAICompatChat(config.baseUrl, model.modelId, history, key, signal);
 	}
 
@@ -570,6 +574,8 @@
 		await tick();
 		scrollToNode(created.id);
 
+		// CLEANUP: Store the AbortController in component state and expose a "Stop" button in the
+		// composer while streaming. Also abort on session/root switch.
 		const abortController = new AbortController();
 
 		try {
@@ -641,7 +647,7 @@
 
 	function handleSearchSelect(result: SearchResult) {
 		const targetRoot = roots[result.rootIndex];
-		activeRootIndex = result.rootIndex;
+		updateActiveSession({ activeRootIndex: result.rootIndex });
 		activeExchangeId = result.exchangeId;
 		expandedSideChatParent =
 			targetRoot
@@ -655,32 +661,37 @@
 	}
 
 	function getExchangeNodeData(exchangeId: string) {
-		const exchange = activeExchanges?.[exchangeId];
-		if (!exchange) return null;
-		const children = activeExchanges ? getChildExchanges(activeExchanges, exchangeId, exchangesByParentId) : [];
-		const hasSideChildren = canCreateSideChats(activeExchanges, exchangeId, exchangesByParentId) && children.length > 1;
-		const isSideRoot = exchange.parentId
-			? (getChildExchanges(activeExchanges, exchange.parentId, exchangesByParentId)[0]?.id ?? null) !== exchangeId
-			: false;
+		try {
+			const exchange = activeExchanges?.[exchangeId];
+			if (!exchange) return null;
+			const children = activeExchanges ? getChildExchanges(activeExchanges, exchangeId, exchangesByParentId) : [];
+			const hasSideChildren = canCreateSideChats(activeExchanges, exchangeId, exchangesByParentId) && children.length > 1;
+			const isSideRoot = exchange.parentId
+				? (getChildExchanges(activeExchanges, exchange.parentId, exchangesByParentId)[0]?.id ?? null) !== exchangeId
+				: false;
 
-		return {
-			prompt: exchange.prompt,
-			response: exchange.response,
-			model: exchange.model,
-			provider: exchange.model ? (getProviderForModelId(exchange.model) ?? 'ollama') : null,
-			isActive: activeExchangeId === exchangeId,
-			isStreaming: streamingExchangeIds.includes(exchangeId),
-			canFork: true,
-			hasSideChildren,
-			isSideRoot,
-			canPromote: !!activeExchanges && canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
-			onMeasure: (height: number) => setMeasuredNodeHeight(exchangeId, height),
-			onSelect: () => { activeExchangeId = exchangeId; },
-			onFork: () => forkChat(exchangeId),
-			onToggleSideChildren: () => toggleSideChildren(exchangeId),
-			onPromote: () => { activeExchangeId = exchangeId; promoteActiveExchange(); },
-			onDelete: () => openDeleteDialog(exchangeId)
-		};
+			return {
+				prompt: exchange.prompt,
+				response: exchange.response,
+				model: exchange.model,
+				provider: exchange.model ? getProviderForModelId(exchange.model) : null,
+				isActive: activeExchangeId === exchangeId,
+				isStreaming: streamingExchangeIds.includes(exchangeId),
+				canFork: true,
+				hasSideChildren,
+				isSideRoot,
+				canPromote: !!activeExchanges && canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
+				onMeasure: (height: number) => setMeasuredNodeHeight(exchangeId, height),
+				onSelect: () => { activeExchangeId = exchangeId; },
+				onFork: () => forkChat(exchangeId),
+				onToggleSideChildren: () => toggleSideChildren(exchangeId),
+				onPromote: () => { activeExchangeId = exchangeId; promoteActiveExchange(); },
+				onDelete: () => openDeleteDialog(exchangeId)
+			};
+		} catch (error) {
+			console.error(`Failed to render exchange "${exchangeId}":`, error);
+			return null;
+		}
 	}
 </script>
 

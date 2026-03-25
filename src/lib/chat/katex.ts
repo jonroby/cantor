@@ -14,6 +14,8 @@ const marked = new Marked({
  * placeholders so marked doesn't mangle them, then run marked, then
  * swap the placeholders back with KaTeX-rendered HTML.
  */
+// CLEANUP: Output is rendered via {@html} without sanitization. Add DOMPurify (or similar) after
+// the marked + KaTeX pipeline to prevent XSS from user prompts or LLM responses containing HTML.
 export function renderRichText(text: string): string {
 	if (!text) return '';
 

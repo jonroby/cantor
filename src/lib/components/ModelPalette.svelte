@@ -4,16 +4,7 @@
 	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '$lib/chat/webllm';
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
-	import claudeLogo from '../../assets/claude.svg';
-	import deepseekLogo from '../../assets/deepseek.svg';
-	import geminiLogo from '../../assets/gemini-color.svg';
-	import gptOssLogo from '../../assets/gpt-oss.svg';
-	import metaLogo from '../../assets/meta.svg';
-	import mistralLogo from '../../assets/mistral-color.svg';
-	import moonshotLogo from '../../assets/moonshot.svg';
-	import ollamaLogo from '../../assets/ollama.svg';
-	import qwenLogo from '../../assets/qwen.svg';
-	import webllmLogo from '../../assets/web-llm.jpeg';
+	import { PROVIDER_LOGOS } from '$lib/chat/logos';
 
 	interface Props {
 		open: boolean;
@@ -44,17 +35,6 @@
 
 	type KeyFlow = { provider: string; mode: 'unlock' | 'setup' };
 	type Tab = 'ollama' | 'frontier' | 'webllm';
-
-	const PROVIDER_LOGOS: Record<string, string> = {
-		claude: claudeLogo,
-		openai: gptOssLogo,
-		gemini: geminiLogo,
-		moonshot: moonshotLogo,
-		qwen: qwenLogo,
-		deepseek: deepseekLogo,
-		mistral: mistralLogo,
-		groq: metaLogo
-	};
 
 	let {
 		open,
@@ -322,7 +302,7 @@
 						class:active={activeTab === 'ollama'}
 						onclick={() => activeTab = 'ollama'}
 					>
-						<img src={ollamaLogo} alt="Ollama" class="palette-tab-icon" />
+						<img src={PROVIDER_LOGOS.ollama} alt="Ollama" class="palette-tab-icon" />
 						Ollama
 					</button>
 					<button
@@ -337,7 +317,7 @@
 						class:active={activeTab === 'webllm'}
 						onclick={() => activeTab = 'webllm'}
 					>
-						<img src={webllmLogo} alt="WebLLM" class="palette-tab-icon" />
+						<img src={PROVIDER_LOGOS.webllm} alt="WebLLM" class="palette-tab-icon" />
 						WebLLM
 					</button>
 				</div>
@@ -395,7 +375,7 @@
 								<!-- Claude (active) -->
 								<div class="palette-provider-group">
 									<div class="palette-provider-title">
-										<img src={claudeLogo} alt="Claude" class="palette-provider-logo" />
+										<img src={PROVIDER_LOGOS.claude} alt="Claude" class="palette-provider-logo" />
 										<span class="palette-provider-name">Claude</span>
 									</div>
 									<div class="palette-provider-models">
