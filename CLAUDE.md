@@ -43,11 +43,13 @@ The central state shape is an `ExchangeMap` from `src/lib/chat/tree.ts`.
 There are three distinct branching concepts. **Do not confuse them.**
 
 ### Sessions
+
 - Top-level chat sessions managed in the sidebar (`AppSidebar.svelte`).
 - Each session has its own set of roots (main chat + forks).
 - Stored as `sessions[]` in `App.svelte`.
 
 ### Forks
+
 - A **fork** copies the conversation from root down to a selected node into a **new root** within the same session.
 - Forks appear as separate trees, navigable via the top header bar ("Main Chat", "Fork 1", "Fork 2", etc.).
 - Created via `forkChat()` in `App.svelte`, triggered by the fork button (`+` icon) on exchange nodes.
@@ -56,6 +58,7 @@ There are three distinct branching concepts. **Do not confuse them.**
 - Prop: `canFork` / `onFork` on `ExchangeNodeData`.
 
 ### Side Chats
+
 - A **side chat** is a sibling branch off an existing node within the same tree.
 - Created implicitly by selecting a node and typing a new message (no dedicated button).
 - Side chats are **1 level deep only** — a side chat node can have at most 1 child.
@@ -76,21 +79,25 @@ There are three distinct branching concepts. **Do not confuse them.**
 ## UI Components
 
 ### Sidebar
+
 - `src/lib/components/AppSidebar.svelte` — session list, new chat, delete session.
 - Uses shadcn-svelte sidebar primitives from `src/components/ui/sidebar/`.
 - Floats over content (gap always icon-width); does not push the main canvas.
 
 ### Floating Action Buttons
+
 - Fixed on the right side, vertically centered.
 - Search, Fit view, Go to top, Go to active, Download chat.
 - Use shadcn Tooltip components (positioned to the left).
 
 ### Exchange Node Actions
+
 - Action buttons appear on hover in a pill-shaped overlay.
 - Use custom CSS tooltips (`.action-tip-wrap` / `.action-tip`) because the canvas CSS transform breaks Floating UI tooltip positioning.
 - Buttons: Fork (`+`), Side chats (branch icon, only if node has side children), Promote (up arrow, only on side roots), Delete (trash).
 
 ### Chat Header
+
 - Fixed top-center, shows "Main Chat" or "Fork N" with navigation arrows.
 - Auto-hides: visible on load and scroll-up, hides on scroll-down after 2s.
 - Controlled by `headerVisible` state and `handleCanvasWheel()`.

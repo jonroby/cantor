@@ -90,7 +90,11 @@ export function migrateVault(): void {
 	localStorage.removeItem(LEGACY_VAULT_KEY);
 }
 
-export async function saveApiKey(provider: string, apiKey: string, password: string): Promise<void> {
+export async function saveApiKey(
+	provider: string,
+	apiKey: string,
+	password: string
+): Promise<void> {
 	const store = getStore();
 	store[provider] = await encryptValue(apiKey, password);
 	setStore(store);

@@ -34,7 +34,10 @@ interface LayoutOptions {
 	measuredHeights?: Record<string, number>;
 }
 
-export function computeCanvasLayout(exchanges: ExchangeMap, options: LayoutOptions = {}): CanvasLayout {
+export function computeCanvasLayout(
+	exchanges: ExchangeMap,
+	options: LayoutOptions = {}
+): CanvasLayout {
 	const anchor = Object.values(exchanges).find((exchange) => exchange.isAnchor);
 	const hiddenExchangeIds = options.hiddenExchangeIds ?? new Set<string>();
 	const measuredHeights = options.measuredHeights ?? {};
@@ -94,7 +97,10 @@ export function computeCanvasLayout(exchanges: ExchangeMap, options: LayoutOptio
 		visit(child.id, 0, index, PADDING_Y);
 	}
 
-	const maxBottom = nodes.reduce((bottom, node) => Math.max(bottom, node.y + node.height), PADDING_Y);
+	const maxBottom = nodes.reduce(
+		(bottom, node) => Math.max(bottom, node.y + node.height),
+		PADDING_Y
+	);
 
 	return {
 		nodes,

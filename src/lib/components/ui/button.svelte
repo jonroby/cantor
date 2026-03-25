@@ -52,7 +52,7 @@
 	{title}
 	aria-label={ariaLabel}
 	class={cn('ui-button', variants[variant], sizes[size], className)}
-	onclick={onclick}
+	{onclick}
 	{...restProps}
 >
 	{@render children?.()}

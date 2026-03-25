@@ -1,4 +1,14 @@
-export type Provider = 'ollama' | 'webllm' | 'claude' | 'openai' | 'gemini' | 'moonshot' | 'qwen' | 'deepseek' | 'mistral' | 'groq';
+export type Provider =
+	| 'ollama'
+	| 'webllm'
+	| 'claude'
+	| 'openai'
+	| 'gemini'
+	| 'moonshot'
+	| 'qwen'
+	| 'deepseek'
+	| 'mistral'
+	| 'groq';
 
 export interface ActiveModel {
 	provider: Provider;
@@ -64,7 +74,10 @@ export const PROVIDER_CONFIG: Record<Exclude<Provider, 'ollama' | 'webllm'>, Pro
 };
 
 /** Model lists per provider. */
-export const PROVIDER_MODELS: Record<Exclude<Provider, 'ollama' | 'webllm'>, ProviderModelEntry[]> = {
+export const PROVIDER_MODELS: Record<
+	Exclude<Provider, 'ollama' | 'webllm'>,
+	ProviderModelEntry[]
+> = {
 	claude: [
 		{ id: 'claude-opus-4-6', label: 'Claude Opus 4.6', contextLength: 1_000_000 },
 		{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', contextLength: 1_000_000 },
@@ -122,10 +135,19 @@ export type ClaudeModel = ProviderModelEntry;
 
 /** All key-based provider names in display order. */
 export const KEY_BASED_PROVIDERS: Exclude<Provider, 'ollama' | 'webllm'>[] = [
-	'claude', 'openai', 'gemini', 'moonshot', 'qwen', 'deepseek', 'mistral', 'groq'
+	'claude',
+	'openai',
+	'gemini',
+	'moonshot',
+	'qwen',
+	'deepseek',
+	'mistral',
+	'groq'
 ];
 
-export function isKeyBasedProvider(provider: Provider): provider is Exclude<Provider, 'ollama' | 'webllm'> {
+export function isKeyBasedProvider(
+	provider: Provider
+): provider is Exclude<Provider, 'ollama' | 'webllm'> {
 	return provider !== 'ollama' && provider !== 'webllm';
 }
 

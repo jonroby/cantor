@@ -29,9 +29,7 @@
 
 	// Render rich text (math + bold/italic) only after streaming is complete.
 	let promptHtml = $derived(renderRichText(data.prompt));
-	let responseHtml = $derived(
-		!data.isStreaming ? renderRichText(data.response) : ''
-	);
+	let responseHtml = $derived(!data.isStreaming ? renderRichText(data.response) : '');
 
 	$effect(() => {
 		if (!cardElement || typeof ResizeObserver === 'undefined') return;
@@ -70,31 +68,111 @@
 	<div class="exchange-actions">
 		{#if data.canFork}
 			<span class="action-tip-wrap">
-				<Button class="icon-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onFork(); }} ariaLabel="Fork">
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg>
+				<Button
+					class="icon-chip"
+					variant="ghost"
+					size="icon"
+					onclick={(event: MouseEvent) => {
+						event.stopPropagation();
+						data.onFork();
+					}}
+					ariaLabel="Fork"
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg
+					>
 				</Button>
 				<span class="action-tip">Fork</span>
 			</span>
 		{/if}
 		{#if data.hasSideChildren}
 			<span class="action-tip-wrap">
-				<Button class="icon-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onToggleSideChildren(); }} ariaLabel="Side chats">
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v8M3 7h4M7 7v4M7 7h4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				<Button
+					class="icon-chip"
+					variant="ghost"
+					size="icon"
+					onclick={(event: MouseEvent) => {
+						event.stopPropagation();
+						data.onToggleSideChildren();
+					}}
+					ariaLabel="Side chats"
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						><path
+							d="M3 3v8M3 7h4M7 7v4M7 7h4"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/></svg
+					>
 				</Button>
 				<span class="action-tip">Side chats</span>
 			</span>
 		{/if}
 		{#if data.isSideRoot}
 			<span class="action-tip-wrap">
-				<Button class="icon-chip" variant="ghost" size="icon" disabled={!data.canPromote} onclick={(event: MouseEvent) => { event.stopPropagation(); data.onPromote(); }} ariaLabel="Promote">
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12V2M7 2l-2 2M7 2l2 2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				<Button
+					class="icon-chip"
+					variant="ghost"
+					size="icon"
+					disabled={!data.canPromote}
+					onclick={(event: MouseEvent) => {
+						event.stopPropagation();
+						data.onPromote();
+					}}
+					ariaLabel="Promote"
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						><path
+							d="M7 12V2M7 2l-2 2M7 2l2 2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/></svg
+					>
 				</Button>
 				<span class="action-tip">Promote</span>
 			</span>
 		{/if}
 		<span class="action-tip-wrap">
-			<Button class="icon-chip delete-chip" variant="ghost" size="icon" onclick={(event: MouseEvent) => { event.stopPropagation(); data.onDelete(); }} ariaLabel="Delete">
-				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.5 4.5h7M5.5 4.5v6M8.5 4.5v6M4.5 4.5l.4-1.2A1 1 0 0 1 5.85 2.6h2.3a1 1 0 0 1 .95.7l.4 1.2M4.5 4.5v6.8c0 .39.31.7.7.7h3.6a.7.7 0 0 0 .7-.7V4.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+			<Button
+				class="icon-chip delete-chip"
+				variant="ghost"
+				size="icon"
+				onclick={(event: MouseEvent) => {
+					event.stopPropagation();
+					data.onDelete();
+				}}
+				ariaLabel="Delete"
+			>
+				<svg
+					width="14"
+					height="14"
+					viewBox="0 0 14 14"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					><path
+						d="M3.5 4.5h7M5.5 4.5v6M8.5 4.5v6M4.5 4.5l.4-1.2A1 1 0 0 1 5.85 2.6h2.3a1 1 0 0 1 .95.7l.4 1.2M4.5 4.5v6.8c0 .39.31.7.7.7h3.6a.7.7 0 0 0 .7-.7V4.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/></svg
+				>
 			</Button>
 			<span class="action-tip">Delete</span>
 		</span>
@@ -109,7 +187,11 @@
 		<div class="exchange-card-header">
 			<div class="exchange-kicker">
 				{#if data.provider && PROVIDER_LOGOS[data.provider]}
-					<img src={PROVIDER_LOGOS[data.provider]} alt={data.provider} class="exchange-provider-logo" />
+					<img
+						src={PROVIDER_LOGOS[data.provider]}
+						alt={data.provider}
+						class="exchange-provider-logo"
+					/>
 				{/if}
 				Assistant
 				{#if data.model}
@@ -125,9 +207,20 @@
 						class="collapse-toggle"
 						type="button"
 						aria-label={collapsed ? 'Expand' : 'Collapse'}
-						onclick={(e: MouseEvent) => { e.stopPropagation(); collapsed = !collapsed; }}
+						onclick={(e: MouseEvent) => {
+							e.stopPropagation();
+							collapsed = !collapsed;
+						}}
 					>
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
 							class:collapse-rotated={!collapsed}
 						>
 							<path d="M4 5.5l3 3 3-3" />
@@ -141,7 +234,9 @@
 			{#if responseHtml}
 				<div class="exchange-response">{@html responseHtml}</div>
 			{:else}
-				<div class="exchange-response exchange-response-plain">{data.response || 'Waiting for response…'}</div>
+				<div class="exchange-response exchange-response-plain">
+					{data.response || 'Waiting for response…'}
+				</div>
 			{/if}
 		{/if}
 	</div>

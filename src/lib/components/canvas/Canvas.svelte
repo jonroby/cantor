@@ -100,7 +100,9 @@
 			tx = targetTx;
 			ty = targetTy;
 			scale = targetScale;
-			setTimeout(() => { animating = false; }, opts.duration);
+			setTimeout(() => {
+				animating = false;
+			}, opts.duration);
 		} else {
 			tx = targetTx;
 			ty = targetTy;
@@ -108,7 +110,11 @@
 		}
 	}
 
-	export function scrollNodeToTop(nodeY: number, nodeCenterX: number, opts?: { zoom?: number; duration?: number; topOffset?: number }) {
+	export function scrollNodeToTop(
+		nodeY: number,
+		nodeCenterX: number,
+		opts?: { zoom?: number; duration?: number; topOffset?: number }
+	) {
 		if (!containerEl) return;
 		const targetScale = opts?.zoom ?? scale;
 		const topOffset = opts?.topOffset ?? 60;
@@ -121,7 +127,9 @@
 			tx = targetTx;
 			ty = targetTy;
 			scale = targetScale;
-			setTimeout(() => { animating = false; }, opts.duration);
+			setTimeout(() => {
+				animating = false;
+			}, opts.duration);
 		} else {
 			tx = targetTx;
 			ty = targetTy;
@@ -132,7 +140,10 @@
 	export function fitView(opts?: { duration?: number; maxZoom?: number }) {
 		if (!containerEl || nodes.length === 0) return;
 		const rect = containerEl.getBoundingClientRect();
-		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		let minX = Infinity,
+			minY = Infinity,
+			maxX = -Infinity,
+			maxY = -Infinity;
 		for (const n of nodes) {
 			minX = Math.min(minX, n.x);
 			minY = Math.min(minY, n.y);
@@ -163,24 +174,14 @@
 	role="application"
 	style="--tx:{tx}px;--ty:{ty}px;--scale:{scale}"
 >
-	<div
-		class="canvas-layer"
-		class:canvas-animating={animating}
-	>
-		<svg
-			class="edges-svg"
-			width={canvasWidth}
-			height={canvasHeight}
-		>
+	<div class="canvas-layer" class:canvas-animating={animating}>
+		<svg class="edges-svg" width={canvasWidth} height={canvasHeight}>
 			{#each edges as edge (edge.id)}
 				<path d={computeEdgePath(edge, nodeLookup)} class="edge-path" />
 			{/each}
 		</svg>
 		{#each nodes as n (n.id)}
-			<div
-				class="canvas-node"
-				style="left:{n.x}px;top:{n.y}px;width:{nodeWidth}px;"
-			>
+			<div class="canvas-node" style="left:{n.x}px;top:{n.y}px;width:{nodeWidth}px;">
 				{@render renderNode(n)}
 			</div>
 		{/each}
@@ -196,7 +197,7 @@
 		cursor: grab;
 		touch-action: none;
 		background-color: hsl(var(--background, 0 0% 100%));
-		background-image: radial-gradient(circle, rgba(0,0,0,0.12) 1px, transparent 1px);
+		background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 1px, transparent 1px);
 		background-size: calc(18px * var(--scale)) calc(18px * var(--scale));
 		background-position: var(--tx) var(--ty);
 	}

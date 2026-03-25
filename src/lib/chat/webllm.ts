@@ -5,11 +5,11 @@ import {
 	hasModelInCache,
 	type WebWorkerMLCEngine,
 	type InitProgressReport
-} from "@mlc-ai/web-llm";
-import type { Message } from "./tree";
-import type { StreamChunk } from "./stream";
+} from '@mlc-ai/web-llm';
+import type { Message } from './tree';
+import type { StreamChunk } from './stream';
 
-export type WebLLMStatus = "idle" | "loading" | "ready" | "error";
+export type WebLLMStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface WebLLMModelEntry {
 	id: string;
@@ -81,16 +81,17 @@ export async function loadWebLLMModel(
 
 	// Terminate previous engine if switching models
 	if (engineWorker) {
-		try { engineWorker.terminate(); } catch { /* ignore */ }
+		try {
+			engineWorker.terminate();
+		} catch {
+			/* ignore */
+		}
 		engine = null;
 		engineWorker = null;
 		currentModelId = null;
 	}
 
-	const worker = new Worker(
-		new URL("./webllm-worker.ts", import.meta.url),
-		{ type: "module" }
-	);
+	const worker = new Worker(new URL('./webllm-worker.ts', import.meta.url), { type: 'module' });
 
 	engine = await CreateWebWorkerMLCEngine(worker, modelId, {
 		appConfig: buildAppConfig(modelId, contextWindowSize),
@@ -103,7 +104,11 @@ export async function loadWebLLMModel(
 /** Unload the current model and terminate the worker. */
 export function unloadWebLLM(): void {
 	if (engineWorker) {
-		try { engineWorker.terminate(); } catch { /* ignore */ }
+		try {
+			engineWorker.terminate();
+		} catch {
+			/* ignore */
+		}
 	}
 	engine = null;
 	engineWorker = null;
@@ -130,7 +135,9 @@ export async function deleteAllModelCaches(): Promise<void> {
 	for (const model of prebuiltAppConfig.model_list) {
 		try {
 			await deleteModelAllInfoInCache(model.model_id);
-		} catch { /* ignore models not in cache */ }
+		} catch {
+			/* ignore models not in cache */
+		}
 	}
 }
 
@@ -139,7 +146,7 @@ export async function* streamWebLLMChat(
 	messages: Message[],
 	signal: AbortSignal
 ): AsyncGenerator<StreamChunk> {
-	if (!engine) throw new Error("WebLLM engine not loaded");
+	if (!engine) throw new Error('WebLLM engine not loaded');
 
 	const chunks = await engine.chat.completions.create({
 		messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -155,7 +162,7 @@ export async function* streamWebLLMChat(
 
 		const delta = chunk.choices[0]?.delta?.content;
 		if (delta) {
-			yield { type: "delta", delta };
+			yield { type: 'delta', delta };
 		}
 
 		if (chunk.usage) {
@@ -164,5 +171,5 @@ export async function* streamWebLLMChat(
 		}
 	}
 
-	yield { type: "done", promptTokens, responseTokens };
+	yield { type: 'done', promptTokens, responseTokens };
 }

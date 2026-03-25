@@ -67,7 +67,9 @@
 
 	const filteredWebLLMModels = $derived(
 		webllmSearchQuery.trim()
-			? webllmModels.filter((m) => m.id.toLowerCase().includes(webllmSearchQuery.trim().toLowerCase()))
+			? webllmModels.filter((m) =>
+					m.id.toLowerCase().includes(webllmSearchQuery.trim().toLowerCase())
+				)
 			: webllmModels.slice(0, 20)
 	);
 
@@ -185,7 +187,10 @@
 	}
 
 	function keyPlaceholder(provider: string): string {
-		return PROVIDER_CONFIG[provider as Exclude<Provider, 'ollama' | 'webllm'>]?.keyPlaceholder ?? 'sk-...';
+		return (
+			PROVIDER_CONFIG[provider as Exclude<Provider, 'ollama' | 'webllm'>]?.keyPlaceholder ??
+			'sk-...'
+		);
 	}
 
 	function getBadge(provider: string): string | undefined {
@@ -205,7 +210,8 @@
 		if (!activeModel) return 'No model selected';
 		// For frontier providers, try to find a nice label
 		if (activeModel.provider !== 'ollama' && activeModel.provider !== 'webllm') {
-			const models = PROVIDER_MODELS[activeModel.provider as Exclude<Provider, 'ollama' | 'webllm'>];
+			const models =
+				PROVIDER_MODELS[activeModel.provider as Exclude<Provider, 'ollama' | 'webllm'>];
 			const found = models?.find((m) => m.id === activeModel.modelId);
 			if (found) return found.label;
 		}
@@ -214,18 +220,16 @@
 </script>
 
 {#if open}
-	<button
-		class="modal-scrim"
-		type="button"
-		aria-label="Close model palette"
-		onclick={handleClose}
+	<button class="modal-scrim" type="button" aria-label="Close model palette" onclick={handleClose}
 	></button>
 	<div class="modal-panel palette-panel">
 		{#if keyFlow}
 			<div class="palette-key-flow">
 				<div>
 					<h2 class="palette-heading">
-						{keyFlow.mode === 'unlock' ? 'Unlock API Keys' : `Add ${providerDisplayName(keyFlow.provider)} API Key`}
+						{keyFlow.mode === 'unlock'
+							? 'Unlock API Keys'
+							: `Add ${providerDisplayName(keyFlow.provider)} API Key`}
 					</h2>
 				</div>
 
@@ -239,7 +243,8 @@
 							autofocus
 						/>
 						<p class="palette-hint">
-							Your key is encrypted with your password and stored locally. It never leaves your device.
+							Your key is encrypted with your password and stored locally. It never leaves your
+							device.
 						</p>
 					</div>
 				{/if}
@@ -253,7 +258,9 @@
 						placeholder={keyFlow.mode === 'unlock' ? 'Enter your password' : 'Choose a password'}
 						bind:value={passwordInput}
 						autofocus={keyFlow.mode === 'unlock'}
-						onkeydown={(e) => { if (e.key === 'Enter' && keyFlow?.mode === 'unlock') handleUnlock(); }}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' && keyFlow?.mode === 'unlock') handleUnlock();
+						}}
 					/>
 				</div>
 
@@ -264,7 +271,9 @@
 							type="password"
 							placeholder="Confirm your password"
 							bind:value={confirmPasswordInput}
-							onkeydown={(e) => { if (e.key === 'Enter') handleSaveKey(); }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter') handleSaveKey();
+							}}
 						/>
 					</div>
 				{/if}
@@ -274,12 +283,21 @@
 				{/if}
 
 				<div class="palette-actions">
-					<Button variant="ghost" onclick={() => { keyFlow = null; keyError = null; }} disabled={isSubmitting}>
+					<Button
+						variant="ghost"
+						onclick={() => {
+							keyFlow = null;
+							keyError = null;
+						}}
+						disabled={isSubmitting}
+					>
 						Back
 					</Button>
 					<Button
 						onclick={keyFlow.mode === 'unlock' ? handleUnlock : handleSaveKey}
-						disabled={isSubmitting || !passwordInput || (keyFlow.mode === 'setup' && (!apiKeyInput || !confirmPasswordInput))}
+						disabled={isSubmitting ||
+							!passwordInput ||
+							(keyFlow.mode === 'setup' && (!apiKeyInput || !confirmPasswordInput))}
 					>
 						{isSubmitting ? '...' : keyFlow.mode === 'unlock' ? 'Unlock' : 'Save & Use'}
 					</Button>
@@ -300,7 +318,7 @@
 					<button
 						class="palette-tab"
 						class:active={activeTab === 'ollama'}
-						onclick={() => activeTab = 'ollama'}
+						onclick={() => (activeTab = 'ollama')}
 					>
 						<img src={PROVIDER_LOGOS.ollama} alt="Ollama" class="palette-tab-icon" />
 						Ollama
@@ -308,14 +326,14 @@
 					<button
 						class="palette-tab"
 						class:active={activeTab === 'frontier'}
-						onclick={() => activeTab = 'frontier'}
+						onclick={() => (activeTab = 'frontier')}
 					>
 						Frontier
 					</button>
 					<button
 						class="palette-tab"
 						class:active={activeTab === 'webllm'}
-						onclick={() => activeTab = 'webllm'}
+						onclick={() => (activeTab = 'webllm')}
 					>
 						<img src={PROVIDER_LOGOS.webllm} alt="WebLLM" class="palette-tab-icon" />
 						WebLLM
@@ -331,7 +349,9 @@
 									bind:value={urlInput}
 									class="palette-connect-input"
 									placeholder="localhost:11434"
-									onkeydown={(e) => { if (e.key === 'Enter') onConnectOllama(urlInput); }}
+									onkeydown={(e) => {
+										if (e.key === 'Enter') onConnectOllama(urlInput);
+									}}
 								/>
 								<Button
 									size="sm"
@@ -340,7 +360,11 @@
 									onclick={() => onConnectOllama(urlInput)}
 									disabled={ollamaStatus === 'connecting'}
 								>
-									{ollamaStatus === 'connecting' ? 'Connecting...' : isOllamaConnected ? 'Reconnect' : 'Connect'}
+									{ollamaStatus === 'connecting'
+										? 'Connecting...'
+										: isOllamaConnected
+											? 'Reconnect'
+											: 'Connect'}
 								</Button>
 								{#if ollamaStatus === 'error'}
 									<span class="palette-connect-error">Failed</span>
@@ -354,7 +378,8 @@
 									{#each ollamaModels as modelId (modelId)}
 										<button
 											class="palette-model-row"
-											class:active={activeModel?.provider === 'ollama' && activeModel.modelId === modelId}
+											class:active={activeModel?.provider === 'ollama' &&
+												activeModel.modelId === modelId}
 											onclick={() => handleSelectModel({ provider: 'ollama', modelId })}
 										>
 											<span>{modelId}</span>
@@ -368,7 +393,6 @@
 								</div>
 							{/if}
 						</div>
-
 					{:else if activeTab === 'frontier'}
 						<div class="palette-tab-content">
 							<div class="palette-providers-grid">
@@ -382,7 +406,8 @@
 										{#each PROVIDER_MODELS.claude as model (model.id)}
 											<button
 												class="palette-model-row"
-												class:active={activeModel?.provider === 'claude' && activeModel.modelId === model.id}
+												class:active={activeModel?.provider === 'claude' &&
+													activeModel.modelId === model.id}
 												onclick={() => handleSelectProvider('claude', model.id)}
 											>
 												<span>{model.label}</span>
@@ -397,10 +422,7 @@
 											</button>
 										{/each}
 										{#if apiKeys['claude']}
-											<button
-												class="palette-forget-key"
-												onclick={() => onForgetKey('claude')}
-											>
+											<button class="palette-forget-key" onclick={() => onForgetKey('claude')}>
 												Forget saved key
 											</button>
 										{/if}
@@ -408,7 +430,7 @@
 								</div>
 
 								<!-- Other providers (coming soon) -->
-								{#each KEY_BASED_PROVIDERS.filter(p => p !== 'claude') as provider (provider)}
+								{#each KEY_BASED_PROVIDERS.filter((p) => p !== 'claude') as provider (provider)}
 									{@const models = PROVIDER_MODELS[provider]}
 									{@const logo = PROVIDER_LOGOS[provider]}
 									{@const name = providerDisplayName(provider)}
@@ -422,10 +444,7 @@
 										</div>
 										<div class="palette-provider-models">
 											{#each models as model (model.id)}
-												<button
-													class="palette-model-row disabled"
-													disabled
-												>
+												<button class="palette-model-row disabled" disabled>
 													<span>{model.label}</span>
 													<div class="palette-model-meta"></div>
 												</button>
@@ -435,7 +454,6 @@
 								{/each}
 							</div>
 						</div>
-
 					{:else if activeTab === 'webllm'}
 						<div class="palette-tab-content">
 							<div class="palette-webllm-context">
@@ -451,16 +469,25 @@
 									</button>
 								{/each}
 								<span class="palette-webllm-context-hint">
-									{webllmContextSize <= 4096 ? 'Low memory' : webllmContextSize <= 8192 ? 'Moderate' : 'More memory'}
+									{webllmContextSize <= 4096
+										? 'Low memory'
+										: webllmContextSize <= 8192
+											? 'Moderate'
+											: 'More memory'}
 								</span>
 							</div>
 
 							{#if webllmStatus === 'loading'}
 								<div class="palette-webllm-loading">
 									<div class="palette-webllm-progress-bar">
-										<div class="palette-webllm-progress-fill" style="width: {webllmProgress * 100}%"></div>
+										<div
+											class="palette-webllm-progress-fill"
+											style="width: {webllmProgress * 100}%"
+										></div>
 									</div>
-									<p class="palette-hint">{webllmProgressText || `Loading... ${Math.round(webllmProgress * 100)}%`}</p>
+									<p class="palette-hint">
+										{webllmProgressText || `Loading... ${Math.round(webllmProgress * 100)}%`}
+									</p>
 								</div>
 							{/if}
 
@@ -478,7 +505,8 @@
 
 							<div class="palette-model-grid">
 								{#each filteredWebLLMModels as model (model.id)}
-									{@const isLoaded = activeModel?.provider === 'webllm' && activeModel.modelId === model.id}
+									{@const isLoaded =
+										activeModel?.provider === 'webllm' && activeModel.modelId === model.id}
 									{@const isLoading = webllmStatus === 'loading'}
 									<button
 										class="palette-model-row"
@@ -489,7 +517,11 @@
 										<span>{model.id}</span>
 										<div class="palette-model-meta">
 											{#if model.vramMB}
-												<span class="palette-vram">{model.vramMB < 1024 ? `${model.vramMB}MB` : `${(model.vramMB / 1024).toFixed(1)}GB`}</span>
+												<span class="palette-vram"
+													>{model.vramMB < 1024
+														? `${model.vramMB}MB`
+														: `${(model.vramMB / 1024).toFixed(1)}GB`}</span
+												>
 											{/if}
 											{#if isLoaded}
 												<span class="palette-active-dot"></span>
@@ -503,7 +535,9 @@
 								<p class="palette-hint">No models match "{webllmSearchQuery}"</p>
 							{/if}
 							{#if !webllmSearchQuery}
-								<p class="palette-hint">{webllmModels.length} models available. Search to find more.</p>
+								<p class="palette-hint">
+									{webllmModels.length} models available. Search to find more.
+								</p>
 							{/if}
 
 							<div class="palette-webllm-cache-actions">
@@ -515,10 +549,7 @@
 										Remove cached model ({activeModel.modelId})
 									</button>
 								{/if}
-								<button
-									class="palette-forget-key"
-									onclick={onDeleteAllWebLLMCaches}
-								>
+								<button class="palette-forget-key" onclick={onDeleteAllWebLLMCaches}>
 									Clear all cached models
 								</button>
 							</div>
@@ -594,7 +625,9 @@
 		border: none;
 		border-bottom: 2px solid transparent;
 		cursor: pointer;
-		transition: color 0.15s, border-color 0.15s;
+		transition:
+			color 0.15s,
+			border-color 0.15s;
 		margin-bottom: -1px;
 	}
 
