@@ -9,8 +9,8 @@
 	import { CLAUDE_MODELS, PROVIDER_CONFIG, PROVIDER_MODELS, getModelContextLength, getProviderForModelId, isKeyBasedProvider, type ActiveModel, type OllamaStatus, type Provider } from '$lib/chat/models';
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
-	import ExchangeNode from '$lib/components/flow/ExchangeNode.svelte';
-	import Canvas from '$lib/components/flow/Canvas.svelte';
+	import ExchangeNode from '$lib/components/canvas/ExchangeNode.svelte';
+	import Canvas from '$lib/components/canvas/Canvas.svelte';
 	import {
 		DEFAULT_OLLAMA_URL,
 		fetchAvailableModels,
