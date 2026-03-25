@@ -32,6 +32,7 @@ export const CODE_EDITOR_WIDTH = 640;
 export const CODE_EDITOR_GAP = 40;
 export const CODE_EDITOR_HEIGHT = 400;
 export const CODE_EDITOR_ROW_GAP = 60;
+export const DRAWING_BOARD_WIDTH = 800;
 
 export interface CanvasLayout {
 	nodes: CanvasNode[];
@@ -40,6 +41,7 @@ export interface CanvasLayout {
 	height: number;
 	codeEditor: CodeEditorPosition;
 	pythonEditor: CodeEditorPosition;
+	drawingBoard: CodeEditorPosition;
 }
 
 interface LayoutOptions {
@@ -59,6 +61,7 @@ export function computeCanvasLayout(
 
 	const jsEditorX = PADDING_X;
 	const pyEditorX = PADDING_X + CODE_EDITOR_WIDTH + CODE_EDITOR_GAP;
+	const drawBoardX = pyEditorX + CODE_EDITOR_WIDTH + CODE_EDITOR_GAP;
 	const jsHeight = options.codeEditorHeight ?? CODE_EDITOR_HEIGHT;
 	const pyHeight = options.pythonEditorHeight ?? CODE_EDITOR_HEIGHT;
 	const editorsBottomY = PADDING_Y + Math.max(jsHeight, pyHeight) + CODE_EDITOR_ROW_GAP;
@@ -78,6 +81,11 @@ export function computeCanvasLayout(
 				x: pyEditorX,
 				y: PADDING_Y,
 				width: CODE_EDITOR_WIDTH
+			},
+			drawingBoard: {
+				x: drawBoardX,
+				y: PADDING_Y,
+				width: DRAWING_BOARD_WIDTH
 			}
 		};
 	}
@@ -138,7 +146,7 @@ export function computeCanvasLayout(
 		editorsBottomY
 	);
 
-	const editorsRight = pyEditorX + CODE_EDITOR_WIDTH + PADDING_X;
+	const editorsRight = drawBoardX + DRAWING_BOARD_WIDTH + PADDING_X;
 	const nodesRight =
 		PADDING_X + (maxColumn + 1) * (NODE_WIDTH + COLUMN_GAP) - COLUMN_GAP + PADDING_X;
 	const totalWidth = Math.max(1200, Math.max(editorsRight, nodesRight));
@@ -157,6 +165,11 @@ export function computeCanvasLayout(
 			x: pyEditorX,
 			y: PADDING_Y,
 			width: CODE_EDITOR_WIDTH
+		},
+		drawingBoard: {
+			x: drawBoardX,
+			y: PADDING_Y,
+			width: DRAWING_BOARD_WIDTH
 		}
 	};
 }

@@ -1,8 +1,6 @@
 <script lang="ts">
 	import type { CanvasNode, CanvasEdge, CodeEditorPosition } from '$lib/chat/layout';
 	import type { Snippet } from 'svelte';
-	import type { Shape, DrawingTool } from '$lib/drawing/types';
-	import DrawingLayer from './DrawingLayer.svelte';
 
 	const MIN_ZOOM = 0.1;
 	const MAX_ZOOM = 2;
@@ -18,11 +16,8 @@
 		renderCodeEditor?: Snippet<[]>;
 		pythonEditor?: CodeEditorPosition;
 		renderPythonEditor?: Snippet<[]>;
-		drawingMode?: boolean;
-		drawingTool?: DrawingTool;
-		drawingColor?: string;
-		shapes?: Shape[];
-		onShapesChange?: (shapes: Shape[]) => void;
+		drawingBoard?: CodeEditorPosition;
+		renderDrawingBoard?: Snippet<[]>;
 	}
 
 	let {
@@ -36,11 +31,8 @@
 		renderCodeEditor,
 		pythonEditor,
 		renderPythonEditor,
-		drawingMode = false,
-		drawingTool = 'select',
-		drawingColor = '#374151',
-		shapes = [],
-		onShapesChange
+		drawingBoard,
+		renderDrawingBoard
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | null = $state(null);
@@ -93,9 +85,13 @@
 
 	function onPointerDown(e: PointerEvent) {
 		if (e.button !== 0) return;
-		if (drawingMode) return;
 		const target = e.target as HTMLElement;
-		if (target.closest('.exchange-card') || target.closest('.code-editor-card')) return;
+		if (
+			target.closest('.exchange-card') ||
+			target.closest('.code-editor-card') ||
+			target.closest('.drawing-board')
+		)
+			return;
 		isPanning = true;
 		lastPointerX = e.clientX;
 		lastPointerY = e.clientY;
@@ -200,7 +196,7 @@
 	onpointermove={onPointerMove}
 	onpointerup={onPointerUp}
 	role="application"
-	style="--tx:{tx}px;--ty:{ty}px;--scale:{scale};{drawingMode && drawingTool !== 'select' ? 'cursor:crosshair' : ''}"
+	style="--tx:{tx}px;--ty:{ty}px;--scale:{scale}"
 >
 	<div class="canvas-layer" class:canvas-animating={animating}>
 		<svg class="edges-svg" width={canvasWidth} height={canvasHeight}>
@@ -229,15 +225,13 @@
 				{@render renderPythonEditor()}
 			</div>
 		{/if}
-		{#if drawingMode && onShapesChange}
-			<DrawingLayer
-				{shapes}
-				activeTool={drawingTool}
-				strokeColor={drawingColor}
-				{onShapesChange}
-				{canvasWidth}
-				{canvasHeight}
-			/>
+		{#if drawingBoard && renderDrawingBoard}
+			<div
+				class="canvas-node"
+				style="left:{drawingBoard.x}px;top:{drawingBoard.y}px;width:{drawingBoard.width}px;"
+			>
+				{@render renderDrawingBoard()}
+			</div>
 		{/if}
 	</div>
 </div>

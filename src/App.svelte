@@ -22,8 +22,8 @@
 	import CodeEditor from '$lib/components/canvas/CodeEditor.svelte';
 	import PythonEditor from '$lib/components/canvas/PythonEditor.svelte';
 	import Canvas from '$lib/components/canvas/Canvas.svelte';
-	import DrawingToolbar from '$lib/components/canvas/DrawingToolbar.svelte';
-	import type { Shape, DrawingTool } from '$lib/drawing/types';
+	import DrawingBoard from '$lib/components/canvas/DrawingBoard.svelte';
+	import type { Shape } from '$lib/drawing/types';
 	import {
 		DEFAULT_OLLAMA_URL,
 		fetchAvailableModels,
@@ -147,9 +147,6 @@
 	let deleteMode: DeleteMode = $state('exchange');
 	let measuredNodeHeights: Record<string, number> = $state({});
 
-	let drawingMode = $state(false);
-	let drawingTool: DrawingTool = $state('rectangle');
-	let drawingColor = $state('#374151');
 	let drawingShapes: Shape[] = $state([]);
 
 	let canvasRef: Canvas | null = $state(null);
@@ -841,40 +838,6 @@
 							<Button
 								{...props}
 								class="floating-button"
-								variant={drawingMode ? 'default' : 'outline'}
-								size="icon"
-								onclick={() => {
-									drawingMode = !drawingMode;
-									if (drawingMode) drawingTool = 'rectangle';
-								}}
-								ariaLabel="Draw"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									><path
-										d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									/></svg
-								>
-							</Button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none"
-						>Draw</Tooltip.Content
-					>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								class="floating-button"
 								variant="outline"
 								size="icon"
 								onclick={() => (searchOpen = true)}
@@ -1043,11 +1006,7 @@
 					nodeWidth={NODE_WIDTH}
 					codeEditor={canvas.codeEditor}
 					pythonEditor={canvas.pythonEditor}
-					{drawingMode}
-					{drawingTool}
-					{drawingColor}
-					shapes={drawingShapes}
-					onShapesChange={(s) => (drawingShapes = s)}
+					drawingBoard={canvas.drawingBoard}
 					bind:this={canvasRef}
 				>
 					{#snippet renderNode(n: CanvasNode)}
@@ -1062,18 +1021,11 @@
 					{#snippet renderPythonEditor()}
 						<PythonEditor />
 					{/snippet}
+					{#snippet renderDrawingBoard()}
+						<DrawingBoard shapes={drawingShapes} onShapesChange={(s) => (drawingShapes = s)} />
+					{/snippet}
 				</Canvas>
 			</div>
-
-			{#if drawingMode}
-				<DrawingToolbar
-					activeTool={drawingTool}
-					activeColor={drawingColor}
-					onSelectTool={(t) => (drawingTool = t)}
-					onSelectColor={(c) => (drawingColor = c)}
-					onClose={() => (drawingMode = false)}
-				/>
-			{/if}
 
 			<form
 				class="composer"
