@@ -73,7 +73,7 @@
 			: webllmModels.slice(0, 20)
 	);
 
-	let urlInput = $state(ollamaUrl);
+	let urlInput = $derived(ollamaUrl);
 	let keyFlow: KeyFlow | null = $state(null);
 	let pendingModel: ActiveModel | null = $state(null);
 	let apiKeyInput = $state('');
@@ -97,10 +97,6 @@
 		if (open) {
 			activeTab = defaultTab;
 		}
-	});
-
-	$effect(() => {
-		urlInput = ollamaUrl;
 	});
 
 	function handleClose() {

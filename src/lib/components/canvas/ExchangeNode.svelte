@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DOMPurify from 'dompurify';
 	import Button from '$lib/components/ui/button.svelte';
 	import type { Provider } from '$lib/chat/models';
 	import { renderRichText } from '$lib/chat/katex';
@@ -28,8 +29,10 @@
 	let collapsed = $state(false);
 
 	// Render rich text (math + bold/italic) only after streaming is complete.
-	let promptHtml = $derived(renderRichText(data.prompt));
-	let responseHtml = $derived(!data.isStreaming ? renderRichText(data.response) : '');
+	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
+	let responseHtml = $derived(
+		!data.isStreaming ? DOMPurify.sanitize(renderRichText(data.response)) : ''
+	);
 
 	$effect(() => {
 		if (!cardElement || typeof ResizeObserver === 'undefined') return;
@@ -180,6 +183,7 @@
 
 	<div class="exchange-section prompt-section">
 		<div class="exchange-kicker">You</div>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 		<div class="exchange-prompt">{@html promptHtml}</div>
 	</div>
 
@@ -232,6 +236,7 @@
 		</div>
 		{#if !collapsed}
 			{#if responseHtml}
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 				<div class="exchange-response">{@html responseHtml}</div>
 			{:else}
 				<div class="exchange-response exchange-response-plain">

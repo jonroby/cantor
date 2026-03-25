@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { buildInitialExchanges } from '$lib/chat/initialExchanges';
 	import { computeCanvasLayout, NODE_WIDTH } from '$lib/chat/layout';
 	import type { CanvasNode } from '$lib/chat/layout';
@@ -361,9 +362,9 @@
 	}
 
 	function getHiddenExchangeIds() {
-		if (!activeExchanges) return new Set<string>();
+		if (!activeExchanges) return new SvelteSet<string>();
 
-		const hidden = new Set<string>();
+		const hidden = new SvelteSet<string>();
 
 		for (const parentId of collapsedParentIds) {
 			const children = getChildExchanges(activeExchanges, parentId, exchangesByParentId);
@@ -570,6 +571,7 @@
 	function handleForgetKey(provider: string) {
 		clearProviderKey(provider);
 		const { [provider]: _, ...rest } = apiKeys;
+		void _;
 		apiKeys = rest;
 		vaultProviders = getStoredProviders();
 		if (activeModel?.provider === provider) {
