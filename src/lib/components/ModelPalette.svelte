@@ -297,44 +297,64 @@
 					</div>
 
 					<div class="palette-providers-grid">
-						{#each KEY_BASED_PROVIDERS as provider (provider)}
+						<!-- Claude (active) -->
+						<div class="palette-provider-group">
+							<div class="palette-provider-title">
+								<img src={claudeLogo} alt="Claude" class="palette-provider-logo" />
+								<span class="palette-provider-name">Claude</span>
+							</div>
+							<div class="palette-provider-models">
+								{#each PROVIDER_MODELS.claude as model (model.id)}
+									<button
+										class="palette-model-row"
+										class:active={activeModel?.provider === 'claude' && activeModel.modelId === model.id}
+										onclick={() => handleSelectProvider('claude', model.id)}
+									>
+										<span>{model.label}</span>
+										<div class="palette-model-meta">
+											{#if activeModel?.provider === 'claude' && activeModel.modelId === model.id}
+												<span class="palette-active-dot"></span>
+											{/if}
+											{#if getBadge('claude')}
+												<span class="palette-badge">{getBadge('claude')}</span>
+											{/if}
+										</div>
+									</button>
+								{/each}
+								{#if apiKeys['claude']}
+									<button
+										class="palette-forget-key"
+										onclick={() => onForgetKey('claude')}
+									>
+										Forget saved key
+									</button>
+								{/if}
+							</div>
+						</div>
+
+						<!-- Other providers (coming soon) -->
+						{#each KEY_BASED_PROVIDERS.filter(p => p !== 'claude') as provider (provider)}
 							{@const models = PROVIDER_MODELS[provider]}
 							{@const logo = PROVIDER_LOGOS[provider]}
 							{@const name = providerDisplayName(provider)}
-							{@const badge = getBadge(provider)}
 							<div class="palette-provider-group">
 								<div class="palette-provider-title">
 									{#if logo}
 										<img src={logo} alt={name} class="palette-provider-logo" />
 									{/if}
 									<span class="palette-provider-name">{name}</span>
+									<span class="palette-soon-badge">soon</span>
 								</div>
 								<div class="palette-provider-models">
 									{#each models as model (model.id)}
 										<button
-											class="palette-model-row"
-											class:active={activeModel?.provider === provider && activeModel.modelId === model.id}
-											onclick={() => handleSelectProvider(provider, model.id)}
+											class="palette-model-row disabled"
+											disabled
 										>
 											<span>{model.label}</span>
-											<div class="palette-model-meta">
-												{#if activeModel?.provider === provider && activeModel.modelId === model.id}
-													<span class="palette-active-dot"></span>
-												{/if}
-												{#if badge}
-													<span class="palette-badge">{badge}</span>
-												{/if}
-											</div>
+											<div class="palette-model-meta"></div>
 										</button>
 									{/each}
-									{#if apiKeys[provider]}
-										<button
-											class="palette-forget-key"
-											onclick={() => onForgetKey(provider)}
-										>
-											Forget saved key
-										</button>
-									{/if}
 								</div>
 							</div>
 						{/each}
@@ -446,6 +466,15 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: hsl(var(--muted-foreground));
+	}
+
+	.palette-soon-badge {
+		font-size: 10px;
+		background: hsl(var(--muted));
+		color: hsl(var(--muted-foreground));
+		border-radius: 0.25rem;
+		padding: 0.125rem 0.375rem;
+		font-weight: 500;
 	}
 
 	.palette-provider-models {
