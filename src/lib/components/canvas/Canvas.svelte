@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { CanvasNode, CanvasEdge, CodeEditorPosition } from '$lib/chat/layout';
 	import type { Snippet } from 'svelte';
+	import type { Shape, DrawingTool } from '$lib/drawing/types';
+	import DrawingLayer from './DrawingLayer.svelte';
 
 	const MIN_ZOOM = 0.1;
 	const MAX_ZOOM = 2;
@@ -16,6 +18,10 @@
 		renderCodeEditor?: Snippet<[]>;
 		pythonEditor?: CodeEditorPosition;
 		renderPythonEditor?: Snippet<[]>;
+		drawingMode?: boolean;
+		drawingTool?: DrawingTool;
+		shapes?: Shape[];
+		onShapesChange?: (shapes: Shape[]) => void;
 	}
 
 	let {
@@ -28,7 +34,11 @@
 		codeEditor,
 		renderCodeEditor,
 		pythonEditor,
-		renderPythonEditor
+		renderPythonEditor,
+		drawingMode = false,
+		drawingTool = 'select',
+		shapes = [],
+		onShapesChange
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | null = $state(null);
@@ -81,6 +91,7 @@
 
 	function onPointerDown(e: PointerEvent) {
 		if (e.button !== 0) return;
+		if (drawingMode) return;
 		const target = e.target as HTMLElement;
 		if (target.closest('.exchange-card') || target.closest('.code-editor-card')) return;
 		isPanning = true;
@@ -187,7 +198,7 @@
 	onpointermove={onPointerMove}
 	onpointerup={onPointerUp}
 	role="application"
-	style="--tx:{tx}px;--ty:{ty}px;--scale:{scale}"
+	style="--tx:{tx}px;--ty:{ty}px;--scale:{scale};{drawingMode && drawingTool !== 'select' ? 'cursor:crosshair' : ''}"
 >
 	<div class="canvas-layer" class:canvas-animating={animating}>
 		<svg class="edges-svg" width={canvasWidth} height={canvasHeight}>
@@ -215,6 +226,15 @@
 			>
 				{@render renderPythonEditor()}
 			</div>
+		{/if}
+		{#if drawingMode && onShapesChange}
+			<DrawingLayer
+				{shapes}
+				activeTool={drawingTool}
+				{onShapesChange}
+				{canvasWidth}
+				{canvasHeight}
+			/>
 		{/if}
 	</div>
 </div>

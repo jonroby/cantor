@@ -22,6 +22,8 @@
 	import CodeEditor from '$lib/components/canvas/CodeEditor.svelte';
 	import PythonEditor from '$lib/components/canvas/PythonEditor.svelte';
 	import Canvas from '$lib/components/canvas/Canvas.svelte';
+	import DrawingToolbar from '$lib/components/canvas/DrawingToolbar.svelte';
+	import type { Shape, DrawingTool } from '$lib/drawing/types';
 	import {
 		DEFAULT_OLLAMA_URL,
 		fetchAvailableModels,
@@ -144,6 +146,10 @@
 	let deleteTargetId: string | null = $state(null);
 	let deleteMode: DeleteMode = $state('exchange');
 	let measuredNodeHeights: Record<string, number> = $state({});
+
+	let drawingMode = $state(false);
+	let drawingTool: DrawingTool = $state('rectangle');
+	let drawingShapes: Shape[] = $state([]);
 
 	let canvasRef: Canvas | null = $state(null);
 
@@ -834,6 +840,40 @@
 							<Button
 								{...props}
 								class="floating-button"
+								variant={drawingMode ? 'default' : 'outline'}
+								size="icon"
+								onclick={() => {
+									drawingMode = !drawingMode;
+									if (drawingMode) drawingTool = 'rectangle';
+								}}
+								ariaLabel="Draw"
+							>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+									><path
+										d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/></svg
+								>
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none"
+						>Draw</Tooltip.Content
+					>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								class="floating-button"
 								variant="outline"
 								size="icon"
 								onclick={() => (searchOpen = true)}
@@ -1002,6 +1042,10 @@
 					nodeWidth={NODE_WIDTH}
 					codeEditor={canvas.codeEditor}
 					pythonEditor={canvas.pythonEditor}
+					{drawingMode}
+					{drawingTool}
+					shapes={drawingShapes}
+					onShapesChange={(s) => (drawingShapes = s)}
 					bind:this={canvasRef}
 				>
 					{#snippet renderNode(n: CanvasNode)}
@@ -1018,6 +1062,14 @@
 					{/snippet}
 				</Canvas>
 			</div>
+
+			{#if drawingMode}
+				<DrawingToolbar
+					activeTool={drawingTool}
+					onSelectTool={(t) => (drawingTool = t)}
+					onClose={() => (drawingMode = false)}
+				/>
+			{/if}
 
 			<form
 				class="composer"
