@@ -9,12 +9,13 @@
 	interface Props {
 		shapes: Shape[];
 		activeTool: DrawingTool;
+		strokeColor: string;
 		onShapesChange: (shapes: Shape[]) => void;
 		canvasWidth: number;
 		canvasHeight: number;
 	}
 
-	let { shapes, activeTool, onShapesChange, canvasWidth, canvasHeight }: Props = $props();
+	let { shapes, activeTool, strokeColor, onShapesChange, canvasWidth, canvasHeight }: Props = $props();
 
 	let drawing = $state(false);
 	let startPoint: Point | null = $state(null);
@@ -23,12 +24,17 @@
 	let dragOffset: Point | null = $state(null);
 	let penPoints: Point[] = $state([]);
 
-	const STROKE_COLOR = '#374151';
+	// Resize state
+	type HandleId = 'tl' | 'tr' | 'bl' | 'br' | 'p1' | 'p2';
+	let resizingHandle: HandleId | null = $state(null);
+	let resizeAnchor: Point | null = $state(null);
+
 	const STROKE_WIDTH = 2;
 	const FILL_COLOR = 'transparent';
+	const HANDLE_SIZE = 8;
 
 	function svgPoint(e: PointerEvent): Point {
-		const svg = e.currentTarget as SVGSVGElement;
+		const svg = (e.currentTarget as Element).closest('svg') as SVGSVGElement;
 		const rect = svg.getBoundingClientRect();
 		const scaleX = canvasWidth / rect.width;
 		const scaleY = canvasHeight / rect.height;
@@ -38,24 +44,142 @@
 		};
 	}
 
+	function getHandles(shape: Shape): { id: HandleId; x: number; y: number; cursor: string }[] {
+		switch (shape.type) {
+			case 'rectangle':
+				return [
+					{ id: 'tl', x: shape.x, y: shape.y, cursor: 'nwse-resize' },
+					{ id: 'tr', x: shape.x + shape.width, y: shape.y, cursor: 'nesw-resize' },
+					{ id: 'bl', x: shape.x, y: shape.y + shape.height, cursor: 'nesw-resize' },
+					{ id: 'br', x: shape.x + shape.width, y: shape.y + shape.height, cursor: 'nwse-resize' }
+				];
+			case 'circle':
+				return [
+					{ id: 'tl', x: shape.cx - shape.rx, y: shape.cy - shape.ry, cursor: 'nwse-resize' },
+					{ id: 'tr', x: shape.cx + shape.rx, y: shape.cy - shape.ry, cursor: 'nesw-resize' },
+					{ id: 'bl', x: shape.cx - shape.rx, y: shape.cy + shape.ry, cursor: 'nesw-resize' },
+					{ id: 'br', x: shape.cx + shape.rx, y: shape.cy + shape.ry, cursor: 'nwse-resize' }
+				];
+			case 'line':
+			case 'arrow':
+				return [
+					{ id: 'p1', x: shape.x1, y: shape.y1, cursor: 'move' },
+					{ id: 'p2', x: shape.x2, y: shape.y2, cursor: 'move' }
+				];
+			default:
+				return [];
+		}
+	}
+
+	function resizeShape(shape: Shape, handle: HandleId, pt: Point): Shape {
+		switch (shape.type) {
+			case 'rectangle': {
+				let { x, y, width, height } = shape;
+				switch (handle) {
+					case 'tl': width += x - pt.x; height += y - pt.y; x = pt.x; y = pt.y; break;
+					case 'tr': width = pt.x - x; height += y - pt.y; y = pt.y; break;
+					case 'bl': width += x - pt.x; x = pt.x; height = pt.y - y; break;
+					case 'br': width = pt.x - x; height = pt.y - y; break;
+				}
+				return { ...shape, x, y, width: Math.abs(width), height: Math.abs(height) };
+			}
+			case 'circle': {
+				const anchor = resizeAnchor!;
+				const cx = (anchor.x + pt.x) / 2;
+				const cy = (anchor.y + pt.y) / 2;
+				const rx = Math.abs(pt.x - anchor.x) / 2;
+				const ry = Math.abs(pt.y - anchor.y) / 2;
+				return { ...shape, cx, cy, rx, ry };
+			}
+			case 'line':
+			case 'arrow': {
+				if (handle === 'p1') return { ...shape, x1: pt.x, y1: pt.y };
+				return { ...shape, x2: pt.x, y2: pt.y };
+			}
+			default:
+				return shape;
+		}
+	}
+
+	function hitTestShapes(pt: Point): Shape | null {
+		const HIT = 8;
+		for (let i = shapes.length - 1; i >= 0; i--) {
+			const s = shapes[i];
+			switch (s.type) {
+				case 'rectangle':
+					if (pt.x >= s.x - HIT && pt.x <= s.x + s.width + HIT &&
+						pt.y >= s.y - HIT && pt.y <= s.y + s.height + HIT) return s;
+					break;
+				case 'circle':
+					if (pt.x >= s.cx - s.rx - HIT && pt.x <= s.cx + s.rx + HIT &&
+						pt.y >= s.cy - s.ry - HIT && pt.y <= s.cy + s.ry + HIT) return s;
+					break;
+				case 'line':
+				case 'arrow': {
+					const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+					const len = Math.hypot(dx, dy);
+					if (len === 0) break;
+					const t = Math.max(0, Math.min(1, ((pt.x - s.x1) * dx + (pt.y - s.y1) * dy) / (len * len)));
+					const px = s.x1 + t * dx, py = s.y1 + t * dy;
+					if (Math.hypot(pt.x - px, pt.y - py) <= HIT) return s;
+					break;
+				}
+				case 'pen': {
+					for (let j = 0; j < s.points.length - 1; j++) {
+						const a = s.points[j], b = s.points[j + 1];
+						const dx = b.x - a.x, dy = b.y - a.y;
+						const len = Math.hypot(dx, dy);
+						if (len === 0) continue;
+						const t = Math.max(0, Math.min(1, ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / (len * len)));
+						const px = a.x + t * dx, py = a.y + t * dy;
+						if (Math.hypot(pt.x - px, pt.y - py) <= HIT) return s;
+					}
+					break;
+				}
+			}
+		}
+		return null;
+	}
+
+	function onHandleDown(e: PointerEvent, handleId: HandleId) {
+		e.stopPropagation();
+		if (e.button !== 0 || !selectedId) return;
+		const shape = shapes.find((s) => s.id === selectedId);
+		if (!shape) return;
+
+		resizingHandle = handleId;
+		drawing = true;
+
+		// Set the anchor to the opposite corner for circle/rect resizing
+		if (shape.type === 'rectangle') {
+			const handles = getHandles(shape);
+			const oppositeMap: Record<string, string> = { tl: 'br', tr: 'bl', bl: 'tr', br: 'tl' };
+			const opp = handles.find((h) => h.id === oppositeMap[handleId]);
+			if (opp) resizeAnchor = { x: opp.x, y: opp.y };
+		} else if (shape.type === 'circle') {
+			const handles = getHandles(shape);
+			const oppositeMap: Record<string, string> = { tl: 'br', tr: 'bl', bl: 'tr', br: 'tl' };
+			const opp = handles.find((h) => h.id === oppositeMap[handleId]);
+			if (opp) resizeAnchor = { x: opp.x, y: opp.y };
+		}
+
+		const svg = (e.target as Element).closest('svg') as SVGSVGElement;
+		svg.setPointerCapture(e.pointerId);
+	}
+
 	function onPointerDown(e: PointerEvent) {
 		if (e.button !== 0) return;
 		const pt = svgPoint(e);
 
 		if (activeTool === 'select') {
-			// Check if clicking on a shape
-			const target = e.target as SVGElement;
-			const shapeEl = target.closest('[data-shape-id]') as SVGElement | null;
-			if (shapeEl) {
-				const id = shapeEl.dataset.shapeId!;
-				selectedId = id;
-				const shape = shapes.find((s) => s.id === id);
-				if (shape) {
-					const bounds = getShapeBounds(shape);
-					dragOffset = { x: pt.x - bounds.x, y: pt.y - bounds.y };
-					drawing = true;
-					(e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId);
-				}
+			const hit = hitTestShapes(pt);
+			if (hit) {
+				selectedId = hit.id;
+				const bounds = getShapeBounds(hit);
+				dragOffset = { x: pt.x - bounds.x, y: pt.y - bounds.y };
+				drawing = true;
+				const svg = (e.currentTarget as Element).closest('svg') as SVGSVGElement;
+				svg.setPointerCapture(e.pointerId);
 			} else {
 				selectedId = null;
 			}
@@ -69,7 +193,8 @@
 		if (activeTool === 'pen') {
 			penPoints = [pt];
 		}
-		(e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId);
+		const svg = (e.currentTarget as Element).closest('svg') as SVGSVGElement;
+		svg.setPointerCapture(e.pointerId);
 		e.stopPropagation();
 	}
 
@@ -77,6 +202,18 @@
 		if (!drawing) return;
 		const pt = svgPoint(e);
 
+		// Resizing a handle
+		if (resizingHandle && selectedId) {
+			const updated = shapes.map((s) => {
+				if (s.id !== selectedId) return s;
+				return resizeShape(s, resizingHandle!, pt);
+			});
+			onShapesChange(updated);
+			e.stopPropagation();
+			return;
+		}
+
+		// Moving a shape
 		if (activeTool === 'select' && selectedId && dragOffset) {
 			const off = dragOffset;
 			const updated = shapes.map((s) => {
@@ -98,6 +235,13 @@
 	function onPointerUp(e: PointerEvent) {
 		if (!drawing) return;
 		drawing = false;
+
+		if (resizingHandle) {
+			resizingHandle = null;
+			resizeAnchor = null;
+			e.stopPropagation();
+			return;
+		}
 
 		if (activeTool === 'select') {
 			dragOffset = null;
@@ -125,7 +269,7 @@
 	): Shape | null {
 		const base = {
 			id: generateShapeId(),
-			stroke: STROKE_COLOR,
+			stroke: strokeColor,
 			strokeWidth: STROKE_WIDTH,
 			fill: FILL_COLOR
 		};
@@ -194,26 +338,11 @@
 			case 'circle':
 				return { ...shape, cx: shape.cx + dx, cy: shape.cy + dy };
 			case 'line':
-				return {
-					...shape,
-					x1: shape.x1 + dx,
-					y1: shape.y1 + dy,
-					x2: shape.x2 + dx,
-					y2: shape.y2 + dy
-				};
+				return { ...shape, x1: shape.x1 + dx, y1: shape.y1 + dy, x2: shape.x2 + dx, y2: shape.y2 + dy };
 			case 'arrow':
-				return {
-					...shape,
-					x1: shape.x1 + dx,
-					y1: shape.y1 + dy,
-					x2: shape.x2 + dx,
-					y2: shape.y2 + dy
-				};
+				return { ...shape, x1: shape.x1 + dx, y1: shape.y1 + dy, x2: shape.x2 + dx, y2: shape.y2 + dy };
 			case 'pen':
-				return {
-					...shape,
-					points: shape.points.map((p) => ({ x: p.x + dx, y: p.y + dy }))
-				};
+				return { ...shape, points: shape.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
 		}
 	}
 
@@ -226,23 +355,13 @@
 		return d;
 	}
 
-	function arrowHeadPoints(x1: number, y1: number, x2: number, y2: number): string {
-		const angle = Math.atan2(y2 - y1, x2 - x1);
-		const headLen = 12;
-		const a1 = angle - Math.PI / 6;
-		const a2 = angle + Math.PI / 6;
-		const p1x = x2 - headLen * Math.cos(a1);
-		const p1y = y2 - headLen * Math.sin(a1);
-		const p2x = x2 - headLen * Math.cos(a2);
-		const p2y = y2 - headLen * Math.sin(a2);
-		return `${p1x},${p1y} ${x2},${y2} ${p2x},${p2y}`;
-	}
-
-	// Preview shape while drawing
 	let previewShape = $derived.by(() => {
 		if (!drawing || !startPoint || !currentPoint || activeTool === 'select') return null;
 		return createShape(activeTool, startPoint, currentPoint, penPoints);
 	});
+
+	let selectedShape = $derived(selectedId ? shapes.find((s) => s.id === selectedId) ?? null : null);
+	let handles = $derived(selectedShape && activeTool === 'select' ? getHandles(selectedShape) : []);
 
 	function isSelected(id: string): boolean {
 		return activeTool === 'select' && selectedId === id;
@@ -271,7 +390,7 @@
 >
 	<defs>
 		<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-			<polygon points="0 0, 10 3.5, 0 7" fill={STROKE_COLOR} />
+			<polygon points="0 0, 10 3.5, 0 7" fill={strokeColor} />
 		</marker>
 	</defs>
 
@@ -332,7 +451,6 @@
 					stroke={shape.stroke}
 					stroke-width={shape.strokeWidth}
 				/>
-				<!-- Thicker invisible hit area for lines -->
 				<line
 					x1={shape.x1}
 					y1={shape.y1}
@@ -378,6 +496,23 @@
 		</g>
 	{/each}
 
+	<!-- Resize handles for selected shape -->
+	{#each handles as handle (handle.id)}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<rect
+			class="resize-handle"
+			x={handle.x - HANDLE_SIZE / 2}
+			y={handle.y - HANDLE_SIZE / 2}
+			width={HANDLE_SIZE}
+			height={HANDLE_SIZE}
+			fill="white"
+			stroke="#3b82f6"
+			stroke-width="1.5"
+			style="cursor: {handle.cursor}"
+			onpointerdown={(e) => onHandleDown(e, handle.id)}
+		/>
+	{/each}
+
 	<!-- Preview while drawing -->
 	{#if previewShape}
 		<g class="preview-shape">
@@ -388,7 +523,7 @@
 					width={previewShape.width}
 					height={previewShape.height}
 					fill="none"
-					stroke={STROKE_COLOR}
+					stroke={strokeColor}
 					stroke-width={STROKE_WIDTH}
 					opacity="0.5"
 				/>
@@ -399,7 +534,7 @@
 					rx={previewShape.rx}
 					ry={previewShape.ry}
 					fill="none"
-					stroke={STROKE_COLOR}
+					stroke={strokeColor}
 					stroke-width={STROKE_WIDTH}
 					opacity="0.5"
 				/>
@@ -409,7 +544,7 @@
 					y1={previewShape.y1}
 					x2={previewShape.x2}
 					y2={previewShape.y2}
-					stroke={STROKE_COLOR}
+					stroke={strokeColor}
 					stroke-width={STROKE_WIDTH}
 					opacity="0.5"
 				/>
@@ -419,7 +554,7 @@
 					y1={previewShape.y1}
 					x2={previewShape.x2}
 					y2={previewShape.y2}
-					stroke={STROKE_COLOR}
+					stroke={strokeColor}
 					stroke-width={STROKE_WIDTH}
 					opacity="0.5"
 					marker-end="url(#arrowhead)"
@@ -428,7 +563,7 @@
 				<path
 					d={penPathD(previewShape.points)}
 					fill="none"
-					stroke={STROKE_COLOR}
+					stroke={strokeColor}
 					stroke-width={STROKE_WIDTH}
 					stroke-linecap="round"
 					stroke-linejoin="round"
@@ -454,5 +589,9 @@
 
 	.shape-selected {
 		filter: drop-shadow(0 0 2px #3b82f6);
+	}
+
+	.resize-handle {
+		pointer-events: all;
 	}
 </style>

@@ -149,6 +149,7 @@
 
 	let drawingMode = $state(false);
 	let drawingTool: DrawingTool = $state('rectangle');
+	let drawingColor = $state('#374151');
 	let drawingShapes: Shape[] = $state([]);
 
 	let canvasRef: Canvas | null = $state(null);
@@ -1044,6 +1045,7 @@
 					pythonEditor={canvas.pythonEditor}
 					{drawingMode}
 					{drawingTool}
+					{drawingColor}
 					shapes={drawingShapes}
 					onShapesChange={(s) => (drawingShapes = s)}
 					bind:this={canvasRef}
@@ -1066,7 +1068,9 @@
 			{#if drawingMode}
 				<DrawingToolbar
 					activeTool={drawingTool}
+					activeColor={drawingColor}
 					onSelectTool={(t) => (drawingTool = t)}
+					onSelectColor={(c) => (drawingColor = c)}
 					onClose={() => (drawingMode = false)}
 				/>
 			{/if}

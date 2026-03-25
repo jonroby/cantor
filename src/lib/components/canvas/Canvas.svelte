@@ -20,6 +20,7 @@
 		renderPythonEditor?: Snippet<[]>;
 		drawingMode?: boolean;
 		drawingTool?: DrawingTool;
+		drawingColor?: string;
 		shapes?: Shape[];
 		onShapesChange?: (shapes: Shape[]) => void;
 	}
@@ -37,6 +38,7 @@
 		renderPythonEditor,
 		drawingMode = false,
 		drawingTool = 'select',
+		drawingColor = '#374151',
 		shapes = [],
 		onShapesChange
 	}: Props = $props();
@@ -231,6 +233,7 @@
 			<DrawingLayer
 				{shapes}
 				activeTool={drawingTool}
+				strokeColor={drawingColor}
 				{onShapesChange}
 				{canvasWidth}
 				{canvasHeight}
