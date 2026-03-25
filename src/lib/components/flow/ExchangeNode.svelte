@@ -1,10 +1,33 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button.svelte';
+	import type { Provider } from '$lib/chat/models';
+	import claudeLogo from '../../../assets/claude.svg';
+	import deepseekLogo from '../../../assets/deepseek.svg';
+	import geminiLogo from '../../../assets/gemini-color.svg';
+	import gptOssLogo from '../../../assets/gpt-oss.svg';
+	import metaLogo from '../../../assets/meta.svg';
+	import mistralLogo from '../../../assets/mistral-color.svg';
+	import moonshotLogo from '../../../assets/moonshot.svg';
+	import ollamaLogo from '../../../assets/ollama.svg';
+	import qwenLogo from '../../../assets/qwen.svg';
+
+	const PROVIDER_LOGOS: Record<string, string> = {
+		claude: claudeLogo,
+		openai: gptOssLogo,
+		gemini: geminiLogo,
+		moonshot: moonshotLogo,
+		qwen: qwenLogo,
+		deepseek: deepseekLogo,
+		mistral: mistralLogo,
+		groq: metaLogo,
+		ollama: ollamaLogo
+	};
 
 	export interface ExchangeNodeData {
 		prompt: string;
 		response: string;
 		model?: string;
+		provider?: Provider | null;
 		isActive: boolean;
 		isStreaming: boolean;
 		canFork: boolean;
@@ -98,6 +121,9 @@
 	<div class="exchange-section response-section">
 		<div class="exchange-card-header">
 			<div class="exchange-kicker">
+				{#if data.provider && PROVIDER_LOGOS[data.provider]}
+					<img src={PROVIDER_LOGOS[data.provider]} alt={data.provider} class="exchange-provider-logo" />
+				{/if}
 				Assistant
 				{#if data.model}
 					<span class="exchange-model">{data.model}</span>

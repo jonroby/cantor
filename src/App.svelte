@@ -6,7 +6,7 @@
 	import { streamClaudeChat } from '$lib/chat/claude';
 	import { streamGeminiChat } from '$lib/chat/gemini';
 	import { streamOpenAICompatChat } from '$lib/chat/openai-compat';
-	import { CLAUDE_MODELS, PROVIDER_CONFIG, PROVIDER_MODELS, getModelContextLength, isKeyBasedProvider, type ActiveModel, type OllamaStatus, type Provider } from '$lib/chat/models';
+	import { CLAUDE_MODELS, PROVIDER_CONFIG, PROVIDER_MODELS, getModelContextLength, getProviderForModelId, isKeyBasedProvider, type ActiveModel, type OllamaStatus, type Provider } from '$lib/chat/models';
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import ExchangeNode from '$lib/components/flow/ExchangeNode.svelte';
@@ -608,6 +608,7 @@
 			prompt: exchange.prompt,
 			response: exchange.response,
 			model: exchange.model,
+			provider: exchange.model ? (getProviderForModelId(exchange.model) ?? 'ollama') : null,
 			isActive: activeExchangeId === exchangeId,
 			isStreaming: streamingExchangeIds.includes(exchangeId),
 			canFork: true,

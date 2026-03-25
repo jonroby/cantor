@@ -254,6 +254,16 @@
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	color: hsl(var(--muted-foreground));
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.exchange-provider-logo {
+	height: 0.85rem;
+	width: 0.85rem;
+	object-fit: contain;
+	flex-shrink: 0;
 }
 
 .exchange-model {

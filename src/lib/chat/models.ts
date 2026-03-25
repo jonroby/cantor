@@ -134,3 +134,13 @@ export function getModelContextLength(provider: Provider, modelId: string): numb
 	if (!isKeyBasedProvider(provider)) return null;
 	return PROVIDER_MODELS[provider].find((m) => m.id === modelId)?.contextLength ?? null;
 }
+
+/** Reverse-lookup: find which provider owns a given modelId. Returns null for unknown models. */
+export function getProviderForModelId(modelId: string): Provider | null {
+	for (const provider of KEY_BASED_PROVIDERS) {
+		if (PROVIDER_MODELS[provider].some((m) => m.id === modelId)) {
+			return provider;
+		}
+	}
+	return null;
+}
