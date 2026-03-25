@@ -13,7 +13,8 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test:unit": "vitest",
-		"test": "bun run test:unit -- --run"
+		"test": "bun run test:unit -- --run",
+		"prepare": "husky"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
@@ -30,6 +31,8 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.14.0",
 		"globals": "^17.3.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.4.0",
 		"playwright": "^1.58.2",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
@@ -44,6 +47,13 @@
 		"vite-plugin-devtools-json": "^1.0.0",
 		"vitest": "^4.1.0",
 		"vitest-browser-svelte": "^2.0.2"
+	},
+	"lint-staged": {
+		"*.{ts,svelte}": [
+			"prettier --write",
+			"eslint --fix"
+		],
+		"*.{js,json,css,md,html}": "prettier --write"
 	},
 	"dependencies": {
 		"@mlc-ai/web-llm": "^0.2.82",
