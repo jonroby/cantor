@@ -1,4 +1,5 @@
 import type { Message } from "./tree";
+import type { StreamChunk } from "./stream";
 
 export const DEFAULT_OLLAMA_URL = "http://localhost:11434";
 
@@ -33,10 +34,6 @@ export async function fetchModelContextLength(model: string, baseUrl: string): P
 
     return 131072; // fallback: 128k
 }
-
-type StreamChunk =
-    | { type: "delta"; delta: string }
-    | { type: "done"; promptTokens: number; responseTokens: number };
 
 export async function* streamOllamaChat(
     model: string,

@@ -8,6 +8,8 @@
 		placeholder?: string;
 		disabled?: boolean;
 		id?: string;
+		autofocus?: boolean;
+		onkeydown?: (e: KeyboardEvent) => void;
 	}
 
 	let {
@@ -16,7 +18,9 @@
 		value = $bindable(''),
 		placeholder,
 		disabled = false,
-		id
+		id,
+		autofocus = false,
+		onkeydown
 	}: Props = $props();
 </script>
 
@@ -27,4 +31,6 @@
 	{placeholder}
 	{disabled}
 	class={cn('ui-input', className)}
+	autofocus={autofocus ? true : undefined}
+	{onkeydown}
 />

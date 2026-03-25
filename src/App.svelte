@@ -4,7 +4,9 @@
 	import { computeCanvasLayout, NODE_WIDTH } from '$lib/chat/layout';
 	import type { CanvasNode } from '$lib/chat/layout';
 	import { streamClaudeChat } from '$lib/chat/claude';
-	import { CLAUDE_MODELS, type ActiveModel, type OllamaStatus } from '$lib/chat/models';
+	import { streamGeminiChat } from '$lib/chat/gemini';
+	import { streamOpenAICompatChat } from '$lib/chat/openai-compat';
+	import { CLAUDE_MODELS, PROVIDER_CONFIG, PROVIDER_MODELS, getModelContextLength, isKeyBasedProvider, type ActiveModel, type OllamaStatus, type Provider } from '$lib/chat/models';
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import ExchangeNode from '$lib/components/flow/ExchangeNode.svelte';
@@ -38,10 +40,11 @@
 		updateExchangeTokens,
 		withExplicitExchangeOrder
 	} from '$lib/chat/tree';
-	import { clearVault, hasVault, loadApiKey, saveApiKey } from '$lib/chat/vault';
+	import { clearVault, clearProviderKey, hasVault, loadAllApiKeys, migrateVault, saveApiKey, storedProviders as getStoredProviders } from '$lib/chat/vault';
 	import * as SidebarPrimitive from '@/components/ui/sidebar/index.js';
 	import * as Tooltip from '@/components/ui/tooltip/index.js';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
+	import ModelPalette from '$lib/components/ModelPalette.svelte';
 	import type { ChatSession } from '$lib/chat/tree';
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
@@ -69,19 +72,16 @@
 	let ollamaUrl = $state(DEFAULT_OLLAMA_URL);
 	let ollamaStatus: OllamaStatus = $state('disconnected');
 	let ollamaModels: string[] = $state([]);
-	let claudeApiKey: string | null = $state(null);
-	let hasStoredKey = $state(false);
+	let apiKeys: Record<string, string> = $state({});
+	let vaultProviders: string[] = $state([]);
 
 	let composerValue = $state('');
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
 	let searchOpen = $state(false);
 	let paletteOpen = $state(false);
-	let claudeMode: 'unlock' | 'setup' | null = $state(null);
-	let pendingClaudeModelId: string | null = $state(null);
 	let expandedSideChatParent: string | null = $state(null);
 	let hasHydrated = $state(false);
-	let passwordInput = $state('');
 	let headerVisible = $state(true);
 	let headerTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -97,9 +97,6 @@
 			headerVisible = false;
 		}
 	}
-	let confirmPasswordInput = $state('');
-	let apiKeyInput = $state('');
-	let keyError: string | null = $state(null);
 	let deleteTargetId: string | null = $state(null);
 	let deleteMode: DeleteMode = $state('exchange');
 	let measuredNodeHeights: Record<string, number> = $state({});
@@ -167,9 +164,8 @@
 	});
 
 	$effect(() => {
-		if (activeModel?.provider === 'claude') {
-			contextLength =
-				CLAUDE_MODELS.find((model) => model.id === activeModel?.modelId)?.contextLength ?? null;
+		if (activeModel && isKeyBasedProvider(activeModel.provider)) {
+			contextLength = getModelContextLength(activeModel.provider, activeModel.modelId);
 		}
 	});
 
@@ -194,7 +190,8 @@
 	});
 
 	onMount(() => {
-		hasStoredKey = hasVault();
+		migrateVault();
+		vaultProviders = getStoredProviders();
 
 		function handleKeyDown(event: KeyboardEvent) {
 			const target = event.target;
@@ -441,10 +438,6 @@
 			ollamaUrl = url;
 			ollamaModels = models;
 			ollamaStatus = 'connected';
-
-			if (models.length > 0) {
-				activeModel = { provider: 'ollama', modelId: models[0] };
-			}
 		} catch (error) {
 			ollamaStatus = 'error';
 			ollamaModels = [];
@@ -452,72 +445,44 @@
 		}
 	}
 
-	async function unlockClaudeKey() {
-		keyError = null;
-		try {
-			claudeApiKey = await loadApiKey(passwordInput);
-			if (pendingClaudeModelId) {
-				activeModel = { provider: 'claude', modelId: pendingClaudeModelId };
-				paletteOpen = false;
-			}
-			claudeMode = null;
-			passwordInput = '';
-		} catch (error) {
-			keyError = error instanceof Error ? error.message : 'Failed to unlock Claude key.';
-		}
+	async function handleUnlockKeys(password: string) {
+		apiKeys = await loadAllApiKeys(password);
 	}
 
-	async function saveClaudeCredentials() {
-		keyError = null;
-		if (passwordInput.length < 8) {
-			keyError = 'Password must be at least 8 characters.';
-			return;
-		}
-		if (passwordInput !== confirmPasswordInput) {
-			keyError = 'Passwords do not match.';
-			return;
-		}
-
-		try {
-			await saveApiKey(apiKeyInput.trim(), passwordInput);
-			claudeApiKey = apiKeyInput.trim();
-			hasStoredKey = true;
-			if (pendingClaudeModelId) {
-				activeModel = { provider: 'claude', modelId: pendingClaudeModelId };
-				paletteOpen = false;
-			}
-			claudeMode = null;
-			passwordInput = '';
-			confirmPasswordInput = '';
-			apiKeyInput = '';
-		} catch (error) {
-			keyError = error instanceof Error ? error.message : 'Failed to save Claude key.';
-		}
+	async function handleSaveKey(provider: string, apiKey: string, password: string) {
+		await saveApiKey(provider, apiKey, password);
+		apiKeys = { ...apiKeys, [provider]: apiKey };
+		vaultProviders = getStoredProviders();
 	}
 
-	function forgetClaudeKey() {
-		clearVault();
-		claudeApiKey = null;
-		hasStoredKey = false;
-		if (activeModel?.provider === 'claude') {
+	function handleForgetKey(provider: string) {
+		clearProviderKey(provider);
+		const { [provider]: _, ...rest } = apiKeys;
+		apiKeys = rest;
+		vaultProviders = getStoredProviders();
+		if (activeModel?.provider === provider) {
 			activeModel = null;
 		}
 	}
 
-	function startClaudeFlow(modelId: string) {
-		pendingClaudeModelId = modelId;
-		keyError = null;
-		passwordInput = '';
-		confirmPasswordInput = '';
-		apiKeyInput = '';
+	function handleSelectModel(model: ActiveModel) {
+		activeModel = model;
+	}
 
-		if (claudeApiKey) {
-			activeModel = { provider: 'claude', modelId };
-			paletteOpen = false;
-			return;
+	function getProviderStream(model: ActiveModel, history: import('$lib/chat/tree').Message[], signal: AbortSignal) {
+		const key = apiKeys[model.provider] ?? '';
+		if (model.provider === 'ollama') {
+			return streamOllamaChat(model.modelId, history, signal, ollamaUrl);
 		}
-
-		claudeMode = hasStoredKey ? 'unlock' : 'setup';
+		if (model.provider === 'claude') {
+			return streamClaudeChat(model.modelId, history, key, signal);
+		}
+		if (model.provider === 'gemini') {
+			return streamGeminiChat(model.modelId, history, key, signal);
+		}
+		// All others: OpenAI-compatible
+		const config = PROVIDER_CONFIG[model.provider as Exclude<Provider, 'ollama'>];
+		return streamOpenAICompatChat(config.baseUrl, model.modelId, history, key, signal);
 	}
 
 	async function submitPrompt() {
@@ -550,20 +515,7 @@
 
 		try {
 			const history = getHistory(created.exchanges, created.id);
-			const stream =
-				activeModel.provider === 'ollama'
-					? streamOllamaChat(
-							activeModel.modelId,
-							history,
-							abortController.signal,
-							ollamaUrl
-						)
-					: streamClaudeChat(
-							activeModel.modelId,
-							history,
-							claudeApiKey ?? '',
-							abortController.signal
-						);
+			const stream = getProviderStream(activeModel, history, abortController.signal);
 
 			let response = '';
 			for await (const chunk of stream) {
@@ -806,85 +758,21 @@
 		</div>
 	</form>
 
-	{#if paletteOpen}
-		<button
-			class="modal-scrim"
-			type="button"
-			aria-label="Close model palette"
-			onclick={() => { paletteOpen = false; claudeMode = null; }}
-		></button>
-		<div class="modal-panel">
-				<div class="modal-header">
-					<h2>Select a model</h2>
-					<Button class="ghost-button" variant="ghost" size="sm" onclick={() => { paletteOpen = false; claudeMode = null; }}>
-						Close
-					</Button>
-				</div>
-
-			{#if claudeMode}
-				<div class="modal-section">
-					<h3>{claudeMode === 'unlock' ? 'Unlock Claude key' : 'Save Claude key'}</h3>
-					{#if claudeMode === 'setup'}
-						<Input class="sidebar-input" bind:value={apiKeyInput} placeholder="Claude API key" />
-					{/if}
-					<Input class="sidebar-input" bind:value={passwordInput} placeholder="Password" type="password" />
-					{#if claudeMode === 'setup'}
-						<Input
-							class="sidebar-input"
-							bind:value={confirmPasswordInput}
-							placeholder="Confirm password"
-							type="password"
-						/>
-					{/if}
-					{#if keyError}
-						<div class="error-inline">{keyError}</div>
-					{/if}
-					<div class="modal-actions">
-						<Button class="toolbar-button" variant="outline" size="sm" onclick={() => (claudeMode = null)}>Back</Button>
-						<Button
-							class="primary-button"
-							onclick={claudeMode === 'unlock' ? unlockClaudeKey : saveClaudeCredentials}
-						>
-							{claudeMode === 'unlock' ? 'Unlock' : 'Save'}
-						</Button>
-					</div>
-				</div>
-			{:else}
-				<div class="modal-grid">
-					<section class="modal-section">
-						<h3>Claude</h3>
-						{#each CLAUDE_MODELS as model (model.id)}
-							<Button class="model-option" variant="outline" onclick={() => startClaudeFlow(model.id)}>
-								<span>{model.label}</span>
-								<span>{Math.round(model.contextLength / 1000)}k</span>
-							</Button>
-						{/each}
-					</section>
-
-					<section class="modal-section">
-						<h3>Ollama</h3>
-						<Input class="sidebar-input" bind:value={ollamaUrl} placeholder="http://localhost:11434" />
-						<Button class="primary-button" onclick={() => connectOllama(ollamaUrl)}>
-							{ollamaStatus === 'connecting' ? 'Connecting…' : 'Connect'}
-						</Button>
-						{#each ollamaModels as model (model)}
-							<Button
-								class="model-option"
-								variant="outline"
-								onclick={() => {
-									activeModel = { provider: 'ollama', modelId: model };
-									paletteOpen = false;
-								}}
-							>
-								<span>{model}</span>
-								<span>local</span>
-							</Button>
-						{/each}
-					</section>
-				</div>
-			{/if}
-		</div>
-	{/if}
+	<ModelPalette
+		open={paletteOpen}
+		onClose={() => { paletteOpen = false; }}
+		{activeModel}
+		onSelectModel={handleSelectModel}
+		{ollamaUrl}
+		{ollamaStatus}
+		{ollamaModels}
+		onConnectOllama={connectOllama}
+		{apiKeys}
+		{vaultProviders}
+		onUnlockKeys={handleUnlockKeys}
+		onSaveKey={handleSaveKey}
+		onForgetKey={handleForgetKey}
+	/>
 
 	{#if searchOpen}
 		<button class="modal-scrim" type="button" aria-label="Close search" onclick={() => (searchOpen = false)}></button>

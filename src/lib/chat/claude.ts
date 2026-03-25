@@ -1,8 +1,5 @@
 import type { Message } from './tree';
-
-type StreamChunk =
-	| { type: 'delta'; delta: string }
-	| { type: 'done'; promptTokens: number; responseTokens: number };
+import type { StreamChunk } from './stream';
 
 interface ClaudeTextBlock {
 	type: 'text';
