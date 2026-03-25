@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CanvasNode, CanvasEdge } from '$lib/chat/layout';
+	import type { CanvasNode, CanvasEdge, CodeEditorPosition } from '$lib/chat/layout';
 	import type { Snippet } from 'svelte';
 
 	const MIN_ZOOM = 0.1;
@@ -12,9 +12,20 @@
 		canvasHeight: number;
 		nodeWidth: number;
 		renderNode: Snippet<[CanvasNode]>;
+		codeEditor?: CodeEditorPosition;
+		renderCodeEditor?: Snippet<[]>;
 	}
 
-	let { nodes, edges, canvasWidth, canvasHeight, nodeWidth, renderNode }: Props = $props();
+	let {
+		nodes,
+		edges,
+		canvasWidth,
+		canvasHeight,
+		nodeWidth,
+		renderNode,
+		codeEditor,
+		renderCodeEditor
+	}: Props = $props();
 
 	let containerEl: HTMLDivElement | null = $state(null);
 	let tx = $state(0);
@@ -67,7 +78,7 @@
 	function onPointerDown(e: PointerEvent) {
 		if (e.button !== 0) return;
 		const target = e.target as HTMLElement;
-		if (target.closest('.exchange-card')) return;
+		if (target.closest('.exchange-card') || target.closest('.code-editor-card')) return;
 		isPanning = true;
 		lastPointerX = e.clientX;
 		lastPointerY = e.clientY;
@@ -185,6 +196,14 @@
 				{@render renderNode(n)}
 			</div>
 		{/each}
+		{#if codeEditor && renderCodeEditor}
+			<div
+				class="canvas-node"
+				style="left:{codeEditor.x}px;top:{codeEditor.y}px;width:{codeEditor.width}px;"
+			>
+				{@render renderCodeEditor()}
+			</div>
+		{/if}
 	</div>
 </div>
 

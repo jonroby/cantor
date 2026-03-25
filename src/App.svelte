@@ -7,9 +7,7 @@
 	import { streamGeminiChat } from '$lib/chat/gemini';
 	import { streamOpenAICompatChat } from '$lib/chat/openai-compat';
 	import {
-		CLAUDE_MODELS,
 		PROVIDER_CONFIG,
-		PROVIDER_MODELS,
 		getModelContextLength,
 		getProviderForModelId,
 		isKeyBasedProvider,
@@ -20,6 +18,7 @@
 	import Button from '$lib/components/ui/button.svelte';
 	import Input from '$lib/components/ui/input.svelte';
 	import ExchangeNode from '$lib/components/canvas/ExchangeNode.svelte';
+	import CodeEditor from '$lib/components/canvas/CodeEditor.svelte';
 	import Canvas from '$lib/components/canvas/Canvas.svelte';
 	import {
 		DEFAULT_OLLAMA_URL,
@@ -30,9 +29,7 @@
 	import {
 		getWebLLMModels,
 		loadWebLLMModel,
-		unloadWebLLM,
 		streamWebLLMChat,
-		getLoadedModelId,
 		deleteModelCache,
 		deleteAllModelCaches,
 		WEBLLM_CONTEXT_OPTIONS,
@@ -65,9 +62,7 @@
 		withExplicitExchangeOrder
 	} from '$lib/chat/tree';
 	import {
-		clearVault,
 		clearProviderKey,
-		hasVault,
 		loadAllApiKeys,
 		migrateVault,
 		saveApiKey,
@@ -1002,6 +997,7 @@
 					canvasWidth={canvas.width}
 					canvasHeight={canvas.height}
 					nodeWidth={NODE_WIDTH}
+					codeEditor={canvas.codeEditor}
 					bind:this={canvasRef}
 				>
 					{#snippet renderNode(n: CanvasNode)}
@@ -1009,6 +1005,9 @@
 						{#if nodeData}
 							<ExchangeNode data={nodeData} />
 						{/if}
+					{/snippet}
+					{#snippet renderCodeEditor()}
+						<CodeEditor />
 					{/snippet}
 				</Canvas>
 			</div>

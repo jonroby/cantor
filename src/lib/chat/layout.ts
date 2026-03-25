@@ -22,11 +22,21 @@ export interface CanvasEdge {
 	to: string;
 }
 
+export interface CodeEditorPosition {
+	x: number;
+	y: number;
+	width: number;
+}
+
+export const CODE_EDITOR_WIDTH = 640;
+export const CODE_EDITOR_GAP = 120;
+
 export interface CanvasLayout {
 	nodes: CanvasNode[];
 	edges: CanvasEdge[];
 	width: number;
 	height: number;
+	codeEditor: CodeEditorPosition;
 }
 
 interface LayoutOptions {
@@ -43,7 +53,17 @@ export function computeCanvasLayout(
 	const measuredHeights = options.measuredHeights ?? {};
 
 	if (!anchor) {
-		return { nodes: [], edges: [], width: 1200, height: 800 };
+		return {
+			nodes: [],
+			edges: [],
+			width: 1200,
+			height: 800,
+			codeEditor: {
+				x: PADDING_X + NODE_WIDTH + COLUMN_GAP + CODE_EDITOR_GAP,
+				y: PADDING_Y,
+				width: CODE_EDITOR_WIDTH
+			}
+		};
 	}
 
 	const exchangesByParentId = buildExchangesByParentId(exchanges);
@@ -102,13 +122,19 @@ export function computeCanvasLayout(
 		PADDING_Y
 	);
 
+	const codeEditorX = PADDING_X + (maxColumn + 1) * (NODE_WIDTH + COLUMN_GAP) + CODE_EDITOR_GAP;
+
+	const totalWidth = Math.max(1200, codeEditorX + CODE_EDITOR_WIDTH + PADDING_X);
+
 	return {
 		nodes,
 		edges,
-		width: Math.max(
-			1200,
-			PADDING_X * 2 + (maxColumn + 1) * NODE_WIDTH + Math.max(0, maxColumn) * COLUMN_GAP
-		),
-		height: Math.max(900, maxBottom + PADDING_Y)
+		width: totalWidth,
+		height: Math.max(900, maxBottom + PADDING_Y),
+		codeEditor: {
+			x: codeEditorX,
+			y: PADDING_Y,
+			width: CODE_EDITOR_WIDTH
+		}
 	};
 }
