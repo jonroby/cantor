@@ -1,4 +1,4 @@
-export type Provider = 'ollama' | 'claude' | 'openai' | 'gemini' | 'moonshot' | 'qwen' | 'deepseek' | 'mistral' | 'groq';
+export type Provider = 'ollama' | 'webllm' | 'claude' | 'openai' | 'gemini' | 'moonshot' | 'qwen' | 'deepseek' | 'mistral' | 'groq';
 
 export interface ActiveModel {
 	provider: Provider;
@@ -19,8 +19,8 @@ export interface ProviderConfig {
 	keyPlaceholder: string;
 }
 
-/** Config for all key-based (non-Ollama) providers. */
-export const PROVIDER_CONFIG: Record<Exclude<Provider, 'ollama'>, ProviderConfig> = {
+/** Config for all key-based (non-Ollama, non-WebLLM) providers. */
+export const PROVIDER_CONFIG: Record<Exclude<Provider, 'ollama' | 'webllm'>, ProviderConfig> = {
 	claude: {
 		name: 'Claude',
 		baseUrl: 'https://api.anthropic.com/v1/messages',
@@ -64,7 +64,7 @@ export const PROVIDER_CONFIG: Record<Exclude<Provider, 'ollama'>, ProviderConfig
 };
 
 /** Model lists per provider. */
-export const PROVIDER_MODELS: Record<Exclude<Provider, 'ollama'>, ProviderModelEntry[]> = {
+export const PROVIDER_MODELS: Record<Exclude<Provider, 'ollama' | 'webllm'>, ProviderModelEntry[]> = {
 	claude: [
 		{ id: 'claude-opus-4-6', label: 'Claude Opus 4.6', contextLength: 1_000_000 },
 		{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', contextLength: 1_000_000 },
@@ -121,12 +121,12 @@ export const CLAUDE_MODELS = PROVIDER_MODELS.claude;
 export type ClaudeModel = ProviderModelEntry;
 
 /** All key-based provider names in display order. */
-export const KEY_BASED_PROVIDERS: Exclude<Provider, 'ollama'>[] = [
+export const KEY_BASED_PROVIDERS: Exclude<Provider, 'ollama' | 'webllm'>[] = [
 	'claude', 'openai', 'gemini', 'moonshot', 'qwen', 'deepseek', 'mistral', 'groq'
 ];
 
-export function isKeyBasedProvider(provider: Provider): provider is Exclude<Provider, 'ollama'> {
-	return provider !== 'ollama';
+export function isKeyBasedProvider(provider: Provider): provider is Exclude<Provider, 'ollama' | 'webllm'> {
+	return provider !== 'ollama' && provider !== 'webllm';
 }
 
 /** Look up context length for a key-based provider model. */

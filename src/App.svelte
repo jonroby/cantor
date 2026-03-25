@@ -17,6 +17,19 @@
 		fetchModelContextLength,
 		streamOllamaChat
 	} from '$lib/chat/ollama';
+	import {
+		getWebLLMModels,
+		loadWebLLMModel,
+		unloadWebLLM,
+		streamWebLLMChat,
+		getLoadedModelId,
+		deleteModelCache,
+		deleteAllModelCaches,
+		WEBLLM_CONTEXT_OPTIONS,
+		type WebLLMStatus,
+		type WebLLMModelEntry,
+		type WebLLMContextSize
+	} from '$lib/chat/webllm';
 	import { getDefaultItems, searchChats, type SearchResult } from '$lib/chat/search';
 	import {
 		ROOT_ANCHOR_ID,
@@ -74,6 +87,13 @@
 	let ollamaModels: string[] = $state([]);
 	let apiKeys: Record<string, string> = $state({});
 	let vaultProviders: string[] = $state([]);
+
+	let webllmStatus: WebLLMStatus = $state('idle');
+	let webllmProgress = $state(0);
+	let webllmProgressText = $state('');
+	let webllmModels: WebLLMModelEntry[] = $state([]);
+	let webllmError: string | null = $state(null);
+	let webllmContextSize: WebLLMContextSize = $state(4_096);
 
 	let composerValue = $state('');
 	let searchQuery = $state('');
@@ -192,6 +212,7 @@
 	onMount(() => {
 		migrateVault();
 		vaultProviders = getStoredProviders();
+		webllmModels = getWebLLMModels();
 
 		function handleKeyDown(event: KeyboardEvent) {
 			const target = event.target;
@@ -445,6 +466,41 @@
 		}
 	}
 
+	async function handleLoadWebLLMModel(modelId: string) {
+		webllmStatus = 'loading';
+		webllmProgress = 0;
+		webllmProgressText = '';
+		webllmError = null;
+		try {
+			await loadWebLLMModel(modelId, webllmContextSize, (report) => {
+				webllmProgress = report.progress;
+				webllmProgressText = report.text;
+			});
+			webllmStatus = 'ready';
+			activeModel = { provider: 'webllm', modelId };
+			contextLength = webllmContextSize;
+		} catch (error) {
+			webllmStatus = 'error';
+			webllmError = error instanceof Error ? error.message : 'Failed to load model.';
+		}
+	}
+
+	async function handleDeleteWebLLMCache(modelId: string) {
+		await deleteModelCache(modelId);
+		if (activeModel?.provider === 'webllm' && activeModel.modelId === modelId) {
+			activeModel = null;
+			webllmStatus = 'idle';
+		}
+	}
+
+	async function handleDeleteAllWebLLMCaches() {
+		await deleteAllModelCaches();
+		if (activeModel?.provider === 'webllm') {
+			activeModel = null;
+		}
+		webllmStatus = 'idle';
+	}
+
 	async function handleUnlockKeys(password: string) {
 		apiKeys = await loadAllApiKeys(password);
 	}
@@ -471,6 +527,9 @@
 
 	function getProviderStream(model: ActiveModel, history: import('$lib/chat/tree').Message[], signal: AbortSignal) {
 		const key = apiKeys[model.provider] ?? '';
+		if (model.provider === 'webllm') {
+			return streamWebLLMChat(history, signal);
+		}
 		if (model.provider === 'ollama') {
 			return streamOllamaChat(model.modelId, history, signal, ollamaUrl);
 		}
@@ -773,6 +832,17 @@
 		onUnlockKeys={handleUnlockKeys}
 		onSaveKey={handleSaveKey}
 		onForgetKey={handleForgetKey}
+		{webllmStatus}
+		{webllmProgress}
+		{webllmProgressText}
+		{webllmModels}
+		{webllmError}
+		{webllmContextSize}
+		webllmContextOptions={WEBLLM_CONTEXT_OPTIONS}
+		onWebLLMContextSizeChange={(size) => { webllmContextSize = size; }}
+		onLoadWebLLMModel={handleLoadWebLLMModel}
+		onDeleteWebLLMCache={handleDeleteWebLLMCache}
+		onDeleteAllWebLLMCaches={handleDeleteAllWebLLMCaches}
 	/>
 
 	{#if searchOpen}

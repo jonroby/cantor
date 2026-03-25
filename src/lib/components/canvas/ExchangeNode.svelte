@@ -11,6 +11,7 @@
 	import moonshotLogo from '../../../assets/moonshot.svg';
 	import ollamaLogo from '../../../assets/ollama.svg';
 	import qwenLogo from '../../../assets/qwen.svg';
+	import webllmLogo from '../../../assets/web-llm.jpeg';
 
 	const PROVIDER_LOGOS: Record<string, string> = {
 		claude: claudeLogo,
@@ -21,7 +22,8 @@
 		deepseek: deepseekLogo,
 		mistral: mistralLogo,
 		groq: metaLogo,
-		ollama: ollamaLogo
+		ollama: ollamaLogo,
+		webllm: webllmLogo
 	};
 
 	export interface ExchangeNodeData {
