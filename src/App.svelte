@@ -20,6 +20,7 @@
 	import Input from '$lib/components/ui/input.svelte';
 	import ExchangeNode from '$lib/components/canvas/ExchangeNode.svelte';
 	import CodeEditor from '$lib/components/canvas/CodeEditor.svelte';
+	import PythonEditor from '$lib/components/canvas/PythonEditor.svelte';
 	import Canvas from '$lib/components/canvas/Canvas.svelte';
 	import {
 		DEFAULT_OLLAMA_URL,
@@ -1000,6 +1001,7 @@
 					canvasHeight={canvas.height}
 					nodeWidth={NODE_WIDTH}
 					codeEditor={canvas.codeEditor}
+					pythonEditor={canvas.pythonEditor}
 					bind:this={canvasRef}
 				>
 					{#snippet renderNode(n: CanvasNode)}
@@ -1010,6 +1012,9 @@
 					{/snippet}
 					{#snippet renderCodeEditor()}
 						<CodeEditor />
+					{/snippet}
+					{#snippet renderPythonEditor()}
+						<PythonEditor />
 					{/snippet}
 				</Canvas>
 			</div>

@@ -14,6 +14,8 @@
 		renderNode: Snippet<[CanvasNode]>;
 		codeEditor?: CodeEditorPosition;
 		renderCodeEditor?: Snippet<[]>;
+		pythonEditor?: CodeEditorPosition;
+		renderPythonEditor?: Snippet<[]>;
 	}
 
 	let {
@@ -24,7 +26,9 @@
 		nodeWidth,
 		renderNode,
 		codeEditor,
-		renderCodeEditor
+		renderCodeEditor,
+		pythonEditor,
+		renderPythonEditor
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | null = $state(null);
@@ -202,6 +206,14 @@
 				style="left:{codeEditor.x}px;top:{codeEditor.y}px;width:{codeEditor.width}px;"
 			>
 				{@render renderCodeEditor()}
+			</div>
+		{/if}
+		{#if pythonEditor && renderPythonEditor}
+			<div
+				class="canvas-node"
+				style="left:{pythonEditor.x}px;top:{pythonEditor.y}px;width:{pythonEditor.width}px;"
+			>
+				{@render renderPythonEditor()}
 			</div>
 		{/if}
 	</div>

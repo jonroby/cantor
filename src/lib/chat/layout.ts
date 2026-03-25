@@ -29,7 +29,9 @@ export interface CodeEditorPosition {
 }
 
 export const CODE_EDITOR_WIDTH = 640;
-export const CODE_EDITOR_GAP = 120;
+export const CODE_EDITOR_GAP = 40;
+export const CODE_EDITOR_HEIGHT = 400;
+export const CODE_EDITOR_ROW_GAP = 60;
 
 export interface CanvasLayout {
 	nodes: CanvasNode[];
@@ -37,11 +39,14 @@ export interface CanvasLayout {
 	width: number;
 	height: number;
 	codeEditor: CodeEditorPosition;
+	pythonEditor: CodeEditorPosition;
 }
 
 interface LayoutOptions {
 	hiddenExchangeIds?: Set<string>;
 	measuredHeights?: Record<string, number>;
+	codeEditorHeight?: number;
+	pythonEditorHeight?: number;
 }
 
 export function computeCanvasLayout(
@@ -52,6 +57,12 @@ export function computeCanvasLayout(
 	const hiddenExchangeIds = options.hiddenExchangeIds ?? new Set<string>();
 	const measuredHeights = options.measuredHeights ?? {};
 
+	const jsEditorX = PADDING_X;
+	const pyEditorX = PADDING_X + CODE_EDITOR_WIDTH + CODE_EDITOR_GAP;
+	const jsHeight = options.codeEditorHeight ?? CODE_EDITOR_HEIGHT;
+	const pyHeight = options.pythonEditorHeight ?? CODE_EDITOR_HEIGHT;
+	const editorsBottomY = PADDING_Y + Math.max(jsHeight, pyHeight) + CODE_EDITOR_ROW_GAP;
+
 	if (!anchor) {
 		return {
 			nodes: [],
@@ -59,7 +70,12 @@ export function computeCanvasLayout(
 			width: 1200,
 			height: 800,
 			codeEditor: {
-				x: PADDING_X + NODE_WIDTH + COLUMN_GAP + CODE_EDITOR_GAP,
+				x: jsEditorX,
+				y: PADDING_Y,
+				width: CODE_EDITOR_WIDTH
+			},
+			pythonEditor: {
+				x: pyEditorX,
 				y: PADDING_Y,
 				width: CODE_EDITOR_WIDTH
 			}
@@ -81,7 +97,7 @@ export function computeCanvasLayout(
 		const exchange = exchanges[exchangeId];
 		if (!exchange || hiddenExchangeIds.has(exchangeId)) return;
 		const height = getNodeHeight(exchange.id);
-		const nextY = Math.max(y, columnBottoms.get(column) ?? PADDING_Y);
+		const nextY = Math.max(y, columnBottoms.get(column) ?? editorsBottomY);
 
 		nodes.push({
 			id: exchange.id,
@@ -114,17 +130,18 @@ export function computeCanvasLayout(
 	for (let index = 0; index < rootChildren.length; index += 1) {
 		const child = rootChildren[index]!;
 		if (hiddenExchangeIds.has(child.id)) continue;
-		visit(child.id, 0, index, PADDING_Y);
+		visit(child.id, 0, index, editorsBottomY);
 	}
 
 	const maxBottom = nodes.reduce(
 		(bottom, node) => Math.max(bottom, node.y + node.height),
-		PADDING_Y
+		editorsBottomY
 	);
 
-	const codeEditorX = PADDING_X + (maxColumn + 1) * (NODE_WIDTH + COLUMN_GAP) + CODE_EDITOR_GAP;
-
-	const totalWidth = Math.max(1200, codeEditorX + CODE_EDITOR_WIDTH + PADDING_X);
+	const editorsRight = pyEditorX + CODE_EDITOR_WIDTH + PADDING_X;
+	const nodesRight =
+		PADDING_X + (maxColumn + 1) * (NODE_WIDTH + COLUMN_GAP) - COLUMN_GAP + PADDING_X;
+	const totalWidth = Math.max(1200, Math.max(editorsRight, nodesRight));
 
 	return {
 		nodes,
@@ -132,7 +149,12 @@ export function computeCanvasLayout(
 		width: totalWidth,
 		height: Math.max(900, maxBottom + PADDING_Y),
 		codeEditor: {
-			x: codeEditorX,
+			x: jsEditorX,
+			y: PADDING_Y,
+			width: CODE_EDITOR_WIDTH
+		},
+		pythonEditor: {
+			x: pyEditorX,
 			y: PADDING_Y,
 			width: CODE_EDITOR_WIDTH
 		}
