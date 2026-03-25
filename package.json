@@ -48,6 +48,7 @@
 		"@xyflow/svelte": "^1.5.1",
 		"clsx": "^2.1.1",
 		"katex": "^0.16.42",
+		"marked": "^17.0.5",
 		"tailwind-merge": "^3.5.0"
 	}
 }
