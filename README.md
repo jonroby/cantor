@@ -36,3 +36,43 @@ bunx sv migrate svelte-5
 ## Architecture
 
 See [CLAUDE.md](./CLAUDE.md) for detailed architecture, data model, branching concepts, and working rules.
+
+## Project Structure
+
+```
+src/
+├── lib/
+│   ├── models/          index.ts (model metadata), logos.ts
+│   ├── providers/       claude.ts, gemini.ts, ollama.ts, openai-compat.ts, webllm.ts, webllm-worker.ts, stream.ts, vault.ts
+│   ├── search/          index.ts
+│   ├── tree/            index.ts
+│   └── validate-md/     index.ts, validate-md.spec.ts
+│
+├── state/
+│   ├── chats.svelte.ts
+│   ├── documents.svelte.ts
+│   ├── initial-exchanges.ts
+│   └── providers.svelte.ts
+│
+├── features/
+│   ├── app-sidebar/
+│   ├── canvas/          Canvas.svelte, ChatTree.svelte, ExchangeNode.svelte, layout.ts, katex.ts
+│   ├── chat-header/
+│   ├── chat-input/
+│   ├── chat-toolbar/
+│   ├── code-editor/     CodeEditor.svelte
+│   ├── composer/
+│   ├── docs-panel/      DocsPanel.svelte
+│   ├── drawing-board/   DrawingBoard.svelte, drawing-types.ts
+│   ├── model-palette/
+│   ├── python-editor/   PythonEditor.svelte
+│   └── search-dialog/
+│
+├── components/
+│   ├── custom/          button.svelte, input.svelte
+│   └── shadcn/          ui/ (shadcn-svelte primitives), utils.ts
+│
+├── assets/
+├── App.svelte
+└── main.ts
+```

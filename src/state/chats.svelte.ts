@@ -8,8 +8,8 @@ import {
 	withExplicitExchangeOrder,
 	type Chat,
 	type ExchangeMap
-} from '@/lib/chat/tree';
-import { buildInitialExchanges } from '@/lib/chat/initialExchanges';
+} from '@/lib/tree';
+import { buildInitialExchanges } from '@/state/initial-exchanges';
 
 function makeDefaultChat(): Chat {
 	const exchanges = withExplicitExchangeOrder(buildInitialExchanges());

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ActiveModel, OllamaStatus } from '@/lib/chat/models';
+	import type { ActiveModel, OllamaStatus } from '@/lib/models';
 	import Button from '@/components/custom/button.svelte';
 	import Input from '@/components/custom/input.svelte';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { ActiveModel } from '@/lib/chat/models';
-	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '@/lib/chat/webllm';
+	import type { ActiveModel } from '@/lib/models';
+	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '@/lib/providers/webllm';
 	import Input from '@/components/custom/input.svelte';
 
 	interface Props {

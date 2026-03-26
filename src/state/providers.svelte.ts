@@ -5,13 +5,13 @@ import {
 	type ActiveModel,
 	type OllamaStatus,
 	type Provider
-} from '@/lib/chat/models';
+} from '@/lib/models';
 import {
 	DEFAULT_OLLAMA_URL,
 	fetchAvailableModels,
 	fetchModelContextLength,
 	streamOllamaChat
-} from '@/lib/chat/ollama';
+} from '@/lib/providers/ollama';
 import {
 	getWebLLMModels,
 	loadWebLLMModel,
@@ -22,18 +22,18 @@ import {
 	type WebLLMStatus,
 	type WebLLMModelEntry,
 	type WebLLMContextSize
-} from '@/lib/chat/webllm';
-import { streamClaudeChat } from '@/lib/chat/claude';
-import { streamGeminiChat } from '@/lib/chat/gemini';
-import { streamOpenAICompatChat } from '@/lib/chat/openai-compat';
+} from '@/lib/providers/webllm';
+import { streamClaudeChat } from '@/lib/providers/claude';
+import { streamGeminiChat } from '@/lib/providers/gemini';
+import { streamOpenAICompatChat } from '@/lib/providers/openai-compat';
 import {
 	clearProviderKey,
 	loadAllApiKeys,
 	migrateVault,
 	saveApiKey,
 	storedProviders as getStoredProviders
-} from '@/lib/chat/vault';
-import type { Message } from '@/lib/chat/tree';
+} from '@/lib/providers/vault';
+import type { Message } from '@/lib/tree';
 
 export { WEBLLM_CONTEXT_OPTIONS };
 export type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize, ActiveModel, OllamaStatus };

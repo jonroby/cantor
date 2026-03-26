@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Input from '@/components/custom/input.svelte';
-	import type { SearchResult } from '@/lib/chat/search';
+	import type { SearchResult } from '@/lib/search';
 
 	interface Props {
 		searchQuery: string;

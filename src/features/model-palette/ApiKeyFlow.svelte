@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { PROVIDER_CONFIG } from '@/lib/chat/models';
-	import type { ActiveModel, Provider } from '@/lib/chat/models';
+	import { PROVIDER_CONFIG } from '@/lib/models';
+	import type { ActiveModel, Provider } from '@/lib/models';
 	import Button from '@/components/custom/button.svelte';
 	import Input from '@/components/custom/input.svelte';
 

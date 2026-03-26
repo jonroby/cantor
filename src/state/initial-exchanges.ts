@@ -1,4 +1,4 @@
-import { ROOT_ANCHOR_ID, type ExchangeMap } from './tree';
+import { ROOT_ANCHOR_ID, type ExchangeMap } from '@/lib/tree';
 
 export function buildInitialExchanges(): ExchangeMap {
 	const root: ExchangeMap = {};

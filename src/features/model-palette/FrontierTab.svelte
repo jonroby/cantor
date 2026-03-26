@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { PROVIDER_MODELS, PROVIDER_CONFIG, KEY_BASED_PROVIDERS } from '@/lib/chat/models';
-	import type { ActiveModel, Provider } from '@/lib/chat/models';
-	import { PROVIDER_LOGOS } from '@/lib/chat/logos';
+	import { PROVIDER_MODELS, PROVIDER_CONFIG, KEY_BASED_PROVIDERS } from '@/lib/models';
+	import type { ActiveModel, Provider } from '@/lib/models';
+	import { PROVIDER_LOGOS } from '@/lib/models/logos';
 
 	interface Props {
 		activeModel: ActiveModel | null;

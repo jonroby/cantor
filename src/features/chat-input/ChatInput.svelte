@@ -14,7 +14,7 @@
 		updateExchangeResponse,
 		updateExchangeTokens,
 		type ExchangeMap
-	} from '@/lib/chat/tree';
+	} from '@/lib/tree';
 	import {
 		chatState,
 		getActiveExchanges,

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
 	import Button from '@/components/custom/button.svelte';
-	import type { Provider } from '@/lib/chat/models';
+	import type { Provider } from '@/lib/models';
 	import { renderRichText } from './katex';
-	import { PROVIDER_LOGOS } from '@/lib/chat/logos';
+	import { PROVIDER_LOGOS } from '@/lib/models/logos';
 
 	export interface ExchangeNodeData {
 		prompt: string;

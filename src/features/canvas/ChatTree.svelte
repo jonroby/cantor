@@ -2,7 +2,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { computeCanvasLayout, NODE_WIDTH } from './layout';
 	import type { CanvasNode } from './layout';
-	import { getProviderForModelId } from '@/lib/chat/models';
+	import { getProviderForModelId } from '@/lib/models';
 	import Button from '@/components/custom/button.svelte';
 	import ExchangeNode from '@/features/canvas/ExchangeNode.svelte';
 	import CodeEditor from '@/features/code-editor/CodeEditor.svelte';
@@ -22,7 +22,7 @@
 		promoteSideChatToMainChat,
 		type DeleteMode,
 		type ExchangeMap
-	} from '@/lib/chat/tree';
+	} from '@/lib/tree';
 	import {
 		chatState,
 		getActiveExchanges,

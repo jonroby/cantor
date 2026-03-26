@@ -6,7 +6,7 @@ import {
 	type WebWorkerMLCEngine,
 	type InitProgressReport
 } from '@mlc-ai/web-llm';
-import type { Message } from './tree';
+import type { Message } from '@/lib/tree';
 import type { StreamChunk } from './stream';
 
 export type WebLLMStatus = 'idle' | 'loading' | 'ready' | 'error';

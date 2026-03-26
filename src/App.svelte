@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Toaster from '@/components/shadcn/ui/sonner/sonner.svelte';
-	import { getDefaultItems, searchChats, type SearchResult } from '@/lib/chat/search';
-	import type { Chat } from '@/lib/chat/tree';
+	import { getDefaultItems, searchChats, type SearchResult } from '@/lib/search';
+	import type { Chat } from '@/lib/tree';
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar } from '@/features/app-sidebar';
 	import { ChatToolbar } from '@/features/chat-toolbar';

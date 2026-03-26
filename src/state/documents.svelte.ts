@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { toast } from 'svelte-sonner';
-import type { ChatFolder, DocFile } from '@/lib/chat/tree';
+import type { ChatFolder, DocFile } from '@/lib/tree';
 import { validate } from '@/lib/validate-md';
 
 export interface OpenDoc {

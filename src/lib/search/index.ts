@@ -1,4 +1,4 @@
-import type { Chat } from './tree';
+import type { Chat } from '@/lib/tree';
 
 const SNIPPET_CONTEXT = 80;
 const TRIGRAM_THRESHOLD = 0.15;
