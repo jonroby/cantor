@@ -39,7 +39,7 @@
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar } from '@/features/app-sidebar';
 	import { ModelPalette } from '@/features/model-palette';
-	import { FloatingActions } from '@/features/floating-actions';
+	import { ChatToolbar } from '@/features/floating-actions';
 	import { SearchDialog } from '@/features/search-dialog';
 	import { ChatHeader } from '@/features/chat-header';
 	import { Composer } from '@/features/composer';
@@ -556,7 +556,7 @@
 				<div class="error-banner">{operationError}</div>
 			{/if}
 
-			<FloatingActions
+			<ChatToolbar
 				onSearch={() => (searchOpen = true)}
 				onFitView={() => canvasRef?.fitView({ duration: 250, maxZoom: 1 })}
 				onGoToTop={() => {

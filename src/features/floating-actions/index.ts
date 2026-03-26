@@ -1,1 +1,1 @@
-export { default as FloatingActions } from './FloatingActions.svelte';
+export { default as ChatToolbar } from './ChatToolbar.svelte';
