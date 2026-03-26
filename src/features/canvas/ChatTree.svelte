@@ -24,8 +24,11 @@
 		type ExchangeMap
 	} from '@/lib/chat/tree';
 	import {
-		chatState, getActiveExchanges, getActiveExchangeId,
-		replaceActiveExchanges, setActiveExchangeId,
+		chatState,
+		getActiveExchanges,
+		getActiveExchangeId,
+		replaceActiveExchanges,
+		setActiveExchangeId,
 		forkChat as forkChatAction
 	} from '@/state/chats.svelte';
 	import { docState } from '@/state/documents.svelte';
@@ -274,7 +277,9 @@
 					title={docFile?.name}
 					content={doc.content}
 					onContentChange={(c) => {
-						docState.openDocs = docState.openDocs.map((d, i) => (i === index ? { ...d, content: c } : d));
+						docState.openDocs = docState.openDocs.map((d, i) =>
+							i === index ? { ...d, content: c } : d
+						);
 						if (doc.docKey) {
 							const { folderId, fileId } = doc.docKey;
 							docState.folders = docState.folders.map((f) =>
@@ -311,11 +316,8 @@
 	<div class="modal-panel delete-panel">
 		<div class="modal-header">
 			<h2>Delete exchange</h2>
-			<Button
-				class="ghost-button"
-				variant="ghost"
-				size="sm"
-				onclick={() => (deleteTargetId = null)}>Close</Button
+			<Button class="ghost-button" variant="ghost" size="sm" onclick={() => (deleteTargetId = null)}
+				>Close</Button
 			>
 		</div>
 		<div class="modal-section">

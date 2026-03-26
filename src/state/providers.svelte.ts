@@ -85,7 +85,8 @@ export async function connectOllama(url: string) {
 	} catch (error) {
 		providerState.ollamaStatus = 'error';
 		providerState.ollamaModels = [];
-		providerState.operationError = error instanceof Error ? error.message : 'Failed to connect to Ollama.';
+		providerState.operationError =
+			error instanceof Error ? error.message : 'Failed to connect to Ollama.';
 	}
 }
 
@@ -110,7 +111,10 @@ export async function loadWebLLMModel_(modelId: string) {
 
 export async function deleteWebLLMCache(modelId: string) {
 	await deleteModelCache(modelId);
-	if (providerState.activeModel?.provider === 'webllm' && providerState.activeModel.modelId === modelId) {
+	if (
+		providerState.activeModel?.provider === 'webllm' &&
+		providerState.activeModel.modelId === modelId
+	) {
 		providerState.activeModel = null;
 		providerState.webllmStatus = 'idle';
 	}
@@ -151,7 +155,10 @@ export function selectModel(model: ActiveModel) {
 
 export function updateContextLength() {
 	if (providerState.activeModel && isKeyBasedProvider(providerState.activeModel.provider)) {
-		providerState.contextLength = getModelContextLength(providerState.activeModel.provider, providerState.activeModel.modelId);
+		providerState.contextLength = getModelContextLength(
+			providerState.activeModel.provider,
+			providerState.activeModel.modelId
+		);
 	}
 }
 

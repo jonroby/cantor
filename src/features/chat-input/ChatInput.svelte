@@ -16,15 +16,28 @@
 		type ExchangeMap
 	} from '@/lib/chat/tree';
 	import {
-		chatState, getActiveExchanges, getActiveExchangeId,
-		replaceActiveExchanges, setActiveExchangeId
+		chatState,
+		getActiveExchanges,
+		getActiveExchangeId,
+		replaceActiveExchanges,
+		setActiveExchangeId
 	} from '@/state/chats.svelte';
 	import {
-		providerState, WEBLLM_CONTEXT_OPTIONS,
-		init as initProviders, autoConnectOllama, connectOllama,
-		loadWebLLMModel_ as loadWebLLMModel, deleteWebLLMCache, deleteAllWebLLMCaches,
-		unlockKeys, saveKey, forgetKey, selectModel,
-		updateContextLength, fetchOllamaContextLength, getProviderStream
+		providerState,
+		WEBLLM_CONTEXT_OPTIONS,
+		init as initProviders,
+		autoConnectOllama,
+		connectOllama,
+		loadWebLLMModel_ as loadWebLLMModel,
+		deleteWebLLMCache,
+		deleteAllWebLLMCaches,
+		unlockKeys,
+		saveKey,
+		forgetKey,
+		selectModel,
+		updateContextLength,
+		fetchOllamaContextLength,
+		getProviderStream
 	} from '@/state/providers.svelte';
 
 	interface Props {
@@ -92,7 +105,13 @@
 
 		let created: { id: string; exchanges: ExchangeMap };
 		try {
-			created = addExchangeResult(activeExchanges, parentId, prompt, '', providerState.activeModel.modelId);
+			created = addExchangeResult(
+				activeExchanges,
+				parentId,
+				prompt,
+				'',
+				providerState.activeModel.modelId
+			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
 			return;
@@ -115,7 +134,9 @@
 			for await (const chunk of stream) {
 				if (chunk.type === 'delta') {
 					response += chunk.delta;
-					doReplaceActiveExchanges(updateExchangeResponse(getActiveExchanges(), created.id, response));
+					doReplaceActiveExchanges(
+						updateExchangeResponse(getActiveExchanges(), created.id, response)
+					);
 				} else {
 					doReplaceActiveExchanges(
 						updateExchangeTokens(
@@ -137,7 +158,9 @@
 			);
 			operationError = error instanceof Error ? error.message : 'Request failed.';
 		} finally {
-			chatState.streamingExchangeIds = chatState.streamingExchangeIds.filter((id) => id !== created.id);
+			chatState.streamingExchangeIds = chatState.streamingExchangeIds.filter(
+				(id) => id !== created.id
+			);
 		}
 	}
 </script>

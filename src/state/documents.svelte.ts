@@ -32,9 +32,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 export const docState = $state({
 	folders: [] as ChatFolder[],
-	openDocs: [
-		{ id: crypto.randomUUID(), content: DEFAULT_DOC_CONTENT, docKey: null }
-	] as OpenDoc[]
+	openDocs: [{ id: crypto.randomUUID(), content: DEFAULT_DOC_CONTENT, docKey: null }] as OpenDoc[]
 });
 
 export function newFolder(): string {
@@ -175,21 +173,21 @@ export async function downloadFolder(folderId: string) {
 function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
 	let imported = 0;
 	const folder = docState.folders.find((f) => f.id === folderId);
-	const existingNames = new Set((folder?.files ?? []).map((f) => f.name));
+	const existingNames = (folder?.files ?? []).map((f) => f.name);
 
 	for (const file of mdFiles) {
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result === 'string') {
 				let name = file.name;
-				if (existingNames.has(name)) {
+				if (existingNames.includes(name)) {
 					const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
 					const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
 					let i = 1;
-					while (existingNames.has(`${base} (${i})${ext}`)) i++;
+					while (existingNames.includes(`${base} (${i})${ext}`)) i++;
 					name = `${base} (${i})${ext}`;
 				}
-				existingNames.add(name);
+				existingNames.push(name);
 				const docFile: DocFile = {
 					id: crypto.randomUUID(),
 					name,
@@ -223,10 +221,10 @@ export function uploadFolder() {
 		}
 
 		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
-		const existingFolderNames = new Set(docState.folders.map((f) => f.name));
+		const existingFolderNames = docState.folders.map((f) => f.name);
 		let folderName = dirName;
 		let n = 2;
-		while (existingFolderNames.has(folderName)) {
+		while (existingFolderNames.includes(folderName)) {
 			folderName = `${dirName} (${n})`;
 			n++;
 		}

@@ -139,9 +139,7 @@
 		newlyCreatedFolderId = id;
 	}
 
-	let indexedChats = $derived(
-		chats.map((c, i) => ({ chat: c, index: i }))
-	);
+	let indexedChats = $derived(chats.map((c, i) => ({ chat: c, index: i })));
 </script>
 
 <Sidebar.Root collapsible="icon">

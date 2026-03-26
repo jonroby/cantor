@@ -1,4 +1,4 @@
-import type { Chat, ExchangeMap } from './tree';
+import type { Chat } from './tree';
 
 const SNIPPET_CONTEXT = 80;
 const TRIGRAM_THRESHOLD = 0.15;
@@ -53,11 +53,7 @@ function extractSnippet(text: string, query: string): Snippet | null {
 	};
 }
 
-export function searchChats(
-	chats: Chat[],
-	query: string,
-	indices: number[]
-): SearchResult[] {
+export function searchChats(chats: Chat[], query: string, indices: number[]): SearchResult[] {
 	const queryTrigrams = trigrams(query);
 	const scored: { result: SearchResult; score: number }[] = [];
 

@@ -226,7 +226,8 @@ export function validateChatUpload(data: unknown): Chat {
 		id: obj.id as string,
 		name: obj.name as string,
 		exchanges,
-		activeExchangeId: typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : getMainChatTail(exchanges)
+		activeExchangeId:
+			typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : getMainChatTail(exchanges)
 	};
 }
 

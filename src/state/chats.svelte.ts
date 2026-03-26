@@ -44,7 +44,9 @@ function hasRenderableExchanges(exchanges: ExchangeMap) {
 }
 
 export function updateActiveChat(patch: Partial<Pick<Chat, 'exchanges' | 'activeExchangeId'>>) {
-	chatState.chats = chatState.chats.map((c, i) => (i === chatState.activeChatIndex ? { ...c, ...patch } : c));
+	chatState.chats = chatState.chats.map((c, i) =>
+		i === chatState.activeChatIndex ? { ...c, ...patch } : c
+	);
 }
 
 export function replaceActiveExchanges(nextExchanges: ExchangeMap) {
@@ -80,7 +82,7 @@ export function deleteChat(index: number) {
 
 export function renameChat(index: number, name: string) {
 	chatState.chats[index].name = name;
-	chatState.chats = chatState.chats;
+	chatState.chats = [...chatState.chats];
 }
 
 export function downloadChat(index: number) {
@@ -108,10 +110,10 @@ export function uploadChat(): void {
 			const chat = validateChatUpload(data);
 			chat.id = crypto.randomUUID();
 			const baseName = file.name.replace(/\.json$/i, '');
-			const existingNames = new Set(chatState.chats.map((c) => c.name));
+			const existingNames = chatState.chats.map((c) => c.name);
 			let name = baseName;
 			let i = 1;
-			while (existingNames.has(name)) {
+			while (existingNames.includes(name)) {
 				name = `${baseName} (${i})`;
 				i++;
 			}
@@ -157,26 +159,32 @@ export function hydrate(parsed: {
 	if (rawChats?.length) {
 		const hydratedChats: Chat[] = [];
 		for (const c of rawChats) {
-			if ('roots' in c && Array.isArray((c as any).roots)) {
-				const legacyRoots = (c as any).roots as ExchangeMap[];
-				const legacyActiveRootIndex = (c as any).activeRootIndex ?? 0;
+			if ('roots' in c && Array.isArray((c as Record<string, unknown>).roots)) {
+				const legacyRoots = (c as Record<string, unknown>).roots as ExchangeMap[];
+				const legacyActiveRootIndex =
+					((c as Record<string, unknown>).activeRootIndex as number) ?? 0;
 				for (let i = 0; i < legacyRoots.length; i++) {
 					const exchanges = hasExplicitExchangeOrder(legacyRoots[i])
 						? legacyRoots[i]
 						: withExplicitExchangeOrder(legacyRoots[i]);
 					hydratedChats.push({
 						id: crypto.randomUUID(),
-						name: i === 0 ? (c.name ?? `Chat ${hydratedChats.length + 1}`) : `${c.name ?? 'Chat'} (fork ${i})`,
+						name:
+							i === 0
+								? (c.name ?? `Chat ${hydratedChats.length + 1}`)
+								: `${c.name ?? 'Chat'} (fork ${i})`,
 						exchanges,
-						activeExchangeId: i === legacyActiveRootIndex
-							? (c.activeExchangeId ?? getMainChatTail(exchanges))
-							: getMainChatTail(exchanges)
+						activeExchangeId:
+							i === legacyActiveRootIndex
+								? (c.activeExchangeId ?? getMainChatTail(exchanges))
+								: getMainChatTail(exchanges)
 					});
 				}
 			} else {
-				const exchanges = c.exchanges && !hasExplicitExchangeOrder(c.exchanges)
-					? withExplicitExchangeOrder(c.exchanges)
-					: c.exchanges;
+				const exchanges =
+					c.exchanges && !hasExplicitExchangeOrder(c.exchanges)
+						? withExplicitExchangeOrder(c.exchanges)
+						: c.exchanges;
 				hydratedChats.push({
 					...c,
 					exchanges,

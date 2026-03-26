@@ -1,5 +1,3 @@
-import type { Chat, ExchangeMap } from '@/lib/chat/tree';
-import type { ChatFolder } from '@/lib/chat/tree';
 import { chatState, hydrate } from '@/state/chats.svelte';
 import { docState } from '@/state/documents.svelte';
 
@@ -24,24 +22,31 @@ export function loadFromStorage() {
 }
 
 export function saveToStorage() {
-	localStorage.setItem(STORAGE_KEY, JSON.stringify({
-		chats: chatState.chats,
-		activeChatIndex: chatState.activeChatIndex,
-		folders: docState.folders
-	}));
+	localStorage.setItem(
+		STORAGE_KEY,
+		JSON.stringify({
+			chats: chatState.chats,
+			activeChatIndex: chatState.activeChatIndex,
+			folders: docState.folders
+		})
+	);
 }
 
 export function downloadToFile() {
-	const payload = JSON.stringify({
-		chats: chatState.chats,
-		activeChatIndex: chatState.activeChatIndex,
-		folders: docState.folders
-	}, null, 2);
+	const payload = JSON.stringify(
+		{
+			chats: chatState.chats,
+			activeChatIndex: chatState.activeChatIndex,
+			folders: docState.folders
+		},
+		null,
+		2
+	);
 	const blob = new Blob([payload], { type: 'application/json' });
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement('a');
 	link.href = url;
-	link.download = `chat-tree-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+	link.download = `chat-tree-${Date.now()}.json`;
 	link.click();
 	URL.revokeObjectURL(url);
 }

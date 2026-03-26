@@ -11,15 +11,30 @@
 	import ChatTree from '@/features/canvas/ChatTree.svelte';
 	import ChatInput from '@/features/chat-input/ChatInput.svelte';
 	import {
-		chatState, getActiveChat, getActiveExchangeId,
-		newChat as newChatAction, selectChat as selectChatAction,
-		deleteChat as deleteChatAction, renameChat, downloadChat, uploadChat,
+		chatState,
+		getActiveChat,
+		getActiveExchangeId,
+		newChat as newChatAction,
+		selectChat as selectChatAction,
+		deleteChat as deleteChatAction,
+		renameChat,
+		downloadChat,
+		uploadChat,
 		setActiveExchangeId
 	} from '@/state/chats.svelte';
 	import {
-		docState, newFolder, deleteFolder, downloadFolder, renameFolder,
-		uploadDocToFolder, uploadFolder, uploadFolderToFolder,
-		selectDoc, deleteDocFromFolder, renameDocInFolder, moveDocToFolder
+		docState,
+		newFolder,
+		deleteFolder,
+		downloadFolder,
+		renameFolder,
+		uploadDocToFolder,
+		uploadFolder,
+		uploadFolderToFolder,
+		selectDoc,
+		deleteDocFromFolder,
+		renameDocInFolder,
+		moveDocToFolder
 	} from '@/state/documents.svelte';
 	import { loadFromStorage, saveToStorage, downloadToFile } from '@/state/persistence.svelte';
 
@@ -37,7 +52,9 @@
 			? searchChats(
 					chatState.chats,
 					searchQuery.trim(),
-					searchAllChats ? chatState.chats.map((_: Chat, index: number) => index) : [chatState.activeChatIndex]
+					searchAllChats
+						? chatState.chats.map((_: Chat, index: number) => index)
+						: [chatState.activeChatIndex]
 				)
 			: getDefaultItems(chatState.chats, chatState.activeChatIndex, searchAllChats)
 	);
@@ -130,7 +147,6 @@
 		resetUIState();
 	}
 
-
 	function handleSearchSelect(result: SearchResult) {
 		selectChatAction(result.chatIndex);
 		setActiveExchangeId(result.exchangeId);
@@ -167,10 +183,7 @@
 	/>
 	<SidebarPrimitive.Inset>
 		<div class="page-shell" onwheel={handleCanvasWheel}>
-			<ChatHeader
-				visible={headerVisible}
-				chatName={getActiveChat().name}
-			/>
+			<ChatHeader visible={headerVisible} chatName={getActiveChat().name} />
 
 			<ChatToolbar
 				onSearch={() => (searchOpen = true)}
@@ -180,9 +193,7 @@
 				onDownload={downloadToFile}
 			/>
 
-			<ChatTree
-				bind:this={chatTreeRef}
-			/>
+			<ChatTree bind:this={chatTreeRef} />
 
 			<ChatInput
 				onScrollToNode={(nodeId) => chatTreeRef?.scrollToNode(nodeId)}
