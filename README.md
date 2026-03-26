@@ -25,6 +25,14 @@ bun install
 bun run dev
 ```
 
+## Migration
+
+To run the Svelte 5 migration tool:
+
+```bash
+bunx sv migrate svelte-5
+```
+
 ## Architecture
 
 See [CLAUDE.md](./CLAUDE.md) for detailed architecture, data model, branching concepts, and working rules.
