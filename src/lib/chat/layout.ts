@@ -33,6 +33,8 @@ export const CODE_EDITOR_GAP = 40;
 export const CODE_EDITOR_HEIGHT = 400;
 export const CODE_EDITOR_ROW_GAP = 60;
 export const DRAWING_BOARD_WIDTH = 800;
+export const DOCS_PANEL_WIDTH = 600;
+export const DOCS_PANEL_GAP = 60;
 
 export interface CanvasLayout {
 	nodes: CanvasNode[];
@@ -42,6 +44,7 @@ export interface CanvasLayout {
 	codeEditor: CodeEditorPosition;
 	pythonEditor: CodeEditorPosition;
 	drawingBoard: CodeEditorPosition;
+	docsPanel: CodeEditorPosition;
 }
 
 interface LayoutOptions {
@@ -59,8 +62,9 @@ export function computeCanvasLayout(
 	const hiddenExchangeIds = options.hiddenExchangeIds ?? new Set<string>();
 	const measuredHeights = options.measuredHeights ?? {};
 
-	const jsEditorX = PADDING_X;
-	const pyEditorX = PADDING_X + CODE_EDITOR_WIDTH + CODE_EDITOR_GAP;
+	const docsRight = PADDING_X + DOCS_PANEL_WIDTH + DOCS_PANEL_GAP;
+	const jsEditorX = docsRight;
+	const pyEditorX = docsRight + CODE_EDITOR_WIDTH + CODE_EDITOR_GAP;
 	const drawBoardX = pyEditorX + CODE_EDITOR_WIDTH + CODE_EDITOR_GAP;
 	const jsHeight = options.codeEditorHeight ?? CODE_EDITOR_HEIGHT;
 	const pyHeight = options.pythonEditorHeight ?? CODE_EDITOR_HEIGHT;
@@ -86,6 +90,11 @@ export function computeCanvasLayout(
 				x: drawBoardX,
 				y: PADDING_Y,
 				width: DRAWING_BOARD_WIDTH
+			},
+			docsPanel: {
+				x: PADDING_X,
+				y: PADDING_Y,
+				width: DOCS_PANEL_WIDTH
 			}
 		};
 	}
@@ -109,7 +118,7 @@ export function computeCanvasLayout(
 
 		nodes.push({
 			id: exchange.id,
-			x: PADDING_X + column * (NODE_WIDTH + COLUMN_GAP),
+			x: docsRight + column * (NODE_WIDTH + COLUMN_GAP),
 			y: nextY,
 			depth,
 			height
@@ -148,7 +157,7 @@ export function computeCanvasLayout(
 
 	const editorsRight = drawBoardX + DRAWING_BOARD_WIDTH + PADDING_X;
 	const nodesRight =
-		PADDING_X + (maxColumn + 1) * (NODE_WIDTH + COLUMN_GAP) - COLUMN_GAP + PADDING_X;
+		docsRight + (maxColumn + 1) * (NODE_WIDTH + COLUMN_GAP) - COLUMN_GAP + PADDING_X;
 	const totalWidth = Math.max(1200, Math.max(editorsRight, nodesRight));
 
 	return {
@@ -170,6 +179,11 @@ export function computeCanvasLayout(
 			x: drawBoardX,
 			y: PADDING_Y,
 			width: DRAWING_BOARD_WIDTH
+		},
+		docsPanel: {
+			x: PADDING_X,
+			y: PADDING_Y,
+			width: DOCS_PANEL_WIDTH
 		}
 	};
 }

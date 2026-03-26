@@ -18,6 +18,8 @@
 		renderPythonEditor?: Snippet<[]>;
 		drawingBoard?: CodeEditorPosition;
 		renderDrawingBoard?: Snippet<[]>;
+		docsPanel?: CodeEditorPosition;
+		renderDocsPanel?: Snippet<[]>;
 	}
 
 	let {
@@ -32,7 +34,9 @@
 		pythonEditor,
 		renderPythonEditor,
 		drawingBoard,
-		renderDrawingBoard
+		renderDrawingBoard,
+		docsPanel,
+		renderDocsPanel
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | null = $state(null);
@@ -209,6 +213,14 @@
 				{@render renderNode(n)}
 			</div>
 		{/each}
+		{#if docsPanel && renderDocsPanel}
+			<div
+				class="canvas-node"
+				style="left:{docsPanel.x}px;top:{docsPanel.y}px;width:{docsPanel.width}px;"
+			>
+				{@render renderDocsPanel()}
+			</div>
+		{/if}
 		{#if codeEditor && renderCodeEditor}
 			<div
 				class="canvas-node"

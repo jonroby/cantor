@@ -23,6 +23,7 @@
 	import PythonEditor from '$lib/components/canvas/PythonEditor.svelte';
 	import Canvas from '$lib/components/canvas/Canvas.svelte';
 	import DrawingBoard from '$lib/components/canvas/DrawingBoard.svelte';
+	import DocsPanel from '$lib/components/canvas/DocsPanel.svelte';
 	import type { Shape } from '$lib/drawing/types';
 	import {
 		DEFAULT_OLLAMA_URL,
@@ -146,6 +147,29 @@
 	let deleteTargetId: string | null = $state(null);
 	let deleteMode: DeleteMode = $state('exchange');
 	let measuredNodeHeights: Record<string, number> = $state({});
+
+	let docsContent = $state(`# Superset Svelte
+
+Welcome to the documentation.
+
+## Getting Started
+
+This is a visual canvas for exploring branching chat conversations.
+
+## Math Support
+
+Inline math: $E = mc^2$
+
+Display math:
+
+$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+
+## Features
+
+- **Sessions** — top-level chat sessions
+- **Forks** — copy conversation into a new root
+- **Side Chats** — sibling branches off existing nodes
+`);
 
 	let drawingShapes: Shape[] = $state([]);
 
@@ -1007,6 +1031,7 @@
 					codeEditor={canvas.codeEditor}
 					pythonEditor={canvas.pythonEditor}
 					drawingBoard={canvas.drawingBoard}
+					docsPanel={canvas.docsPanel}
 					bind:this={canvasRef}
 				>
 					{#snippet renderNode(n: CanvasNode)}
@@ -1023,6 +1048,9 @@
 					{/snippet}
 					{#snippet renderDrawingBoard()}
 						<DrawingBoard shapes={drawingShapes} onShapesChange={(s) => (drawingShapes = s)} />
+					{/snippet}
+					{#snippet renderDocsPanel()}
+						<DocsPanel content={docsContent} />
 					{/snippet}
 				</Canvas>
 			</div>
