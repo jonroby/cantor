@@ -68,10 +68,32 @@ There are three distinct branching concepts. **Do not confuse them.**
 - A side chat can be **promoted** to become the main chat path via the promote button.
 - Prop: `isSideRoot` / `canPromote` / `onPromote` on `ExchangeNodeData`.
 
+## Canvas Panels
+
+The canvas hosts several panel types alongside chat nodes. All panels are positioned by `layout.ts` and rendered via snippets in `Canvas.svelte`.
+
+- **Document panels** (`DocsPanel.svelte`) — Markdown viewer/editor with KaTeX math support. Multiple panels can be open simultaneously, stacked vertically in the left column. Each has its own content and optional link to a folder file.
+- **Code editor** (`CodeEditor.svelte`) — JavaScript editor.
+- **Python editor** (`PythonEditor.svelte`) — Python editor.
+- **Drawing board** (`DrawingBoard.svelte`) — Freeform drawing canvas.
+
+Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling without triggering canvas pan.
+
+## Documents and Folders
+
+- `ChatFolder` and `DocFile` types are defined in `src/lib/chat/tree.ts`.
+- Folders and their files are stored in `folders[]` in `App.svelte` and persisted to `localStorage`.
+- Open doc panels are tracked as `openDocs[]` in `App.svelte` — this is transient UI state (not persisted across reloads).
+- Each open doc has an `id`, `content`, and optional `docKey` linking it to a folder file.
+- When a doc is saved in the panel, changes persist back to `folders` if it has a `docKey`.
+- Users open docs via the dropdown menu on a file in the sidebar (not by clicking the file directly).
+- Uploading a file with a duplicate name auto-increments: `name (1).md`, `name (2).md`, etc.
+- Closing a panel with unsaved edits shows a confirmation dialog.
+
 ## Rendering Flow
 
 - `src/App.svelte` derives the active root, active exchange, hidden side branches, token usage, and search results.
-- `src/lib/chat/layout.ts` converts the exchange tree into positioned canvas nodes and edges.
+- `src/lib/chat/layout.ts` converts the exchange tree into positioned canvas nodes and edges. Also computes positions for all canvas panels (doc panels, code editors, drawing board).
 - `src/lib/components/canvas/Canvas.svelte` renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
 - `src/lib/components/canvas/ExchangeNode.svelte` renders each exchange card with action buttons.
 - Collapsed side branches are hidden from layout until expanded.
@@ -80,9 +102,10 @@ There are three distinct branching concepts. **Do not confuse them.**
 
 ### Sidebar
 
-- `src/lib/components/AppSidebar.svelte` — session list, new chat, delete session.
+- `src/lib/components/AppSidebar.svelte` — session list, folder/doc management, new chat, delete session.
 - Uses shadcn-svelte sidebar primitives from `src/components/ui/sidebar/`.
 - Floats over content (gap always icon-width); does not push the main canvas.
+- Folders contain documents; each doc has a dropdown menu with Open, Rename, Download, Delete.
 
 ### Floating Action Buttons
 
@@ -111,7 +134,8 @@ There are three distinct branching concepts. **Do not confuse them.**
 
 ## Persistence
 
-- Chat trees and active root index are stored in `localStorage` under `chat-tree-store-svelte`.
+- Chat trees, active root index, and folders (with document contents) are stored in `localStorage` under `chat-tree-store-svelte`.
+- Open doc panels (`openDocs`) are transient — not persisted across reloads.
 - Claude API keys are stored in browser `localStorage` via `src/lib/chat/vault.ts`.
 - The vault encrypts the key with `PBKDF2` + `AES-GCM` using a user-supplied password.
 
