@@ -24,6 +24,7 @@
 		canPromoteSideChatToMainChat,
 		deleteExchangeWithModeResult,
 		findSideChatParent,
+		forkExchanges,
 		getChildExchanges,
 		getDescendantExchanges,
 		getHistory,
@@ -31,11 +32,9 @@
 		getPathTokenTotal,
 		promoteSideChatToMainChat,
 		type DeleteMode,
-		type Exchange,
 		type ExchangeMap,
 		updateExchangeResponse,
-		updateExchangeTokens,
-		withExplicitExchangeOrder
+		updateExchangeTokens
 	} from '@/lib/chat/tree';
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar } from '@/features/app-sidebar';
@@ -323,50 +322,16 @@
 	}
 
 	function forkChat(exchangeId: string) {
-		const sourceExchanges = activeExchanges;
-		if (!sourceExchanges) return;
+		if (!activeExchanges) return;
 
-		const path: Exchange[] = [];
-		let current: Exchange | undefined = sourceExchanges[exchangeId];
-		while (current && !current.isAnchor) {
-			path.unshift(current);
-			current = current.parentId ? sourceExchanges[current.parentId] : undefined;
-		}
+		const result = forkExchanges(activeExchanges, exchangeId);
+		if (!result) return;
 
-		const anchorId = `__anchor_${crypto.randomUUID()}__`;
-		const copiedExchanges: ExchangeMap = {
-			[anchorId]: { id: anchorId, parentId: null, prompt: '', response: '', isAnchor: true }
-		};
-		const idMap: Record<string, string> = {};
-
-		for (const exchange of path) {
-			idMap[exchange.id] = crypto.randomUUID();
-		}
-
-		let firstCopiedId = '';
-		for (const exchange of path) {
-			const copiedId = idMap[exchange.id];
-			if (!copiedId) continue;
-			if (!firstCopiedId) firstCopiedId = copiedId;
-			const copiedParentId =
-				exchange.parentId && idMap[exchange.parentId] ? idMap[exchange.parentId] : anchorId;
-
-			copiedExchanges[copiedId] = {
-				id: copiedId,
-				parentId: copiedParentId,
-				prompt: exchange.prompt,
-				response: exchange.response,
-				promptTokens: exchange.promptTokens,
-				responseTokens: exchange.responseTokens,
-				model: exchange.model
-			};
-		}
-
-		const newRoots = [...chats.roots, withExplicitExchangeOrder(copiedExchanges)];
+		const newRoots = [...chats.roots, result.forkedRoot];
 		chats.updateActiveChat({ roots: newRoots, activeRootIndex: newRoots.length - 1 });
-		activeExchangeId = firstCopiedId;
+		activeExchangeId = result.firstCopiedId;
 		expandedSideChatParent = null;
-		scrollToNode(firstCopiedId);
+		scrollToNode(result.firstCopiedId);
 	}
 
 	function scrollToNode(nodeId: string | null) {

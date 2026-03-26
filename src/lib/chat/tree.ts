@@ -689,6 +689,51 @@ export function findSideChatParent(exchanges: ExchangeMap, exchangeId: string): 
 	return outermostSideChatParent;
 }
 
+export function forkExchanges(
+	exchanges: ExchangeMap,
+	exchangeId: string
+): { forkedRoot: ExchangeMap; firstCopiedId: string } | null {
+	const path: Exchange[] = [];
+	let current: Exchange | undefined = exchanges[exchangeId];
+	while (current && !current.isAnchor) {
+		path.unshift(current);
+		current = current.parentId ? exchanges[current.parentId] : undefined;
+	}
+
+	if (path.length === 0) return null;
+
+	const anchorId = `__anchor_${crypto.randomUUID()}__`;
+	const copiedExchanges: ExchangeMap = {
+		[anchorId]: { id: anchorId, parentId: null, prompt: '', response: '', isAnchor: true }
+	};
+	const idMap: Record<string, string> = {};
+
+	for (const exchange of path) {
+		idMap[exchange.id] = crypto.randomUUID();
+	}
+
+	let firstCopiedId = '';
+	for (const exchange of path) {
+		const copiedId = idMap[exchange.id];
+		if (!copiedId) continue;
+		if (!firstCopiedId) firstCopiedId = copiedId;
+		const copiedParentId =
+			exchange.parentId && idMap[exchange.parentId] ? idMap[exchange.parentId] : anchorId;
+
+		copiedExchanges[copiedId] = {
+			id: copiedId,
+			parentId: copiedParentId,
+			prompt: exchange.prompt,
+			response: exchange.response,
+			promptTokens: exchange.promptTokens,
+			responseTokens: exchange.responseTokens,
+			model: exchange.model
+		};
+	}
+
+	return { forkedRoot: withExplicitExchangeOrder(copiedExchanges), firstCopiedId };
+}
+
 export function hasExplicitExchangeOrder(exchanges: ExchangeMap): boolean {
 	const parentIds = new Set(
 		Object.values(exchanges)
