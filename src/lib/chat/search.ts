@@ -1,4 +1,4 @@
-import type { ExchangeMap } from './tree';
+import type { Chat, ExchangeMap } from './tree';
 
 const SNIPPET_CONTEXT = 80;
 const TRIGRAM_THRESHOLD = 0.15;
@@ -11,7 +11,7 @@ export interface Snippet {
 
 export interface SearchResult {
 	exchangeId: string;
-	rootIndex: number;
+	chatIndex: number;
 	prompt: string;
 	snippets: Snippet[];
 }
@@ -43,8 +43,8 @@ function extractSnippet(text: string, query: string): Snippet | null {
 	if (idx === -1) return null;
 	const start = Math.max(0, idx - SNIPPET_CONTEXT);
 	const end = Math.min(text.length, idx + query.length + SNIPPET_CONTEXT);
-	const prefix = start > 0 ? '…' : '';
-	const suffix = end < text.length ? '…' : '';
+	const prefix = start > 0 ? '...' : '';
+	const suffix = end < text.length ? '...' : '';
 	const snippet = prefix + text.slice(start, end) + suffix;
 	return {
 		text: snippet,
@@ -54,15 +54,15 @@ function extractSnippet(text: string, query: string): Snippet | null {
 }
 
 export function searchChats(
-	roots: ExchangeMap[],
+	chats: Chat[],
 	query: string,
 	indices: number[]
 ): SearchResult[] {
 	const queryTrigrams = trigrams(query);
 	const scored: { result: SearchResult; score: number }[] = [];
 
-	indices.forEach((rootIndex) => {
-		const exchangeMap = roots[rootIndex];
+	indices.forEach((chatIndex) => {
+		const exchangeMap = chats[chatIndex]?.exchanges;
 		if (!exchangeMap) return;
 
 		for (const exchange of Object.values(exchangeMap)) {
@@ -84,7 +84,7 @@ export function searchChats(
 			}
 
 			scored.push({
-				result: { exchangeId: exchange.id, rootIndex, prompt: exchange.prompt, snippets },
+				result: { exchangeId: exchange.id, chatIndex, prompt: exchange.prompt, snippets },
 				score
 			});
 		}
@@ -94,20 +94,20 @@ export function searchChats(
 }
 
 export function getDefaultItems(
-	roots: ExchangeMap[],
-	activeRootIndex: number,
+	chats: Chat[],
+	activeChatIndex: number,
 	allChats: boolean
 ): SearchResult[] {
-	const indices = allChats ? roots.map((_, i) => i) : [activeRootIndex];
-	return indices.flatMap((rootIndex) => {
-		const exchangeMap = roots[rootIndex];
+	const indices = allChats ? chats.map((_, i) => i) : [activeChatIndex];
+	return indices.flatMap((chatIndex) => {
+		const exchangeMap = chats[chatIndex]?.exchanges;
 		if (!exchangeMap) return [];
 
 		return Object.values(exchangeMap)
 			.filter((exchange) => !exchange.isAnchor && exchange.prompt)
 			.map((exchange) => ({
 				exchangeId: exchange.id,
-				rootIndex,
+				chatIndex,
 				prompt: exchange.prompt,
 				snippets: []
 			}));
@@ -116,8 +116,8 @@ export function getDefaultItems(
 
 export function groupResults(
 	items: SearchResult[],
-	roots: ExchangeMap[],
-	activeRootIndex: number,
+	chats: Chat[],
+	activeChatIndex: number,
 	grouped: boolean,
 	allChats: boolean
 ): ResultGroup[] {
@@ -125,26 +125,26 @@ export function groupResults(
 		return [{ label: 'Exchanges', items }];
 	}
 
-	const itemsByRootIndex = items.reduce<Map<number, SearchResult[]>>((acc, item) => {
-		const groupItems = acc.get(item.rootIndex);
+	const itemsByChatIndex = items.reduce<Map<number, SearchResult[]>>((acc, item) => {
+		const groupItems = acc.get(item.chatIndex);
 		if (groupItems) {
 			groupItems.push(item);
 		} else {
-			acc.set(item.rootIndex, [item]);
+			acc.set(item.chatIndex, [item]);
 		}
 		return acc;
 	}, new Map());
 
 	const orderedIndices = [
-		activeRootIndex,
-		...roots.map((_, i) => i).filter((i) => i !== activeRootIndex)
+		activeChatIndex,
+		...chats.map((_, i) => i).filter((i) => i !== activeChatIndex)
 	];
-	return orderedIndices.reduce<ResultGroup[]>((acc, rootIndex) => {
-		const groupItems = itemsByRootIndex.get(rootIndex) ?? [];
+	return orderedIndices.reduce<ResultGroup[]>((acc, chatIndex) => {
+		const groupItems = itemsByChatIndex.get(chatIndex) ?? [];
 		if (groupItems.length === 0) return acc;
 
-		const base = rootIndex === 0 ? 'Main Chat' : `Fork ${rootIndex}`;
-		const label = rootIndex === activeRootIndex ? `${base} (current)` : base;
+		const chatName = chats[chatIndex]?.name ?? `Chat ${chatIndex + 1}`;
+		const label = chatIndex === activeChatIndex ? `${chatName} (current)` : chatName;
 		acc.push({ label, items: groupItems });
 		return acc;
 	}, []);

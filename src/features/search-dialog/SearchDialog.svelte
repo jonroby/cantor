@@ -48,7 +48,7 @@
 				{searchQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}
 			</div>
 		{/if}
-		{#each searchItems.slice(0, 40) as result (result.rootIndex + ':' + result.exchangeId)}
+		{#each searchItems.slice(0, 40) as result (result.chatIndex + ':' + result.exchangeId)}
 			<button
 				class="search-result"
 				type="button"

@@ -24,7 +24,6 @@
 		canPromoteSideChatToMainChat,
 		deleteExchangeWithModeResult,
 		findSideChatParent,
-		forkExchanges,
 		getChildExchanges,
 		getDescendantExchanges,
 		getHistory,
@@ -36,6 +35,7 @@
 		updateExchangeResponse,
 		updateExchangeTokens
 	} from '@/lib/chat/tree';
+	import type { Chat } from '@/lib/chat/tree';
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar } from '@/features/app-sidebar';
 	import { ModelPalette } from '@/features/model-palette';
@@ -43,16 +43,28 @@
 	import { SearchDialog } from '@/features/search-dialog';
 	import { ChatHeader } from '@/features/chat-header';
 	import { Composer } from '@/features/composer';
-	import type { Chat, ChatFolder } from '@/lib/chat/tree';
-	import { createDocumentState, createProviderState, createChatState } from '@/lib/state';
-
-	const docs = createDocumentState();
-	const providers = createProviderState();
-	const chats = createChatState();
+	import {
+		chatState, getActiveChat, getActiveExchanges, getActiveExchangeId,
+		updateActiveChat, replaceActiveExchanges, setActiveExchangeId,
+		newChat as newChatAction, selectChat as selectChatAction,
+		deleteChat as deleteChatAction, renameChat, downloadChat, uploadChat,
+		forkChat as forkChatAction, hydrate
+	} from '@/lib/state/chats.svelte';
+	import {
+		docState, newFolder, deleteFolder, downloadFolder, renameFolder,
+		uploadDocToFolder, uploadFolder, uploadFolderToFolder,
+		selectDoc, deleteDocFromFolder, renameDocInFolder, moveDocToFolder
+	} from '@/lib/state/documents.svelte';
+	import {
+		providerState, WEBLLM_CONTEXT_OPTIONS,
+		init as initProviders, autoConnectOllama, connectOllama,
+		loadWebLLMModel_ as loadWebLLMModel, deleteWebLLMCache, deleteAllWebLLMCaches,
+		unlockKeys, saveKey, forgetKey, selectModel,
+		updateContextLength, fetchOllamaContextLength, getProviderStream
+	} from '@/lib/state/providers.svelte';
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
 
-	let activeExchangeId: string | null = $state(null);
 	let streamingExchangeIds: string[] = $state([]);
 	let operationError: string | null = $state(null);
 
@@ -69,14 +81,12 @@
 
 	function handleCanvasWheel(e: WheelEvent) {
 		if (e.deltaY < 0) {
-			// Scrolling up — show header
 			headerVisible = true;
 			if (headerTimer) clearTimeout(headerTimer);
 			headerTimer = setTimeout(() => {
 				headerVisible = false;
 			}, 2000);
 		} else if (e.deltaY > 0) {
-			// Scrolling down — hide header
 			if (headerTimer) clearTimeout(headerTimer);
 			headerVisible = false;
 		}
@@ -88,7 +98,8 @@
 	let drawingShapes: Shape[] = $state([]);
 	let canvasRef: Canvas | null = $state(null);
 
-	let activeExchanges = $derived(chats.roots[chats.activeRootIndex] ?? chats.roots[0]);
+	let activeExchanges = $derived(getActiveExchanges());
+	let activeExchangeId = $derived(getActiveExchangeId());
 	let exchangesByParentId = $derived(
 		activeExchanges ? buildExchangesByParentId(activeExchanges) : {}
 	);
@@ -99,9 +110,9 @@
 			? computeCanvasLayout(activeExchanges, {
 					hiddenExchangeIds,
 					measuredHeights: measuredNodeHeights,
-					docsPanelCount: docs.openDocs.length
+					docsPanelCount: docState.openDocs.length
 				})
-			: computeCanvasLayout({}, { docsPanelCount: docs.openDocs.length })
+			: computeCanvasLayout({}, { docsPanelCount: docState.openDocs.length })
 	);
 	let nodeLookup = $derived(new Map(canvas.nodes.map((node) => [node.id, node])));
 	let usedTokens = $derived(
@@ -110,16 +121,16 @@
 	let searchItems = $derived(
 		searchQuery.trim()
 			? searchChats(
-					chats.roots,
+					chatState.chats,
 					searchQuery.trim(),
-					searchAllChats ? chats.roots.map((_: ExchangeMap, index: number) => index) : [chats.activeRootIndex]
+					searchAllChats ? chatState.chats.map((_: Chat, index: number) => index) : [chatState.activeChatIndex]
 				)
-			: getDefaultItems(chats.roots, chats.activeRootIndex, searchAllChats)
+			: getDefaultItems(chatState.chats, chatState.activeChatIndex, searchAllChats)
 	);
 	let submitDisabledReason = $derived(
 		streamingExchangeIds.length > 0
 			? 'Wait for the current response to finish.'
-			: !providers.activeModel
+			: !providerState.activeModel
 				? 'Select a model first.'
 				: activeExchangeId &&
 					  activeExchanges &&
@@ -130,13 +141,11 @@
 
 	$effect(() => {
 		if (hasHydrated) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions: chats.chats, activeSessionIndex: chats.activeChatIndex, folders: docs.folders }));
-		}
-	});
-
-	$effect(() => {
-		if (activeExchanges && (!activeExchangeId || !activeExchanges[activeExchangeId])) {
-			activeExchangeId = getMainChatTail(activeExchanges);
+			localStorage.setItem(STORAGE_KEY, JSON.stringify({
+				chats: chatState.chats,
+				activeChatIndex: chatState.activeChatIndex,
+				folders: docState.folders
+			}));
 		}
 	});
 
@@ -159,15 +168,15 @@
 	});
 
 	$effect(() => {
-		providers.updateContextLength();
+		updateContextLength();
 	});
 
 	$effect(() => {
-		providers.fetchOllamaContextLength();
+		fetchOllamaContextLength();
 	});
 
 	onMount(() => {
-		providers.init();
+		initProviders();
 
 		function handleKeyDown(event: KeyboardEvent) {
 			const target = event.target;
@@ -203,7 +212,6 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		// Auto-hide header after initial display
 		headerTimer = setTimeout(() => {
 			headerVisible = false;
 		}, 2000);
@@ -211,27 +219,19 @@
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (raw) {
 			try {
-				const parsed = JSON.parse(raw) as {
-					sessions?: Chat[];
-					activeSessionIndex?: number;
-					folders?: ChatFolder[];
-					roots?: ExchangeMap[];
-					activeRootIndex?: number;
-				};
-
-				chats.hydrate(parsed);
+				const parsed = JSON.parse(raw);
+				hydrate(parsed);
 				if (parsed.folders?.length) {
-					docs.folders = parsed.folders;
+					docState.folders = parsed.folders;
 				}
 			} catch {
 				// ignore invalid persisted state
 			}
 		}
 
-		activeExchangeId = chats.getActiveExchangeIdAfterHydrate();
 		hasHydrated = true;
 
-		providers.autoConnectOllama();
+		autoConnectOllama();
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
@@ -275,39 +275,25 @@
 		measuredNodeHeights = {};
 	}
 
-	function selectRoot(index: number) {
-		activeExchangeId = chats.selectRoot(index);
-		resetUIState();
-		scrollToNode(activeExchangeId);
-	}
-
-	function replaceActiveRoot(nextRoot: ExchangeMap) {
+	function doReplaceActiveExchanges(nextExchanges: ExchangeMap) {
 		measuredNodeHeights = {};
-		chats.replaceActiveRoot(nextRoot);
+		replaceActiveExchanges(nextExchanges);
 	}
 
 	function newChat(): number {
-		const result = chats.newChat();
-		activeExchangeId = result.activeExchangeId;
+		const index = newChatAction();
 		resetUIState();
-		return result.index;
+		return index;
 	}
 
 	function selectChat(index: number) {
-		activeExchangeId = chats.selectChat(index);
+		selectChatAction(index);
 		resetUIState();
 	}
 
-	function deleteChat(index: number) {
-		const newActiveId = chats.deleteChat(index);
-		if (newActiveId !== null) {
-			activeExchangeId = newActiveId;
-			resetUIState();
-		}
-	}
-
-	function deleteFolder(folderId: string) {
-		chats.chats = docs.deleteFolder(folderId, chats.chats) as Chat[];
+	function doDeleteChat(index: number) {
+		deleteChatAction(index);
+		resetUIState();
 	}
 
 	function setMeasuredNodeHeight(exchangeId: string, height: number) {
@@ -323,15 +309,9 @@
 
 	function forkChat(exchangeId: string) {
 		if (!activeExchanges) return;
-
-		const result = forkExchanges(activeExchanges, exchangeId);
-		if (!result) return;
-
-		const newRoots = [...chats.roots, result.forkedRoot];
-		chats.updateActiveChat({ roots: newRoots, activeRootIndex: newRoots.length - 1 });
-		activeExchangeId = result.firstCopiedId;
+		forkChatAction(exchangeId);
 		expandedSideChatParent = null;
-		scrollToNode(result.firstCopiedId);
+		scrollToNode(getActiveExchangeId());
 	}
 
 	function scrollToNode(nodeId: string | null) {
@@ -347,7 +327,11 @@
 	}
 
 	function saveToDisk() {
-		const payload = JSON.stringify({ sessions: chats.chats, activeSessionIndex: chats.activeChatIndex, folders: docs.folders }, null, 2);
+		const payload = JSON.stringify({
+			chats: chatState.chats,
+			activeChatIndex: chatState.activeChatIndex,
+			folders: docState.folders
+		}, null, 2);
 		const blob = new Blob([payload], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -359,7 +343,7 @@
 
 	async function submitPrompt() {
 		const prompt = composerValue.trim();
-		if (!prompt || !activeExchanges || submitDisabledReason || !providers.activeModel) return;
+		if (!prompt || !activeExchanges || submitDisabledReason || !providerState.activeModel) return;
 
 		operationError = null;
 
@@ -371,39 +355,36 @@
 			expandedSideChatParent = activeExchangeId;
 		}
 
-		let created: { id: string; exchanges: import('@/lib/chat/tree').ExchangeMap };
+		let created: { id: string; exchanges: ExchangeMap };
 		try {
-			created = addExchangeResult(activeExchanges, parentId, prompt, '', providers.activeModel.modelId);
+			created = addExchangeResult(activeExchanges, parentId, prompt, '', providerState.activeModel.modelId);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
 			return;
 		}
 
-		replaceActiveRoot(created.exchanges);
-		activeExchangeId = created.id;
+		doReplaceActiveExchanges(created.exchanges);
+		setActiveExchangeId(created.id);
 		streamingExchangeIds = [...streamingExchangeIds, created.id];
 		composerValue = '';
 		await tick();
 		scrollToNode(created.id);
 
-		// CLEANUP: Store the AbortController in component state and expose a "Stop" button in the
-		// CLEANUP: Store the AbortController in component state and expose a "Stop" button in the
-		// composer while streaming. Also abort on chat/root switch.
 		const abortController = new AbortController();
 
 		try {
 			const history = getHistory(created.exchanges, created.id);
-			const stream = providers.getProviderStream(providers.activeModel, history, abortController.signal);
+			const stream = getProviderStream(providerState.activeModel, history, abortController.signal);
 
 			let response = '';
 			for await (const chunk of stream) {
 				if (chunk.type === 'delta') {
 					response += chunk.delta;
-					replaceActiveRoot(updateExchangeResponse(chats.roots[chats.activeRootIndex], created.id, response));
+					doReplaceActiveExchanges(updateExchangeResponse(getActiveExchanges(), created.id, response));
 				} else {
-					replaceActiveRoot(
+					doReplaceActiveExchanges(
 						updateExchangeTokens(
-							chats.roots[chats.activeRootIndex],
+							getActiveExchanges(),
 							created.id,
 							chunk.promptTokens,
 							chunk.responseTokens
@@ -412,9 +393,9 @@
 				}
 			}
 		} catch (error) {
-			replaceActiveRoot(
+			doReplaceActiveExchanges(
 				updateExchangeResponse(
-					chats.roots[chats.activeRootIndex],
+					getActiveExchanges(),
 					created.id,
 					`Request failed.\n\n${error instanceof Error ? error.message : 'Unknown error.'}`
 				)
@@ -437,9 +418,9 @@
 
 		try {
 			const result = deleteExchangeWithModeResult(activeExchanges, deleteTargetId, deleteMode);
-			replaceActiveRoot(result.exchanges);
+			doReplaceActiveExchanges(result.exchanges);
 			if (deleteTargetId === activeExchangeId || !result.exchanges[activeExchangeId ?? '']) {
-				activeExchangeId = getMainChatTail(result.exchanges);
+				setActiveExchangeId(getMainChatTail(result.exchanges));
 			}
 			deleteTargetId = null;
 			operationError = null;
@@ -451,7 +432,7 @@
 	function promoteActiveExchange() {
 		if (!activeExchanges || !activeExchangeId) return;
 		try {
-			replaceActiveRoot(promoteSideChatToMainChat(activeExchanges, activeExchangeId));
+			doReplaceActiveExchanges(promoteSideChatToMainChat(activeExchanges, activeExchangeId));
 			operationError = null;
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Unable to promote exchange.';
@@ -459,10 +440,10 @@
 	}
 
 	function handleSearchSelect(result: SearchResult) {
-		const targetRoot = chats.roots[result.rootIndex];
-		chats.updateActiveChat({ activeRootIndex: result.rootIndex });
-		activeExchangeId = result.exchangeId;
-		expandedSideChatParent = targetRoot ? findSideChatParent(targetRoot, result.exchangeId) : null;
+		selectChatAction(result.chatIndex);
+		setActiveExchangeId(result.exchangeId);
+		const targetExchanges = chatState.chats[result.chatIndex]?.exchanges;
+		expandedSideChatParent = targetExchanges ? findSideChatParent(targetExchanges, result.exchangeId) : null;
 		scrollToNode(result.exchangeId);
 	}
 
@@ -499,12 +480,12 @@
 					canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
 				onMeasure: (height: number) => setMeasuredNodeHeight(exchangeId, height),
 				onSelect: () => {
-					activeExchangeId = exchangeId;
+					setActiveExchangeId(exchangeId);
 				},
 				onFork: () => forkChat(exchangeId),
 				onToggleSideChildren: () => toggleSideChildren(exchangeId),
 				onPromote: () => {
-					activeExchangeId = exchangeId;
+					setActiveExchangeId(exchangeId);
 					promoteActiveExchange();
 				},
 				onDelete: () => openDeleteDialog(exchangeId)
@@ -522,34 +503,32 @@
 
 <SidebarPrimitive.Provider>
 	<AppSidebar
-		chats={chats.chats}
-		activeChatIndex={chats.activeChatIndex}
+		chats={chatState.chats}
+		activeChatIndex={chatState.activeChatIndex}
 		onSelectChat={selectChat}
 		onNewChat={newChat}
-		onDeleteChat={deleteChat}
-		onRenameChat={chats.renameChat}
-		onDownloadChat={chats.downloadChat}
-		onUploadChat={chats.uploadChat}
-		folders={docs.folders}
-		onNewFolder={docs.newFolder}
+		onDeleteChat={doDeleteChat}
+		onRenameChat={renameChat}
+		onDownloadChat={downloadChat}
+		onUploadChat={uploadChat}
+		folders={docState.folders}
+		onNewFolder={newFolder}
 		onDeleteFolder={deleteFolder}
-		onDownloadFolder={docs.downloadFolder}
-		onRenameFolder={docs.renameFolder}
-		onUploadDoc={docs.uploadDocToFolder}
-		onUploadFolder={docs.uploadFolderToFolder}
-		onUploadNewFolder={docs.uploadFolder}
-		onSelectDoc={docs.selectDoc}
-		onDeleteDoc={docs.deleteDocFromFolder}
-		onRenameDoc={docs.renameDocInFolder}
-		onMoveDoc={docs.moveDocToFolder}
+		onDownloadFolder={downloadFolder}
+		onRenameFolder={renameFolder}
+		onUploadDoc={uploadDocToFolder}
+		onUploadFolder={uploadFolderToFolder}
+		onUploadNewFolder={uploadFolder}
+		onSelectDoc={selectDoc}
+		onDeleteDoc={deleteDocFromFolder}
+		onRenameDoc={renameDocInFolder}
+		onMoveDoc={moveDocToFolder}
 	/>
 	<SidebarPrimitive.Inset>
 		<div class="page-shell" onwheel={handleCanvasWheel}>
 			<ChatHeader
 				visible={headerVisible}
-				rootCount={chats.roots.length}
-				activeRootIndex={chats.activeRootIndex}
-				onSelectRoot={selectRoot}
+				chatName={getActiveChat().name}
 			/>
 
 			{#if operationError}
@@ -601,10 +580,10 @@
 						<DrawingBoard shapes={drawingShapes} onShapesChange={(s) => (drawingShapes = s)} />
 					{/snippet}
 					{#snippet renderDocsPanel(index: number)}
-						{@const doc = docs.openDocs[index]}
+						{@const doc = docState.openDocs[index]}
 						{#if doc}
 							{@const docFile = doc.docKey
-								? docs.folders
+								? docState.folders
 										.find((f) => f.id === doc.docKey!.folderId)
 										?.files?.find((f) => f.id === doc.docKey!.fileId)
 								: null}
@@ -612,10 +591,10 @@
 								title={docFile?.name}
 								content={doc.content}
 								onContentChange={(c) => {
-									docs.openDocs = docs.openDocs.map((d, i) => (i === index ? { ...d, content: c } : d));
+									docState.openDocs = docState.openDocs.map((d, i) => (i === index ? { ...d, content: c } : d));
 									if (doc.docKey) {
 										const { folderId, fileId } = doc.docKey;
-										docs.folders = docs.folders.map((f) =>
+										docState.folders = docState.folders.map((f) =>
 											f.id === folderId
 												? {
 														...f,
@@ -628,7 +607,7 @@
 									}
 								}}
 								onClose={() => {
-									docs.openDocs = docs.openDocs.filter((_, i) => i !== index);
+									docState.openDocs = docState.openDocs.filter((_, i) => i !== index);
 								}}
 							/>
 						{/if}
@@ -640,9 +619,9 @@
 				bind:composerValue
 				bind:canvasMode
 				{submitDisabledReason}
-				activeModelId={providers.activeModel?.modelId ?? null}
+				activeModelId={providerState.activeModel?.modelId ?? null}
 				{usedTokens}
-				contextLength={providers.contextLength}
+				contextLength={providerState.contextLength}
 				onSubmit={submitPrompt}
 				onToggleCanvasMode={() => (canvasMode = !canvasMode)}
 				onOpenPalette={() => (paletteOpen = true)}
@@ -653,30 +632,30 @@
 				onClose={() => {
 					paletteOpen = false;
 				}}
-				activeModel={providers.activeModel}
-				onSelectModel={providers.selectModel}
-				ollamaUrl={providers.ollamaUrl}
-				ollamaStatus={providers.ollamaStatus}
-				ollamaModels={providers.ollamaModels}
-				onConnectOllama={providers.connectOllama}
-				apiKeys={providers.apiKeys}
-				vaultProviders={providers.vaultProviders}
-				onUnlockKeys={providers.unlockKeys}
-				onSaveKey={providers.saveKey}
-				onForgetKey={providers.forgetKey}
-				webllmStatus={providers.webllmStatus}
-				webllmProgress={providers.webllmProgress}
-				webllmProgressText={providers.webllmProgressText}
-				webllmModels={providers.webllmModels}
-				webllmError={providers.webllmError}
-				webllmContextSize={providers.webllmContextSize}
-				webllmContextOptions={providers.WEBLLM_CONTEXT_OPTIONS}
+				activeModel={providerState.activeModel}
+				onSelectModel={selectModel}
+				ollamaUrl={providerState.ollamaUrl}
+				ollamaStatus={providerState.ollamaStatus}
+				ollamaModels={providerState.ollamaModels}
+				onConnectOllama={connectOllama}
+				apiKeys={providerState.apiKeys}
+				vaultProviders={providerState.vaultProviders}
+				onUnlockKeys={unlockKeys}
+				onSaveKey={saveKey}
+				onForgetKey={forgetKey}
+				webllmStatus={providerState.webllmStatus}
+				webllmProgress={providerState.webllmProgress}
+				webllmProgressText={providerState.webllmProgressText}
+				webllmModels={providerState.webllmModels}
+				webllmError={providerState.webllmError}
+				webllmContextSize={providerState.webllmContextSize}
+				webllmContextOptions={WEBLLM_CONTEXT_OPTIONS}
 				onWebLLMContextSizeChange={(size) => {
-					providers.webllmContextSize = size;
+					providerState.webllmContextSize = size;
 				}}
-				onLoadWebLLMModel={providers.loadWebLLMModel}
-				onDeleteWebLLMCache={providers.deleteWebLLMCache}
-				onDeleteAllWebLLMCaches={providers.deleteAllWebLLMCaches}
+				onLoadWebLLMModel={loadWebLLMModel}
+				onDeleteWebLLMCache={deleteWebLLMCache}
+				onDeleteAllWebLLMCaches={deleteAllWebLLMCaches}
 			/>
 
 			{#if searchOpen}

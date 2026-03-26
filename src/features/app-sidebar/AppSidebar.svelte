@@ -139,8 +139,8 @@
 		newlyCreatedFolderId = id;
 	}
 
-	let unfolderedChats = $derived(
-		chats.map((c, i) => ({ chat: c, index: i })).filter(({ chat }) => !chat.folderId)
+	let indexedChats = $derived(
+		chats.map((c, i) => ({ chat: c, index: i }))
 	);
 </script>
 
@@ -288,7 +288,7 @@
 				</Sidebar.GroupLabel>
 				<Sidebar.GroupContent>
 					<Sidebar.Menu>
-						{#each unfolderedChats as { chat, index } (chat.id)}
+						{#each indexedChats as { chat, index } (chat.id)}
 							<ChatItem
 								{chat}
 								isActive={index === activeChatIndex}
@@ -389,10 +389,6 @@
 									expanded={!!expandedFolders[folder.id]}
 									isDragOver={dragOverFolderId === folder.id}
 									startEditing={newlyCreatedFolderId === folder.id}
-									{chats}
-									{activeChatIndex}
-									{editingChatIndex}
-									bind:editingChatName
 									{editingDocFileId}
 									bind:editingDocFileName
 									draggingDocFileId={draggingDoc?.fileId ?? null}
@@ -402,12 +398,6 @@
 									onRenameFolder={(name) => onRenameFolder(folder.id, name)}
 									onDownloadFolder={() => onDownloadFolder(folder.id)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
-									onSelectChat={(index) => onSelectChat(index)}
-									onStartRenameChat={startRenameChat}
-									onCommitRenameChat={commitRenameChat}
-									onCancelRenameChat={cancelRenameChat}
-									onDownloadChat={(index) => onDownloadChat(index)}
-									onDeleteChat={(index, name) => (deleteChatTarget = { index, name })}
 									onSelectDoc={(fileId) => onSelectDoc(folder.id, fileId)}
 									onStartRenameDoc={(fileId, fileName) =>
 										startRenameDoc(folder.id, fileId, fileName)}
@@ -486,7 +476,7 @@
 <ConfirmDeleteDialog
 	open={!!deleteFolderTarget}
 	title="Delete folder"
-	description={`Are you sure you want to delete "${deleteFolderTarget?.name}"? This will remove the folder and all its documents. Chats will be moved out of the folder.`}
+	description={`Are you sure you want to delete "${deleteFolderTarget?.name}"? This will remove the folder and all its documents.`}
 	onConfirm={() => {
 		if (deleteFolderTarget) {
 			onDeleteFolder(deleteFolderTarget.id);

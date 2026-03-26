@@ -24,9 +24,8 @@ export type DeleteMode = 'exchange' | 'exchangeAndMainChat' | 'exchangeAndSideCh
 export interface Chat {
 	id: string;
 	name: string;
-	roots: ExchangeMap[];
-	activeRootIndex: number;
-	folderId?: string | null;
+	exchanges: ExchangeMap;
+	activeExchangeId: string | null;
 }
 
 export interface DocFile {
@@ -188,48 +187,47 @@ export function validateChatUpload(data: unknown): Chat {
 	if (typeof obj.name !== 'string' || !obj.name) {
 		throw new Error('Chat is missing a valid "name".');
 	}
-	if (!Array.isArray(obj.roots) || obj.roots.length === 0) {
-		throw new Error('Chat must have at least one root.');
-	}
-	if (
-		typeof obj.activeRootIndex !== 'number' ||
-		obj.activeRootIndex < 0 ||
-		obj.activeRootIndex >= obj.roots.length
-	) {
-		throw new Error('Chat has an invalid "activeRootIndex".');
+
+	// Support new format (exchanges) and legacy format (roots[])
+	let exchanges: ExchangeMap;
+	if (obj.exchanges && typeof obj.exchanges === 'object' && !Array.isArray(obj.exchanges)) {
+		exchanges = obj.exchanges as ExchangeMap;
+	} else if (Array.isArray(obj.roots) && obj.roots.length > 0) {
+		const rootIndex = typeof obj.activeRootIndex === 'number' ? obj.activeRootIndex : 0;
+		exchanges = obj.roots[rootIndex] as ExchangeMap;
+	} else {
+		throw new Error('Chat must have an "exchanges" map.');
 	}
 
-	for (let i = 0; i < obj.roots.length; i++) {
-		const root = obj.roots[i];
-		if (typeof root !== 'object' || root === null || Array.isArray(root)) {
-			throw new Error(`Root at index ${i} is not a valid exchange map.`);
+	if (Object.keys(exchanges).length === 0) {
+		throw new Error('Exchanges map is empty.');
+	}
+	for (const [id, exchange] of Object.entries(exchanges)) {
+		if (typeof exchange !== 'object' || exchange === null) {
+			throw new Error(`Exchange "${id}" is not a valid object.`);
 		}
-		const exchangeMap = root as ExchangeMap;
-		if (Object.keys(exchangeMap).length === 0) {
-			throw new Error(`Root at index ${i} is empty.`);
+		if (typeof exchange.id !== 'string') {
+			throw new Error(`Exchange is missing an "id".`);
 		}
-		for (const [id, exchange] of Object.entries(exchangeMap)) {
-			if (typeof exchange !== 'object' || exchange === null) {
-				throw new Error(`Exchange "${id}" in root ${i} is not a valid object.`);
-			}
-			if (typeof exchange.id !== 'string') {
-				throw new Error(`Exchange in root ${i} is missing an "id".`);
-			}
-			if (typeof exchange.prompt !== 'string') {
-				throw new Error(`Exchange "${id}" in root ${i} is missing a "prompt".`);
-			}
-			if (typeof exchange.response !== 'string') {
-				throw new Error(`Exchange "${id}" in root ${i} is missing a "response".`);
-			}
+		if (typeof exchange.prompt !== 'string') {
+			throw new Error(`Exchange "${id}" is missing a "prompt".`);
 		}
-		try {
-			validateChatTree(exchangeMap);
-		} catch (e) {
-			throw new Error(`Root at index ${i}: ${e instanceof Error ? e.message : String(e)}`);
+		if (typeof exchange.response !== 'string') {
+			throw new Error(`Exchange "${id}" is missing a "response".`);
 		}
 	}
+	try {
+		validateChatTree(exchanges);
+	} catch (e) {
+		throw new Error(e instanceof Error ? e.message : String(e));
+	}
 
-	return data as Chat;
+	return {
+		id: obj.id as string,
+		name: obj.name as string,
+		exchanges,
+		activeExchangeId: typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : getMainChatTail(exchanges)
+	};
 }
 
 export function addExchange(
