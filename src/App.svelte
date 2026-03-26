@@ -19,7 +19,6 @@
 		type Provider
 	} from '$lib/chat/models';
 	import Button from '$lib/components/ui/button.svelte';
-	import Input from '$lib/components/ui/input.svelte';
 	import ExchangeNode from '$lib/components/canvas/ExchangeNode.svelte';
 	import CodeEditor from '$lib/components/canvas/CodeEditor.svelte';
 	import PythonEditor from '$lib/components/canvas/PythonEditor.svelte';
@@ -78,13 +77,14 @@
 		storedProviders as getStoredProviders
 	} from '$lib/chat/vault';
 	import * as SidebarPrimitive from '@/components/ui/sidebar/index.js';
-	import * as Tooltip from '@/components/ui/tooltip/index.js';
-	import AppSidebar from '$lib/components/AppSidebar.svelte';
-	import ModelPalette from '$lib/components/ModelPalette.svelte';
+	import { AppSidebar } from '$lib/components/app-sidebar';
+	import { ModelPalette } from '$lib/components/model-palette';
+	import { FloatingActions } from '$lib/components/floating-actions';
+	import { SearchDialog } from '$lib/components/search-dialog';
+	import { ChatHeader } from '$lib/components/chat-header';
+	import { Composer } from '$lib/components/composer';
 	import type { ChatSession, ChatFolder } from '$lib/chat/tree';
 	import { validateChatSessionUpload } from '$lib/chat/tree';
-	import logoLight from './assets/logo_light.svg';
-	import logoDark from './assets/logo_dark.svg';
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
 
@@ -1032,219 +1032,32 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	/>
 	<SidebarPrimitive.Inset>
 		<div class="page-shell" onwheel={handleCanvasWheel}>
-			<div class="chat-header" class:chat-header-hidden={!headerVisible}>
-				{#if roots.length > 1}
-					<Button
-						class="chat-nav"
-						variant="outline"
-						size="icon"
-						disabled={activeRootIndex === 0}
-						onclick={() => selectRoot(activeRootIndex - 1)}
-					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.8"
-							stroke-linecap="round"><path d="M9 2L4 7l5 5" /></svg
-						>
-					</Button>
-				{/if}
-				<div class="chat-header-label">
-					{activeRootIndex === 0 ? 'Main Chat' : `Fork ${activeRootIndex}`}
-				</div>
-				{#if roots.length > 1}
-					<Button
-						class="chat-nav"
-						variant="outline"
-						size="icon"
-						disabled={activeRootIndex === roots.length - 1}
-						onclick={() => selectRoot(activeRootIndex + 1)}
-					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.8"
-							stroke-linecap="round"><path d="M5 2l5 5-5 5" /></svg
-						>
-					</Button>
-				{/if}
-			</div>
+			<ChatHeader
+				visible={headerVisible}
+				rootCount={roots.length}
+				{activeRootIndex}
+				onSelectRoot={selectRoot}
+			/>
 
 			{#if operationError}
 				<div class="error-banner">{operationError}</div>
 			{/if}
 
-			<div class="floating-actions">
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								class="floating-button"
-								variant="outline"
-								size="icon"
-								onclick={() => (searchOpen = true)}
-								ariaLabel="Search"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									><circle cx="6.5" cy="6.5" r="4" /><path
-										d="M11 11l2.5 2.5"
-										stroke-linecap="round"
-									/></svg
-								>
-							</Button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none"
-						>Search</Tooltip.Content
-					>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								class="floating-button"
-								variant="outline"
-								size="icon"
-								onclick={() => canvasRef?.fitView({ duration: 250, maxZoom: 1 })}
-								ariaLabel="Fit view"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									><rect x="3" y="3" width="10" height="10" rx="1.5" /><path
-										d="M6 6h4M6 8h4M6 10h2"
-										stroke-linecap="round"
-									/></svg
-								>
-							</Button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none"
-						>Fit view</Tooltip.Content
-					>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								class="floating-button"
-								variant="outline"
-								size="icon"
-								onclick={() => {
-									const first = canvas.nodes[0];
-									if (first && canvasRef)
-										canvasRef.scrollNodeToTop(first.y, first.x + NODE_WIDTH / 2, {
-											zoom: 1,
-											duration: 250,
-											topOffset: 60
-										});
-								}}
-								ariaLabel="Go to top"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									><path
-										d="M8 12V4M8 4 5.5 6.5M8 4l2.5 2.5"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									/></svg
-								>
-							</Button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none"
-						>Go to top</Tooltip.Content
-					>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								class="floating-button"
-								variant="outline"
-								size="icon"
-								onclick={() => scrollToNode(activeExchangeId)}
-								ariaLabel="Go to active"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									><circle cx="8" cy="8" r="5" /><circle
-										cx="8"
-										cy="8"
-										r="1.5"
-										fill="currentColor"
-										stroke="none"
-									/></svg
-								>
-							</Button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none"
-						>Go to active</Tooltip.Content
-					>
-				</Tooltip.Root>
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								class="floating-button"
-								variant="outline"
-								size="icon"
-								onclick={saveToDisk}
-								ariaLabel="Download chat"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									><path
-										d="M3 13h10M8 3v7M5 7l3 3 3-3"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									/></svg
-								>
-							</Button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="left" class="bg-neutral-900 text-white text-xs border-none"
-						>Download chat</Tooltip.Content
-					>
-				</Tooltip.Root>
-			</div>
+			<FloatingActions
+				onSearch={() => (searchOpen = true)}
+				onFitView={() => canvasRef?.fitView({ duration: 250, maxZoom: 1 })}
+				onGoToTop={() => {
+					const first = canvas.nodes[0];
+					if (first && canvasRef)
+						canvasRef.scrollNodeToTop(first.y, first.x + NODE_WIDTH / 2, {
+							zoom: 1,
+							duration: 250,
+							topOffset: 60
+						});
+				}}
+				onGoToActive={() => scrollToNode(activeExchangeId)}
+				onDownload={saveToDisk}
+			/>
 
 			<div class="flow-shell">
 				<Canvas
@@ -1310,87 +1123,17 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 				</Canvas>
 			</div>
 
-			<form
-				class="composer"
-				onsubmit={(e: Event) => {
-					e.preventDefault();
-					submitPrompt();
-				}}
-			>
-				<div class="composer-shell" class:canvas-mode={canvasMode}>
-					<div class="composer-row">
-						<button
-							type="button"
-							class="canvas-toggle"
-							onclick={() => (canvasMode = !canvasMode)}
-							aria-label={canvasMode ? 'Disable canvas mode' : 'Enable canvas mode'}
-						>
-							<img
-								src={canvasMode ? logoDark : logoLight}
-								alt="Canvas mode"
-								width="24"
-								height="24"
-							/>
-						</button>
-						<Input
-							bind:value={composerValue}
-							class="composer-input"
-							placeholder={canvasMode
-								? 'Ask about the canvas...'
-								: (submitDisabledReason ?? 'Message...')}
-						/>
-						<Button
-							class="composer-send"
-							type="submit"
-							size="icon"
-							disabled={!!submitDisabledReason || !composerValue.trim()}
-							ariaLabel="Send message"
-						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 16 16"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.6"
-								><path d="M8 3v7M5 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" /></svg
-							>
-						</Button>
-					</div>
-					<div class="composer-footer">
-						<Button
-							class="model-chip"
-							variant="outline"
-							size="sm"
-							onclick={() => (paletteOpen = true)}
-						>
-							{activeModel ? activeModel.modelId : 'Connect a model'}
-						</Button>
-						{#if activeModel}
-							<div class="composer-divider"></div>
-							<div class="context-meta">
-								<span>Context</span>
-								{#if contextLength != null}
-									<div class="progress-track compact">
-										<div
-											class="progress-fill"
-											style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}
-										></div>
-									</div>
-								{/if}
-								<span
-									>{usedTokens.toLocaleString()}{contextLength != null
-										? ` / ${contextLength.toLocaleString()}`
-										: ''}</span
-								>
-							</div>
-						{/if}
-						{#if submitDisabledReason}
-							<span class="composer-hint">{submitDisabledReason}</span>
-						{/if}
-					</div>
-				</div>
-			</form>
+			<Composer
+				bind:composerValue
+				bind:canvasMode
+				{submitDisabledReason}
+				activeModelId={activeModel?.modelId ?? null}
+				{usedTokens}
+				{contextLength}
+				onSubmit={submitPrompt}
+				onToggleCanvasMode={() => (canvasMode = !canvasMode)}
+				onOpenPalette={() => (paletteOpen = true)}
+			/>
 
 			<ModelPalette
 				open={paletteOpen}
@@ -1424,57 +1167,13 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 			/>
 
 			{#if searchOpen}
-				<button
-					class="modal-scrim"
-					type="button"
-					aria-label="Close search"
-					onclick={() => (searchOpen = false)}
-				></button>
-				<div class="search-dialog">
-					<div class="search-dialog-header">
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 18 18"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.6"
-							><circle cx="7.5" cy="7.5" r="5" /><path d="M13 13l3 3" stroke-linecap="round" /></svg
-						>
-						<Input
-							id="search"
-							bind:value={searchQuery}
-							class="search-input"
-							placeholder="Search chats and projects"
-						/>
-						<label class="check-row compact">
-							<input type="checkbox" bind:checked={searchAllChats} />
-							<span>All chats</span>
-						</label>
-					</div>
-					<div class="search-results search-dialog-results">
-						{#if searchItems.length === 0}
-							<div class="search-empty">
-								{searchQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}
-							</div>
-						{/if}
-						{#each searchItems.slice(0, 40) as result (result.rootIndex + ':' + result.exchangeId)}
-							<button
-								class="search-result"
-								type="button"
-								onclick={() => {
-									handleSearchSelect(result);
-									searchOpen = false;
-								}}
-							>
-								<div class="search-result-title">{result.prompt}</div>
-								{#if result.snippets[0]}
-									<div class="search-result-snippet">{result.snippets[0].text}</div>
-								{/if}
-							</button>
-						{/each}
-					</div>
-				</div>
+				<SearchDialog
+					bind:searchQuery
+					bind:searchAllChats
+					{searchItems}
+					onClose={() => (searchOpen = false)}
+					onSelect={handleSearchSelect}
+				/>
 			{/if}
 
 			{#if deleteTargetId}
