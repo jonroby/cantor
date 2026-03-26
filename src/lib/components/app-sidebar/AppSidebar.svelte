@@ -22,6 +22,7 @@
 		folders: ChatFolder[];
 		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
+		onDownloadFolder: (folderId: string) => void;
 		onRenameFolder: (folderId: string, name: string) => boolean;
 		onUploadDoc: (folderId: string) => void;
 		onUploadFolder: (folderId: string) => void;
@@ -44,6 +45,7 @@
 		folders,
 		onNewFolder,
 		onDeleteFolder,
+		onDownloadFolder,
 		onRenameFolder,
 		onUploadDoc,
 		onUploadFolder,
@@ -398,6 +400,7 @@
 									onUploadDoc={() => onUploadDoc(folder.id)}
 									onUploadFolder={() => onUploadFolder(folder.id)}
 									onRenameFolder={(name) => onRenameFolder(folder.id, name)}
+									onDownloadFolder={() => onDownloadFolder(folder.id)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
 									onSelectSession={(index) => onSelectSession(index)}
 									onStartRenameChat={startRenameChat}

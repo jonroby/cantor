@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import JSZip from 'jszip';
 	import { toast } from 'svelte-sonner';
 	import Toaster from '@/components/ui/sonner/sonner.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -579,6 +580,27 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		return true;
 	}
 
+	async function downloadFolder(folderId: string) {
+		const folder = folders.find((f) => f.id === folderId);
+		if (!folder || !folder.files?.length) {
+			toast.error('Folder is empty');
+			return;
+		}
+		const zip = new JSZip();
+		for (const file of folder.files) {
+			zip.file(file.name, file.content);
+		}
+		const blob = await zip.generateAsync({ type: 'blob' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${folder.name}.zip`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		setTimeout(() => URL.revokeObjectURL(url), 100);
+	}
+
 	function uploadDocToFolder(folderId: string) {
 		const input = document.createElement('input');
 		input.type = 'file';
@@ -1111,6 +1133,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		{folders}
 		onNewFolder={newFolder}
 		onDeleteFolder={deleteFolder}
+		onDownloadFolder={downloadFolder}
 		onRenameFolder={renameFolder}
 		onUploadDoc={uploadDocToFolder}
 		onUploadFolder={uploadFolderToFolder}

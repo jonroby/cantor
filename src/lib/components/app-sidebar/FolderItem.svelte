@@ -24,6 +24,7 @@
 		onUploadDoc: () => void;
 		onUploadFolder: () => void;
 		onRenameFolder: (name: string) => boolean;
+		onDownloadFolder: () => void;
 		onDeleteFolder: () => void;
 		onSelectSession: (index: number) => void;
 		onStartRenameChat: (index: number, name: string) => void;
@@ -59,6 +60,7 @@
 		onUploadDoc,
 		onUploadFolder,
 		onRenameFolder,
+		onDownloadFolder,
 		onDeleteFolder,
 		onSelectSession,
 		onStartRenameChat,
@@ -256,6 +258,26 @@
 							/>
 						</svg>
 						Rename
+					</DropdownMenu.Item>
+					<DropdownMenu.Item
+						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						onclick={onDownloadFolder}
+					>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="7 10 12 15 17 10" />
+							<line x1="12" y1="15" x2="12" y2="3" />
+						</svg>
+						Download
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator class="my-1 bg-border h-px" />
 					<DropdownMenu.Item
