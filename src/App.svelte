@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import JSZip from 'jszip';
 	import { toast } from 'svelte-sonner';
-	import Toaster from '@/shadcn/ui/sonner/sonner.svelte';
+	import Toaster from '@/components/shadcn/ui/sonner/sonner.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { buildInitialExchanges } from '@/lib/chat/initialExchanges';
 	import { computeCanvasLayout, NODE_WIDTH } from '@/lib/chat/layout';
@@ -19,13 +19,13 @@
 		type OllamaStatus,
 		type Provider
 	} from '@/lib/chat/models';
-	import Button from '@/components/ui/button.svelte';
-	import ExchangeNode from '@/components/canvas/ExchangeNode.svelte';
-	import CodeEditor from '@/components/canvas/CodeEditor.svelte';
-	import PythonEditor from '@/components/canvas/PythonEditor.svelte';
-	import Canvas from '@/components/canvas/Canvas.svelte';
-	import DrawingBoard from '@/components/canvas/DrawingBoard.svelte';
-	import DocsPanel from '@/components/canvas/DocsPanel.svelte';
+	import Button from '@/components/custom/button.svelte';
+	import ExchangeNode from '@/features/canvas/ExchangeNode.svelte';
+	import CodeEditor from '@/features/canvas/CodeEditor.svelte';
+	import PythonEditor from '@/features/canvas/PythonEditor.svelte';
+	import Canvas from '@/features/canvas/Canvas.svelte';
+	import DrawingBoard from '@/features/canvas/DrawingBoard.svelte';
+	import DocsPanel from '@/features/canvas/DocsPanel.svelte';
 	import type { Shape } from '@/lib/drawing/types';
 	import {
 		DEFAULT_OLLAMA_URL,
@@ -77,13 +77,13 @@
 		saveApiKey,
 		storedProviders as getStoredProviders
 	} from '@/lib/chat/vault';
-	import * as SidebarPrimitive from '@/shadcn/ui/sidebar/index.js';
-	import { AppSidebar } from '@/components/app-sidebar';
-	import { ModelPalette } from '@/components/model-palette';
-	import { FloatingActions } from '@/components/floating-actions';
-	import { SearchDialog } from '@/components/search-dialog';
-	import { ChatHeader } from '@/components/chat-header';
-	import { Composer } from '@/components/composer';
+	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
+	import { AppSidebar } from '@/features/app-sidebar';
+	import { ModelPalette } from '@/features/model-palette';
+	import { FloatingActions } from '@/features/floating-actions';
+	import { SearchDialog } from '@/features/search-dialog';
+	import { ChatHeader } from '@/features/chat-header';
+	import { Composer } from '@/features/composer';
 	import type { ChatSession, ChatFolder } from '@/lib/chat/tree';
 	import { validateChatSessionUpload } from '@/lib/chat/tree';
 

@@ -24,9 +24,9 @@ The app is mostly client-side and centered around one top-level UI shell in `src
 - `src/main.ts` mounts the Svelte app and loads global CSS.
 - `src/App.svelte` owns the primary application state, hydration from `localStorage`, model selection, composer flow, search UI, branching-chat actions, and response streaming.
 - `src/lib/chat/*` contains the domain logic for chat trees, model metadata, provider integrations, search, layout, seed data, and API-key storage.
-- `src/components/canvas/*` contains the visual canvas and node rendering for the conversation graph.
-- `src/components/ui/*` contains small reusable UI primitives such as buttons and inputs.
-- `src/shadcn/ui/*` contains shadcn-svelte primitives (sidebar, tooltip, sheet, etc.).
+- `src/features/*` contains feature-specific components (canvas, app-sidebar, composer, chat-header, model-palette, search-dialog, floating-actions).
+- `src/components/custom/*` contains small reusable UI primitives such as buttons and inputs.
+- `src/components/shadcn/ui/*` contains shadcn-svelte primitives (sidebar, tooltip, sheet, etc.).
 
 ## Core Data Model
 
@@ -94,16 +94,16 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 
 - `src/App.svelte` derives the active root, active exchange, hidden side branches, token usage, and search results.
 - `src/lib/chat/layout.ts` converts the exchange tree into positioned canvas nodes and edges. Also computes positions for all canvas panels (doc panels, code editors, drawing board).
-- `src/lib/components/canvas/Canvas.svelte` renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
-- `src/lib/components/canvas/ExchangeNode.svelte` renders each exchange card with action buttons.
+- `src/features/canvas/Canvas.svelte` renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
+- `src/features/canvas/ExchangeNode.svelte` renders each exchange card with action buttons.
 - Collapsed side branches are hidden from layout until expanded.
 
 ## UI Components
 
 ### Sidebar
 
-- `src/lib/components/AppSidebar.svelte` — session list, folder/doc management, new chat, delete session.
-- Uses shadcn-svelte sidebar primitives from `src/components/ui/sidebar/`.
+- `src/features/app-sidebar/AppSidebar.svelte` — session list, folder/doc management, new chat, delete session.
+- Uses shadcn-svelte sidebar primitives from `src/components/shadcn/ui/sidebar/`.
 - Floats over content (gap always icon-width); does not push the main canvas.
 - Folders contain documents; each doc has a dropdown menu with Open, Rename, Download, Delete.
 
