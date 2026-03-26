@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { toast } from 'svelte-sonner';
+	import Toaster from '@/components/ui/sonner/sonner.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { buildInitialExchanges } from '$lib/chat/initialExchanges';
 	import { computeCanvasLayout, NODE_WIDTH } from '$lib/chat/layout';
@@ -64,7 +66,8 @@
 		type ExchangeMap,
 		updateExchangeResponse,
 		updateExchangeTokens,
-		withExplicitExchangeOrder
+		withExplicitExchangeOrder,
+		type DocFile
 	} from '$lib/chat/tree';
 	import {
 		clearProviderKey,
@@ -99,6 +102,7 @@
 	]);
 	let activeSessionIndex = $state(0);
 	let folders: ChatFolder[] = $state([]);
+	let activeDocKey: { folderId: string; fileId: string } | null = $state(null);
 
 	let roots: ExchangeMap[] = $derived(
 		sessions[activeSessionIndex]?.roots ?? sessions[0]?.roots ?? []
@@ -301,6 +305,27 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 		window.addEventListener('keydown', handleKeyDown);
 
+		function handleWindowDragOver(e: DragEvent) {
+			e.preventDefault();
+			if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+		}
+
+		function handleWindowDrop(e: DragEvent) {
+			e.preventDefault();
+			const file = e.dataTransfer?.files?.[0];
+			if (!file || !file.name.endsWith('.md')) return;
+			const reader = new FileReader();
+			reader.onload = () => {
+				if (typeof reader.result === 'string') {
+					docsContent = reader.result;
+				}
+			};
+			reader.readAsText(file);
+		}
+
+		window.addEventListener('dragover', handleWindowDragOver);
+		window.addEventListener('drop', handleWindowDrop);
+
 		// Auto-hide header after initial display
 		headerTimer = setTimeout(() => {
 			headerVisible = false;
@@ -483,6 +508,50 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 	function moveSessionToFolder(sessionIndex: number, folderId: string | null) {
 		sessions = sessions.map((s, i) => (i === sessionIndex ? { ...s, folderId } : s));
+	}
+
+	function uploadDocToFolder(folderId: string) {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.md';
+		input.onchange = () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			const reader = new FileReader();
+			reader.onload = () => {
+				if (typeof reader.result === 'string') {
+					const docFile: DocFile = {
+						id: crypto.randomUUID(),
+						name: file.name,
+						content: reader.result as string
+					};
+					folders = folders.map((f) =>
+						f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
+					);
+					toast.success(`Uploaded ${file.name}`);
+				}
+			};
+			reader.readAsText(file);
+		};
+		input.click();
+	}
+
+	function selectDoc(folderId: string, fileId: string) {
+		const folder = folders.find((f) => f.id === folderId);
+		const file = folder?.files?.find((f) => f.id === fileId);
+		if (file) {
+			docsContent = file.content;
+			activeDocKey = { folderId, fileId };
+		}
+	}
+
+	function deleteDocFromFolder(folderId: string, fileId: string) {
+		folders = folders.map((f) =>
+			f.id === folderId ? { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) } : f
+		);
+		if (activeDocKey?.folderId === folderId && activeDocKey?.fileId === fileId) {
+			activeDocKey = null;
+		}
 	}
 
 	function setMeasuredNodeHeight(exchangeId: string, height: number) {
@@ -837,6 +906,10 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		onDeleteFolder={deleteFolder}
 		onRenameFolder={renameFolder}
 		onMoveSessionToFolder={moveSessionToFolder}
+		{activeDocKey}
+		onUploadDoc={uploadDocToFolder}
+		onSelectDoc={selectDoc}
+		onDeleteDoc={deleteDocFromFolder}
 	/>
 	<SidebarPrimitive.Inset>
 		<div class="page-shell" onwheel={handleCanvasWheel}>
@@ -1313,3 +1386,4 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		</div>
 	</SidebarPrimitive.Inset>
 </SidebarPrimitive.Provider>
+<Toaster />

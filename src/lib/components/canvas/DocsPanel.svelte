@@ -97,6 +97,18 @@
 		editing = false;
 	}
 
+	function downloadMarkdown() {
+		const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'document.md';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		setTimeout(() => URL.revokeObjectURL(url), 100);
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			e.preventDefault();
@@ -105,6 +117,36 @@
 			e.preventDefault();
 			saveEdit();
 		}
+	}
+
+	let draggingOver = $state(false);
+
+	function handleDragOver(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+		draggingOver = true;
+	}
+
+	function handleDragLeave(e: DragEvent) {
+		const panel = e.currentTarget as HTMLElement;
+		if (e.relatedTarget && panel.contains(e.relatedTarget as Node)) return;
+		draggingOver = false;
+	}
+
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		draggingOver = false;
+		const file = e.dataTransfer?.files?.[0];
+		if (!file || !file.name.endsWith('.md')) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (typeof reader.result === 'string') {
+				onContentChange?.(reader.result);
+			}
+		};
+		reader.readAsText(file);
 	}
 
 	onMount(() => {
@@ -118,7 +160,14 @@
 	});
 </script>
 
-<div class="docs-panel">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+	class="docs-panel"
+	class:drag-over={draggingOver}
+	ondragover={handleDragOver}
+	ondragleave={handleDragLeave}
+	ondrop={handleDrop}
+>
 	<div class="docs-header">
 		<svg
 			width="16"
@@ -132,11 +181,27 @@
 			<path d="M10 2v3h3" />
 			<path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke-linecap="round" />
 		</svg>
-		<span>Documentation</span>
+		<span>Document</span>
 		{#if dirty}
 			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 		{/if}
 		<div class="header-actions">
+			<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
+				<svg
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+					<polyline points="7 10 12 15 17 10" />
+					<line x1="12" y1="15" x2="12" y2="3" />
+				</svg>
+			</button>
 			{#if editing}
 				{#if dirty}
 					<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
@@ -246,6 +311,11 @@
 		flex-direction: column;
 		width: 816px;
 		height: 1056px;
+	}
+	.docs-panel.drag-over {
+		outline: 2px dashed hsl(var(--primary, 220 90% 56%));
+		outline-offset: -4px;
+		background: hsl(var(--primary, 220 90% 56%) / 0.04);
 	}
 
 	.docs-header {

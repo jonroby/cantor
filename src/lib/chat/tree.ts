@@ -29,9 +29,16 @@ export interface ChatSession {
 	folderId?: string | null;
 }
 
+export interface DocFile {
+	id: string;
+	name: string;
+	content: string;
+}
+
 export interface ChatFolder {
 	id: string;
 	name: string;
+	files?: DocFile[];
 }
 
 export interface DeleteResult {

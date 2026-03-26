@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Sidebar from '@/components/ui/sidebar/index.js';
 	import * as Tooltip from '@/components/ui/tooltip/index.js';
+	import * as DropdownMenu from '@/components/ui/dropdown-menu/index.js';
 	import type { ChatSession, ChatFolder } from '$lib/chat/tree';
 	import { useSidebar } from '@/components/ui/sidebar/context.svelte.js';
 	import logoDark from '../../assets/logo_dark.svg';
@@ -17,6 +18,10 @@
 		onDeleteFolder: (folderId: string) => void;
 		onRenameFolder: (folderId: string, name: string) => void;
 		onMoveSessionToFolder: (sessionIndex: number, folderId: string | null) => void;
+		activeDocKey: { folderId: string; fileId: string } | null;
+		onUploadDoc: (folderId: string) => void;
+		onSelectDoc: (folderId: string, fileId: string) => void;
+		onDeleteDoc: (folderId: string, fileId: string) => void;
 	}
 
 	let {
@@ -29,7 +34,11 @@
 		onNewFolder,
 		onDeleteFolder,
 		onRenameFolder,
-		onMoveSessionToFolder
+		onMoveSessionToFolder,
+		activeDocKey,
+		onUploadDoc,
+		onSelectDoc,
+		onDeleteDoc
 	}: Props = $props();
 
 	const sidebar = useSidebar();
@@ -313,27 +322,95 @@
 											>
 										{/if}
 									</Sidebar.MenuButton>
-									<Sidebar.MenuAction
-										showOnHover
-										onclick={(e: MouseEvent) => {
-											e.stopPropagation();
-											onDeleteFolder(folder.id);
-										}}
-										aria-label="Delete folder"
-										class="text-sidebar-foreground/40 hover:text-sidebar-foreground"
-									>
-										<svg
-											width="14"
-											height="14"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="1.5"
-											stroke-linecap="round"
+									<DropdownMenu.Root>
+										<DropdownMenu.Trigger
+											class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100"
+											onclick={(e) => e.stopPropagation()}
 										>
-											<path d="M18 6L6 18M6 6l12 12" />
-										</svg>
-									</Sidebar.MenuAction>
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												stroke-linecap="round"
+											>
+												<circle cx="5" cy="12" r="1" />
+												<circle cx="12" cy="12" r="1" />
+												<circle cx="19" cy="12" r="1" />
+											</svg>
+										</DropdownMenu.Trigger>
+										<DropdownMenu.Portal>
+											<DropdownMenu.Content
+												align="start"
+												side="right"
+												class="rounded-lg bg-popover p-1 text-popover-foreground shadow-md z-50 min-w-[140px] border"
+											>
+												<DropdownMenu.Item
+													class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+													onclick={() => onUploadDoc(folder.id)}
+												>
+													<svg
+														width="14"
+														height="14"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="1.5"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+													>
+														<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+														<polyline points="17 8 12 3 7 8" />
+														<line x1="12" y1="3" x2="12" y2="15" />
+													</svg>
+													Upload .md
+												</DropdownMenu.Item>
+												<DropdownMenu.Item
+													class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+													onclick={() => startRenameFolder(folder)}
+												>
+													<svg
+														width="14"
+														height="14"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="1.5"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+													>
+														<path d="M12 20h9" />
+														<path
+															d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+														/>
+													</svg>
+													Rename
+												</DropdownMenu.Item>
+												<DropdownMenu.Separator class="my-1 bg-border h-px" />
+												<DropdownMenu.Item
+													class="gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex cursor-pointer items-center"
+													onclick={() => onDeleteFolder(folder.id)}
+												>
+													<svg
+														width="14"
+														height="14"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="1.5"
+														stroke-linecap="round"
+													>
+														<path
+															d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+														/>
+													</svg>
+													Delete
+												</DropdownMenu.Item>
+											</DropdownMenu.Content>
+										</DropdownMenu.Portal>
+									</DropdownMenu.Root>
 								</Sidebar.MenuItem>
 
 								<!-- Folder contents -->
@@ -386,7 +463,53 @@
 											{/if}
 										</Sidebar.MenuItem>
 									{/each}
-									{#if folderSessions.length === 0}
+									{#each folder.files ?? [] as file (file.id)}
+										<Sidebar.MenuItem>
+											<Sidebar.MenuButton
+												isActive={activeDocKey?.folderId === folder.id &&
+													activeDocKey?.fileId === file.id}
+												tooltipContent={file.name}
+												onclick={() => onSelectDoc(folder.id, file.id)}
+												class="rounded-lg pl-8 pr-3 py-2"
+											>
+												<svg
+													width="16"
+													height="16"
+													viewBox="0 0 16 16"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="1.5"
+													class="shrink-0"
+												>
+													<path d="M3 2h7l3 3v9H3V2z" />
+													<path d="M10 2v3h3" />
+												</svg>
+												<span>{file.name}</span>
+											</Sidebar.MenuButton>
+											<Sidebar.MenuAction
+												showOnHover
+												onclick={(e: MouseEvent) => {
+													e.stopPropagation();
+													onDeleteDoc(folder.id, file.id);
+												}}
+												aria-label="Delete document"
+												class="text-sidebar-foreground/40 hover:text-sidebar-foreground"
+											>
+												<svg
+													width="14"
+													height="14"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="1.5"
+													stroke-linecap="round"
+												>
+													<path d="M18 6L6 18M6 6l12 12" />
+												</svg>
+											</Sidebar.MenuAction>
+										</Sidebar.MenuItem>
+									{/each}
+									{#if folderSessions.length === 0 && (folder.files ?? []).length === 0}
 										<div class="px-8 py-1 text-xs text-sidebar-foreground/30">Empty</div>
 									{/if}
 								{/if}
