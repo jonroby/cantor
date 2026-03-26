@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from '@/lib/utils';
+	import { cn } from '@/components/shadcn/utils';
 
 	type Variant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 	type Size = 'default' | 'sm' | 'lg' | 'icon';

@@ -10,7 +10,7 @@
 	import { Button } from '@/components/shadcn/ui/button/index.js';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { Cancel01Icon } from '@hugeicons/core-free-icons';
-	import { cn, type WithoutChildrenOrChild } from '@/lib/utils.js';
+	import { cn, type WithoutChildrenOrChild } from '@/components/shadcn/utils';
 	import type { ComponentProps } from 'svelte';
 
 	let {

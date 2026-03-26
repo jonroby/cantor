@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { toast } from 'svelte-sonner';
 import type { ChatFolder, DocFile } from '@/lib/chat/tree';
+import { validate } from '@/lib/validate-md';
 
 export interface OpenDoc {
 	id: string;
@@ -69,6 +70,11 @@ export function uploadDocToFolder(folderId: string) {
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result === 'string') {
+				const errors = validate(reader.result);
+				if (errors.length > 0) {
+					toast.error(`Invalid markdown: ${errors.join('; ')}`);
+					return;
+				}
 				const folder = docState.folders.find((f) => f.id === folderId);
 				const existingNames = (folder?.files ?? []).map((f) => f.name);
 				let name = file.name;
@@ -179,6 +185,11 @@ function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result === 'string') {
+				const errors = validate(reader.result);
+				if (errors.length > 0) {
+					toast.error(`Skipped ${file.name}: ${errors.join('; ')}`);
+					return;
+				}
 				let name = file.name;
 				if (existingNames.includes(name)) {
 					const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';

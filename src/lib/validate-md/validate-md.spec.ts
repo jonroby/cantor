@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validate } from './validate-md';
+import { validate } from '.';
 
 describe('validate', () => {
 	it('returns no errors for plain markdown', () => {

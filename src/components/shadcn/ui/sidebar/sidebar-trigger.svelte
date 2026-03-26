@@ -3,7 +3,7 @@
 	import * as Tooltip from '@/components/shadcn/ui/tooltip/index.js';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import { cn } from '@/lib/utils.js';
+	import { cn } from '@/components/shadcn/utils';
 	import type { ComponentProps } from 'svelte';
 	import { useSidebar } from './context.svelte.js';
 

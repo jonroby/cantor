@@ -3,6 +3,7 @@
 	import { Marked } from 'marked';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
+	import { validate as validateMd } from '@/lib/validate-md';
 
 	interface Props {
 		title?: string;
@@ -72,6 +73,8 @@
 	}
 
 	function validate(md: string): string | null {
+		const errors = validateMd(md);
+		if (errors.length > 0) return errors.join('; ');
 		try {
 			processContent(md);
 			return null;

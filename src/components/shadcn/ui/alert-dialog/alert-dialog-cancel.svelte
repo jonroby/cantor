@@ -5,7 +5,7 @@
 		type ButtonVariant,
 		type ButtonSize
 	} from '@/components/shadcn/ui/button/index.js';
-	import { cn } from '@/lib/utils.js';
+	import { cn } from '@/components/shadcn/utils';
 
 	let {
 		ref = $bindable(null),
