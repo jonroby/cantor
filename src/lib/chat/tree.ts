@@ -21,7 +21,7 @@ export const ROOT_ANCHOR_ID = '__root_anchor__';
 
 export type DeleteMode = 'exchange' | 'exchangeAndMainChat' | 'exchangeAndSideChats';
 
-export interface ChatSession {
+export interface Chat {
 	id: string;
 	name: string;
 	roots: ExchangeMap[];
@@ -175,7 +175,7 @@ export function validateChatTree(exchanges: ExchangeMap): ExchangeMap {
 	return exchanges;
 }
 
-export function validateChatSessionUpload(data: unknown): ChatSession {
+export function validateChatUpload(data: unknown): Chat {
 	if (typeof data !== 'object' || data === null || Array.isArray(data)) {
 		throw new Error('Upload must be a JSON object.');
 	}
@@ -183,20 +183,20 @@ export function validateChatSessionUpload(data: unknown): ChatSession {
 	const obj = data as Record<string, unknown>;
 
 	if (typeof obj.id !== 'string' || !obj.id) {
-		throw new Error('Session is missing a valid "id".');
+		throw new Error('Chat is missing a valid "id".');
 	}
 	if (typeof obj.name !== 'string' || !obj.name) {
-		throw new Error('Session is missing a valid "name".');
+		throw new Error('Chat is missing a valid "name".');
 	}
 	if (!Array.isArray(obj.roots) || obj.roots.length === 0) {
-		throw new Error('Session must have at least one root.');
+		throw new Error('Chat must have at least one root.');
 	}
 	if (
 		typeof obj.activeRootIndex !== 'number' ||
 		obj.activeRootIndex < 0 ||
 		obj.activeRootIndex >= obj.roots.length
 	) {
-		throw new Error('Session has an invalid "activeRootIndex".');
+		throw new Error('Chat has an invalid "activeRootIndex".');
 	}
 
 	for (let i = 0; i < obj.roots.length; i++) {
@@ -229,7 +229,7 @@ export function validateChatSessionUpload(data: unknown): ChatSession {
 		}
 	}
 
-	return data as ChatSession;
+	return data as Chat;
 }
 
 export function addExchange(

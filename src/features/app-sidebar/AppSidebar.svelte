@@ -4,20 +4,20 @@
 	import * as Sidebar from '@/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/components/shadcn/ui/sidebar/context.svelte.js';
-	import type { ChatSession, ChatFolder } from '@/lib/chat/tree';
+	import type { Chat, ChatFolder } from '@/lib/chat/tree';
 	import newLogo from '@/assets/new-logo.png';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from './ConfirmDeleteDialog.svelte';
 
 	interface Props {
-		sessions: ChatSession[];
-		activeSessionIndex: number;
-		onSelectSession: (index: number) => void;
+		chats: Chat[];
+		activeChatIndex: number;
+		onSelectChat: (index: number) => void;
 		onNewChat: () => number;
-		onDeleteSession: (index: number) => void;
-		onRenameSession: (index: number, name: string) => void;
-		onDownloadSession: (index: number) => void;
+		onDeleteChat: (index: number) => void;
+		onRenameChat: (index: number, name: string) => void;
+		onDownloadChat: (index: number) => void;
 		onUploadChat: () => void;
 		folders: ChatFolder[];
 		onNewFolder: () => string;
@@ -34,13 +34,13 @@
 	}
 
 	let {
-		sessions,
-		activeSessionIndex,
-		onSelectSession,
+		chats,
+		activeChatIndex,
+		onSelectChat,
 		onNewChat,
-		onDeleteSession,
-		onRenameSession,
-		onDownloadSession,
+		onDeleteChat,
+		onRenameChat,
+		onDownloadChat,
 		onUploadChat,
 		folders,
 		onNewFolder,
@@ -80,7 +80,7 @@
 
 	function commitRenameChat(name: string) {
 		if (editingChatIndex !== null && name.trim()) {
-			onRenameSession(editingChatIndex, name.trim());
+			onRenameChat(editingChatIndex, name.trim());
 		}
 		editingChatIndex = null;
 		editingChatName = '';
@@ -139,8 +139,8 @@
 		newlyCreatedFolderId = id;
 	}
 
-	let unfolderedSessions = $derived(
-		sessions.map((s, i) => ({ session: s, index: i })).filter(({ session }) => !session.folderId)
+	let unfolderedChats = $derived(
+		chats.map((c, i) => ({ chat: c, index: i })).filter(({ chat }) => !chat.folderId)
 	);
 </script>
 
@@ -217,7 +217,7 @@
 							tooltipContent="New chat"
 							onclick={async () => {
 								const index = onNewChat();
-								const name = sessions[index]?.name ?? '';
+								const name = chats[index]?.name ?? '';
 								await tick();
 								startRenameChat(index, name);
 							}}
@@ -288,19 +288,19 @@
 				</Sidebar.GroupLabel>
 				<Sidebar.GroupContent>
 					<Sidebar.Menu>
-						{#each unfolderedSessions as { session, index } (session.id)}
+						{#each unfolderedChats as { chat, index } (chat.id)}
 							<ChatItem
-								{session}
-								isActive={index === activeSessionIndex}
+								{chat}
+								isActive={index === activeChatIndex}
 								isEditing={editingChatIndex === index}
 								bind:editingName={editingChatName}
-								canDelete={sessions.length > 1}
-								onSelect={() => onSelectSession(index)}
-								onStartRename={() => startRenameChat(index, session.name)}
+								canDelete={chats.length > 1}
+								onSelect={() => onSelectChat(index)}
+								onStartRename={() => startRenameChat(index, chat.name)}
 								onCommitRename={commitRenameChat}
 								onCancelRename={cancelRenameChat}
-								onDownload={() => onDownloadSession(index)}
-								onDelete={() => (deleteChatTarget = { index, name: session.name })}
+								onDownload={() => onDownloadChat(index)}
+								onDelete={() => (deleteChatTarget = { index, name: chat.name })}
 							/>
 						{/each}
 					</Sidebar.Menu>
@@ -389,8 +389,8 @@
 									expanded={!!expandedFolders[folder.id]}
 									isDragOver={dragOverFolderId === folder.id}
 									startEditing={newlyCreatedFolderId === folder.id}
-									{sessions}
-									{activeSessionIndex}
+									{chats}
+									{activeChatIndex}
 									{editingChatIndex}
 									bind:editingChatName
 									{editingDocFileId}
@@ -402,11 +402,11 @@
 									onRenameFolder={(name) => onRenameFolder(folder.id, name)}
 									onDownloadFolder={() => onDownloadFolder(folder.id)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
-									onSelectSession={(index) => onSelectSession(index)}
+									onSelectChat={(index) => onSelectChat(index)}
 									onStartRenameChat={startRenameChat}
 									onCommitRenameChat={commitRenameChat}
 									onCancelRenameChat={cancelRenameChat}
-									onDownloadSession={(index) => onDownloadSession(index)}
+									onDownloadChat={(index) => onDownloadChat(index)}
 									onDeleteChat={(index, name) => (deleteChatTarget = { index, name })}
 									onSelectDoc={(fileId) => onSelectDoc(folder.id, fileId)}
 									onStartRenameDoc={(fileId, fileName) =>
@@ -475,7 +475,7 @@
 	description={`Are you sure you want to delete "${deleteChatTarget?.name}"?`}
 	onConfirm={() => {
 		if (deleteChatTarget) {
-			onDeleteSession(deleteChatTarget.index);
+			onDeleteChat(deleteChatTarget.index);
 			toast.success(`Deleted "${deleteChatTarget.name}"`);
 		}
 		deleteChatTarget = null;

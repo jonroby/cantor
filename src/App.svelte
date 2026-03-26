@@ -1,24 +1,11 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import JSZip from 'jszip';
 	import { toast } from 'svelte-sonner';
 	import Toaster from '@/components/shadcn/ui/sonner/sonner.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { buildInitialExchanges } from '@/lib/chat/initialExchanges';
 	import { computeCanvasLayout, NODE_WIDTH } from '@/lib/chat/layout';
 	import type { CanvasNode } from '@/lib/chat/layout';
-	import { streamClaudeChat } from '@/lib/chat/claude';
-	import { streamGeminiChat } from '@/lib/chat/gemini';
-	import { streamOpenAICompatChat } from '@/lib/chat/openai-compat';
-	import {
-		PROVIDER_CONFIG,
-		getModelContextLength,
-		getProviderForModelId,
-		isKeyBasedProvider,
-		type ActiveModel,
-		type OllamaStatus,
-		type Provider
-	} from '@/lib/chat/models';
+	import { getProviderForModelId } from '@/lib/chat/models';
 	import Button from '@/components/custom/button.svelte';
 	import ExchangeNode from '@/features/canvas/ExchangeNode.svelte';
 	import CodeEditor from '@/features/canvas/CodeEditor.svelte';
@@ -27,28 +14,10 @@
 	import DrawingBoard from '@/features/canvas/DrawingBoard.svelte';
 	import DocsPanel from '@/features/canvas/DocsPanel.svelte';
 	import type { Shape } from '@/lib/drawing/types';
-	import {
-		DEFAULT_OLLAMA_URL,
-		fetchAvailableModels,
-		fetchModelContextLength,
-		streamOllamaChat
-	} from '@/lib/chat/ollama';
-	import {
-		getWebLLMModels,
-		loadWebLLMModel,
-		streamWebLLMChat,
-		deleteModelCache,
-		deleteAllModelCaches,
-		WEBLLM_CONTEXT_OPTIONS,
-		type WebLLMStatus,
-		type WebLLMModelEntry,
-		type WebLLMContextSize
-	} from '@/lib/chat/webllm';
 	import { getDefaultItems, searchChats, type SearchResult } from '@/lib/chat/search';
 	import {
 		ROOT_ANCHOR_ID,
 		addExchangeResult,
-		buildEmptyExchanges,
 		buildExchangesByParentId,
 		canAcceptNewChat,
 		canCreateSideChats,
@@ -60,23 +29,14 @@
 		getHistory,
 		getMainChatTail,
 		getPathTokenTotal,
-		hasExplicitExchangeOrder,
 		promoteSideChatToMainChat,
 		type DeleteMode,
 		type Exchange,
 		type ExchangeMap,
 		updateExchangeResponse,
 		updateExchangeTokens,
-		withExplicitExchangeOrder,
-		type DocFile
+		withExplicitExchangeOrder
 	} from '@/lib/chat/tree';
-	import {
-		clearProviderKey,
-		loadAllApiKeys,
-		migrateVault,
-		saveApiKey,
-		storedProviders as getStoredProviders
-	} from '@/lib/chat/vault';
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar } from '@/features/app-sidebar';
 	import { ModelPalette } from '@/features/model-palette';
@@ -84,82 +44,18 @@
 	import { SearchDialog } from '@/features/search-dialog';
 	import { ChatHeader } from '@/features/chat-header';
 	import { Composer } from '@/features/composer';
-	import type { ChatSession, ChatFolder } from '@/lib/chat/tree';
-	import { validateChatSessionUpload } from '@/lib/chat/tree';
+	import type { Chat, ChatFolder } from '@/lib/chat/tree';
+	import { createDocumentState, createProviderState, createChatState } from '@/lib/state';
+
+	const docs = createDocumentState();
+	const providers = createProviderState();
+	const chats = createChatState();
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
 
-	function makeSession(roots: ExchangeMap[], name?: string): ChatSession {
-		return {
-			id: crypto.randomUUID(),
-			name: name ?? `Chat ${sessions.length + 1}`,
-			roots,
-			activeRootIndex: 0
-		};
-	}
-
-	let sessions: ChatSession[] = $state([
-		makeSession([withExplicitExchangeOrder(buildInitialExchanges())], 'Chat 1')
-	]);
-	let activeSessionIndex = $state(0);
-	let folders: ChatFolder[] = $state([]);
-
-	interface OpenDoc {
-		id: string;
-		content: string;
-		docKey: { folderId: string; fileId: string } | null;
-	}
-
-	let openDocs: OpenDoc[] = $state([
-		{
-			id: crypto.randomUUID(),
-			content: `# Superset Svelte
-
-Welcome to the documentation.
-
-## Getting Started
-
-This is a visual canvas for exploring branching chat conversations.
-
-## Math Support
-
-Inline math: $E = mc^2$
-
-Display math:
-
-$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
-
-## Features
-
-- **Sessions** — top-level chat sessions
-- **Forks** — copy conversation into a new root
-- **Side Chats** — sibling branches off existing nodes`,
-			docKey: null
-		}
-	]);
-
-	let roots: ExchangeMap[] = $derived(
-		sessions[activeSessionIndex]?.roots ?? sessions[0]?.roots ?? []
-	);
-	let activeRootIndex = $derived(sessions[activeSessionIndex]?.activeRootIndex ?? 0);
 	let activeExchangeId: string | null = $state(null);
 	let streamingExchangeIds: string[] = $state([]);
 	let operationError: string | null = $state(null);
-
-	let activeModel: ActiveModel | null = $state(null);
-	let contextLength: number | null = $state(null);
-	let ollamaUrl = $state(DEFAULT_OLLAMA_URL);
-	let ollamaStatus: OllamaStatus = $state('disconnected');
-	let ollamaModels: string[] = $state([]);
-	let apiKeys: Record<string, string> = $state({});
-	let vaultProviders: string[] = $state([]);
-
-	let webllmStatus: WebLLMStatus = $state('idle');
-	let webllmProgress = $state(0);
-	let webllmProgressText = $state('');
-	let webllmModels: WebLLMModelEntry[] = $state([]);
-	let webllmError: string | null = $state(null);
-	let webllmContextSize: WebLLMContextSize = $state(4_096);
 
 	let composerValue = $state('');
 	let canvasMode = $state(false);
@@ -193,7 +89,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	let drawingShapes: Shape[] = $state([]);
 	let canvasRef: Canvas | null = $state(null);
 
-	let activeExchanges = $derived(roots[activeRootIndex] ?? roots[0]);
+	let activeExchanges = $derived(chats.roots[chats.activeRootIndex] ?? chats.roots[0]);
 	let exchangesByParentId = $derived(
 		activeExchanges ? buildExchangesByParentId(activeExchanges) : {}
 	);
@@ -204,9 +100,9 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 			? computeCanvasLayout(activeExchanges, {
 					hiddenExchangeIds,
 					measuredHeights: measuredNodeHeights,
-					docsPanelCount: openDocs.length
+					docsPanelCount: docs.openDocs.length
 				})
-			: computeCanvasLayout({}, { docsPanelCount: openDocs.length })
+			: computeCanvasLayout({}, { docsPanelCount: docs.openDocs.length })
 	);
 	let nodeLookup = $derived(new Map(canvas.nodes.map((node) => [node.id, node])));
 	let usedTokens = $derived(
@@ -215,16 +111,16 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	let searchItems = $derived(
 		searchQuery.trim()
 			? searchChats(
-					roots,
+					chats.roots,
 					searchQuery.trim(),
-					searchAllChats ? roots.map((_: ExchangeMap, index: number) => index) : [activeRootIndex]
+					searchAllChats ? chats.roots.map((_: ExchangeMap, index: number) => index) : [chats.activeRootIndex]
 				)
-			: getDefaultItems(roots, activeRootIndex, searchAllChats)
+			: getDefaultItems(chats.roots, chats.activeRootIndex, searchAllChats)
 	);
 	let submitDisabledReason = $derived(
 		streamingExchangeIds.length > 0
 			? 'Wait for the current response to finish.'
-			: !activeModel
+			: !providers.activeModel
 				? 'Select a model first.'
 				: activeExchangeId &&
 					  activeExchanges &&
@@ -235,7 +131,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 	$effect(() => {
 		if (hasHydrated) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions, activeSessionIndex, folders }));
+			localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions: chats.chats, activeSessionIndex: chats.activeChatIndex, folders: docs.folders }));
 		}
 	});
 
@@ -264,43 +160,15 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	});
 
 	$effect(() => {
-		if (activeModel && isKeyBasedProvider(activeModel.provider)) {
-			contextLength = getModelContextLength(activeModel.provider, activeModel.modelId);
-		}
+		providers.updateContextLength();
 	});
 
 	$effect(() => {
-		if (activeModel?.provider === 'ollama') {
-			const modelId = activeModel.modelId;
-			const url = ollamaUrl;
-
-			(async () => {
-				try {
-					const length = await fetchModelContextLength(modelId, url);
-					if (
-						activeModel?.provider === 'ollama' &&
-						activeModel.modelId === modelId &&
-						ollamaUrl === url
-					) {
-						contextLength = length;
-					}
-				} catch {
-					if (
-						activeModel?.provider === 'ollama' &&
-						activeModel.modelId === modelId &&
-						ollamaUrl === url
-					) {
-						contextLength = null;
-					}
-				}
-			})();
-		}
+		providers.fetchOllamaContextLength();
 	});
 
 	onMount(() => {
-		migrateVault();
-		vaultProviders = getStoredProviders();
-		webllmModels = getWebLLMModels();
+		providers.init();
 
 		function handleKeyDown(event: KeyboardEvent) {
 			const target = event.target;
@@ -345,81 +213,32 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		if (raw) {
 			try {
 				const parsed = JSON.parse(raw) as {
-					// new format
-					sessions?: ChatSession[];
+					sessions?: Chat[];
 					activeSessionIndex?: number;
 					folders?: ChatFolder[];
-					// legacy format
 					roots?: ExchangeMap[];
 					activeRootIndex?: number;
 				};
 
-				if (parsed.sessions?.length) {
-					const hydratedSessions = parsed.sessions.map((s) => ({
-						...s,
-						roots: s.roots.map((r) =>
-							hasExplicitExchangeOrder(r) ? r : withExplicitExchangeOrder(r)
-						)
-					}));
-					if (hydratedSessions.some((s) => hasRenderableExchanges(s.roots))) {
-						sessions = hydratedSessions;
-					}
-					if (typeof parsed.activeSessionIndex === 'number') {
-						activeSessionIndex = Math.min(
-							Math.max(parsed.activeSessionIndex, 0),
-							sessions.length - 1
-						);
-					}
-				} else if (parsed.roots?.length) {
-					// migrate legacy format
-					const hydratedRoots = parsed.roots.map((root) => withExplicitExchangeOrder(root));
-					if (hasRenderableExchanges(hydratedRoots)) {
-						sessions = [makeSession(hydratedRoots, 'Chat 1')];
-						activeSessionIndex = 0;
-					}
-				}
+				chats.hydrate(parsed);
 				if (parsed.folders?.length) {
-					folders = parsed.folders;
+					docs.folders = parsed.folders;
 				}
 			} catch {
 				// ignore invalid persisted state
 			}
 		}
 
-		activeExchangeId = getMainChatTail(
-			sessions[activeSessionIndex]?.roots[sessions[activeSessionIndex]?.activeRootIndex ?? 0] ??
-				sessions[0]?.roots[0]
-		);
+		activeExchangeId = chats.getActiveExchangeIdAfterHydrate();
 		hasHydrated = true;
 
-		(async () => {
-			try {
-				const models = await fetchAvailableModels(DEFAULT_OLLAMA_URL);
-				if (models.length > 0) {
-					ollamaUrl = DEFAULT_OLLAMA_URL;
-					ollamaModels = models;
-					ollamaStatus = 'connected';
-					activeModel = { provider: 'ollama', modelId: models[0] };
-				}
-			} catch {
-				// Ollama not running, silently ignore
-			}
-		})();
+		providers.autoConnectOllama();
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
 			if (headerTimer) clearTimeout(headerTimer);
 		};
 	});
-
-	function clampRootIndex(index: number, rootCount: number) {
-		if (rootCount <= 0) return 0;
-		return Math.min(Math.max(index, 0), rootCount - 1);
-	}
-
-	function hasRenderableExchanges(rootList: ExchangeMap[]) {
-		return rootList.some((root) => Object.values(root).some((exchange) => !exchange.isAnchor));
-	}
 
 	function getCollapsedParentIds() {
 		if (!activeExchanges) return new Set<string>();
@@ -452,332 +271,44 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		return hidden;
 	}
 
-	function updateActiveSession(patch: Partial<Pick<ChatSession, 'roots' | 'activeRootIndex'>>) {
-		sessions = sessions.map((s, i) => (i === activeSessionIndex ? { ...s, ...patch } : s));
+	function resetUIState() {
+		expandedSideChatParent = null;
+		measuredNodeHeights = {};
 	}
 
 	function selectRoot(index: number) {
-		const clamped = clampRootIndex(index, roots.length);
-		updateActiveSession({ activeRootIndex: clamped });
-		activeExchangeId = getMainChatTail(roots[clamped]);
-		expandedSideChatParent = null;
-		measuredNodeHeights = {};
+		activeExchangeId = chats.selectRoot(index);
+		resetUIState();
 		scrollToNode(activeExchangeId);
 	}
 
 	function replaceActiveRoot(nextRoot: ExchangeMap) {
 		measuredNodeHeights = {};
-		updateActiveSession({
-			roots: roots.map((root, index) => (index === activeRootIndex ? nextRoot : root))
-		});
+		chats.replaceActiveRoot(nextRoot);
 	}
 
 	function newChat(): number {
-		const session = makeSession([buildEmptyExchanges()]);
-		sessions = [...sessions, session];
-		activeSessionIndex = sessions.length - 1;
-		activeExchangeId = getMainChatTail(session.roots[0]);
-		expandedSideChatParent = null;
-		measuredNodeHeights = {};
-		return sessions.length - 1;
+		const result = chats.newChat();
+		activeExchangeId = result.activeExchangeId;
+		resetUIState();
+		return result.index;
 	}
 
-	function selectSession(index: number) {
-		activeSessionIndex = Math.min(Math.max(index, 0), sessions.length - 1);
-		const session = sessions[activeSessionIndex];
-		activeExchangeId = getMainChatTail(session.roots[session.activeRootIndex ?? 0]);
-		expandedSideChatParent = null;
-		measuredNodeHeights = {};
+	function selectChat(index: number) {
+		activeExchangeId = chats.selectChat(index);
+		resetUIState();
 	}
 
-	function deleteSession(index: number) {
-		if (sessions.length <= 1) return;
-		sessions = sessions.filter((_, i) => i !== index);
-		activeSessionIndex = Math.min(activeSessionIndex, sessions.length - 1);
-		const session = sessions[activeSessionIndex];
-		activeExchangeId = getMainChatTail(session.roots[session.activeRootIndex ?? 0]);
-		expandedSideChatParent = null;
-		measuredNodeHeights = {};
-	}
-
-	function renameSession(index: number, name: string) {
-		sessions[index].name = name;
-		sessions = sessions;
-	}
-
-	function downloadSession(index: number) {
-		const session = sessions[index];
-		const payload = JSON.stringify(session, null, 2);
-		const blob = new Blob([payload], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = `${session.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`;
-		link.click();
-		URL.revokeObjectURL(url);
-	}
-
-	function uploadChat() {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = '.json';
-		input.onchange = async () => {
-			const file = input.files?.[0];
-			if (!file) return;
-			try {
-				const text = await file.text();
-				const data = JSON.parse(text);
-				const session = validateChatSessionUpload(data);
-				session.id = crypto.randomUUID();
-				const baseName = file.name.replace(/\.json$/i, '');
-				const existingNames = new Set(sessions.map((s) => s.name));
-				let name = baseName;
-				let i = 1;
-				while (existingNames.has(name)) {
-					name = `${baseName} (${i})`;
-					i++;
-				}
-				session.name = name;
-				sessions = [...sessions, session];
-				activeSessionIndex = sessions.length - 1;
-				const s = sessions[activeSessionIndex];
-				activeExchangeId = getMainChatTail(s.roots[s.activeRootIndex ?? 0]);
-				expandedSideChatParent = null;
-				measuredNodeHeights = {};
-				toast.success(`Imported "${session.name}"`);
-			} catch (e) {
-				toast.error(e instanceof Error ? e.message : 'Invalid chat file');
-			}
-		};
-		input.click();
-	}
-
-	function newFolder(): string {
-		const existingNames = new Set(folders.map((f) => f.name));
-		let name = 'New Folder';
-		let i = 2;
-		while (existingNames.has(name)) {
-			name = `New Folder ${i}`;
-			i++;
+	function deleteChat(index: number) {
+		const newActiveId = chats.deleteChat(index);
+		if (newActiveId !== null) {
+			activeExchangeId = newActiveId;
+			resetUIState();
 		}
-		const folder: ChatFolder = {
-			id: crypto.randomUUID(),
-			name
-		};
-		folders = [...folders, folder];
-		return folder.id;
 	}
 
 	function deleteFolder(folderId: string) {
-		sessions = sessions.map((s) => (s.folderId === folderId ? { ...s, folderId: null } : s));
-		folders = folders.filter((f) => f.id !== folderId);
-	}
-
-	function renameFolder(folderId: string, name: string): boolean {
-		const conflict = folders.some((f) => f.id !== folderId && f.name === name);
-		if (conflict) return false;
-		folders = folders.map((f) => (f.id === folderId ? { ...f, name } : f));
-		return true;
-	}
-
-	async function downloadFolder(folderId: string) {
-		const folder = folders.find((f) => f.id === folderId);
-		if (!folder || !folder.files?.length) {
-			toast.error('Folder is empty');
-			return;
-		}
-		const zip = new JSZip();
-		for (const file of folder.files) {
-			zip.file(file.name, file.content);
-		}
-		const blob = await zip.generateAsync({ type: 'blob' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `${folder.name}.zip`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		setTimeout(() => URL.revokeObjectURL(url), 100);
-	}
-
-	function uploadDocToFolder(folderId: string) {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = '.md';
-		input.onchange = () => {
-			const file = input.files?.[0];
-			if (!file) return;
-			const reader = new FileReader();
-			reader.onload = () => {
-				if (typeof reader.result === 'string') {
-					const folder = folders.find((f) => f.id === folderId);
-					const existingNames = new Set((folder?.files ?? []).map((f) => f.name));
-					let name = file.name;
-					if (existingNames.has(name)) {
-						const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
-						const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-						let i = 1;
-						while (existingNames.has(`${base} (${i})${ext}`)) i++;
-						name = `${base} (${i})${ext}`;
-					}
-					const docFile: DocFile = {
-						id: crypto.randomUUID(),
-						name,
-						content: reader.result as string
-					};
-					folders = folders.map((f) =>
-						f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
-					);
-					toast.success(`Uploaded ${file.name}`);
-				}
-			};
-			reader.readAsText(file);
-		};
-		input.click();
-	}
-
-	function uploadFolder() {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.webkitdirectory = true;
-		input.onchange = () => {
-			const files = input.files;
-			if (!files || files.length === 0) return;
-
-			const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
-			if (mdFiles.length === 0) {
-				toast.error('No .md files found in the selected folder');
-				return;
-			}
-
-			// Derive folder name from the directory path
-			const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
-			const existingFolderNames = new Set(folders.map((f) => f.name));
-			let folderName = dirName;
-			let n = 2;
-			while (existingFolderNames.has(folderName)) {
-				folderName = `${dirName} (${n})`;
-				n++;
-			}
-
-			const folderId = crypto.randomUUID();
-			const newFolder: ChatFolder = { id: folderId, name: folderName, files: [] };
-			folders = [...folders, newFolder];
-
-			uploadDocsIntoFolder(folderId, mdFiles);
-		};
-		input.click();
-	}
-
-	function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
-		let imported = 0;
-		const folder = folders.find((f) => f.id === folderId);
-		const existingNames = new Set((folder?.files ?? []).map((f) => f.name));
-
-		for (const file of mdFiles) {
-			const reader = new FileReader();
-			reader.onload = () => {
-				if (typeof reader.result === 'string') {
-					let name = file.name;
-					if (existingNames.has(name)) {
-						const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
-						const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-						let i = 1;
-						while (existingNames.has(`${base} (${i})${ext}`)) i++;
-						name = `${base} (${i})${ext}`;
-					}
-					existingNames.add(name);
-					const docFile: DocFile = {
-						id: crypto.randomUUID(),
-						name,
-						content: reader.result as string
-					};
-					folders = folders.map((f) =>
-						f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
-					);
-					imported++;
-					if (imported === mdFiles.length) {
-						toast.success(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
-					}
-				}
-			};
-			reader.readAsText(file);
-		}
-	}
-
-	function uploadFolderToFolder(folderId: string) {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.webkitdirectory = true;
-		input.onchange = () => {
-			const files = input.files;
-			if (!files || files.length === 0) return;
-
-			const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
-			if (mdFiles.length === 0) {
-				toast.error('No .md files found in the selected folder');
-				return;
-			}
-
-			uploadDocsIntoFolder(folderId, mdFiles);
-		};
-		input.click();
-	}
-
-	function selectDoc(folderId: string, fileId: string) {
-		const folder = folders.find((f) => f.id === folderId);
-		const file = folder?.files?.find((f) => f.id === fileId);
-		if (!file) return;
-		// If already open, don't duplicate
-		const existing = openDocs.find(
-			(d) => d.docKey?.folderId === folderId && d.docKey?.fileId === fileId
-		);
-		if (existing) return;
-		openDocs = [
-			...openDocs,
-			{ id: crypto.randomUUID(), content: file.content, docKey: { folderId, fileId } }
-		];
-	}
-
-	function renameDocInFolder(folderId: string, fileId: string, name: string): boolean {
-		const folder = folders.find((f) => f.id === folderId);
-		if (folder?.files?.some((f) => f.id !== fileId && f.name === name)) return false;
-		folders = folders.map((f) =>
-			f.id === folderId
-				? { ...f, files: (f.files ?? []).map((d) => (d.id === fileId ? { ...d, name } : d)) }
-				: f
-		);
-		return true;
-	}
-
-	function deleteDocFromFolder(folderId: string, fileId: string) {
-		folders = folders.map((f) =>
-			f.id === folderId ? { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) } : f
-		);
-		openDocs = openDocs.filter(
-			(d) => !(d.docKey?.folderId === folderId && d.docKey?.fileId === fileId)
-		);
-	}
-
-	function moveDocToFolder(fromFolderId: string, fileId: string, toFolderId: string): boolean {
-		const fromFolder = folders.find((f) => f.id === fromFolderId);
-		const toFolder = folders.find((f) => f.id === toFolderId);
-		const file = fromFolder?.files?.find((f) => f.id === fileId);
-		if (!file || !toFolder) return false;
-		if (toFolder.files?.some((f) => f.name === file.name)) return false;
-		folders = folders.map((f) => {
-			if (f.id === fromFolderId)
-				return { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) };
-			if (f.id === toFolderId) return { ...f, files: [...(f.files ?? []), file] };
-			return f;
-		});
-		openDocs = openDocs.map((d) =>
-			d.docKey?.folderId === fromFolderId && d.docKey?.fileId === fileId
-				? { ...d, docKey: { folderId: toFolderId, fileId } }
-				: d
-		);
-		return true;
+		chats.chats = docs.deleteFolder(folderId, chats.chats) as Chat[];
 	}
 
 	function setMeasuredNodeHeight(exchangeId: string, height: number) {
@@ -831,8 +362,8 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 			};
 		}
 
-		const newRoots = [...roots, withExplicitExchangeOrder(copiedExchanges)];
-		updateActiveSession({ roots: newRoots, activeRootIndex: newRoots.length - 1 });
+		const newRoots = [...chats.roots, withExplicitExchangeOrder(copiedExchanges)];
+		chats.updateActiveChat({ roots: newRoots, activeRootIndex: newRoots.length - 1 });
 		activeExchangeId = firstCopiedId;
 		expandedSideChatParent = null;
 		scrollToNode(firstCopiedId);
@@ -851,7 +382,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	}
 
 	function saveToDisk() {
-		const payload = JSON.stringify({ sessions, activeSessionIndex, folders }, null, 2);
+		const payload = JSON.stringify({ sessions: chats.chats, activeSessionIndex: chats.activeChatIndex, folders: docs.folders }, null, 2);
 		const blob = new Blob([payload], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -861,106 +392,9 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		URL.revokeObjectURL(url);
 	}
 
-	async function connectOllama(url: string) {
-		ollamaStatus = 'connecting';
-		try {
-			const models = await fetchAvailableModels(url);
-			ollamaUrl = url;
-			ollamaModels = models;
-			ollamaStatus = 'connected';
-		} catch (error) {
-			ollamaStatus = 'error';
-			ollamaModels = [];
-			operationError = error instanceof Error ? error.message : 'Failed to connect to Ollama.';
-		}
-	}
-
-	async function handleLoadWebLLMModel(modelId: string) {
-		webllmStatus = 'loading';
-		webllmProgress = 0;
-		webllmProgressText = '';
-		webllmError = null;
-		try {
-			await loadWebLLMModel(modelId, webllmContextSize, (report) => {
-				webllmProgress = report.progress;
-				webllmProgressText = report.text;
-			});
-			webllmStatus = 'ready';
-			activeModel = { provider: 'webllm', modelId };
-			contextLength = webllmContextSize;
-		} catch (error) {
-			webllmStatus = 'error';
-			webllmError = error instanceof Error ? error.message : 'Failed to load model.';
-		}
-	}
-
-	async function handleDeleteWebLLMCache(modelId: string) {
-		await deleteModelCache(modelId);
-		if (activeModel?.provider === 'webllm' && activeModel.modelId === modelId) {
-			activeModel = null;
-			webllmStatus = 'idle';
-		}
-	}
-
-	async function handleDeleteAllWebLLMCaches() {
-		await deleteAllModelCaches();
-		if (activeModel?.provider === 'webllm') {
-			activeModel = null;
-		}
-		webllmStatus = 'idle';
-	}
-
-	async function handleUnlockKeys(password: string) {
-		apiKeys = await loadAllApiKeys(password);
-	}
-
-	async function handleSaveKey(provider: string, apiKey: string, password: string) {
-		await saveApiKey(provider, apiKey, password);
-		apiKeys = { ...apiKeys, [provider]: apiKey };
-		vaultProviders = getStoredProviders();
-	}
-
-	function handleForgetKey(provider: string) {
-		clearProviderKey(provider);
-		const { [provider]: _, ...rest } = apiKeys;
-		void _;
-		apiKeys = rest;
-		vaultProviders = getStoredProviders();
-		if (activeModel?.provider === provider) {
-			activeModel = null;
-		}
-	}
-
-	function handleSelectModel(model: ActiveModel) {
-		activeModel = model;
-	}
-
-	function getProviderStream(
-		model: ActiveModel,
-		history: import('@/lib/chat/tree').Message[],
-		signal: AbortSignal
-	) {
-		const key = apiKeys[model.provider] ?? '';
-		if (model.provider === 'webllm') {
-			return streamWebLLMChat(history, signal);
-		}
-		if (model.provider === 'ollama') {
-			return streamOllamaChat(model.modelId, history, signal, ollamaUrl);
-		}
-		if (model.provider === 'claude') {
-			return streamClaudeChat(model.modelId, history, key, signal);
-		}
-		if (model.provider === 'gemini') {
-			return streamGeminiChat(model.modelId, history, key, signal);
-		}
-		// All others: OpenAI-compatible
-		const config = PROVIDER_CONFIG[model.provider as Exclude<Provider, 'ollama' | 'webllm'>];
-		return streamOpenAICompatChat(config.baseUrl, model.modelId, history, key, signal);
-	}
-
 	async function submitPrompt() {
 		const prompt = composerValue.trim();
-		if (!prompt || !activeExchanges || submitDisabledReason || !activeModel) return;
+		if (!prompt || !activeExchanges || submitDisabledReason || !providers.activeModel) return;
 
 		operationError = null;
 
@@ -974,7 +408,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 		let created: { id: string; exchanges: import('@/lib/chat/tree').ExchangeMap };
 		try {
-			created = addExchangeResult(activeExchanges, parentId, prompt, '', activeModel.modelId);
+			created = addExchangeResult(activeExchanges, parentId, prompt, '', providers.activeModel.modelId);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
 			return;
@@ -988,22 +422,23 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		scrollToNode(created.id);
 
 		// CLEANUP: Store the AbortController in component state and expose a "Stop" button in the
-		// composer while streaming. Also abort on session/root switch.
+		// CLEANUP: Store the AbortController in component state and expose a "Stop" button in the
+		// composer while streaming. Also abort on chat/root switch.
 		const abortController = new AbortController();
 
 		try {
 			const history = getHistory(created.exchanges, created.id);
-			const stream = getProviderStream(activeModel, history, abortController.signal);
+			const stream = providers.getProviderStream(providers.activeModel, history, abortController.signal);
 
 			let response = '';
 			for await (const chunk of stream) {
 				if (chunk.type === 'delta') {
 					response += chunk.delta;
-					replaceActiveRoot(updateExchangeResponse(roots[activeRootIndex], created.id, response));
+					replaceActiveRoot(updateExchangeResponse(chats.roots[chats.activeRootIndex], created.id, response));
 				} else {
 					replaceActiveRoot(
 						updateExchangeTokens(
-							roots[activeRootIndex],
+							chats.roots[chats.activeRootIndex],
 							created.id,
 							chunk.promptTokens,
 							chunk.responseTokens
@@ -1014,7 +449,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		} catch (error) {
 			replaceActiveRoot(
 				updateExchangeResponse(
-					roots[activeRootIndex],
+					chats.roots[chats.activeRootIndex],
 					created.id,
 					`Request failed.\n\n${error instanceof Error ? error.message : 'Unknown error.'}`
 				)
@@ -1059,8 +494,8 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	}
 
 	function handleSearchSelect(result: SearchResult) {
-		const targetRoot = roots[result.rootIndex];
-		updateActiveSession({ activeRootIndex: result.rootIndex });
+		const targetRoot = chats.roots[result.rootIndex];
+		chats.updateActiveChat({ activeRootIndex: result.rootIndex });
 		activeExchangeId = result.exchangeId;
 		expandedSideChatParent = targetRoot ? findSideChatParent(targetRoot, result.exchangeId) : null;
 		scrollToNode(result.exchangeId);
@@ -1122,33 +557,33 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 <SidebarPrimitive.Provider>
 	<AppSidebar
-		{sessions}
-		{activeSessionIndex}
-		onSelectSession={selectSession}
+		chats={chats.chats}
+		activeChatIndex={chats.activeChatIndex}
+		onSelectChat={selectChat}
 		onNewChat={newChat}
-		onDeleteSession={deleteSession}
-		onRenameSession={renameSession}
-		onDownloadSession={downloadSession}
-		onUploadChat={uploadChat}
-		{folders}
-		onNewFolder={newFolder}
+		onDeleteChat={deleteChat}
+		onRenameChat={chats.renameChat}
+		onDownloadChat={chats.downloadChat}
+		onUploadChat={chats.uploadChat}
+		folders={docs.folders}
+		onNewFolder={docs.newFolder}
 		onDeleteFolder={deleteFolder}
-		onDownloadFolder={downloadFolder}
-		onRenameFolder={renameFolder}
-		onUploadDoc={uploadDocToFolder}
-		onUploadFolder={uploadFolderToFolder}
-		onUploadNewFolder={uploadFolder}
-		onSelectDoc={selectDoc}
-		onDeleteDoc={deleteDocFromFolder}
-		onRenameDoc={renameDocInFolder}
-		onMoveDoc={moveDocToFolder}
+		onDownloadFolder={docs.downloadFolder}
+		onRenameFolder={docs.renameFolder}
+		onUploadDoc={docs.uploadDocToFolder}
+		onUploadFolder={docs.uploadFolderToFolder}
+		onUploadNewFolder={docs.uploadFolder}
+		onSelectDoc={docs.selectDoc}
+		onDeleteDoc={docs.deleteDocFromFolder}
+		onRenameDoc={docs.renameDocInFolder}
+		onMoveDoc={docs.moveDocToFolder}
 	/>
 	<SidebarPrimitive.Inset>
 		<div class="page-shell" onwheel={handleCanvasWheel}>
 			<ChatHeader
 				visible={headerVisible}
-				rootCount={roots.length}
-				{activeRootIndex}
+				rootCount={chats.roots.length}
+				activeRootIndex={chats.activeRootIndex}
 				onSelectRoot={selectRoot}
 			/>
 
@@ -1201,10 +636,10 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 						<DrawingBoard shapes={drawingShapes} onShapesChange={(s) => (drawingShapes = s)} />
 					{/snippet}
 					{#snippet renderDocsPanel(index: number)}
-						{@const doc = openDocs[index]}
+						{@const doc = docs.openDocs[index]}
 						{#if doc}
 							{@const docFile = doc.docKey
-								? folders
+								? docs.folders
 										.find((f) => f.id === doc.docKey!.folderId)
 										?.files?.find((f) => f.id === doc.docKey!.fileId)
 								: null}
@@ -1212,10 +647,10 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 								title={docFile?.name}
 								content={doc.content}
 								onContentChange={(c) => {
-									openDocs = openDocs.map((d, i) => (i === index ? { ...d, content: c } : d));
+									docs.openDocs = docs.openDocs.map((d, i) => (i === index ? { ...d, content: c } : d));
 									if (doc.docKey) {
 										const { folderId, fileId } = doc.docKey;
-										folders = folders.map((f) =>
+										docs.folders = docs.folders.map((f) =>
 											f.id === folderId
 												? {
 														...f,
@@ -1228,7 +663,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 									}
 								}}
 								onClose={() => {
-									openDocs = openDocs.filter((_, i) => i !== index);
+									docs.openDocs = docs.openDocs.filter((_, i) => i !== index);
 								}}
 							/>
 						{/if}
@@ -1240,9 +675,9 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 				bind:composerValue
 				bind:canvasMode
 				{submitDisabledReason}
-				activeModelId={activeModel?.modelId ?? null}
+				activeModelId={providers.activeModel?.modelId ?? null}
 				{usedTokens}
-				{contextLength}
+				contextLength={providers.contextLength}
 				onSubmit={submitPrompt}
 				onToggleCanvasMode={() => (canvasMode = !canvasMode)}
 				onOpenPalette={() => (paletteOpen = true)}
@@ -1253,30 +688,30 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 				onClose={() => {
 					paletteOpen = false;
 				}}
-				{activeModel}
-				onSelectModel={handleSelectModel}
-				{ollamaUrl}
-				{ollamaStatus}
-				{ollamaModels}
-				onConnectOllama={connectOllama}
-				{apiKeys}
-				{vaultProviders}
-				onUnlockKeys={handleUnlockKeys}
-				onSaveKey={handleSaveKey}
-				onForgetKey={handleForgetKey}
-				{webllmStatus}
-				{webllmProgress}
-				{webllmProgressText}
-				{webllmModels}
-				{webllmError}
-				{webllmContextSize}
-				webllmContextOptions={WEBLLM_CONTEXT_OPTIONS}
+				activeModel={providers.activeModel}
+				onSelectModel={providers.selectModel}
+				ollamaUrl={providers.ollamaUrl}
+				ollamaStatus={providers.ollamaStatus}
+				ollamaModels={providers.ollamaModels}
+				onConnectOllama={providers.connectOllama}
+				apiKeys={providers.apiKeys}
+				vaultProviders={providers.vaultProviders}
+				onUnlockKeys={providers.unlockKeys}
+				onSaveKey={providers.saveKey}
+				onForgetKey={providers.forgetKey}
+				webllmStatus={providers.webllmStatus}
+				webllmProgress={providers.webllmProgress}
+				webllmProgressText={providers.webllmProgressText}
+				webllmModels={providers.webllmModels}
+				webllmError={providers.webllmError}
+				webllmContextSize={providers.webllmContextSize}
+				webllmContextOptions={providers.WEBLLM_CONTEXT_OPTIONS}
 				onWebLLMContextSizeChange={(size) => {
-					webllmContextSize = size;
+					providers.webllmContextSize = size;
 				}}
-				onLoadWebLLMModel={handleLoadWebLLMModel}
-				onDeleteWebLLMCache={handleDeleteWebLLMCache}
-				onDeleteAllWebLLMCaches={handleDeleteAllWebLLMCaches}
+				onLoadWebLLMModel={providers.loadWebLLMModel}
+				onDeleteWebLLMCache={providers.deleteWebLLMCache}
+				onDeleteAllWebLLMCaches={providers.deleteAllWebLLMCaches}
 			/>
 
 			{#if searchOpen}

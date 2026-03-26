@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import * as Sidebar from '@/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/components/shadcn/ui/dropdown-menu/index.js';
-	import type { ChatSession, ChatFolder } from '@/lib/chat/tree';
+	import type { Chat, ChatFolder } from '@/lib/chat/tree';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 	import ChatItem from './ChatItem.svelte';
 	import DocItem from './DocItem.svelte';
@@ -13,8 +13,8 @@
 		expanded: boolean;
 		isDragOver: boolean;
 		startEditing?: boolean;
-		sessions: ChatSession[];
-		activeSessionIndex: number;
+		chats: Chat[];
+		activeChatIndex: number;
 		editingChatIndex: number | null;
 		editingChatName: string;
 		editingDocFileId: string | null;
@@ -26,11 +26,11 @@
 		onRenameFolder: (name: string) => boolean;
 		onDownloadFolder: () => void;
 		onDeleteFolder: () => void;
-		onSelectSession: (index: number) => void;
+		onSelectChat: (index: number) => void;
 		onStartRenameChat: (index: number, name: string) => void;
 		onCommitRenameChat: (name: string) => void;
 		onCancelRenameChat: () => void;
-		onDownloadSession: (index: number) => void;
+		onDownloadChat: (index: number) => void;
 		onDeleteChat: (index: number, name: string) => void;
 		onSelectDoc: (fileId: string) => void;
 		onStartRenameDoc: (fileId: string, fileName: string) => void;
@@ -49,8 +49,8 @@
 		expanded,
 		isDragOver,
 		startEditing = false,
-		sessions,
-		activeSessionIndex,
+		chats,
+		activeChatIndex,
 		editingChatIndex,
 		editingChatName = $bindable(),
 		editingDocFileId,
@@ -62,11 +62,11 @@
 		onRenameFolder,
 		onDownloadFolder,
 		onDeleteFolder,
-		onSelectSession,
+		onSelectChat,
 		onStartRenameChat,
 		onCommitRenameChat,
 		onCancelRenameChat,
-		onDownloadSession,
+		onDownloadChat,
 		onDeleteChat,
 		onSelectDoc,
 		onStartRenameDoc,
@@ -125,10 +125,10 @@
 		setTimeout(() => URL.revokeObjectURL(url), 100);
 	}
 
-	let folderSessions = $derived(
-		sessions
-			.map((s, i) => ({ session: s, index: i }))
-			.filter(({ session }) => session.folderId === folder.id)
+	let folderChats = $derived(
+		chats
+			.map((c, i) => ({ chat: c, index: i }))
+			.filter(({ chat }) => chat.folderId === folder.id)
 	);
 </script>
 
@@ -305,20 +305,20 @@
 	</Sidebar.MenuItem>
 
 	{#if expanded}
-		{#each folderSessions as { session, index } (session.id)}
+		{#each folderChats as { chat, index } (chat.id)}
 			<ChatItem
-				{session}
-				isActive={index === activeSessionIndex}
+				{chat}
+				isActive={index === activeChatIndex}
 				isEditing={editingChatIndex === index}
 				bind:editingName={editingChatName}
-				canDelete={sessions.length > 1}
+				canDelete={chats.length > 1}
 				indented={true}
-				onSelect={() => onSelectSession(index)}
-				onStartRename={() => onStartRenameChat(index, session.name)}
+				onSelect={() => onSelectChat(index)}
+				onStartRename={() => onStartRenameChat(index, chat.name)}
 				onCommitRename={onCommitRenameChat}
 				onCancelRename={onCancelRenameChat}
-				onDownload={() => onDownloadSession(index)}
-				onDelete={() => onDeleteChat(index, session.name)}
+				onDownload={() => onDownloadChat(index)}
+				onDelete={() => onDeleteChat(index, chat.name)}
 			/>
 		{/each}
 		{#each folder.files ?? [] as file (file.id)}
@@ -337,7 +337,7 @@
 				{onDragEnd}
 			/>
 		{/each}
-		{#if folderSessions.length === 0 && (folder.files ?? []).length === 0}
+		{#if folderChats.length === 0 && (folder.files ?? []).length === 0}
 			<div class="px-8 py-1 text-xs text-sidebar-foreground/30">Empty</div>
 		{/if}
 	{/if}

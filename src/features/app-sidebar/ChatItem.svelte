@@ -1,11 +1,11 @@
 <script lang="ts">
 	import * as Sidebar from '@/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/components/shadcn/ui/dropdown-menu/index.js';
-	import type { ChatSession } from '@/lib/chat/tree';
+	import type { Chat } from '@/lib/chat/tree';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 
 	interface Props {
-		session: ChatSession;
+		chat: Chat;
 		isActive: boolean;
 		isEditing: boolean;
 		editingName: string;
@@ -20,7 +20,7 @@
 	}
 
 	let {
-		session,
+		chat,
 		isActive,
 		isEditing,
 		editingName = $bindable(),
@@ -38,7 +38,7 @@
 <Sidebar.MenuItem>
 	<Sidebar.MenuButton
 		{isActive}
-		tooltipContent={session.name}
+		tooltipContent={chat.name}
 		onclick={onSelect}
 		class="rounded-lg {indented
 			? 'pl-8 pr-3'
@@ -63,7 +63,7 @@
 				onCancel={onCancelRename}
 			/>
 		{:else}
-			<span class="sidebar-fade-text">{session.name}</span>
+			<span class="sidebar-fade-text">{chat.name}</span>
 		{/if}
 	</Sidebar.MenuButton>
 	<DropdownMenu.Root>

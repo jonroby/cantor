@@ -1,4 +1,5 @@
 export { createDocumentState, type OpenDoc } from './documents.svelte.js';
+export { createChatState } from './chats.svelte.js';
 export {
 	createProviderState,
 	WEBLLM_CONTEXT_OPTIONS,
