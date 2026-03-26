@@ -24,6 +24,8 @@
 		onDeleteFolder: (folderId: string) => void;
 		onRenameFolder: (folderId: string, name: string) => boolean;
 		onUploadDoc: (folderId: string) => void;
+		onUploadFolder: (folderId: string) => void;
+		onUploadNewFolder: () => void;
 		onSelectDoc: (folderId: string, fileId: string) => void;
 		onDeleteDoc: (folderId: string, fileId: string) => void;
 		onRenameDoc: (folderId: string, fileId: string, name: string) => boolean;
@@ -44,6 +46,8 @@
 		onDeleteFolder,
 		onRenameFolder,
 		onUploadDoc,
+		onUploadFolder,
+		onUploadNewFolder,
 		onSelectDoc,
 		onDeleteDoc,
 		onRenameDoc,
@@ -340,8 +344,40 @@
 			<!-- Folders list -->
 			{#if folders.length > 0}
 				<Sidebar.Group class="p-0 mt-1">
-					<Sidebar.GroupLabel class="px-3 text-xs text-sidebar-foreground/50 mb-1">
-						Folders
+					<Sidebar.GroupLabel
+						class="px-3 text-xs text-sidebar-foreground/50 mb-1 flex items-center justify-between"
+					>
+						<span>Folders</span>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button
+										{...props}
+										class="rounded-md p-0.5 text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors"
+										onclick={onUploadNewFolder}
+										aria-label="Upload folder"
+									>
+										<svg
+											width="14"
+											height="14"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="1.5"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										>
+											<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+											<polyline points="17 8 12 3 7 8" />
+											<line x1="12" y1="3" x2="12" y2="15" />
+										</svg>
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
+								Upload folder
+							</Tooltip.Content>
+						</Tooltip.Root>
 					</Sidebar.GroupLabel>
 					<Sidebar.GroupContent>
 						<Sidebar.Menu>
@@ -360,6 +396,7 @@
 									draggingDocFileId={draggingDoc?.fileId ?? null}
 									onToggle={() => toggleFolder(folder.id)}
 									onUploadDoc={() => onUploadDoc(folder.id)}
+									onUploadFolder={() => onUploadFolder(folder.id)}
 									onRenameFolder={(name) => onRenameFolder(folder.id, name)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
 									onSelectSession={(index) => onSelectSession(index)}

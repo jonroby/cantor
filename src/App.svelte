@@ -615,6 +615,94 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		input.click();
 	}
 
+	function uploadFolder() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.webkitdirectory = true;
+		input.onchange = () => {
+			const files = input.files;
+			if (!files || files.length === 0) return;
+
+			const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
+			if (mdFiles.length === 0) {
+				toast.error('No .md files found in the selected folder');
+				return;
+			}
+
+			// Derive folder name from the directory path
+			const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
+			const existingFolderNames = new Set(folders.map((f) => f.name));
+			let folderName = dirName;
+			let n = 2;
+			while (existingFolderNames.has(folderName)) {
+				folderName = `${dirName} (${n})`;
+				n++;
+			}
+
+			const folderId = crypto.randomUUID();
+			const newFolder: ChatFolder = { id: folderId, name: folderName, files: [] };
+			folders = [...folders, newFolder];
+
+			uploadDocsIntoFolder(folderId, mdFiles);
+		};
+		input.click();
+	}
+
+	function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
+		let imported = 0;
+		const folder = folders.find((f) => f.id === folderId);
+		const existingNames = new Set((folder?.files ?? []).map((f) => f.name));
+
+		for (const file of mdFiles) {
+			const reader = new FileReader();
+			reader.onload = () => {
+				if (typeof reader.result === 'string') {
+					let name = file.name;
+					if (existingNames.has(name)) {
+						const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
+						const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
+						let i = 1;
+						while (existingNames.has(`${base} (${i})${ext}`)) i++;
+						name = `${base} (${i})${ext}`;
+					}
+					existingNames.add(name);
+					const docFile: DocFile = {
+						id: crypto.randomUUID(),
+						name,
+						content: reader.result as string
+					};
+					folders = folders.map((f) =>
+						f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
+					);
+					imported++;
+					if (imported === mdFiles.length) {
+						toast.success(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
+					}
+				}
+			};
+			reader.readAsText(file);
+		}
+	}
+
+	function uploadFolderToFolder(folderId: string) {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.webkitdirectory = true;
+		input.onchange = () => {
+			const files = input.files;
+			if (!files || files.length === 0) return;
+
+			const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
+			if (mdFiles.length === 0) {
+				toast.error('No .md files found in the selected folder');
+				return;
+			}
+
+			uploadDocsIntoFolder(folderId, mdFiles);
+		};
+		input.click();
+	}
+
 	function selectDoc(folderId: string, fileId: string) {
 		const folder = folders.find((f) => f.id === folderId);
 		const file = folder?.files?.find((f) => f.id === fileId);
@@ -1025,6 +1113,8 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		onDeleteFolder={deleteFolder}
 		onRenameFolder={renameFolder}
 		onUploadDoc={uploadDocToFolder}
+		onUploadFolder={uploadFolderToFolder}
+		onUploadNewFolder={uploadFolder}
 		onSelectDoc={selectDoc}
 		onDeleteDoc={deleteDocFromFolder}
 		onRenameDoc={renameDocInFolder}
