@@ -176,8 +176,6 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 `);
 
 	let drawingShapes: Shape[] = $state([]);
-	let logoSize = $state(128);
-
 	let canvasRef: Canvas | null = $state(null);
 
 	let activeExchanges = $derived(roots[activeRootIndex] ?? roots[0]);
@@ -1088,19 +1086,6 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 						<DocsPanel content={docsContent} onContentChange={(c) => (docsContent = c)} />
 					{/snippet}
 				</Canvas>
-
-				<!-- Logo preview -->
-				<div
-					style="position:fixed;bottom:20px;right:20px;z-index:100;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:12px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);"
-				>
-					<img src={logoLight} alt="Powerset" width={logoSize} height={logoSize} />
-					<div
-						style="display:flex;align-items:center;gap:8px;font-size:12px;color:hsl(var(--muted-foreground));"
-					>
-						<span>{logoSize}px</span>
-						<input type="range" min="16" max="512" bind:value={logoSize} style="width:200px;" />
-					</div>
-				</div>
 			</div>
 
 			<form
