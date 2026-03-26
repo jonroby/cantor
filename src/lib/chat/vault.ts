@@ -1,13 +1,15 @@
-const VAULT_KEY = 'byok_vault_v2';
-const LEGACY_VAULT_KEY = 'byok_vault';
+import {
+	getVaultStore,
+	setVaultStore,
+	migrateVaultStorage,
+	clearVaultStorage
+} from '@/state/persistence.svelte';
 
 interface VaultRecord {
 	cipherText: string;
 	salt: string;
 	iv: string;
 }
-
-type VaultStore = Record<string, VaultRecord>;
 
 function base64ToBytes(b64: string): Uint8Array {
 	return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -65,29 +67,8 @@ async function decryptRecord(record: VaultRecord, password: string): Promise<str
 	return new TextDecoder().decode(decrypted);
 }
 
-function getStore(): VaultStore {
-	const raw = localStorage.getItem(VAULT_KEY);
-	if (!raw) return {};
-	return JSON.parse(raw) as VaultStore;
-}
-
-function setStore(store: VaultStore): void {
-	if (Object.keys(store).length === 0) {
-		localStorage.removeItem(VAULT_KEY);
-	} else {
-		localStorage.setItem(VAULT_KEY, JSON.stringify(store));
-	}
-}
-
-/** Migrate legacy single-key vault to per-provider format. Call once at startup. */
 export function migrateVault(): void {
-	if (localStorage.getItem(VAULT_KEY)) return; // already migrated
-	const legacy = localStorage.getItem(LEGACY_VAULT_KEY);
-	if (!legacy) return;
-	const record = JSON.parse(legacy) as VaultRecord;
-	const store: VaultStore = { claude: record };
-	localStorage.setItem(VAULT_KEY, JSON.stringify(store));
-	localStorage.removeItem(LEGACY_VAULT_KEY);
+	migrateVaultStorage();
 }
 
 export async function saveApiKey(
@@ -95,20 +76,20 @@ export async function saveApiKey(
 	apiKey: string,
 	password: string
 ): Promise<void> {
-	const store = getStore();
+	const store = getVaultStore();
 	store[provider] = await encryptValue(apiKey, password);
-	setStore(store);
+	setVaultStore(store);
 }
 
 export async function loadApiKey(provider: string, password: string): Promise<string> {
-	const store = getStore();
+	const store = getVaultStore();
 	const record = store[provider];
 	if (!record) throw new Error(`No saved key found for ${provider}.`);
 	return decryptRecord(record, password);
 }
 
 export async function loadAllApiKeys(password: string): Promise<Record<string, string>> {
-	const store = getStore();
+	const store = getVaultStore();
 	const result: Record<string, string> = {};
 	for (const [provider, record] of Object.entries(store)) {
 		result[provider] = await decryptRecord(record, password);
@@ -117,25 +98,25 @@ export async function loadAllApiKeys(password: string): Promise<Record<string, s
 }
 
 export function hasVault(): boolean {
-	const store = getStore();
+	const store = getVaultStore();
 	return Object.keys(store).length > 0;
 }
 
 export function hasProviderKey(provider: string): boolean {
-	const store = getStore();
+	const store = getVaultStore();
 	return provider in store;
 }
 
 export function storedProviders(): string[] {
-	return Object.keys(getStore());
+	return Object.keys(getVaultStore());
 }
 
 export function clearVault(): void {
-	localStorage.removeItem(VAULT_KEY);
+	clearVaultStorage();
 }
 
 export function clearProviderKey(provider: string): void {
-	const store = getStore();
+	const store = getVaultStore();
 	delete store[provider];
-	setStore(store);
+	setVaultStore(store);
 }

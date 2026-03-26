@@ -18,14 +18,14 @@
 	import {
 		chatState, getActiveExchanges, getActiveExchangeId,
 		replaceActiveExchanges, setActiveExchangeId
-	} from '@/lib/state/chats.svelte';
+	} from '@/state/chats.svelte';
 	import {
 		providerState, WEBLLM_CONTEXT_OPTIONS,
 		init as initProviders, autoConnectOllama, connectOllama,
 		loadWebLLMModel_ as loadWebLLMModel, deleteWebLLMCache, deleteAllWebLLMCaches,
 		unlockKeys, saveKey, forgetKey, selectModel,
 		updateContextLength, fetchOllamaContextLength, getProviderStream
-	} from '@/lib/state/providers.svelte';
+	} from '@/state/providers.svelte';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;

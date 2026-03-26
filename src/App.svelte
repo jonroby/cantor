@@ -14,15 +14,14 @@
 		chatState, getActiveChat, getActiveExchangeId,
 		newChat as newChatAction, selectChat as selectChatAction,
 		deleteChat as deleteChatAction, renameChat, downloadChat, uploadChat,
-		setActiveExchangeId, hydrate
-	} from '@/lib/state/chats.svelte';
+		setActiveExchangeId
+	} from '@/state/chats.svelte';
 	import {
 		docState, newFolder, deleteFolder, downloadFolder, renameFolder,
 		uploadDocToFolder, uploadFolder, uploadFolderToFolder,
 		selectDoc, deleteDocFromFolder, renameDocInFolder, moveDocToFolder
-	} from '@/lib/state/documents.svelte';
-
-	const STORAGE_KEY = 'chat-tree-store-svelte';
+	} from '@/state/documents.svelte';
+	import { loadFromStorage, saveToStorage, downloadToFile } from '@/state/persistence.svelte';
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
@@ -58,11 +57,7 @@
 
 	$effect(() => {
 		if (hasHydrated) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({
-				chats: chatState.chats,
-				activeChatIndex: chatState.activeChatIndex,
-				folders: docState.folders
-			}));
+			saveToStorage();
 		}
 	});
 
@@ -105,18 +100,7 @@
 			headerVisible = false;
 		}, 2000);
 
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (raw) {
-			try {
-				const parsed = JSON.parse(raw);
-				hydrate(parsed);
-				if (parsed.folders?.length) {
-					docState.folders = parsed.folders;
-				}
-			} catch {
-				// ignore invalid persisted state
-			}
-		}
+		loadFromStorage();
 
 		hasHydrated = true;
 
@@ -146,20 +130,6 @@
 		resetUIState();
 	}
 
-	function saveToDisk() {
-		const payload = JSON.stringify({
-			chats: chatState.chats,
-			activeChatIndex: chatState.activeChatIndex,
-			folders: docState.folders
-		}, null, 2);
-		const blob = new Blob([payload], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = `chat-tree-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
-		link.click();
-		URL.revokeObjectURL(url);
-	}
 
 	function handleSearchSelect(result: SearchResult) {
 		selectChatAction(result.chatIndex);
@@ -207,7 +177,7 @@
 				onFitView={() => chatTreeRef?.fitView()}
 				onGoToTop={() => chatTreeRef?.scrollToTop()}
 				onGoToActive={() => chatTreeRef?.scrollToNode(getActiveExchangeId())}
-				onDownload={saveToDisk}
+				onDownload={downloadToFile}
 			/>
 
 			<ChatTree

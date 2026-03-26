@@ -27,8 +27,8 @@
 		chatState, getActiveExchanges, getActiveExchangeId,
 		replaceActiveExchanges, setActiveExchangeId,
 		forkChat as forkChatAction
-	} from '@/lib/state/chats.svelte';
-	import { docState } from '@/lib/state/documents.svelte';
+	} from '@/state/chats.svelte';
+	import { docState } from '@/state/documents.svelte';
 
 	let expandedSideChatParent: string | null = $state(null);
 	let measuredNodeHeights: Record<string, number> = $state({});
