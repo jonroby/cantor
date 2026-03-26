@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CanvasNode, CanvasEdge, CodeEditorPosition } from '@/lib/chat/layout';
+	import type { CanvasNode, CanvasEdge, CodeEditorPosition } from './layout';
 	import type { Snippet } from 'svelte';
 
 	const MIN_ZOOM = 0.1;

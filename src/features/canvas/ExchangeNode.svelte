@@ -2,7 +2,7 @@
 	import DOMPurify from 'dompurify';
 	import Button from '@/components/custom/button.svelte';
 	import type { Provider } from '@/lib/chat/models';
-	import { renderRichText } from '@/lib/chat/katex';
+	import { renderRichText } from './katex';
 	import { PROVIDER_LOGOS } from '@/lib/chat/logos';
 
 	export interface ExchangeNodeData {

@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
-	import { computeCanvasLayout, NODE_WIDTH } from '@/lib/chat/layout';
-	import type { CanvasNode } from '@/lib/chat/layout';
+	import { computeCanvasLayout, NODE_WIDTH } from './layout';
+	import type { CanvasNode } from './layout';
 	import { getProviderForModelId } from '@/lib/chat/models';
 	import Button from '@/components/custom/button.svelte';
 	import ExchangeNode from '@/features/canvas/ExchangeNode.svelte';
-	import CodeEditor from '@/features/canvas/CodeEditor.svelte';
-	import PythonEditor from '@/features/canvas/PythonEditor.svelte';
+	import CodeEditor from '@/features/code-editor/CodeEditor.svelte';
+	import PythonEditor from '@/features/python-editor/PythonEditor.svelte';
 	import Canvas from '@/features/canvas/Canvas.svelte';
-	import DrawingBoard from '@/features/canvas/DrawingBoard.svelte';
-	import DocsPanel from '@/features/canvas/DocsPanel.svelte';
-	import type { Shape } from '@/lib/drawing/types';
+	import DrawingBoard from '@/features/drawing-board/DrawingBoard.svelte';
+	import DocsPanel from '@/features/docs-panel/DocsPanel.svelte';
+	import type { Shape } from '@/features/drawing-board/drawing-types';
 	import {
 		buildExchangesByParentId,
 		canCreateSideChats,

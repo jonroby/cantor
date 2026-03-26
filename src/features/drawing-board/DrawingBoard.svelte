@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type Shape, type DrawingTool, type Point, generateShapeId } from '@/lib/drawing/types';
+	import { type Shape, type DrawingTool, type Point, generateShapeId } from './drawing-types';
 
 	interface Props {
 		shapes: Shape[];
