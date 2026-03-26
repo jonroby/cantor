@@ -520,6 +520,11 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 			const reader = new FileReader();
 			reader.onload = () => {
 				if (typeof reader.result === 'string') {
+					const folder = folders.find((f) => f.id === folderId);
+					if (folder?.files?.some((f) => f.name === file.name)) {
+						toast.error(`"${file.name}" already exists in this folder`);
+						return;
+					}
 					const docFile: DocFile = {
 						id: crypto.randomUUID(),
 						name: file.name,
@@ -1386,4 +1391,4 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		</div>
 	</SidebarPrimitive.Inset>
 </SidebarPrimitive.Provider>
-<Toaster />
+<Toaster position="top-center" />

@@ -279,7 +279,7 @@
 								<Sidebar.MenuItem>
 									<Sidebar.MenuButton
 										onclick={() => toggleFolder(folder.id)}
-										class="rounded-lg px-3 py-2"
+										class="rounded-lg px-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
 									>
 										<svg
 											width="16"
@@ -324,7 +324,7 @@
 									</Sidebar.MenuButton>
 									<DropdownMenu.Root>
 										<DropdownMenu.Trigger
-											class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100"
+											class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
 											onclick={(e) => e.stopPropagation()}
 										>
 											<svg
@@ -470,7 +470,7 @@
 													activeDocKey?.fileId === file.id}
 												tooltipContent={file.name}
 												onclick={() => onSelectDoc(folder.id, file.id)}
-												class="rounded-lg pl-8 pr-3 py-2"
+												class="rounded-lg pl-8 pr-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground"
 											>
 												<svg
 													width="16"
