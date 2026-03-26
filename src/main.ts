@@ -1,7 +1,7 @@
 import { mount } from 'svelte';
 import 'katex/dist/katex.min.css';
 import './index.css';
-import './routes/layout.css';
+import './layout.css';
 import App from './App.svelte';
 
 const app = mount(App, {
