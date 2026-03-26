@@ -489,12 +489,20 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		measuredNodeHeights = {};
 	}
 
-	function newFolder() {
+	function newFolder(): string {
+		const existingNames = new Set(folders.map((f) => f.name));
+		let name = 'New Folder';
+		let i = 2;
+		while (existingNames.has(name)) {
+			name = `New Folder ${i}`;
+			i++;
+		}
 		const folder: ChatFolder = {
 			id: crypto.randomUUID(),
-			name: `Folder ${folders.length + 1}`
+			name
 		};
 		folders = [...folders, folder];
+		return folder.id;
 	}
 
 	function deleteFolder(folderId: string) {
@@ -502,8 +510,11 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		folders = folders.filter((f) => f.id !== folderId);
 	}
 
-	function renameFolder(folderId: string, name: string) {
+	function renameFolder(folderId: string, name: string): boolean {
+		const conflict = folders.some((f) => f.id !== folderId && f.name === name);
+		if (conflict) return false;
 		folders = folders.map((f) => (f.id === folderId ? { ...f, name } : f));
+		return true;
 	}
 
 	function moveSessionToFolder(sessionIndex: number, folderId: string | null) {

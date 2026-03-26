@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import * as Sidebar from '@/components/ui/sidebar/index.js';
 	import * as Tooltip from '@/components/ui/tooltip/index.js';
 	import * as DropdownMenu from '@/components/ui/dropdown-menu/index.js';
+	import * as AlertDialog from '@/components/ui/alert-dialog/index.js';
+	import { toast } from 'svelte-sonner';
 	import type { ChatSession, ChatFolder } from '$lib/chat/tree';
 	import { useSidebar } from '@/components/ui/sidebar/context.svelte.js';
 	import logoDark from '../../assets/logo_dark.svg';
@@ -14,9 +17,9 @@
 		onNewChat: () => void;
 		onDeleteSession: (index: number) => void;
 		folders: ChatFolder[];
-		onNewFolder: () => void;
+		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
-		onRenameFolder: (folderId: string, name: string) => void;
+		onRenameFolder: (folderId: string, name: string) => boolean;
 		onMoveSessionToFolder: (sessionIndex: number, folderId: string | null) => void;
 		activeDocKey: { folderId: string; fileId: string } | null;
 		onUploadDoc: (folderId: string) => void;
@@ -52,17 +55,41 @@
 		expandedFolders = { ...expandedFolders, [folderId]: !expandedFolders[folderId] };
 	}
 
-	function startRenameFolder(folder: ChatFolder) {
+	let deleteFolderTarget: ChatFolder | null = $state(null);
+
+	async function startRenameFolder(folder: ChatFolder) {
 		editingFolderId = folder.id;
 		editingFolderName = folder.name;
+		await tick();
+		const input = document.querySelector<HTMLInputElement>('[data-rename-folder-input]');
+		input?.focus();
+		input?.select();
 	}
 
 	function commitRenameFolder() {
 		if (editingFolderId && editingFolderName.trim()) {
-			onRenameFolder(editingFolderId, editingFolderName.trim());
+			const ok = onRenameFolder(editingFolderId, editingFolderName.trim());
+			if (!ok) {
+				toast.error(`A folder named "${editingFolderName.trim()}" already exists`);
+				return;
+			}
 		}
 		editingFolderId = null;
 		editingFolderName = '';
+	}
+
+	async function handleNewFolder() {
+		const id = onNewFolder();
+		expandedFolders = { ...expandedFolders, [id]: true };
+		const folder = folders.find((f) => f.id === id);
+		if (folder) {
+			editingFolderId = id;
+			editingFolderName = folder.name;
+			await tick();
+			const input = document.querySelector<HTMLInputElement>('[data-rename-folder-input]');
+			input?.focus();
+			input?.select();
+		}
 	}
 
 	function sessionsInFolder(folderId: string): { session: ChatSession; index: number }[] {
@@ -241,7 +268,7 @@
 							<Sidebar.MenuButton
 								size="default"
 								tooltipContent="New folder"
-								onclick={onNewFolder}
+								onclick={handleNewFolder}
 								class="rounded-lg px-3 py-2"
 							>
 								<svg
@@ -301,6 +328,7 @@
 											<!-- svelte-ignore a11y_autofocus -->
 											<input
 												type="text"
+												data-rename-folder-input
 												bind:value={editingFolderName}
 												onblur={commitRenameFolder}
 												onkeydown={(e) => {
@@ -391,7 +419,7 @@
 												<DropdownMenu.Separator class="my-1 bg-border h-px" />
 												<DropdownMenu.Item
 													class="gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex cursor-pointer items-center"
-													onclick={() => onDeleteFolder(folder.id)}
+													onclick={() => (deleteFolderTarget = folder)}
 												>
 													<svg
 														width="14"
@@ -523,3 +551,42 @@
 
 	<Sidebar.Rail />
 </Sidebar.Root>
+
+<AlertDialog.Root
+	open={!!deleteFolderTarget}
+	onOpenChange={(open) => {
+		if (!open) deleteFolderTarget = null;
+	}}
+>
+	<AlertDialog.Portal>
+		<AlertDialog.Overlay class="inset-0 bg-black/50 fixed z-50" />
+		<AlertDialog.Content
+			class="max-w-md rounded-xl bg-background p-6 shadow-lg fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 border"
+		>
+			<AlertDialog.Header>
+				<AlertDialog.Title class="text-lg font-semibold">Delete folder</AlertDialog.Title>
+				<AlertDialog.Description class="text-sm text-muted-foreground mt-2">
+					Are you sure you want to delete "{deleteFolderTarget?.name}"? This will remove the folder
+					and all its documents. Chats will be moved out of the folder.
+				</AlertDialog.Description>
+			</AlertDialog.Header>
+			<AlertDialog.Footer class="mt-6 gap-2 flex justify-end">
+				<AlertDialog.Cancel class="rounded-lg px-4 py-2 text-sm hover:bg-muted border"
+					>Cancel</AlertDialog.Cancel
+				>
+				<AlertDialog.Action
+					class="rounded-lg bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/90"
+					onclick={() => {
+						if (deleteFolderTarget) {
+							onDeleteFolder(deleteFolderTarget.id);
+							toast.success(`Deleted "${deleteFolderTarget.name}"`);
+						}
+						deleteFolderTarget = null;
+					}}
+				>
+					Delete
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</AlertDialog.Content>
+	</AlertDialog.Portal>
+</AlertDialog.Root>
