@@ -13,13 +13,15 @@
 		sessions: ChatSession[];
 		activeSessionIndex: number;
 		onSelectSession: (index: number) => void;
-		onNewChat: () => void;
+		onNewChat: () => number;
 		onDeleteSession: (index: number) => void;
+		onRenameSession: (index: number, name: string) => void;
+		onDownloadSession: (index: number) => void;
+		onUploadChat: () => void;
 		folders: ChatFolder[];
 		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
 		onRenameFolder: (folderId: string, name: string) => boolean;
-		onMoveSessionToFolder: (sessionIndex: number, folderId: string | null) => void;
 		onUploadDoc: (folderId: string) => void;
 		onSelectDoc: (folderId: string, fileId: string) => void;
 		onDeleteDoc: (folderId: string, fileId: string) => void;
@@ -33,11 +35,13 @@
 		onSelectSession,
 		onNewChat,
 		onDeleteSession,
+		onRenameSession,
+		onDownloadSession,
+		onUploadChat,
 		folders,
 		onNewFolder,
 		onDeleteFolder,
 		onRenameFolder,
-		onMoveSessionToFolder,
 		onUploadDoc,
 		onSelectDoc,
 		onDeleteDoc,
@@ -60,6 +64,26 @@
 
 	let deleteFolderTarget: ChatFolder | null = $state(null);
 	let deleteDocTarget: { folderId: string; fileId: string; fileName: string } | null = $state(null);
+	let deleteChatTarget: { index: number; name: string } | null = $state(null);
+	let editingChatIndex: number | null = $state(null);
+	let editingChatName = $state('');
+
+	async function startRenameChat(index: number, name: string) {
+		editingChatIndex = index;
+		editingChatName = name;
+		await tick();
+		const input = document.querySelector<HTMLInputElement>('[data-rename-chat-input]');
+		input?.focus();
+		input?.select();
+	}
+
+	function commitRenameChat() {
+		if (editingChatIndex !== null && editingChatName.trim()) {
+			onRenameSession(editingChatIndex, editingChatName.trim());
+		}
+		editingChatIndex = null;
+		editingChatName = '';
+	}
 	let editingDocFileId: string | null = $state(null);
 	let editingDocFileName = $state('');
 	let editingDocFolderId: string | null = $state(null);
@@ -217,7 +241,12 @@
 						<Sidebar.MenuButton
 							size="default"
 							tooltipContent="New chat"
-							onclick={onNewChat}
+							onclick={async () => {
+								const index = onNewChat();
+								const name = sessions[index]?.name ?? '';
+								await tick();
+								startRenameChat(index, name);
+							}}
 							class="rounded-lg px-3 py-2"
 						>
 							<svg
@@ -248,8 +277,40 @@
 
 			<!-- Chat list (unfoldered) -->
 			<Sidebar.Group class="p-0">
-				<Sidebar.GroupLabel class="px-3 text-xs text-sidebar-foreground/50 mb-1">
-					Chats
+				<Sidebar.GroupLabel
+					class="px-3 text-xs text-sidebar-foreground/50 mb-1 flex items-center justify-between"
+				>
+					<span>Chats</span>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="rounded-md p-0.5 text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors"
+									onclick={onUploadChat}
+									aria-label="Upload chat"
+								>
+									<svg
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+										<polyline points="17 8 12 3 7 8" />
+										<line x1="12" y1="3" x2="12" y2="15" />
+									</svg>
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
+							Upload chat
+						</Tooltip.Content>
+					</Tooltip.Root>
 				</Sidebar.GroupLabel>
 				<Sidebar.GroupContent>
 					<Sidebar.Menu>
@@ -259,7 +320,7 @@
 									isActive={index === activeSessionIndex}
 									tooltipContent={session.name}
 									onclick={() => onSelectSession(index)}
-									class="rounded-lg px-3 py-2"
+									class="rounded-lg px-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
 								>
 									<svg
 										width="16"
@@ -273,17 +334,32 @@
 									>
 										<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 									</svg>
-									<span>{session.name}</span>
+									{#if editingChatIndex === index}
+										<!-- svelte-ignore a11y_autofocus -->
+										<input
+											type="text"
+											data-rename-chat-input
+											bind:value={editingChatName}
+											onblur={commitRenameChat}
+											onkeydown={(e) => {
+												if (e.key === 'Enter') commitRenameChat();
+												if (e.key === 'Escape') {
+													editingChatIndex = null;
+													editingChatName = '';
+												}
+											}}
+											onclick={(e) => e.stopPropagation()}
+											autofocus
+											class="text-sm text-sidebar-foreground w-full border-none bg-transparent outline-none"
+										/>
+									{:else}
+										<span class="sidebar-fade-text">{session.name}</span>
+									{/if}
 								</Sidebar.MenuButton>
-								{#if sessions.length > 1}
-									<Sidebar.MenuAction
-										showOnHover
-										onclick={(e: MouseEvent) => {
-											e.stopPropagation();
-											onDeleteSession(index);
-										}}
-										aria-label="Delete chat"
-										class="text-sidebar-foreground/40 hover:text-sidebar-foreground"
+								<DropdownMenu.Root>
+									<DropdownMenu.Trigger
+										class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
+										onclick={(e) => e.stopPropagation()}
 									>
 										<svg
 											width="14"
@@ -291,13 +367,90 @@
 											viewBox="0 0 24 24"
 											fill="none"
 											stroke="currentColor"
-											stroke-width="1.5"
+											stroke-width="2"
 											stroke-linecap="round"
 										>
-											<path d="M18 6L6 18M6 6l12 12" />
+											<circle cx="5" cy="12" r="1" />
+											<circle cx="12" cy="12" r="1" />
+											<circle cx="19" cy="12" r="1" />
 										</svg>
-									</Sidebar.MenuAction>
-								{/if}
+									</DropdownMenu.Trigger>
+									<DropdownMenu.Portal>
+										<DropdownMenu.Content
+											align="start"
+											side="right"
+											class="rounded-lg bg-popover p-1 text-popover-foreground shadow-md z-50 min-w-[140px] border"
+										>
+											<DropdownMenu.Item
+												class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+												onclick={() => startRenameChat(index, session.name)}
+											>
+												<svg
+													width="14"
+													height="14"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="1.5"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+												>
+													<path d="M12 20h9" />
+													<path
+														d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+													/>
+												</svg>
+												Rename
+											</DropdownMenu.Item>
+											<DropdownMenu.Item
+												class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+												onclick={() => onDownloadSession(index)}
+											>
+												<svg
+													width="14"
+													height="14"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="1.5"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+												>
+													<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+													<polyline points="7 10 12 15 17 10" />
+													<line x1="12" y1="15" x2="12" y2="3" />
+												</svg>
+												Download
+											</DropdownMenu.Item>
+											{#if sessions.length > 1}
+												<DropdownMenu.Separator class="my-1 bg-border h-px" />
+												<DropdownMenu.Item
+													class="gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex cursor-pointer items-center"
+													onclick={() =>
+														(deleteChatTarget = {
+															index,
+															name: session.name
+														})}
+												>
+													<svg
+														width="14"
+														height="14"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="1.5"
+														stroke-linecap="round"
+													>
+														<path
+															d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+														/>
+													</svg>
+													Delete
+												</DropdownMenu.Item>
+											{/if}
+										</DropdownMenu.Content>
+									</DropdownMenu.Portal>
+								</DropdownMenu.Root>
 							</Sidebar.MenuItem>
 						{/each}
 					</Sidebar.Menu>
@@ -527,7 +680,7 @@
 													isActive={index === activeSessionIndex}
 													tooltipContent={session.name}
 													onclick={() => onSelectSession(index)}
-													class="rounded-lg pl-8 pr-3 py-2"
+													class="rounded-lg pl-8 pr-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
 												>
 													<svg
 														width="16"
@@ -543,17 +696,32 @@
 															d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
 														/>
 													</svg>
-													<span>{session.name}</span>
+													{#if editingChatIndex === index}
+														<!-- svelte-ignore a11y_autofocus -->
+														<input
+															type="text"
+															data-rename-chat-input
+															bind:value={editingChatName}
+															onblur={commitRenameChat}
+															onkeydown={(e) => {
+																if (e.key === 'Enter') commitRenameChat();
+																if (e.key === 'Escape') {
+																	editingChatIndex = null;
+																	editingChatName = '';
+																}
+															}}
+															onclick={(e) => e.stopPropagation()}
+															autofocus
+															class="text-sm text-sidebar-foreground w-full border-none bg-transparent outline-none"
+														/>
+													{:else}
+														<span class="sidebar-fade-text">{session.name}</span>
+													{/if}
 												</Sidebar.MenuButton>
-												{#if sessions.length > 1}
-													<Sidebar.MenuAction
-														showOnHover
-														onclick={(e: MouseEvent) => {
-															e.stopPropagation();
-															onMoveSessionToFolder(index, null);
-														}}
-														aria-label="Remove from folder"
-														class="text-sidebar-foreground/40 hover:text-sidebar-foreground"
+												<DropdownMenu.Root>
+													<DropdownMenu.Trigger
+														class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
+														onclick={(e) => e.stopPropagation()}
 													>
 														<svg
 															width="14"
@@ -561,13 +729,90 @@
 															viewBox="0 0 24 24"
 															fill="none"
 															stroke="currentColor"
-															stroke-width="1.5"
+															stroke-width="2"
 															stroke-linecap="round"
 														>
-															<path d="M18 6L6 18M6 6l12 12" />
+															<circle cx="5" cy="12" r="1" />
+															<circle cx="12" cy="12" r="1" />
+															<circle cx="19" cy="12" r="1" />
 														</svg>
-													</Sidebar.MenuAction>
-												{/if}
+													</DropdownMenu.Trigger>
+													<DropdownMenu.Portal>
+														<DropdownMenu.Content
+															align="start"
+															side="right"
+															class="rounded-lg bg-popover p-1 text-popover-foreground shadow-md z-50 min-w-[140px] border"
+														>
+															<DropdownMenu.Item
+																class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+																onclick={() => startRenameChat(index, session.name)}
+															>
+																<svg
+																	width="14"
+																	height="14"
+																	viewBox="0 0 24 24"
+																	fill="none"
+																	stroke="currentColor"
+																	stroke-width="1.5"
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																>
+																	<path d="M12 20h9" />
+																	<path
+																		d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+																	/>
+																</svg>
+																Rename
+															</DropdownMenu.Item>
+															<DropdownMenu.Item
+																class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+																onclick={() => onDownloadSession(index)}
+															>
+																<svg
+																	width="14"
+																	height="14"
+																	viewBox="0 0 24 24"
+																	fill="none"
+																	stroke="currentColor"
+																	stroke-width="1.5"
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																>
+																	<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+																	<polyline points="7 10 12 15 17 10" />
+																	<line x1="12" y1="15" x2="12" y2="3" />
+																</svg>
+																Download
+															</DropdownMenu.Item>
+															{#if sessions.length > 1}
+																<DropdownMenu.Separator class="my-1 bg-border h-px" />
+																<DropdownMenu.Item
+																	class="gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex cursor-pointer items-center"
+																	onclick={() =>
+																		(deleteChatTarget = {
+																			index,
+																			name: session.name
+																		})}
+																>
+																	<svg
+																		width="14"
+																		height="14"
+																		viewBox="0 0 24 24"
+																		fill="none"
+																		stroke="currentColor"
+																		stroke-width="1.5"
+																		stroke-linecap="round"
+																	>
+																		<path
+																			d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+																		/>
+																	</svg>
+																	Delete
+																</DropdownMenu.Item>
+															{/if}
+														</DropdownMenu.Content>
+													</DropdownMenu.Portal>
+												</DropdownMenu.Root>
 											</Sidebar.MenuItem>
 										{/each}
 										{#each folder.files ?? [] as file (file.id)}
@@ -758,6 +1003,44 @@
 </Sidebar.Root>
 
 <AlertDialog.Root
+	open={!!deleteChatTarget}
+	onOpenChange={(open) => {
+		if (!open) deleteChatTarget = null;
+	}}
+>
+	<AlertDialog.Portal>
+		<AlertDialog.Overlay class="inset-0 bg-black/50 fixed z-50" />
+		<AlertDialog.Content
+			class="max-w-md rounded-xl bg-background p-6 shadow-lg fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 border"
+		>
+			<AlertDialog.Header>
+				<AlertDialog.Title class="text-lg font-semibold">Delete chat</AlertDialog.Title>
+				<AlertDialog.Description class="text-sm text-muted-foreground mt-2">
+					Are you sure you want to delete "{deleteChatTarget?.name}"?
+				</AlertDialog.Description>
+			</AlertDialog.Header>
+			<AlertDialog.Footer class="mt-6 gap-2 flex justify-end">
+				<AlertDialog.Cancel class="rounded-lg px-4 py-2 text-sm hover:bg-muted border"
+					>Cancel</AlertDialog.Cancel
+				>
+				<AlertDialog.Action
+					class="rounded-lg bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/90"
+					onclick={() => {
+						if (deleteChatTarget) {
+							onDeleteSession(deleteChatTarget.index);
+							toast.success(`Deleted "${deleteChatTarget.name}"`);
+						}
+						deleteChatTarget = null;
+					}}
+				>
+					Delete
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</AlertDialog.Content>
+	</AlertDialog.Portal>
+</AlertDialog.Root>
+
+<AlertDialog.Root
 	open={!!deleteFolderTarget}
 	onOpenChange={(open) => {
 		if (!open) deleteFolderTarget = null;
@@ -833,3 +1116,16 @@
 		</AlertDialog.Content>
 	</AlertDialog.Portal>
 </AlertDialog.Root>
+
+<style>
+	.sidebar-fade-text {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+	:global(.group\/menu-item:hover) .sidebar-fade-text {
+		text-overflow: clip;
+		mask-image: linear-gradient(to right, black 40%, transparent 85%) !important;
+		-webkit-mask-image: linear-gradient(to right, black 40%, transparent 85%) !important;
+	}
+</style>

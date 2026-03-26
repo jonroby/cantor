@@ -48,6 +48,7 @@
 	import {
 		ROOT_ANCHOR_ID,
 		addExchangeResult,
+		buildEmptyExchanges,
 		buildExchangesByParentId,
 		canAcceptNewChat,
 		canCreateSideChats,
@@ -81,6 +82,7 @@
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import ModelPalette from '$lib/components/ModelPalette.svelte';
 	import type { ChatSession, ChatFolder } from '$lib/chat/tree';
+	import { validateChatSessionUpload } from '$lib/chat/tree';
 	import logoLight from './assets/logo_light.svg';
 	import logoDark from './assets/logo_dark.svg';
 
@@ -89,9 +91,7 @@
 	function makeSession(roots: ExchangeMap[], name?: string): ChatSession {
 		return {
 			id: crypto.randomUUID(),
-			name:
-				name ??
-				`Chat ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`,
+			name: name ?? `Chat ${sessions.length + 1}`,
 			roots,
 			activeRootIndex: 0
 		};
@@ -471,13 +471,14 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		});
 	}
 
-	function newChat() {
-		const session = makeSession([withExplicitExchangeOrder(buildInitialExchanges())]);
+	function newChat(): number {
+		const session = makeSession([buildEmptyExchanges()]);
 		sessions = [...sessions, session];
 		activeSessionIndex = sessions.length - 1;
 		activeExchangeId = getMainChatTail(session.roots[0]);
 		expandedSideChatParent = null;
 		measuredNodeHeights = {};
+		return sessions.length - 1;
 	}
 
 	function selectSession(index: number) {
@@ -496,6 +497,58 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		activeExchangeId = getMainChatTail(session.roots[session.activeRootIndex ?? 0]);
 		expandedSideChatParent = null;
 		measuredNodeHeights = {};
+	}
+
+	function renameSession(index: number, name: string) {
+		sessions[index].name = name;
+		sessions = sessions;
+	}
+
+	function downloadSession(index: number) {
+		const session = sessions[index];
+		const payload = JSON.stringify(session, null, 2);
+		const blob = new Blob([payload], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = `${session.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`;
+		link.click();
+		URL.revokeObjectURL(url);
+	}
+
+	function uploadChat() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.json';
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			try {
+				const text = await file.text();
+				const data = JSON.parse(text);
+				const session = validateChatSessionUpload(data);
+				session.id = crypto.randomUUID();
+				const baseName = file.name.replace(/\.json$/i, '');
+				const existingNames = new Set(sessions.map((s) => s.name));
+				let name = baseName;
+				let i = 1;
+				while (existingNames.has(name)) {
+					name = `${baseName} (${i})`;
+					i++;
+				}
+				session.name = name;
+				sessions = [...sessions, session];
+				activeSessionIndex = sessions.length - 1;
+				const s = sessions[activeSessionIndex];
+				activeExchangeId = getMainChatTail(s.roots[s.activeRootIndex ?? 0]);
+				expandedSideChatParent = null;
+				measuredNodeHeights = {};
+				toast.success(`Imported "${session.name}"`);
+			} catch (e) {
+				toast.error(e instanceof Error ? e.message : 'Invalid chat file');
+			}
+		};
+		input.click();
 	}
 
 	function newFolder(): string {
@@ -524,10 +577,6 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		if (conflict) return false;
 		folders = folders.map((f) => (f.id === folderId ? { ...f, name } : f));
 		return true;
-	}
-
-	function moveSessionToFolder(sessionIndex: number, folderId: string | null) {
-		sessions = sessions.map((s, i) => (i === sessionIndex ? { ...s, folderId } : s));
 	}
 
 	function uploadDocToFolder(folderId: string) {
@@ -968,11 +1017,13 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		onSelectSession={selectSession}
 		onNewChat={newChat}
 		onDeleteSession={deleteSession}
+		onRenameSession={renameSession}
+		onDownloadSession={downloadSession}
+		onUploadChat={uploadChat}
 		{folders}
 		onNewFolder={newFolder}
 		onDeleteFolder={deleteFolder}
 		onRenameFolder={renameFolder}
-		onMoveSessionToFolder={moveSessionToFolder}
 		onUploadDoc={uploadDocToFolder}
 		onSelectDoc={selectDoc}
 		onDeleteDoc={deleteDocFromFolder}

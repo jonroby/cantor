@@ -51,6 +51,18 @@ export interface AddExchangeResult {
 	exchanges: ExchangeMap;
 }
 
+export function buildEmptyExchanges(): ExchangeMap {
+	return {
+		[ROOT_ANCHOR_ID]: {
+			id: ROOT_ANCHOR_ID,
+			parentId: null,
+			prompt: '',
+			response: '',
+			isAnchor: true
+		}
+	};
+}
+
 export class ChatTreeOperationError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -161,6 +173,63 @@ export function validateChatTree(exchanges: ExchangeMap): ExchangeMap {
 	);
 
 	return exchanges;
+}
+
+export function validateChatSessionUpload(data: unknown): ChatSession {
+	if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+		throw new Error('Upload must be a JSON object.');
+	}
+
+	const obj = data as Record<string, unknown>;
+
+	if (typeof obj.id !== 'string' || !obj.id) {
+		throw new Error('Session is missing a valid "id".');
+	}
+	if (typeof obj.name !== 'string' || !obj.name) {
+		throw new Error('Session is missing a valid "name".');
+	}
+	if (!Array.isArray(obj.roots) || obj.roots.length === 0) {
+		throw new Error('Session must have at least one root.');
+	}
+	if (
+		typeof obj.activeRootIndex !== 'number' ||
+		obj.activeRootIndex < 0 ||
+		obj.activeRootIndex >= obj.roots.length
+	) {
+		throw new Error('Session has an invalid "activeRootIndex".');
+	}
+
+	for (let i = 0; i < obj.roots.length; i++) {
+		const root = obj.roots[i];
+		if (typeof root !== 'object' || root === null || Array.isArray(root)) {
+			throw new Error(`Root at index ${i} is not a valid exchange map.`);
+		}
+		const exchangeMap = root as ExchangeMap;
+		if (Object.keys(exchangeMap).length === 0) {
+			throw new Error(`Root at index ${i} is empty.`);
+		}
+		for (const [id, exchange] of Object.entries(exchangeMap)) {
+			if (typeof exchange !== 'object' || exchange === null) {
+				throw new Error(`Exchange "${id}" in root ${i} is not a valid object.`);
+			}
+			if (typeof exchange.id !== 'string') {
+				throw new Error(`Exchange in root ${i} is missing an "id".`);
+			}
+			if (typeof exchange.prompt !== 'string') {
+				throw new Error(`Exchange "${id}" in root ${i} is missing a "prompt".`);
+			}
+			if (typeof exchange.response !== 'string') {
+				throw new Error(`Exchange "${id}" in root ${i} is missing a "response".`);
+			}
+		}
+		try {
+			validateChatTree(exchangeMap);
+		} catch (e) {
+			throw new Error(`Root at index ${i}: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	}
+
+	return data as ChatSession;
 }
 
 export function addExchange(

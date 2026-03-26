@@ -1,0 +1,12 @@
+<style>
+	.sidebar-fade-text {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+	:global(.group\/menu-item:hover) .sidebar-fade-text {
+		text-overflow: clip;
+		mask-image: linear-gradient(to right, black 55%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to right, black 55%, transparent 100%);
+	}
+</style>
