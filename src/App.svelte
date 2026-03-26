@@ -305,12 +305,19 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 		window.addEventListener('keydown', handleKeyDown);
 
+		function hasFiles(dt: DataTransfer | null): boolean {
+			if (!dt) return false;
+			return Array.from(dt.types).includes('Files');
+		}
+
 		function handleWindowDragOver(e: DragEvent) {
+			if (!hasFiles(e.dataTransfer)) return;
 			e.preventDefault();
-			if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+			e.dataTransfer!.dropEffect = 'copy';
 		}
 
 		function handleWindowDrop(e: DragEvent) {
+			if (!hasFiles(e.dataTransfer)) return;
 			e.preventDefault();
 			const file = e.dataTransfer?.files?.[0];
 			if (!file || !file.name.endsWith('.md')) return;
@@ -561,6 +568,17 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		}
 	}
 
+	function renameDocInFolder(folderId: string, fileId: string, name: string): boolean {
+		const folder = folders.find((f) => f.id === folderId);
+		if (folder?.files?.some((f) => f.id !== fileId && f.name === name)) return false;
+		folders = folders.map((f) =>
+			f.id === folderId
+				? { ...f, files: (f.files ?? []).map((d) => (d.id === fileId ? { ...d, name } : d)) }
+				: f
+		);
+		return true;
+	}
+
 	function deleteDocFromFolder(folderId: string, fileId: string) {
 		folders = folders.map((f) =>
 			f.id === folderId ? { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) } : f
@@ -568,6 +586,24 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		if (activeDocKey?.folderId === folderId && activeDocKey?.fileId === fileId) {
 			activeDocKey = null;
 		}
+	}
+
+	function moveDocToFolder(fromFolderId: string, fileId: string, toFolderId: string): boolean {
+		const fromFolder = folders.find((f) => f.id === fromFolderId);
+		const toFolder = folders.find((f) => f.id === toFolderId);
+		const file = fromFolder?.files?.find((f) => f.id === fileId);
+		if (!file || !toFolder) return false;
+		if (toFolder.files?.some((f) => f.name === file.name)) return false;
+		folders = folders.map((f) => {
+			if (f.id === fromFolderId)
+				return { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) };
+			if (f.id === toFolderId) return { ...f, files: [...(f.files ?? []), file] };
+			return f;
+		});
+		if (activeDocKey?.folderId === fromFolderId && activeDocKey?.fileId === fileId) {
+			activeDocKey = { folderId: toFolderId, fileId };
+		}
+		return true;
 	}
 
 	function setMeasuredNodeHeight(exchangeId: string, height: number) {
@@ -926,6 +962,8 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		onUploadDoc={uploadDocToFolder}
 		onSelectDoc={selectDoc}
 		onDeleteDoc={deleteDocFromFolder}
+		onRenameDoc={renameDocInFolder}
+		onMoveDoc={moveDocToFolder}
 	/>
 	<SidebarPrimitive.Inset>
 		<div class="page-shell" onwheel={handleCanvasWheel}>
