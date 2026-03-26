@@ -5,7 +5,7 @@
 	import type { Chat } from '@/lib/chat/tree';
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar } from '@/features/app-sidebar';
-	import { ChatToolbar } from '@/features/ChatToolbar';
+	import { ChatToolbar } from '@/features/chat-toolbar';
 	import { SearchDialog } from '@/features/search-dialog';
 	import { ChatHeader } from '@/features/chat-header';
 	import ChatTree from '@/features/canvas/ChatTree.svelte';
