@@ -2,14 +2,14 @@
 	import { onMount, tick } from 'svelte';
 	import JSZip from 'jszip';
 	import { toast } from 'svelte-sonner';
-	import Toaster from '@/components/ui/sonner/sonner.svelte';
+	import Toaster from '@/shadcn/ui/sonner/sonner.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { buildInitialExchanges } from '$lib/chat/initialExchanges';
-	import { computeCanvasLayout, NODE_WIDTH } from '$lib/chat/layout';
-	import type { CanvasNode } from '$lib/chat/layout';
-	import { streamClaudeChat } from '$lib/chat/claude';
-	import { streamGeminiChat } from '$lib/chat/gemini';
-	import { streamOpenAICompatChat } from '$lib/chat/openai-compat';
+	import { buildInitialExchanges } from '@/lib/chat/initialExchanges';
+	import { computeCanvasLayout, NODE_WIDTH } from '@/lib/chat/layout';
+	import type { CanvasNode } from '@/lib/chat/layout';
+	import { streamClaudeChat } from '@/lib/chat/claude';
+	import { streamGeminiChat } from '@/lib/chat/gemini';
+	import { streamOpenAICompatChat } from '@/lib/chat/openai-compat';
 	import {
 		PROVIDER_CONFIG,
 		getModelContextLength,
@@ -18,21 +18,21 @@
 		type ActiveModel,
 		type OllamaStatus,
 		type Provider
-	} from '$lib/chat/models';
-	import Button from '$lib/components/ui/button.svelte';
-	import ExchangeNode from '$lib/components/canvas/ExchangeNode.svelte';
-	import CodeEditor from '$lib/components/canvas/CodeEditor.svelte';
-	import PythonEditor from '$lib/components/canvas/PythonEditor.svelte';
-	import Canvas from '$lib/components/canvas/Canvas.svelte';
-	import DrawingBoard from '$lib/components/canvas/DrawingBoard.svelte';
-	import DocsPanel from '$lib/components/canvas/DocsPanel.svelte';
-	import type { Shape } from '$lib/drawing/types';
+	} from '@/lib/chat/models';
+	import Button from '@/components/ui/button.svelte';
+	import ExchangeNode from '@/components/canvas/ExchangeNode.svelte';
+	import CodeEditor from '@/components/canvas/CodeEditor.svelte';
+	import PythonEditor from '@/components/canvas/PythonEditor.svelte';
+	import Canvas from '@/components/canvas/Canvas.svelte';
+	import DrawingBoard from '@/components/canvas/DrawingBoard.svelte';
+	import DocsPanel from '@/components/canvas/DocsPanel.svelte';
+	import type { Shape } from '@/lib/drawing/types';
 	import {
 		DEFAULT_OLLAMA_URL,
 		fetchAvailableModels,
 		fetchModelContextLength,
 		streamOllamaChat
-	} from '$lib/chat/ollama';
+	} from '@/lib/chat/ollama';
 	import {
 		getWebLLMModels,
 		loadWebLLMModel,
@@ -43,8 +43,8 @@
 		type WebLLMStatus,
 		type WebLLMModelEntry,
 		type WebLLMContextSize
-	} from '$lib/chat/webllm';
-	import { getDefaultItems, searchChats, type SearchResult } from '$lib/chat/search';
+	} from '@/lib/chat/webllm';
+	import { getDefaultItems, searchChats, type SearchResult } from '@/lib/chat/search';
 	import {
 		ROOT_ANCHOR_ID,
 		addExchangeResult,
@@ -69,23 +69,23 @@
 		updateExchangeTokens,
 		withExplicitExchangeOrder,
 		type DocFile
-	} from '$lib/chat/tree';
+	} from '@/lib/chat/tree';
 	import {
 		clearProviderKey,
 		loadAllApiKeys,
 		migrateVault,
 		saveApiKey,
 		storedProviders as getStoredProviders
-	} from '$lib/chat/vault';
-	import * as SidebarPrimitive from '@/components/ui/sidebar/index.js';
-	import { AppSidebar } from '$lib/components/app-sidebar';
-	import { ModelPalette } from '$lib/components/model-palette';
-	import { FloatingActions } from '$lib/components/floating-actions';
-	import { SearchDialog } from '$lib/components/search-dialog';
-	import { ChatHeader } from '$lib/components/chat-header';
-	import { Composer } from '$lib/components/composer';
-	import type { ChatSession, ChatFolder } from '$lib/chat/tree';
-	import { validateChatSessionUpload } from '$lib/chat/tree';
+	} from '@/lib/chat/vault';
+	import * as SidebarPrimitive from '@/shadcn/ui/sidebar/index.js';
+	import { AppSidebar } from '@/components/app-sidebar';
+	import { ModelPalette } from '@/components/model-palette';
+	import { FloatingActions } from '@/components/floating-actions';
+	import { SearchDialog } from '@/components/search-dialog';
+	import { ChatHeader } from '@/components/chat-header';
+	import { Composer } from '@/components/composer';
+	import type { ChatSession, ChatFolder } from '@/lib/chat/tree';
+	import { validateChatSessionUpload } from '@/lib/chat/tree';
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
 
@@ -937,7 +937,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 	function getProviderStream(
 		model: ActiveModel,
-		history: import('$lib/chat/tree').Message[],
+		history: import('@/lib/chat/tree').Message[],
 		signal: AbortSignal
 	) {
 		const key = apiKeys[model.provider] ?? '';
@@ -972,7 +972,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 			expandedSideChatParent = activeExchangeId;
 		}
 
-		let created: { id: string; exchanges: import('$lib/chat/tree').ExchangeMap };
+		let created: { id: string; exchanges: import('@/lib/chat/tree').ExchangeMap };
 		try {
 			created = addExchangeResult(activeExchanges, parentId, prompt, '', activeModel.modelId);
 		} catch (error) {

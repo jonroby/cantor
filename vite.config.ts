@@ -8,8 +8,7 @@ export default defineConfig({
 	plugins: [tailwindcss(), svelte(), devtoolsJson()],
 	resolve: {
 		alias: {
-			'@': '/Users/jonroby/ai/superset-svelte/src',
-			$lib: '/Users/jonroby/ai/superset-svelte/src/lib'
+			'@': '/Users/jonroby/ai/superset-svelte/src'
 		}
 	},
 	test: {

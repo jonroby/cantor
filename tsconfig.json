@@ -17,8 +17,7 @@
 		"sourceMap": true,
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"],
-			"$lib/*": ["src/lib/*"]
+			"@/*": ["src/*"]
 		},
 		"types": ["svelte", "vite/client"]
 	},

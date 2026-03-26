@@ -1,5 +1,5 @@
 import { toast } from 'svelte-sonner';
-import type { ChatFolder, DocFile } from '$lib/chat/tree';
+import type { ChatFolder, DocFile } from '@/lib/chat/tree';
 
 export interface OpenDoc {
 	id: string;

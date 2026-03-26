@@ -24,9 +24,9 @@ The app is mostly client-side and centered around one top-level UI shell in `src
 - `src/main.ts` mounts the Svelte app and loads global CSS.
 - `src/App.svelte` owns the primary application state, hydration from `localStorage`, model selection, composer flow, search UI, branching-chat actions, and response streaming.
 - `src/lib/chat/*` contains the domain logic for chat trees, model metadata, provider integrations, search, layout, seed data, and API-key storage.
-- `src/lib/components/canvas/*` contains the visual canvas and node rendering for the conversation graph.
-- `src/lib/components/ui/*` contains small reusable UI primitives such as buttons and inputs.
-- `src/components/ui/*` contains shadcn-svelte primitives (sidebar, tooltip, sheet, etc.).
+- `src/components/canvas/*` contains the visual canvas and node rendering for the conversation graph.
+- `src/components/ui/*` contains small reusable UI primitives such as buttons and inputs.
+- `src/shadcn/ui/*` contains shadcn-svelte primitives (sidebar, tooltip, sheet, etc.).
 
 ## Core Data Model
 
