@@ -18,8 +18,8 @@
 		renderPythonEditor?: Snippet<[]>;
 		drawingBoard?: CodeEditorPosition;
 		renderDrawingBoard?: Snippet<[]>;
-		docsPanel?: CodeEditorPosition;
-		renderDocsPanel?: Snippet<[]>;
+		docsPanels?: CodeEditorPosition[];
+		renderDocsPanel?: Snippet<[number]>;
 	}
 
 	let {
@@ -35,7 +35,7 @@
 		renderPythonEditor,
 		drawingBoard,
 		renderDrawingBoard,
-		docsPanel,
+		docsPanels,
 		renderDocsPanel
 	}: Props = $props();
 
@@ -214,13 +214,12 @@
 				{@render renderNode(n)}
 			</div>
 		{/each}
-		{#if docsPanel && renderDocsPanel}
-			<div
-				class="canvas-node"
-				style="left:{docsPanel.x}px;top:{docsPanel.y}px;width:{docsPanel.width}px;"
-			>
-				{@render renderDocsPanel()}
-			</div>
+		{#if docsPanels && renderDocsPanel}
+			{#each docsPanels as panel, i (i)}
+				<div class="canvas-node" style="left:{panel.x}px;top:{panel.y}px;width:{panel.width}px;">
+					{@render renderDocsPanel(i)}
+				</div>
+			{/each}
 		{/if}
 		{#if codeEditor && renderCodeEditor}
 			<div

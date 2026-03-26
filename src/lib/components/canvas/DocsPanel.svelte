@@ -5,11 +5,32 @@
 	import DOMPurify from 'dompurify';
 
 	interface Props {
+		title?: string;
 		content: string;
 		onContentChange?: (content: string) => void;
+		onClose?: () => void;
 	}
 
-	let { content, onContentChange }: Props = $props();
+	let { title, content, onContentChange, onClose }: Props = $props();
+
+	let showCloseConfirm = $state(false);
+
+	function requestClose() {
+		if (dirty) {
+			showCloseConfirm = true;
+		} else {
+			onClose?.();
+		}
+	}
+
+	function confirmClose() {
+		showCloseConfirm = false;
+		onClose?.();
+	}
+
+	function cancelClose() {
+		showCloseConfirm = false;
+	}
 
 	const marked = new Marked({
 		breaks: true,
@@ -167,6 +188,7 @@
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
+	onwheel={(e) => e.stopPropagation()}
 >
 	<div class="docs-header">
 		<svg
@@ -181,11 +203,26 @@
 			<path d="M10 2v3h3" />
 			<path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke-linecap="round" />
 		</svg>
-		<span>Document</span>
+		<span>{title || 'Document'}</span>
 		{#if dirty}
 			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 		{/if}
 		<div class="header-actions">
+			{#if onClose}
+				<button class="header-btn" onclick={requestClose} title="Close">
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					>
+						<path d="M18 6L6 18M6 6l12 12" />
+					</svg>
+				</button>
+			{/if}
 			<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
 				<svg
 					width="14"
@@ -229,8 +266,9 @@
 						stroke="currentColor"
 						stroke-width="1.5"
 						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-						<path d="M18 6L6 18M6 6l12 12" />
+						<path d="M5 12l5 5L20 7" />
 					</svg>
 				</button>
 				<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
@@ -250,23 +288,6 @@
 					</svg>
 				</button>
 			{:else}
-				{#if dirty}
-					<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<polyline points="1 4 1 10 7 10" />
-							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-						</svg>
-					</button>
-				{/if}
 				<button class="header-btn" onclick={enterEditMode} title="Edit">
 					<svg
 						width="14"
@@ -297,6 +318,19 @@
 		<div class="docs-content">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 			{@html renderedHtml}
+		</div>
+	{/if}
+	{#if showCloseConfirm}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="close-confirm-overlay" onclick={cancelClose}>
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="close-confirm-dialog" onclick={(e) => e.stopPropagation()}>
+				<p>You have unsaved changes. Discard them?</p>
+				<div class="close-confirm-actions">
+					<button class="confirm-btn cancel" onclick={cancelClose}>Cancel</button>
+					<button class="confirm-btn discard" onclick={confirmClose}>Discard</button>
+				</div>
+			</div>
 		</div>
 	{/if}
 </div>
@@ -479,5 +513,65 @@
 		border: none;
 		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 		margin: 16px 0;
+	}
+
+	.close-confirm-overlay {
+		position: absolute;
+		inset: 0;
+		background: hsl(0 0% 0% / 0.3);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10;
+		border-radius: 12px;
+	}
+
+	.close-confirm-dialog {
+		background: hsl(var(--card, 0 0% 100%));
+		border: 1px solid hsl(var(--border, 0 0% 85%));
+		border-radius: 10px;
+		padding: 20px 24px;
+		box-shadow: 0 8px 24px hsl(0 0% 0% / 0.15);
+		max-width: 300px;
+	}
+
+	.close-confirm-dialog p {
+		margin: 0 0 16px 0;
+		font-size: 14px;
+		color: hsl(var(--foreground, 0 0% 9%));
+	}
+
+	.close-confirm-actions {
+		display: flex;
+		gap: 8px;
+		justify-content: flex-end;
+	}
+
+	.confirm-btn {
+		padding: 6px 14px;
+		border-radius: 6px;
+		border: 1px solid hsl(var(--border, 0 0% 85%));
+		font-size: 13px;
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+
+	.confirm-btn.cancel {
+		background: transparent;
+		color: hsl(var(--foreground, 0 0% 9%));
+	}
+	.confirm-btn.cancel:hover {
+		background: hsl(var(--muted, 0 0% 96%));
+	}
+
+	.confirm-btn.discard {
+		background: hsl(0 72% 51%);
+		color: white;
+		border-color: hsl(0 72% 51%);
+	}
+	.confirm-btn.discard:hover {
+		background: hsl(0 72% 45%);
 	}
 </style>

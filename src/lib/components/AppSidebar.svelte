@@ -20,7 +20,6 @@
 		onDeleteFolder: (folderId: string) => void;
 		onRenameFolder: (folderId: string, name: string) => boolean;
 		onMoveSessionToFolder: (sessionIndex: number, folderId: string | null) => void;
-		activeDocKey: { folderId: string; fileId: string } | null;
 		onUploadDoc: (folderId: string) => void;
 		onSelectDoc: (folderId: string, fileId: string) => void;
 		onDeleteDoc: (folderId: string, fileId: string) => void;
@@ -39,7 +38,6 @@
 		onDeleteFolder,
 		onRenameFolder,
 		onMoveSessionToFolder,
-		activeDocKey,
 		onUploadDoc,
 		onSelectDoc,
 		onDeleteDoc,
@@ -197,7 +195,7 @@
 						class="shrink-0 transition-all duration-200"
 						style="width: {sidebar.state === 'collapsed'
 							? '20px'
-							: '32px'}; height: {sidebar.state === 'collapsed' ? '20px' : '32px'};"
+							: '32px'}; height: auto; mix-blend-mode: multiply;"
 					/>
 					{#if sidebar.state === 'expanded'}
 						<span class="text-sm font-semibold text-sidebar-foreground truncate">powerset</span>
@@ -587,11 +585,9 @@
 												class={draggingDoc?.fileId === file.id ? 'opacity-50' : ''}
 											>
 												<Sidebar.MenuButton
-													isActive={activeDocKey?.folderId === folder.id &&
-														activeDocKey?.fileId === file.id}
+													isActive={false}
 													tooltipContent={file.name}
-													onclick={() => onSelectDoc(folder.id, file.id)}
-													class="rounded-lg pl-8 pr-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
+													class="rounded-lg pl-8 pr-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground cursor-default"
 												>
 													<svg
 														width="16"
@@ -653,6 +649,27 @@
 															side="right"
 															class="rounded-lg bg-popover p-1 text-popover-foreground shadow-md z-50 min-w-[140px] border"
 														>
+															<DropdownMenu.Item
+																class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+																onclick={() => onSelectDoc(folder.id, file.id)}
+															>
+																<svg
+																	width="14"
+																	height="14"
+																	viewBox="0 0 24 24"
+																	fill="none"
+																	stroke="currentColor"
+																	stroke-width="1.5"
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																>
+																	<path
+																		d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+																	/>
+																	<polyline points="14 2 14 8 20 8" />
+																</svg>
+																Open
+															</DropdownMenu.Item>
 															<DropdownMenu.Item
 																class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 																onclick={() => startRenameDoc(folder.id, file.id, file.name)}

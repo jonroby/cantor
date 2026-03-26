@@ -102,7 +102,40 @@
 	]);
 	let activeSessionIndex = $state(0);
 	let folders: ChatFolder[] = $state([]);
-	let activeDocKey: { folderId: string; fileId: string } | null = $state(null);
+
+	interface OpenDoc {
+		id: string;
+		content: string;
+		docKey: { folderId: string; fileId: string } | null;
+	}
+
+	let openDocs: OpenDoc[] = $state([
+		{
+			id: crypto.randomUUID(),
+			content: `# Superset Svelte
+
+Welcome to the documentation.
+
+## Getting Started
+
+This is a visual canvas for exploring branching chat conversations.
+
+## Math Support
+
+Inline math: $E = mc^2$
+
+Display math:
+
+$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+
+## Features
+
+- **Sessions** — top-level chat sessions
+- **Forks** — copy conversation into a new root
+- **Side Chats** — sibling branches off existing nodes`,
+			docKey: null
+		}
+	]);
 
 	let roots: ExchangeMap[] = $derived(
 		sessions[activeSessionIndex]?.roots ?? sessions[0]?.roots ?? []
@@ -156,29 +189,6 @@
 	let deleteMode: DeleteMode = $state('exchange');
 	let measuredNodeHeights: Record<string, number> = $state({});
 
-	let docsContent = $state(`# Superset Svelte
-
-Welcome to the documentation.
-
-## Getting Started
-
-This is a visual canvas for exploring branching chat conversations.
-
-## Math Support
-
-Inline math: $E = mc^2$
-
-Display math:
-
-$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
-
-## Features
-
-- **Sessions** — top-level chat sessions
-- **Forks** — copy conversation into a new root
-- **Side Chats** — sibling branches off existing nodes
-`);
-
 	let drawingShapes: Shape[] = $state([]);
 	let canvasRef: Canvas | null = $state(null);
 
@@ -192,9 +202,10 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		activeExchanges
 			? computeCanvasLayout(activeExchanges, {
 					hiddenExchangeIds,
-					measuredHeights: measuredNodeHeights
+					measuredHeights: measuredNodeHeights,
+					docsPanelCount: openDocs.length
 				})
-			: computeCanvasLayout({})
+			: computeCanvasLayout({}, { docsPanelCount: openDocs.length })
 	);
 	let nodeLookup = $derived(new Map(canvas.nodes.map((node) => [node.id, node])));
 	let usedTokens = $derived(
@@ -319,15 +330,6 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		function handleWindowDrop(e: DragEvent) {
 			if (!hasFiles(e.dataTransfer)) return;
 			e.preventDefault();
-			const file = e.dataTransfer?.files?.[0];
-			if (!file || !file.name.endsWith('.md')) return;
-			const reader = new FileReader();
-			reader.onload = () => {
-				if (typeof reader.result === 'string') {
-					docsContent = reader.result;
-				}
-			};
-			reader.readAsText(file);
 		}
 
 		window.addEventListener('dragover', handleWindowDragOver);
@@ -539,13 +541,18 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 			reader.onload = () => {
 				if (typeof reader.result === 'string') {
 					const folder = folders.find((f) => f.id === folderId);
-					if (folder?.files?.some((f) => f.name === file.name)) {
-						toast.error(`"${file.name}" already exists in this folder`);
-						return;
+					const existingNames = new Set((folder?.files ?? []).map((f) => f.name));
+					let name = file.name;
+					if (existingNames.has(name)) {
+						const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
+						const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
+						let i = 1;
+						while (existingNames.has(`${base} (${i})${ext}`)) i++;
+						name = `${base} (${i})${ext}`;
 					}
 					const docFile: DocFile = {
 						id: crypto.randomUUID(),
-						name: file.name,
+						name,
 						content: reader.result as string
 					};
 					folders = folders.map((f) =>
@@ -562,10 +569,16 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	function selectDoc(folderId: string, fileId: string) {
 		const folder = folders.find((f) => f.id === folderId);
 		const file = folder?.files?.find((f) => f.id === fileId);
-		if (file) {
-			docsContent = file.content;
-			activeDocKey = { folderId, fileId };
-		}
+		if (!file) return;
+		// If already open, don't duplicate
+		const existing = openDocs.find(
+			(d) => d.docKey?.folderId === folderId && d.docKey?.fileId === fileId
+		);
+		if (existing) return;
+		openDocs = [
+			...openDocs,
+			{ id: crypto.randomUUID(), content: file.content, docKey: { folderId, fileId } }
+		];
 	}
 
 	function renameDocInFolder(folderId: string, fileId: string, name: string): boolean {
@@ -583,9 +596,9 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		folders = folders.map((f) =>
 			f.id === folderId ? { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) } : f
 		);
-		if (activeDocKey?.folderId === folderId && activeDocKey?.fileId === fileId) {
-			activeDocKey = null;
-		}
+		openDocs = openDocs.filter(
+			(d) => !(d.docKey?.folderId === folderId && d.docKey?.fileId === fileId)
+		);
 	}
 
 	function moveDocToFolder(fromFolderId: string, fileId: string, toFolderId: string): boolean {
@@ -600,9 +613,11 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 			if (f.id === toFolderId) return { ...f, files: [...(f.files ?? []), file] };
 			return f;
 		});
-		if (activeDocKey?.folderId === fromFolderId && activeDocKey?.fileId === fileId) {
-			activeDocKey = { folderId: toFolderId, fileId };
-		}
+		openDocs = openDocs.map((d) =>
+			d.docKey?.folderId === fromFolderId && d.docKey?.fileId === fileId
+				? { ...d, docKey: { folderId: toFolderId, fileId } }
+				: d
+		);
 		return true;
 	}
 
@@ -958,7 +973,6 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		onDeleteFolder={deleteFolder}
 		onRenameFolder={renameFolder}
 		onMoveSessionToFolder={moveSessionToFolder}
-		{activeDocKey}
 		onUploadDoc={uploadDocToFolder}
 		onSelectDoc={selectDoc}
 		onDeleteDoc={deleteDocFromFolder}
@@ -1191,7 +1205,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 					codeEditor={canvas.codeEditor}
 					pythonEditor={canvas.pythonEditor}
 					drawingBoard={canvas.drawingBoard}
-					docsPanel={canvas.docsPanel}
+					docsPanels={canvas.docsPanels}
 					bind:this={canvasRef}
 				>
 					{#snippet renderNode(n: CanvasNode)}
@@ -1209,8 +1223,38 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 					{#snippet renderDrawingBoard()}
 						<DrawingBoard shapes={drawingShapes} onShapesChange={(s) => (drawingShapes = s)} />
 					{/snippet}
-					{#snippet renderDocsPanel()}
-						<DocsPanel content={docsContent} onContentChange={(c) => (docsContent = c)} />
+					{#snippet renderDocsPanel(index: number)}
+						{@const doc = openDocs[index]}
+						{#if doc}
+							{@const docFile = doc.docKey
+								? folders
+										.find((f) => f.id === doc.docKey!.folderId)
+										?.files?.find((f) => f.id === doc.docKey!.fileId)
+								: null}
+							<DocsPanel
+								title={docFile?.name}
+								content={doc.content}
+								onContentChange={(c) => {
+									openDocs = openDocs.map((d, i) => (i === index ? { ...d, content: c } : d));
+									if (doc.docKey) {
+										const { folderId, fileId } = doc.docKey;
+										folders = folders.map((f) =>
+											f.id === folderId
+												? {
+														...f,
+														files: (f.files ?? []).map((d) =>
+															d.id === fileId ? { ...d, content: c } : d
+														)
+													}
+												: f
+										);
+									}
+								}}
+								onClose={() => {
+									openDocs = openDocs.filter((_, i) => i !== index);
+								}}
+							/>
+						{/if}
 					{/snippet}
 				</Canvas>
 			</div>

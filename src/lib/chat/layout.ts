@@ -34,6 +34,7 @@ export const CODE_EDITOR_HEIGHT = 400;
 export const CODE_EDITOR_ROW_GAP = 60;
 export const DRAWING_BOARD_WIDTH = 800;
 export const DOCS_PANEL_WIDTH = 816;
+export const DOCS_PANEL_HEIGHT = 1056;
 export const DOCS_PANEL_GAP = 60;
 
 export interface CanvasLayout {
@@ -44,7 +45,7 @@ export interface CanvasLayout {
 	codeEditor: CodeEditorPosition;
 	pythonEditor: CodeEditorPosition;
 	drawingBoard: CodeEditorPosition;
-	docsPanel: CodeEditorPosition;
+	docsPanels: CodeEditorPosition[];
 }
 
 interface LayoutOptions {
@@ -52,6 +53,19 @@ interface LayoutOptions {
 	measuredHeights?: Record<string, number>;
 	codeEditorHeight?: number;
 	pythonEditorHeight?: number;
+	docsPanelCount?: number;
+}
+
+function buildDocsPanels(count: number): CodeEditorPosition[] {
+	const panels: CodeEditorPosition[] = [];
+	for (let i = 0; i < count; i++) {
+		panels.push({
+			x: PADDING_X,
+			y: PADDING_Y + i * (DOCS_PANEL_HEIGHT + DOCS_PANEL_GAP),
+			width: DOCS_PANEL_WIDTH
+		});
+	}
+	return panels;
 }
 
 export function computeCanvasLayout(
@@ -61,6 +75,7 @@ export function computeCanvasLayout(
 	const anchor = Object.values(exchanges).find((exchange) => exchange.isAnchor);
 	const hiddenExchangeIds = options.hiddenExchangeIds ?? new Set<string>();
 	const measuredHeights = options.measuredHeights ?? {};
+	const docsPanelCount = Math.max(1, options.docsPanelCount ?? 1);
 
 	const docsRight = PADDING_X + DOCS_PANEL_WIDTH + DOCS_PANEL_GAP;
 	const jsEditorX = docsRight;
@@ -91,11 +106,7 @@ export function computeCanvasLayout(
 				y: PADDING_Y,
 				width: DRAWING_BOARD_WIDTH
 			},
-			docsPanel: {
-				x: PADDING_X,
-				y: PADDING_Y,
-				width: DOCS_PANEL_WIDTH
-			}
+			docsPanels: buildDocsPanels(docsPanelCount)
 		};
 	}
 
@@ -180,10 +191,6 @@ export function computeCanvasLayout(
 			y: PADDING_Y,
 			width: DRAWING_BOARD_WIDTH
 		},
-		docsPanel: {
-			x: PADDING_X,
-			y: PADDING_Y,
-			width: DOCS_PANEL_WIDTH
-		}
+		docsPanels: buildDocsPanels(docsPanelCount)
 	};
 }
