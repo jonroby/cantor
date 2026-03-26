@@ -6,25 +6,31 @@
 
 	interface Props {
 		content: string;
-		width?: number;
+		onContentChange?: (content: string) => void;
 	}
 
-	let { content, width = 600 }: Props = $props();
+	let { content, onContentChange }: Props = $props();
 
 	const marked = new Marked({
 		breaks: true,
 		gfm: true
 	});
 
+	let editing = $state(false);
+	let draft = $state('');
+	let error: string | null = $state(null);
+
+	let dirty = $derived(!!draft && draft !== content);
+
 	function renderKatex(tex: string, displayMode: boolean): string {
 		try {
 			return katex.renderToString(tex, {
 				displayMode,
-				throwOnError: false,
+				throwOnError: true,
 				output: 'html'
 			});
 		} catch {
-			return `<code>${tex}</code>`;
+			throw new Error(`Invalid math expression: ${tex}`);
 		}
 	}
 
@@ -44,7 +50,62 @@
 		return '';
 	}
 
-	let renderedHtml = $derived(DOMPurify.sanitize(processContent(content)));
+	function validate(md: string): string | null {
+		try {
+			processContent(md);
+			return null;
+		} catch (e) {
+			return e instanceof Error ? e.message : 'Invalid markdown content';
+		}
+	}
+
+	let renderedHtml = $derived(DOMPurify.sanitize(processContentSafe(content)));
+
+	function processContentSafe(md: string): string {
+		try {
+			return processContent(md);
+		} catch {
+			return `<p style="color: red;">Render error</p>`;
+		}
+	}
+
+	function enterEditMode() {
+		if (!draft) draft = content;
+		error = null;
+		editing = true;
+	}
+
+	function cancelEdit() {
+		editing = false;
+		error = null;
+	}
+
+	function revertToSaved() {
+		draft = content;
+		error = null;
+	}
+
+	function saveEdit() {
+		const validationError = validate(draft);
+		if (validationError) {
+			error = validationError;
+			return;
+		}
+		error = null;
+		onContentChange?.(draft);
+		draft = '';
+		editing = false;
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			cancelEdit();
+		} else if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+			e.preventDefault();
+			saveEdit();
+		}
+	}
 
 	onMount(() => {
 		// Load KaTeX CSS
@@ -57,7 +118,7 @@
 	});
 </script>
 
-<div class="docs-panel" style="width:{width}px;">
+<div class="docs-panel">
 	<div class="docs-header">
 		<svg
 			width="16"
@@ -72,11 +133,107 @@
 			<path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke-linecap="round" />
 		</svg>
 		<span>Documentation</span>
+		{#if dirty}
+			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
+		{/if}
+		<div class="header-actions">
+			{#if editing}
+				{#if dirty}
+					<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<polyline points="1 4 1 10 7 10" />
+							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+						</svg>
+					</button>
+				{/if}
+				<button class="header-btn" onclick={cancelEdit} title="Done (Esc)">
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					>
+						<path d="M18 6L6 18M6 6l12 12" />
+					</svg>
+				</button>
+				<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+						<polyline points="17 21 17 13 7 13 7 21" />
+						<polyline points="7 3 7 8 15 8" />
+					</svg>
+				</button>
+			{:else}
+				{#if dirty}
+					<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<polyline points="1 4 1 10 7 10" />
+							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+						</svg>
+					</button>
+				{/if}
+				<button class="header-btn" onclick={enterEditMode} title="Edit">
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M12 20h9" />
+						<path
+							d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+						/>
+					</svg>
+				</button>
+			{/if}
+		</div>
 	</div>
-	<div class="docs-content">
-		<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
-		{@html renderedHtml}
-	</div>
+	{#if error}
+		<div class="error-bar">{error}</div>
+	{/if}
+	{#if editing}
+		<textarea class="docs-editor" bind:value={draft} onkeydown={handleKeydown} spellcheck="false"
+		></textarea>
+	{:else}
+		<div class="docs-content">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
+			{@html renderedHtml}
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -87,7 +244,8 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		max-height: 800px;
+		width: 816px;
+		height: 1056px;
 	}
 
 	.docs-header {
@@ -100,6 +258,72 @@
 		font-weight: 600;
 		color: hsl(var(--foreground, 0 0% 9%));
 		flex-shrink: 0;
+	}
+
+	.dirty-indicator {
+		color: hsl(var(--primary, 220 90% 56%));
+		font-size: 20px;
+		line-height: 1;
+		margin-left: -4px;
+	}
+
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin-left: auto;
+	}
+
+	.header-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 6px;
+		border: none;
+		background: transparent;
+		color: hsl(var(--muted-foreground, 0 0% 45%));
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+	.header-btn:hover {
+		background: hsl(var(--muted, 0 0% 96%));
+		color: hsl(var(--foreground, 0 0% 9%));
+	}
+
+	.save-btn {
+		color: hsl(var(--primary, 220 90% 56%));
+	}
+	.save-btn:hover {
+		background: hsl(var(--primary, 220 90% 56%) / 0.1);
+		color: hsl(var(--primary, 220 90% 56%));
+	}
+
+	.error-bar {
+		padding: 8px 16px;
+		background: hsl(0 72% 51% / 0.1);
+		color: hsl(0 72% 51%);
+		font-size: 12px;
+		border-bottom: 1px solid hsl(0 72% 51% / 0.2);
+		flex-shrink: 0;
+	}
+
+	.docs-editor {
+		flex: 1;
+		padding: 16px 20px;
+		border: none;
+		outline: none;
+		resize: none;
+		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+		font-size: 13px;
+		line-height: 1.6;
+		color: hsl(var(--foreground, 0 0% 9%));
+		background: hsl(var(--card, 0 0% 100%));
+		overflow-y: auto;
+		tab-size: 2;
 	}
 
 	.docs-content {

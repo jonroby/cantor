@@ -33,7 +33,7 @@ export const CODE_EDITOR_GAP = 40;
 export const CODE_EDITOR_HEIGHT = 400;
 export const CODE_EDITOR_ROW_GAP = 60;
 export const DRAWING_BOARD_WIDTH = 800;
-export const DOCS_PANEL_WIDTH = 600;
+export const DOCS_PANEL_WIDTH = 816;
 export const DOCS_PANEL_GAP = 60;
 
 export interface CanvasLayout {

@@ -26,6 +26,12 @@ export interface ChatSession {
 	name: string;
 	roots: ExchangeMap[];
 	activeRootIndex: number;
+	folderId?: string | null;
+}
+
+export interface ChatFolder {
+	id: string;
+	name: string;
 }
 
 export interface DeleteResult {

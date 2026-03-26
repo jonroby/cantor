@@ -77,7 +77,9 @@
 	import * as Tooltip from '@/components/ui/tooltip/index.js';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import ModelPalette from '$lib/components/ModelPalette.svelte';
-	import type { ChatSession } from '$lib/chat/tree';
+	import type { ChatSession, ChatFolder } from '$lib/chat/tree';
+	import logoLight from './assets/logo_light.svg';
+	import logoDark from './assets/logo_dark.svg';
 
 	const STORAGE_KEY = 'chat-tree-store-svelte';
 
@@ -96,6 +98,7 @@
 		makeSession([withExplicitExchangeOrder(buildInitialExchanges())], 'Chat 1')
 	]);
 	let activeSessionIndex = $state(0);
+	let folders: ChatFolder[] = $state([]);
 
 	let roots: ExchangeMap[] = $derived(
 		sessions[activeSessionIndex]?.roots ?? sessions[0]?.roots ?? []
@@ -121,6 +124,7 @@
 	let webllmContextSize: WebLLMContextSize = $state(4_096);
 
 	let composerValue = $state('');
+	let canvasMode = $state(false);
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
 	let searchOpen = $state(false);
@@ -172,6 +176,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 `);
 
 	let drawingShapes: Shape[] = $state([]);
+	let logoSize = $state(128);
 
 	let canvasRef: Canvas | null = $state(null);
 
@@ -216,7 +221,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 	$effect(() => {
 		if (hasHydrated) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions, activeSessionIndex }));
+			localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessions, activeSessionIndex, folders }));
 		}
 	});
 
@@ -310,6 +315,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 					// new format
 					sessions?: ChatSession[];
 					activeSessionIndex?: number;
+					folders?: ChatFolder[];
 					// legacy format
 					roots?: ExchangeMap[];
 					activeRootIndex?: number;
@@ -338,6 +344,9 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 						sessions = [makeSession(hydratedRoots, 'Chat 1')];
 						activeSessionIndex = 0;
 					}
+				}
+				if (parsed.folders?.length) {
+					folders = parsed.folders;
 				}
 			} catch {
 				// ignore invalid persisted state
@@ -457,6 +466,27 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		measuredNodeHeights = {};
 	}
 
+	function newFolder() {
+		const folder: ChatFolder = {
+			id: crypto.randomUUID(),
+			name: `Folder ${folders.length + 1}`
+		};
+		folders = [...folders, folder];
+	}
+
+	function deleteFolder(folderId: string) {
+		sessions = sessions.map((s) => (s.folderId === folderId ? { ...s, folderId: null } : s));
+		folders = folders.filter((f) => f.id !== folderId);
+	}
+
+	function renameFolder(folderId: string, name: string) {
+		folders = folders.map((f) => (f.id === folderId ? { ...f, name } : f));
+	}
+
+	function moveSessionToFolder(sessionIndex: number, folderId: string | null) {
+		sessions = sessions.map((s, i) => (i === sessionIndex ? { ...s, folderId } : s));
+	}
+
 	function setMeasuredNodeHeight(exchangeId: string, height: number) {
 		const roundedHeight = Math.ceil(height);
 		if (!Number.isFinite(roundedHeight) || roundedHeight <= 0) return;
@@ -528,7 +558,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 	}
 
 	function saveToDisk() {
-		const payload = JSON.stringify({ sessions, activeSessionIndex }, null, 2);
+		const payload = JSON.stringify({ sessions, activeSessionIndex, folders }, null, 2);
 		const blob = new Blob([payload], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -804,6 +834,11 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 		onSelectSession={selectSession}
 		onNewChat={newChat}
 		onDeleteSession={deleteSession}
+		{folders}
+		onNewFolder={newFolder}
+		onDeleteFolder={deleteFolder}
+		onRenameFolder={renameFolder}
+		onMoveSessionToFolder={moveSessionToFolder}
 	/>
 	<SidebarPrimitive.Inset>
 		<div class="page-shell" onwheel={handleCanvasWheel}>
@@ -1050,9 +1085,22 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 						<DrawingBoard shapes={drawingShapes} onShapesChange={(s) => (drawingShapes = s)} />
 					{/snippet}
 					{#snippet renderDocsPanel()}
-						<DocsPanel content={docsContent} />
+						<DocsPanel content={docsContent} onContentChange={(c) => (docsContent = c)} />
 					{/snippet}
 				</Canvas>
+
+				<!-- Logo preview -->
+				<div
+					style="position:fixed;bottom:20px;right:20px;z-index:100;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:12px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);"
+				>
+					<img src={logoLight} alt="Powerset" width={logoSize} height={logoSize} />
+					<div
+						style="display:flex;align-items:center;gap:8px;font-size:12px;color:hsl(var(--muted-foreground));"
+					>
+						<span>{logoSize}px</span>
+						<input type="range" min="16" max="512" bind:value={logoSize} style="width:200px;" />
+					</div>
+				</div>
 			</div>
 
 			<form
@@ -1062,12 +1110,27 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 					submitPrompt();
 				}}
 			>
-				<div class="composer-shell">
+				<div class="composer-shell" class:canvas-mode={canvasMode}>
 					<div class="composer-row">
+						<button
+							type="button"
+							class="canvas-toggle"
+							onclick={() => (canvasMode = !canvasMode)}
+							aria-label={canvasMode ? 'Disable canvas mode' : 'Enable canvas mode'}
+						>
+							<img
+								src={canvasMode ? logoDark : logoLight}
+								alt="Canvas mode"
+								width="24"
+								height="24"
+							/>
+						</button>
 						<Input
 							bind:value={composerValue}
 							class="composer-input"
-							placeholder={submitDisabledReason ?? 'Message...'}
+							placeholder={canvasMode
+								? 'Ask about the canvas...'
+								: (submitDisabledReason ?? 'Message...')}
 						/>
 						<Button
 							class="composer-send"
