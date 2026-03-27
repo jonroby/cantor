@@ -1,10 +1,8 @@
-import { toast } from 'svelte-sonner';
 import {
 	buildEmptyExchanges,
 	forkExchanges,
 	getMainChatTail,
 	hasExplicitExchangeOrder,
-	validateChatUpload,
 	withExplicitExchangeOrder,
 	type Chat,
 	type ExchangeMap
@@ -83,49 +81,6 @@ export function deleteChat(index: number) {
 export function renameChat(index: number, name: string) {
 	chatState.chats[index].name = name;
 	chatState.chats = [...chatState.chats];
-}
-
-export function downloadChat(index: number) {
-	const chat = chatState.chats[index];
-	const payload = JSON.stringify(chat, null, 2);
-	const blob = new Blob([payload], { type: 'application/json' });
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement('a');
-	link.href = url;
-	link.download = `${chat.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`;
-	link.click();
-	URL.revokeObjectURL(url);
-}
-
-export function uploadChat(): void {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.accept = '.json';
-	input.onchange = async () => {
-		const file = input.files?.[0];
-		if (!file) return;
-		try {
-			const text = await file.text();
-			const data = JSON.parse(text);
-			const chat = validateChatUpload(data);
-			chat.id = crypto.randomUUID();
-			const baseName = file.name.replace(/\.json$/i, '');
-			const existingNames = chatState.chats.map((c) => c.name);
-			let name = baseName;
-			let i = 1;
-			while (existingNames.includes(name)) {
-				name = `${baseName} (${i})`;
-				i++;
-			}
-			chat.name = name;
-			chatState.chats = [...chatState.chats, chat];
-			chatState.activeChatIndex = chatState.chats.length - 1;
-			toast.success(`Imported "${chat.name}"`);
-		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Invalid chat file');
-		}
-	};
-	input.click();
 }
 
 export function forkChat(exchangeId: string) {

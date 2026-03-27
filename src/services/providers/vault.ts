@@ -3,7 +3,7 @@ import {
 	setVaultStore,
 	migrateVaultStorage,
 	clearVaultStorage
-} from '@/state/persistence.svelte';
+} from '@/services/database.svelte';
 
 interface VaultRecord {
 	cipherText: string;

@@ -18,25 +18,28 @@
 		selectChat as selectChatAction,
 		deleteChat as deleteChatAction,
 		renameChat,
-		downloadChat,
-		uploadChat,
 		setActiveExchangeId
 	} from '@/state/chats.svelte';
 	import {
 		docState,
 		newFolder,
 		deleteFolder,
-		downloadFolder,
 		renameFolder,
-		uploadDocToFolder,
-		uploadFolder,
-		uploadFolderToFolder,
 		selectDoc,
 		deleteDocFromFolder,
 		renameDocInFolder,
 		moveDocToFolder
 	} from '@/state/documents.svelte';
-	import { loadFromStorage, saveToStorage, downloadToFile } from '@/state/persistence.svelte';
+	import { loadFromStorage, saveToStorage } from '@/services/database.svelte';
+	import {
+		downloadToFile,
+		downloadChat,
+		uploadChat,
+		downloadFolder,
+		uploadDocToFolder,
+		uploadFolder,
+		uploadFolderToFolder
+	} from '@/services/io.svelte';
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);

@@ -1,7 +1,4 @@
-import JSZip from 'jszip';
-import { toast } from 'svelte-sonner';
-import type { ChatFolder, DocFile } from '@/domain/tree';
-import { validate } from '@/lib/validate-md';
+import type { ChatFolder } from '@/domain/tree';
 
 export interface OpenDoc {
 	id: string;
@@ -60,47 +57,6 @@ export function renameFolder(folderId: string, name: string): boolean {
 	return true;
 }
 
-export function uploadDocToFolder(folderId: string) {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.accept = '.md';
-	input.onchange = () => {
-		const file = input.files?.[0];
-		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === 'string') {
-				const errors = validate(reader.result);
-				if (errors.length > 0) {
-					toast.error(`Invalid markdown: ${errors.join('; ')}`);
-					return;
-				}
-				const folder = docState.folders.find((f) => f.id === folderId);
-				const existingNames = (folder?.files ?? []).map((f) => f.name);
-				let name = file.name;
-				if (existingNames.includes(name)) {
-					const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
-					const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-					let i = 1;
-					while (existingNames.includes(`${base} (${i})${ext}`)) i++;
-					name = `${base} (${i})${ext}`;
-				}
-				const docFile: DocFile = {
-					id: crypto.randomUUID(),
-					name,
-					content: reader.result as string
-				};
-				docState.folders = docState.folders.map((f) =>
-					f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
-				);
-				toast.success(`Uploaded ${file.name}`);
-			}
-		};
-		reader.readAsText(file);
-	};
-	input.click();
-}
-
 export function selectDoc(folderId: string, fileId: string) {
 	const folder = docState.folders.find((f) => f.id === folderId);
 	const file = folder?.files?.find((f) => f.id === fileId);
@@ -155,100 +111,6 @@ export function moveDocToFolder(fromFolderId: string, fileId: string, toFolderId
 	return true;
 }
 
-export async function downloadFolder(folderId: string) {
-	const folder = docState.folders.find((f) => f.id === folderId);
-	if (!folder || !folder.files?.length) {
-		toast.error('Folder is empty');
-		return;
-	}
-	const zip = new JSZip();
-	for (const file of folder.files) {
-		zip.file(file.name, file.content);
-	}
-	const blob = await zip.generateAsync({ type: 'blob' });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = `${folder.name}.zip`;
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	setTimeout(() => URL.revokeObjectURL(url), 100);
-}
-
-function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
-	let imported = 0;
-	const folder = docState.folders.find((f) => f.id === folderId);
-	const existingNames = (folder?.files ?? []).map((f) => f.name);
-
-	for (const file of mdFiles) {
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === 'string') {
-				const errors = validate(reader.result);
-				if (errors.length > 0) {
-					toast.error(`Skipped ${file.name}: ${errors.join('; ')}`);
-					return;
-				}
-				let name = file.name;
-				if (existingNames.includes(name)) {
-					const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
-					const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-					let i = 1;
-					while (existingNames.includes(`${base} (${i})${ext}`)) i++;
-					name = `${base} (${i})${ext}`;
-				}
-				existingNames.push(name);
-				const docFile: DocFile = {
-					id: crypto.randomUUID(),
-					name,
-					content: reader.result as string
-				};
-				docState.folders = docState.folders.map((f) =>
-					f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
-				);
-				imported++;
-				if (imported === mdFiles.length) {
-					toast.success(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
-				}
-			}
-		};
-		reader.readAsText(file);
-	}
-}
-
-export function uploadFolder() {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.webkitdirectory = true;
-	input.onchange = () => {
-		const files = input.files;
-		if (!files || files.length === 0) return;
-
-		const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
-		if (mdFiles.length === 0) {
-			toast.error('No .md files found in the selected folder');
-			return;
-		}
-
-		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
-		const existingFolderNames = docState.folders.map((f) => f.name);
-		let folderName = dirName;
-		let n = 2;
-		while (existingFolderNames.includes(folderName)) {
-			folderName = `${dirName} (${n})`;
-			n++;
-		}
-
-		const folderId = crypto.randomUUID();
-		const newFolderObj: ChatFolder = { id: folderId, name: folderName, files: [] };
-		docState.folders = [...docState.folders, newFolderObj];
-
-		uploadDocsIntoFolder(folderId, mdFiles);
-	};
-	input.click();
-}
-
 export function updateDocContent(index: number, content: string) {
 	const doc = docState.openDocs[index];
 	if (!doc) return;
@@ -268,23 +130,4 @@ export function updateDocContent(index: number, content: string) {
 
 export function closeDoc(index: number) {
 	docState.openDocs = docState.openDocs.filter((_, i) => i !== index);
-}
-
-export function uploadFolderToFolder(folderId: string) {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.webkitdirectory = true;
-	input.onchange = () => {
-		const files = input.files;
-		if (!files || files.length === 0) return;
-
-		const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
-		if (mdFiles.length === 0) {
-			toast.error('No .md files found in the selected folder');
-			return;
-		}
-
-		uploadDocsIntoFolder(folderId, mdFiles);
-	};
-	input.click();
 }

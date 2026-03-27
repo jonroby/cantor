@@ -23,9 +23,9 @@ The app is mostly client-side and centered around one top-level UI shell in `src
 
 - `src/main.ts` mounts the Svelte app and loads global CSS.
 - `src/App.svelte` is a thin orchestrator that wires together features and state; it does not own business logic directly.
-- `src/state/*` contains reactive Svelte stores for chat state (`chats.svelte.ts`), document/folder state (`documents.svelte.ts`), provider/model state (`providers.svelte.ts`), and persistence (`persistence.svelte.ts`).
+- `src/state/*` contains reactive Svelte stores for chat state (`chats.svelte.ts`), document/folder state (`documents.svelte.ts`), and provider/model state (`providers.svelte.ts`).
+- `src/services/*` contains infrastructure and async/side-effectful modules: localStorage persistence (`database.svelte.ts`), browser file I/O (`io.svelte.ts`), and provider-specific networking (`providers/` — Claude, Ollama, Gemini, OpenAI-compatible, WebLLM, API-key vault).
 - `src/domain/tree/*` contains the core data structures and tree manipulation algorithms for chat exchanges.
-- `src/lib/providers/*` contains provider-specific networking (Claude, Ollama, Gemini, OpenAI-compatible, WebLLM) and API-key vault.
 - `src/lib/models/*` defines supported providers, model lists, and logo assets.
 - `src/lib/search/*` provides local in-browser search across prompts and responses.
 - `src/lib/validate-md/*` contains markdown validation utilities and tests.

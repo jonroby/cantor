@@ -5,7 +5,7 @@ const STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
 const LEGACY_VAULT_KEY = 'byok_vault';
 
-// --- Chat & folder persistence ---
+// --- Chat & folder storage ---
 
 export function loadFromStorage() {
 	const raw = localStorage.getItem(STORAGE_KEY);
@@ -32,26 +32,7 @@ export function saveToStorage() {
 	);
 }
 
-export function downloadToFile() {
-	const payload = JSON.stringify(
-		{
-			chats: chatState.chats,
-			activeChatIndex: chatState.activeChatIndex,
-			folders: docState.folders
-		},
-		null,
-		2
-	);
-	const blob = new Blob([payload], { type: 'application/json' });
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement('a');
-	link.href = url;
-	link.download = `chat-tree-${Date.now()}.json`;
-	link.click();
-	URL.revokeObjectURL(url);
-}
-
-// --- Vault (API key) persistence ---
+// --- Vault (API key) storage ---
 
 interface VaultRecord {
 	cipherText: string;

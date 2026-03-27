@@ -2,7 +2,11 @@
 	import './palette.css';
 	import { PROVIDER_MODELS } from '@/lib/models';
 	import type { ActiveModel, Provider } from '@/lib/models';
-	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '@/lib/providers/webllm';
+	import type {
+		WebLLMStatus,
+		WebLLMModelEntry,
+		WebLLMContextSize
+	} from '@/services/providers/webllm';
 	import { PROVIDER_LOGOS } from '@/lib/models/logos';
 	import OllamaTab from './OllamaTab.svelte';
 	import FrontierTab from './FrontierTab.svelte';
