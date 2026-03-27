@@ -5,15 +5,12 @@
 	import type { Chat } from '@/domain/tree';
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar } from '@/features/app-sidebar';
-	import { ChatToolbar } from '@/features/chat-toolbar';
 	import { SearchDialog } from '@/features/search-dialog';
-	import { ChatHeader } from '@/features/chat-header';
-	import { ChatTree } from '@/features/canvas';
-	import { ChatInput } from '@/features/chat-input';
+	import { routerState } from '@/routes/router.svelte';
+	import ChatView from '@/routes/ChatView.svelte';
+	import CanvasView from '@/routes/CanvasView.svelte';
 	import {
 		chatState,
-		getActiveChat,
-		getActiveExchangeId,
 		newChat as newChatAction,
 		selectChat as selectChatAction,
 		deleteChat as deleteChatAction,
@@ -32,7 +29,6 @@
 	} from '@/state/documents.svelte';
 	import { loadFromStorage, saveToStorage } from '@/services/database.svelte';
 	import {
-		downloadToFile,
 		downloadChat,
 		uploadChat,
 		downloadFolder,
@@ -47,10 +43,9 @@
 	let searchAllChats = $state(true);
 	let searchOpen = $state(false);
 	let hasHydrated = $state(false);
-	let headerVisible = $state(true);
-	let headerTimer: ReturnType<typeof setTimeout> | null = null;
 
-	let chatTreeRef: ReturnType<typeof ChatTree> | null = $state(null);
+	let canvasViewRef: ReturnType<typeof CanvasView> | null = $state(null);
+	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 
 	let searchItems = $derived(
 		searchQuery.trim()
@@ -63,19 +58,6 @@
 				)
 			: getDefaultItems(chatState.chats, chatState.activeChatIndex, searchAllChats)
 	);
-
-	function handleCanvasWheel(e: WheelEvent) {
-		if (e.deltaY < 0) {
-			headerVisible = true;
-			if (headerTimer) clearTimeout(headerTimer);
-			headerTimer = setTimeout(() => {
-				headerVisible = false;
-			}, 2000);
-		} else if (e.deltaY > 0) {
-			if (headerTimer) clearTimeout(headerTimer);
-			headerVisible = false;
-		}
-	}
 
 	$effect(() => {
 		if (hasHydrated) {
@@ -118,10 +100,6 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		headerTimer = setTimeout(() => {
-			headerVisible = false;
-		}, 2000);
-
 		loadFromStorage();
 		initProviders();
 		autoConnectOllama();
@@ -130,12 +108,12 @@
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
-			if (headerTimer) clearTimeout(headerTimer);
 		};
 	});
 
 	function resetUIState() {
-		chatTreeRef?.resetUIState();
+		canvasViewRef?.resetUIState();
+		chatViewRef?.resetUIState();
 	}
 
 	function newChat(): number {
@@ -159,7 +137,7 @@
 	function handleSearchSelect(result: SearchResult) {
 		selectChatAction(result.chatIndex);
 		setActiveExchangeId(result.exchangeId);
-		chatTreeRef?.scrollToNode(result.exchangeId);
+		canvasViewRef?.scrollToNode(result.exchangeId);
 	}
 </script>
 
@@ -191,34 +169,21 @@
 		onMoveDoc={moveDocToFolder}
 	/>
 	<SidebarPrimitive.Inset>
-		<div class="page-shell" onwheel={handleCanvasWheel}>
-			<ChatHeader visible={headerVisible} chatName={getActiveChat().name} />
+		{#if routerState.route === 'canvas'}
+			<CanvasView bind:this={canvasViewRef} onSearchOpen={() => (searchOpen = true)} />
+		{:else}
+			<ChatView bind:this={chatViewRef} onSearchOpen={() => (searchOpen = true)} />
+		{/if}
 
-			<ChatToolbar
-				onSearch={() => (searchOpen = true)}
-				onFitView={() => chatTreeRef?.fitView()}
-				onGoToTop={() => chatTreeRef?.scrollToTop()}
-				onGoToActive={() => chatTreeRef?.scrollToNode(getActiveExchangeId())}
-				onDownload={downloadToFile}
+		{#if searchOpen}
+			<SearchDialog
+				bind:searchQuery
+				bind:searchAllChats
+				{searchItems}
+				onClose={() => (searchOpen = false)}
+				onSelect={handleSearchSelect}
 			/>
-
-			<ChatTree bind:this={chatTreeRef} />
-
-			<ChatInput
-				onScrollToNode={(nodeId) => chatTreeRef?.scrollToNode(nodeId)}
-				onExpandSideChat={(exchangeId) => chatTreeRef?.expandSideChat(exchangeId)}
-			/>
-
-			{#if searchOpen}
-				<SearchDialog
-					bind:searchQuery
-					bind:searchAllChats
-					{searchItems}
-					onClose={() => (searchOpen = false)}
-					onSelect={handleSearchSelect}
-				/>
-			{/if}
-		</div>
+		{/if}
 	</SidebarPrimitive.Inset>
 </SidebarPrimitive.Provider>
 <Toaster position="top-center" />

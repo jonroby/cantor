@@ -2,7 +2,6 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { computeCanvasLayout, NODE_WIDTH } from './layout';
 	import type { CanvasNode } from './layout';
-	import { getProviderForModelId } from '@/lib/models';
 	import Button from '@/components/custom/button.svelte';
 	import ExchangeNode from '@/features/canvas/ExchangeNode.svelte';
 	import CodeEditor from '@/features/code-editor/CodeEditor.svelte';
@@ -11,30 +10,21 @@
 	import DrawingBoard from '@/features/drawing-board/DrawingBoard.svelte';
 	import DocsPanel from '@/features/docs-panel/DocsPanel.svelte';
 	import type { Shape } from '@/features/drawing-board/drawing-types';
-	import {
-		buildExchangesByParentId,
-		canCreateSideChats,
-		canPromoteSideChatToMainChat,
-		deleteExchangeWithModeResult,
-		getChildExchanges,
-		getDescendantExchanges,
-		getMainChatTail,
-		promoteSideChatToMainChat,
-		type DeleteMode,
-		type ExchangeMap
-	} from '@/domain/tree';
+	import { getChildExchanges, getDescendantExchanges, type DeleteMode } from '@/domain/tree';
 	import {
 		getActiveExchanges,
 		getActiveExchangeId,
-		replaceActiveExchanges,
-		setActiveExchangeId,
-		forkChat as forkChatAction
+		setActiveExchangeId
 	} from '@/state/chats.svelte';
-	import {
-		isStreaming as isExchangeStreaming,
-		cancelStreamsForExchanges
-	} from '@/services/streams';
 	import { docState, updateDocContent, closeDoc } from '@/state/documents.svelte';
+	import {
+		getExchangeNodeData as getNodeData,
+		performDelete,
+		performPromote,
+		performFork,
+		getDeleteMode,
+		buildExchangesByParentId
+	} from '@/features/chat-ops';
 
 	let expandedSideChatParent: string | null = $state(null);
 	let measuredNodeHeights: Record<string, number> = $state({});
@@ -80,6 +70,10 @@
 		}
 	});
 
+	function resetMeasuredHeights() {
+		measuredNodeHeights = {};
+	}
+
 	function getCollapsedParentIds() {
 		if (!activeExchanges) return new Set<string>();
 		return new Set(
@@ -107,11 +101,6 @@
 		return hidden;
 	}
 
-	function doReplaceActiveExchanges(nextExchanges: ExchangeMap) {
-		measuredNodeHeights = {};
-		replaceActiveExchanges(nextExchanges);
-	}
-
 	function setMeasuredNodeHeight(exchangeId: string, height: number) {
 		const roundedHeight = Math.ceil(height);
 		if (!Number.isFinite(roundedHeight) || roundedHeight <= 0) return;
@@ -121,7 +110,7 @@
 
 	function forkChat(exchangeId: string) {
 		if (!activeExchanges) return;
-		forkChatAction(exchangeId);
+		performFork(exchangeId);
 		expandedSideChatParent = null;
 		scrollToNode(getActiveExchangeId());
 	}
@@ -169,75 +158,46 @@
 	function openDeleteDialog(exchangeId: string) {
 		if (!activeExchanges) return;
 		deleteTargetId = exchangeId;
-		const children = getChildExchanges(activeExchanges, exchangeId, exchangesByParentId);
-		deleteMode = children.length > 1 ? 'exchangeAndSideChats' : 'exchange';
+		deleteMode = getDeleteMode(activeExchanges, exchangeId, exchangesByParentId);
 	}
 
 	function confirmDelete() {
 		if (!activeExchanges || !deleteTargetId) return;
-		try {
-			const result = deleteExchangeWithModeResult(activeExchanges, deleteTargetId, deleteMode);
-			cancelStreamsForExchanges(result.removedExchangeIds);
-			doReplaceActiveExchanges(result.exchanges);
-			if (deleteTargetId === activeExchangeId || !result.exchanges[activeExchangeId ?? '']) {
-				setActiveExchangeId(getMainChatTail(result.exchanges));
-			}
+		const result = performDelete(
+			activeExchanges,
+			deleteTargetId,
+			deleteMode,
+			activeExchangeId,
+			resetMeasuredHeights
+		);
+		if (result.error) {
+			operationError = result.error;
+		} else {
 			deleteTargetId = null;
 			operationError = null;
-		} catch (error) {
-			operationError = error instanceof Error ? error.message : 'Unable to delete exchange.';
 		}
 	}
 
 	function promoteExchange(exchangeId: string) {
 		if (!activeExchanges) return;
-		try {
-			setActiveExchangeId(exchangeId);
-			doReplaceActiveExchanges(promoteSideChatToMainChat(activeExchanges, exchangeId));
+		const result = performPromote(activeExchanges, exchangeId, resetMeasuredHeights);
+		if (result.error) {
+			operationError = result.error;
+		} else {
 			operationError = null;
-		} catch (error) {
-			operationError = error instanceof Error ? error.message : 'Unable to promote exchange.';
 		}
 	}
 
 	function getExchangeNodeData(exchangeId: string) {
-		try {
-			const exchange = activeExchanges?.[exchangeId];
-			if (!exchange) return null;
-			const children = activeExchanges
-				? getChildExchanges(activeExchanges, exchangeId, exchangesByParentId)
-				: [];
-			const hasSideChildren =
-				canCreateSideChats(activeExchanges, exchangeId, exchangesByParentId) && children.length > 1;
-			const isSideRoot = exchange.parentId
-				? (getChildExchanges(activeExchanges, exchange.parentId, exchangesByParentId)[0]?.id ??
-						null) !== exchangeId
-				: false;
-
-			return {
-				prompt: exchange.prompt,
-				response: exchange.response,
-				model: exchange.model,
-				provider: exchange.model ? getProviderForModelId(exchange.model) : null,
-				isActive: activeExchangeId === exchangeId,
-				isStreaming: isExchangeStreaming(exchangeId),
-				canFork: true,
-				hasSideChildren,
-				isSideRoot,
-				canPromote:
-					!!activeExchanges &&
-					canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
-				onMeasure: (height: number) => setMeasuredNodeHeight(exchangeId, height),
-				onSelect: () => setActiveExchangeId(exchangeId),
-				onFork: () => forkChat(exchangeId),
-				onToggleSideChildren: () => toggleSideChildren(exchangeId),
-				onPromote: () => promoteExchange(exchangeId),
-				onDelete: () => openDeleteDialog(exchangeId)
-			};
-		} catch (error) {
-			console.error(`Failed to render exchange "${exchangeId}":`, error);
-			return null;
-		}
+		if (!activeExchanges) return null;
+		return getNodeData(exchangeId, activeExchanges, activeExchangeId, exchangesByParentId, {
+			onMeasure: setMeasuredNodeHeight,
+			onSelect: (id) => setActiveExchangeId(id),
+			onFork: forkChat,
+			onToggleSideChildren: toggleSideChildren,
+			onPromote: promoteExchange,
+			onDelete: openDeleteDialog
+		});
 	}
 </script>
 

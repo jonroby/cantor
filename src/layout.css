@@ -649,6 +649,146 @@
 	}
 }
 
+/* ---- ChatView ---- */
+
+.chatview-shell {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+}
+
+.chatview-header {
+	position: sticky;
+	top: 0;
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1.25rem;
+	border-bottom: 1px solid hsl(var(--border));
+	background: hsl(var(--card) / 0.97);
+	backdrop-filter: blur(12px);
+}
+
+.chatview-header-label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: hsl(var(--foreground));
+}
+
+.chatview-header-actions {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.chatview-header-btn {
+	height: 2rem;
+	width: 2rem;
+	border-radius: 0.5rem;
+}
+
+.chatview-body {
+	flex: 1;
+	display: flex;
+	overflow: hidden;
+}
+
+.chatview-body-split .chatview-main {
+	border-right: 1px solid hsl(var(--border));
+}
+
+.chatview-main {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.5rem 0 12rem;
+	transition: flex 250ms ease;
+}
+
+.chatview-exchanges {
+	max-width: 768px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 0 1rem;
+}
+
+.chatview-exchange-wrap {
+	width: 100%;
+}
+
+.chatview-exchange-wrap .exchange-card {
+	width: 100%;
+}
+
+.chatview-exchange-wrap .flow-node-card {
+	min-height: auto;
+}
+
+.chatview-branch-source {
+	position: relative;
+	border-left: 2px solid hsl(var(--primary));
+	padding-left: 0.75rem;
+	border-radius: 2px;
+}
+
+.chatview-empty {
+	padding: 4rem 1rem;
+	text-align: center;
+	font-size: 0.9rem;
+	color: hsl(var(--muted-foreground));
+}
+
+.chatview-side {
+	width: 420px;
+	min-width: 320px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: chatview-slide-in 250ms ease;
+}
+
+@keyframes chatview-slide-in {
+	from {
+		width: 0;
+		opacity: 0;
+	}
+	to {
+		width: 420px;
+		opacity: 1;
+	}
+}
+
+.chatview-side-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.6rem 0.75rem;
+	border-bottom: 1px solid hsl(var(--border));
+	background: hsl(var(--card) / 0.97);
+}
+
+.chatview-side-counter {
+	font-size: 0.8rem;
+	color: hsl(var(--muted-foreground));
+	min-width: 3rem;
+	text-align: center;
+}
+
+.chatview-side-close {
+	margin-left: auto;
+}
+
+.chatview-side-exchanges {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1rem 0.75rem 12rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
 @media (max-width: 900px) {
 	.canvas-viewport {
 		padding: 1rem 1rem 11rem;
@@ -669,5 +809,16 @@
 
 	.modal-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.chatview-side {
+		width: 280px;
+		min-width: 200px;
+	}
+
+	@keyframes chatview-slide-in {
+		to {
+			width: 280px;
+		}
 	}
 }
