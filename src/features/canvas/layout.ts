@@ -1,4 +1,4 @@
-import { buildExchangesByParentId, getChildExchanges, type ExchangeMap } from '@/lib/tree';
+import { buildExchangesByParentId, getChildExchanges, type ExchangeMap } from '@/domain/tree';
 
 export const NODE_WIDTH = 768;
 export const NODE_MIN_HEIGHT = 260;

@@ -1,4 +1,4 @@
-import type { Message } from '@/lib/tree';
+import type { Message } from '@/domain/tree';
 import type { StreamChunk } from './stream';
 
 /**

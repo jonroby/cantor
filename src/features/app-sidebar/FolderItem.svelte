@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import * as Sidebar from '@/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/components/shadcn/ui/dropdown-menu/index.js';
-	import type { ChatFolder } from '@/lib/tree';
+	import type { ChatFolder } from '@/domain/tree';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 	import DocItem from './DocItem.svelte';
 

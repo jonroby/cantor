@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Sidebar from '@/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/components/shadcn/ui/dropdown-menu/index.js';
-	import type { Chat } from '@/lib/tree';
+	import type { Chat } from '@/domain/tree';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 
 	interface Props {

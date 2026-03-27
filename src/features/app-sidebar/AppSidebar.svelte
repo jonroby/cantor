@@ -4,7 +4,7 @@
 	import * as Sidebar from '@/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/components/shadcn/ui/sidebar/context.svelte.js';
-	import type { Chat, ChatFolder } from '@/lib/tree';
+	import type { Chat, ChatFolder } from '@/domain/tree';
 	import newLogo from '@/assets/new-logo.png';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';

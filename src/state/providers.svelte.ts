@@ -33,7 +33,7 @@ import {
 	saveApiKey,
 	storedProviders as getStoredProviders
 } from '@/lib/providers/vault';
-import type { Message } from '@/lib/tree';
+import type { Message } from '@/domain/tree';
 
 export { WEBLLM_CONTEXT_OPTIONS };
 export type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize, ActiveModel, OllamaStatus };

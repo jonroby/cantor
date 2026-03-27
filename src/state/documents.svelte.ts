@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { toast } from 'svelte-sonner';
-import type { ChatFolder, DocFile } from '@/lib/tree';
+import type { ChatFolder, DocFile } from '@/domain/tree';
 import { validate } from '@/lib/validate-md';
 
 export interface OpenDoc {
@@ -247,6 +247,27 @@ export function uploadFolder() {
 		uploadDocsIntoFolder(folderId, mdFiles);
 	};
 	input.click();
+}
+
+export function updateDocContent(index: number, content: string) {
+	const doc = docState.openDocs[index];
+	if (!doc) return;
+	docState.openDocs = docState.openDocs.map((d, i) => (i === index ? { ...d, content } : d));
+	if (doc.docKey) {
+		const { folderId, fileId } = doc.docKey;
+		docState.folders = docState.folders.map((f) =>
+			f.id === folderId
+				? {
+						...f,
+						files: (f.files ?? []).map((d) => (d.id === fileId ? { ...d, content } : d))
+					}
+				: f
+		);
+	}
+}
+
+export function closeDoc(index: number) {
+	docState.openDocs = docState.openDocs.filter((_, i) => i !== index);
 }
 
 export function uploadFolderToFolder(folderId: string) {

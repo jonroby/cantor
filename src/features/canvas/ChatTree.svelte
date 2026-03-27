@@ -22,7 +22,7 @@
 		promoteSideChatToMainChat,
 		type DeleteMode,
 		type ExchangeMap
-	} from '@/lib/tree';
+	} from '@/domain/tree';
 	import {
 		chatState,
 		getActiveExchanges,
@@ -31,7 +31,7 @@
 		setActiveExchangeId,
 		forkChat as forkChatAction
 	} from '@/state/chats.svelte';
-	import { docState } from '@/state/documents.svelte';
+	import { docState, updateDocContent, closeDoc } from '@/state/documents.svelte';
 
 	let expandedSideChatParent: string | null = $state(null);
 	let measuredNodeHeights: Record<string, number> = $state({});
@@ -276,27 +276,8 @@
 				<DocsPanel
 					title={docFile?.name}
 					content={doc.content}
-					onContentChange={(c) => {
-						docState.openDocs = docState.openDocs.map((d, i) =>
-							i === index ? { ...d, content: c } : d
-						);
-						if (doc.docKey) {
-							const { folderId, fileId } = doc.docKey;
-							docState.folders = docState.folders.map((f) =>
-								f.id === folderId
-									? {
-											...f,
-											files: (f.files ?? []).map((d) =>
-												d.id === fileId ? { ...d, content: c } : d
-											)
-										}
-									: f
-							);
-						}
-					}}
-					onClose={() => {
-						docState.openDocs = docState.openDocs.filter((_, i) => i !== index);
-					}}
+					onContentChange={(c) => updateDocContent(index, c)}
+					onClose={() => closeDoc(index)}
 				/>
 			{/if}
 		{/snippet}

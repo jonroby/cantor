@@ -8,7 +8,7 @@ import {
 	withExplicitExchangeOrder,
 	type Chat,
 	type ExchangeMap
-} from '@/lib/tree';
+} from '@/domain/tree';
 import { buildInitialExchanges } from '@/state/initial-exchanges';
 
 function makeDefaultChat(): Chat {

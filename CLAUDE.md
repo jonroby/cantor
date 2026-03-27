@@ -24,7 +24,7 @@ The app is mostly client-side and centered around one top-level UI shell in `src
 - `src/main.ts` mounts the Svelte app and loads global CSS.
 - `src/App.svelte` is a thin orchestrator that wires together features and state; it does not own business logic directly.
 - `src/state/*` contains reactive Svelte stores for chat state (`chats.svelte.ts`), document/folder state (`documents.svelte.ts`), provider/model state (`providers.svelte.ts`), and persistence (`persistence.svelte.ts`).
-- `src/lib/tree/*` contains the core data structures and tree manipulation algorithms for chat exchanges.
+- `src/domain/tree/*` contains the core data structures and tree manipulation algorithms for chat exchanges.
 - `src/lib/providers/*` contains provider-specific networking (Claude, Ollama, Gemini, OpenAI-compatible, WebLLM) and API-key vault.
 - `src/lib/models/*` defines supported providers, model lists, and logo assets.
 - `src/lib/search/*` provides local in-browser search across prompts and responses.
@@ -35,7 +35,7 @@ The app is mostly client-side and centered around one top-level UI shell in `src
 
 ## Core Data Model
 
-The central state shape is an `ExchangeMap` from `src/lib/tree/index.ts`.
+The central state shape is an `ExchangeMap` from `src/domain/tree/index.ts`.
 
 - Each `Exchange` is a chat node with `id`, `parentId`, `prompt`, `response`, optional token counts, and optional model metadata.
 - A hidden root anchor (`ROOT_ANCHOR_ID`) is the single tree root.
@@ -67,7 +67,7 @@ There are three distinct branching concepts. **Do not confuse them.**
 - A **side chat** is a sibling branch off an existing node within the same tree.
 - Created implicitly by selecting a node and typing a new message (no dedicated button).
 - Side chats are **1 level deep only** — a side chat node can have at most 1 child.
-- Restriction enforced by `canCreateSideChats()` and `canAcceptNewChat()` in `src/lib/tree/index.ts`.
+- Restriction enforced by `canCreateSideChats()` and `canAcceptNewChat()` in `src/domain/tree/index.ts`.
 - The "Side chats" button (branch icon) on a node **toggles visibility** of its side branches; it does not create them.
 - Prop: `hasSideChildren` / `onToggleSideChildren` on `ExchangeNodeData`.
 - A side chat can be **promoted** to become the main chat path via the promote button.
@@ -86,7 +86,7 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 
 ## Documents and Folders
 
-- `ChatFolder` and `DocFile` types are defined in `src/lib/tree/index.ts`.
+- `ChatFolder` and `DocFile` types are defined in `src/domain/tree/index.ts`.
 - Folders and their files are stored in `docState` in `src/state/documents.svelte.ts` and persisted to `localStorage`.
 - Open doc panels are tracked as `openDocs[]` in `docState` — this is transient UI state (not persisted across reloads).
 - Each open doc has an `id`, `content`, and optional `docKey` linking it to a folder file.
@@ -154,7 +154,7 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 ## Working Rules For This Repo
 
 - Preserve the current architecture: state in `src/state/`, domain logic in `src/lib/`, UI in `src/features/`.
-- Put tree invariants and chat-structure behavior in `src/lib/tree/`, not inline in components.
+- Put tree invariants and chat-structure behavior in `src/domain/tree/`, not inline in components.
 - Keep provider-specific networking in `src/lib/providers/`.
 - Keep layout math in `src/features/canvas/layout.ts`.
 - Treat `localStorage` hydration and persistence changes carefully; avoid breaking existing saved chat state.
