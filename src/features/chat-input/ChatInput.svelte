@@ -87,6 +87,7 @@
 		const parentId = activeExchangeId ?? getMainChatTail(activeExchanges) ?? ROOT_ANCHOR_ID;
 		if (
 			activeExchangeId &&
+			activeExchangeId !== ROOT_ANCHOR_ID &&
 			getChildExchanges(activeExchanges, activeExchangeId, exchangesByParentId).length > 0
 		) {
 			onExpandSideChat(activeExchangeId);

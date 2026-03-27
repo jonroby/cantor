@@ -43,8 +43,9 @@ export function getExchangeNodeData(
 		const exchange = activeExchanges[exchangeId];
 		if (!exchange) return null;
 		const children = getChildExchanges(activeExchanges, exchangeId, exchangesByParentId);
+		const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
 		const hasSideChildren =
-			canCreateSideChats(activeExchanges, exchangeId, exchangesByParentId) && children.length > 1;
+			canCreateSideChats(activeExchanges, exchangeId, exchangesByParentId) && sideChildrenCount > 0;
 		const isSideRoot = exchange.parentId
 			? (getChildExchanges(activeExchanges, exchange.parentId, exchangesByParentId)[0]?.id ??
 					null) !== exchangeId
@@ -59,6 +60,7 @@ export function getExchangeNodeData(
 			isStreaming: isExchangeStreaming(exchangeId),
 			canFork: true,
 			hasSideChildren,
+			sideChildrenCount,
 			isSideRoot,
 			canPromote: canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
 			onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),

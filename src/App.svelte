@@ -172,7 +172,7 @@
 		{#if routerState.route === 'canvas'}
 			<CanvasView bind:this={canvasViewRef} onSearchOpen={() => (searchOpen = true)} />
 		{:else}
-			<ChatView bind:this={chatViewRef} onSearchOpen={() => (searchOpen = true)} />
+			<ChatView bind:this={chatViewRef} />
 		{/if}
 
 		{#if searchOpen}

@@ -14,6 +14,7 @@
 		isStreaming: boolean;
 		canFork: boolean;
 		hasSideChildren: boolean;
+		sideChildrenCount: number;
 		isSideRoot: boolean;
 		canPromote: boolean;
 		onMeasure: (height: number) => void;
