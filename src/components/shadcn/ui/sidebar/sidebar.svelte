@@ -59,45 +59,28 @@
 {:else}
 	<div
 		bind:this={ref}
-		class="text-sidebar-foreground group peer md:block hidden"
+		class={cn(
+			'text-sidebar-foreground group peer md:flex hidden flex-col h-svh flex-none',
+			'transition-[width] duration-200 ease-linear',
+			sidebar.state === 'expanded' ? 'w-(--sidebar-width)' : 'w-(--sidebar-width-icon)',
+			className
+		)}
 		data-state={sidebar.state}
 		data-collapsible={sidebar.state === 'collapsed' ? collapsible : ''}
 		data-variant={variant}
 		data-side={side}
 		data-slot="sidebar"
+		{...restProps}
 	>
-		<!-- This is what handles the sidebar gap on desktop -->
 		<div
-			data-slot="sidebar-gap"
+			data-sidebar="sidebar"
+			data-slot="sidebar-inner"
 			class={cn(
-				'relative bg-transparent transition-[width] duration-200 ease-linear',
-				'group-data-[collapsible=offcanvas]:w-0',
-				'group-data-[side=right]:rotate-180',
-				'w-(--sidebar-width-icon)'
+				'bg-sidebar flex size-full flex-col border-sidebar-border overflow-hidden',
+				side === 'left' ? 'border-e' : 'border-s'
 			)}
-		></div>
-		<div
-			data-slot="sidebar-container"
-			class={cn(
-				'inset-y-0 md:flex fixed z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear',
-				side === 'left'
-					? 'start-0 group-data-[collapsible=offcanvas]:start-[calc(var(--sidebar-width)*-1)]'
-					: 'end-0 group-data-[collapsible=offcanvas]:end-[calc(var(--sidebar-width)*-1)]',
-				// Adjust the padding for floating and inset variants.
-				variant === 'floating' || variant === 'inset'
-					? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
-					: 'border-sidebar-border group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-e group-data-[side=right]:border-s',
-				className
-			)}
-			{...restProps}
 		>
-			<div
-				data-sidebar="sidebar"
-				data-slot="sidebar-inner"
-				class="bg-sidebar group-data-[variant=floating]:ring-sidebar-border group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm shadow-xl flex size-full flex-col group-data-[variant=floating]:ring-1"
-			>
-				{@render children?.()}
-			</div>
+			{@render children?.()}
 		</div>
 	</div>
 {/if}
