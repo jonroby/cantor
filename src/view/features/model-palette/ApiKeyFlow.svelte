@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { PROVIDER_CONFIG } from '@/domain/models';
 	import type { ActiveModel, Provider } from '@/domain/models';
 	import Button from '@/view/components/custom/button.svelte';
@@ -22,6 +23,9 @@
 	let confirmPasswordInput = $state('');
 	let keyError: string | null = $state(null);
 	let isSubmitting = $state(false);
+
+	let apiKeyRef: ReturnType<typeof Input> | undefined = $state();
+	let passwordRef: ReturnType<typeof Input> | undefined = $state();
 
 	function providerDisplayName(provider: string): string {
 		return PROVIDER_CONFIG[provider as Exclude<Provider, 'ollama' | 'webllm'>]?.name ?? provider;
@@ -73,6 +77,16 @@
 			isSubmitting = false;
 		}
 	}
+
+	$effect(() => {
+		tick().then(() => {
+			if (flow.mode === 'setup') {
+				apiKeyRef?.focus();
+			} else {
+				passwordRef?.focus();
+			}
+		});
+	});
 </script>
 
 <div class="palette-key-flow">
@@ -86,12 +100,13 @@
 
 	{#if flow.mode === 'setup'}
 		<div class="palette-field">
-			<label class="palette-label">API Key</label>
+			<label class="palette-label" for="api-key-input">API Key</label>
 			<Input
+				id="api-key-input"
+				bind:this={apiKeyRef}
 				type="password"
 				placeholder={keyPlaceholder(flow.provider)}
 				bind:value={apiKeyInput}
-				autofocus
 			/>
 			<p class="palette-hint">
 				Your key is encrypted with your password and stored locally. It never leaves your device.
@@ -100,14 +115,15 @@
 	{/if}
 
 	<div class="palette-field">
-		<label class="palette-label">
+		<label class="palette-label" for="password-input">
 			{flow.mode === 'unlock' ? 'Password' : 'Master Password'}
 		</label>
 		<Input
+			id="password-input"
+			bind:this={passwordRef}
 			type="password"
 			placeholder={flow.mode === 'unlock' ? 'Enter your password' : 'Choose a password'}
 			bind:value={passwordInput}
-			autofocus={flow.mode === 'unlock'}
 			onkeydown={(e) => {
 				if (e.key === 'Enter' && flow.mode === 'unlock') handleUnlock();
 			}}
@@ -116,8 +132,9 @@
 
 	{#if flow.mode === 'setup'}
 		<div class="palette-field">
-			<label class="palette-label">Confirm Password</label>
+			<label class="palette-label" for="confirm-password-input">Confirm Password</label>
 			<Input
+				id="confirm-password-input"
 				type="password"
 				placeholder="Confirm your password"
 				bind:value={confirmPasswordInput}

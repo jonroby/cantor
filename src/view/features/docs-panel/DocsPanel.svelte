@@ -4,6 +4,7 @@
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
 	import { validate as validateMd } from '@/domain/validate-md';
+	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
 
 	interface Props {
 		title?: string;
@@ -323,19 +324,13 @@
 			{@html renderedHtml}
 		</div>
 	{/if}
-	{#if showCloseConfirm}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="close-confirm-overlay" onclick={cancelClose}>
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="close-confirm-dialog" onclick={(e) => e.stopPropagation()}>
-				<p>You have unsaved changes. Discard them?</p>
-				<div class="close-confirm-actions">
-					<button class="confirm-btn cancel" onclick={cancelClose}>Cancel</button>
-					<button class="confirm-btn discard" onclick={confirmClose}>Discard</button>
-				</div>
-			</div>
-		</div>
-	{/if}
+	<ConfirmDeleteDialog
+		open={showCloseConfirm}
+		title="Unsaved changes"
+		description="You have unsaved changes. Discard them?"
+		onConfirm={confirmClose}
+		onCancel={cancelClose}
+	/>
 </div>
 
 <style>
@@ -516,65 +511,5 @@
 		border: none;
 		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 		margin: 16px 0;
-	}
-
-	.close-confirm-overlay {
-		position: absolute;
-		inset: 0;
-		background: hsl(0 0% 0% / 0.3);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 10;
-		border-radius: 12px;
-	}
-
-	.close-confirm-dialog {
-		background: hsl(var(--card, 0 0% 100%));
-		border: 1px solid hsl(var(--border, 0 0% 85%));
-		border-radius: 10px;
-		padding: 20px 24px;
-		box-shadow: 0 8px 24px hsl(0 0% 0% / 0.15);
-		max-width: 300px;
-	}
-
-	.close-confirm-dialog p {
-		margin: 0 0 16px 0;
-		font-size: 14px;
-		color: hsl(var(--foreground, 0 0% 9%));
-	}
-
-	.close-confirm-actions {
-		display: flex;
-		gap: 8px;
-		justify-content: flex-end;
-	}
-
-	.confirm-btn {
-		padding: 6px 14px;
-		border-radius: 6px;
-		border: 1px solid hsl(var(--border, 0 0% 85%));
-		font-size: 13px;
-		cursor: pointer;
-		transition:
-			background 0.15s,
-			color 0.15s;
-	}
-
-	.confirm-btn.cancel {
-		background: transparent;
-		color: hsl(var(--foreground, 0 0% 9%));
-	}
-	.confirm-btn.cancel:hover {
-		background: hsl(var(--muted, 0 0% 96%));
-	}
-
-	.confirm-btn.discard {
-		background: hsl(0 72% 51%);
-		color: white;
-		border-color: hsl(0 72% 51%);
-	}
-	.confirm-btn.discard:hover {
-		background: hsl(0 72% 45%);
 	}
 </style>

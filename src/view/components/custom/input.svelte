@@ -8,7 +8,6 @@
 		placeholder?: string;
 		disabled?: boolean;
 		id?: string;
-		autofocus?: boolean;
 		onkeydown?: (e: KeyboardEvent) => void;
 	}
 
@@ -19,7 +18,6 @@
 		placeholder,
 		disabled = false,
 		id,
-		autofocus = false,
 		onkeydown
 	}: Props = $props();
 
@@ -38,6 +36,5 @@
 	{placeholder}
 	{disabled}
 	class={cn('ui-input', className)}
-	autofocus={autofocus ? true : undefined}
 	{onkeydown}
 />
