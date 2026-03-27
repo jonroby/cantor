@@ -78,6 +78,26 @@ export async function* streamGeminiChat(
 				}
 			}
 		}
+		const remaining = buffer.trim();
+		if (remaining && remaining.startsWith('data: ')) {
+			try {
+				const parsed = JSON.parse(remaining.slice(6)) as {
+					candidates?: { content?: { parts?: { text?: string }[] } }[];
+					usageMetadata?: {
+						promptTokenCount?: number;
+						candidatesTokenCount?: number;
+					};
+				};
+				const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+				if (text) yield { type: 'delta', delta: text };
+				if (parsed.usageMetadata) {
+					promptTokens = parsed.usageMetadata.promptTokenCount ?? promptTokens;
+					responseTokens = parsed.usageMetadata.candidatesTokenCount ?? responseTokens;
+				}
+			} catch {
+				/* unparseable trailing data */
+			}
+		}
 	} finally {
 		reader.releaseLock();
 	}

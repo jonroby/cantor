@@ -41,6 +41,7 @@
 		uploadFolderToFolder
 	} from '@/services/io.svelte';
 	import { init as initProviders, autoConnectOllama } from '@/state/providers.svelte';
+	import { cancelStreamsForChat } from '@/services/streams';
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
@@ -149,6 +150,8 @@
 	}
 
 	function doDeleteChat(index: number) {
+		const chat = chatState.chats[index];
+		if (chat) cancelStreamsForChat(chat.id);
 		deleteChatAction(index);
 		resetUIState();
 	}

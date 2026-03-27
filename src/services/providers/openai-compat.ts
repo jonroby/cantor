@@ -77,6 +77,23 @@ export async function* streamOpenAICompatChat(
 				}
 			}
 		}
+		const remaining = buffer.trim();
+		if (remaining && remaining.startsWith('data: ') && remaining.slice(6) !== '[DONE]') {
+			try {
+				const parsed = JSON.parse(remaining.slice(6)) as {
+					choices?: { delta?: { content?: string } }[];
+					usage?: { prompt_tokens?: number; completion_tokens?: number };
+				};
+				const content = parsed.choices?.[0]?.delta?.content;
+				if (content) yield { type: 'delta', delta: content };
+				if (parsed.usage) {
+					promptTokens = parsed.usage.prompt_tokens ?? promptTokens;
+					responseTokens = parsed.usage.completion_tokens ?? responseTokens;
+				}
+			} catch {
+				/* unparseable trailing data */
+			}
+		}
 	} finally {
 		reader.releaseLock();
 	}

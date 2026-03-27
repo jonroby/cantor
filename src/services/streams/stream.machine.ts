@@ -46,6 +46,7 @@ const streamCallback = fromCallback<StreamMachineEvent, CallbackInput>(({ sendBa
 				}
 			}
 		} catch (e) {
+			if (e instanceof DOMException && e.name === 'AbortError') return;
 			sendBack({
 				type: 'ERROR',
 				message: e instanceof Error ? e.message : 'Unknown error.'

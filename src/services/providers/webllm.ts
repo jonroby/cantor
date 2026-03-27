@@ -157,6 +157,14 @@ export async function* streamWebLLMChat(
 	let promptTokens = 0;
 	let responseTokens = 0;
 
+	signal.addEventListener('abort', () => {
+		try {
+			engine!.interruptGenerate();
+		} catch {
+			/* engine may already be stopped */
+		}
+	});
+
 	for await (const chunk of chunks) {
 		if (signal.aborted) break;
 

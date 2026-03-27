@@ -30,7 +30,10 @@
 		setActiveExchangeId,
 		forkChat as forkChatAction
 	} from '@/state/chats.svelte';
-	import { isStreaming as isExchangeStreaming } from '@/services/streams';
+	import {
+		isStreaming as isExchangeStreaming,
+		cancelStreamsForExchanges
+	} from '@/services/streams';
 	import { docState, updateDocContent, closeDoc } from '@/state/documents.svelte';
 
 	let expandedSideChatParent: string | null = $state(null);
@@ -174,6 +177,7 @@
 		if (!activeExchanges || !deleteTargetId) return;
 		try {
 			const result = deleteExchangeWithModeResult(activeExchanges, deleteTargetId, deleteMode);
+			cancelStreamsForExchanges(result.removedExchangeIds);
 			doReplaceActiveExchanges(result.exchanges);
 			if (deleteTargetId === activeExchangeId || !result.exchanges[activeExchangeId ?? '']) {
 				setActiveExchangeId(getMainChatTail(result.exchanges));

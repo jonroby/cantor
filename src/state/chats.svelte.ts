@@ -36,6 +36,19 @@ export function getActiveExchangeId(): string | null {
 	return getActiveChat().activeExchangeId;
 }
 
+export function getChatById(chatId: string): Chat | undefined {
+	return chatState.chats.find((c) => c.id === chatId);
+}
+
+export function getExchangesByChatId(chatId: string): ExchangeMap | undefined {
+	return getChatById(chatId)?.exchanges;
+}
+
+export function replaceExchangesByChatId(chatId: string, nextExchanges: ExchangeMap) {
+	const chat = chatState.chats.find((c) => c.id === chatId);
+	if (chat) chat.exchanges = nextExchanges;
+}
+
 function hasRenderableExchanges(exchanges: ExchangeMap) {
 	return Object.values(exchanges).some((exchange) => !exchange.isAnchor);
 }

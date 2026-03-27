@@ -12,6 +12,7 @@
 		getPathTokenTotal
 	} from '@/domain/tree';
 	import {
+		getActiveChat,
 		getActiveExchanges,
 		getActiveExchangeId,
 		replaceActiveExchanges,
@@ -31,7 +32,7 @@
 		updateContextLength,
 		fetchOllamaContextLength
 	} from '@/state/providers.svelte';
-	import { startStream, isAnyStreaming, cancelAllStreams } from '@/services/streams';
+	import { startStream, isStreaming, cancelStream } from '@/services/streams';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
@@ -53,16 +54,19 @@
 	let usedTokens = $derived(
 		activeExchanges && activeExchangeId ? getPathTokenTotal(activeExchanges, activeExchangeId) : 0
 	);
+	let activeNodeStreaming = $derived.by(() => {
+		const id = activeExchangeId;
+		if (!id) return false;
+		return isStreaming(id);
+	});
 	let submitDisabledReason = $derived(
-		isAnyStreaming()
-			? 'Wait for the current response to finish.'
-			: !providerState.activeModel
-				? 'Select a model first.'
-				: activeExchangeId &&
-					  activeExchanges &&
-					  !canAcceptNewChat(activeExchanges, activeExchangeId, exchangesByParentId)
-					? 'Choose a branch tip or main-chain node to continue.'
-					: null
+		!providerState.activeModel
+			? 'Select a model first.'
+			: activeExchangeId &&
+				  activeExchanges &&
+				  !canAcceptNewChat(activeExchanges, activeExchangeId, exchangesByParentId)
+				? 'Choose a branch tip or main-chain node to continue.'
+				: null
 	);
 
 	$effect(() => {
@@ -79,6 +83,7 @@
 
 		operationError = null;
 
+		const chatId = getActiveChat().id;
 		const parentId = activeExchangeId ?? getMainChatTail(activeExchanges) ?? ROOT_ANCHOR_ID;
 		if (
 			activeExchangeId &&
@@ -109,6 +114,7 @@
 
 		startStream({
 			exchangeId: created.id,
+			chatId,
 			model: providerState.activeModel,
 			exchanges: created.exchanges
 		});
@@ -123,12 +129,14 @@
 	bind:composerValue
 	bind:canvasMode
 	{submitDisabledReason}
-	streaming={isAnyStreaming()}
+	streaming={activeNodeStreaming}
 	activeModelId={providerState.activeModel?.modelId ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
 	onSubmit={submitPrompt}
-	onStop={cancelAllStreams}
+	onStop={() => {
+		if (activeExchangeId) cancelStream(activeExchangeId);
+	}}
 	onToggleCanvasMode={() => (canvasMode = !canvasMode)}
 	onOpenPalette={() => (paletteOpen = true)}
 />

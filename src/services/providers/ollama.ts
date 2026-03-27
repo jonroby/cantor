@@ -93,6 +93,28 @@ export async function* streamOllamaChat(
 				}
 			}
 		}
+		const remaining = buffer.trim();
+		if (remaining) {
+			try {
+				const chunk = JSON.parse(remaining) as {
+					done: boolean;
+					message?: { content: string };
+					prompt_eval_count?: number;
+					eval_count?: number;
+				};
+				if (!chunk.done && chunk.message?.content) {
+					yield { type: 'delta', delta: chunk.message.content };
+				} else if (chunk.done) {
+					yield {
+						type: 'done',
+						promptTokens: chunk.prompt_eval_count ?? 0,
+						responseTokens: chunk.eval_count ?? 0
+					};
+				}
+			} catch {
+				/* unparseable trailing data */
+			}
+		}
 	} finally {
 		reader.releaseLock();
 	}

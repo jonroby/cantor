@@ -4,13 +4,14 @@ import { streamMachine, type StreamMachineInput } from './stream.machine';
 import type { ActiveModel } from '@/lib/models';
 import type { ExchangeMap } from '@/domain/tree';
 import { getHistory, updateExchangeResponse, updateExchangeTokens } from '@/domain/tree';
-import { getActiveExchanges, replaceActiveExchanges } from '@/state/chats.svelte';
+import { getExchangesByChatId, replaceExchangesByChatId } from '@/state/chats.svelte';
 import { getProviderStream } from '@/state/providers.svelte';
 
 type StreamActor = Actor<typeof streamMachine>;
 
 let streamingIds: string[] = $state([]);
 const actors = new SvelteMap<string, StreamActor>();
+const actorChatIds = new SvelteMap<string, string>();
 
 export function isStreaming(exchangeId: string): boolean {
 	return streamingIds.includes(exchangeId);
@@ -31,14 +32,16 @@ function removeStreamingId(id: string) {
 function cleanup(exchangeId: string) {
 	removeStreamingId(exchangeId);
 	actors.delete(exchangeId);
+	actorChatIds.delete(exchangeId);
 }
 
 export function startStream(params: {
 	exchangeId: string;
+	chatId: string;
 	model: ActiveModel;
 	exchanges: ExchangeMap;
 }): void {
-	const { exchangeId, model, exchanges } = params;
+	const { exchangeId, chatId, model, exchanges } = params;
 	const history = getHistory(exchanges, exchangeId);
 
 	const input: StreamMachineInput = {
@@ -51,36 +54,54 @@ export function startStream(params: {
 	const actor = createActor(streamMachine, { input });
 
 	actors.set(exchangeId, actor);
+	actorChatIds.set(exchangeId, chatId);
 	addStreamingId(exchangeId);
 
 	let lastResponse = '';
 
 	actor.subscribe((snapshot: SnapshotFrom<typeof streamMachine>) => {
 		const { context } = snapshot;
+		const targetChatId = actorChatIds.get(exchangeId);
+		if (!targetChatId) return;
+
+		const currentExchanges = getExchangesByChatId(targetChatId);
+		if (!currentExchanges) {
+			cleanup(exchangeId);
+			return;
+		}
 
 		if (snapshot.status === 'active' && context.response !== lastResponse) {
 			lastResponse = context.response;
-			replaceActiveExchanges(
-				updateExchangeResponse(getActiveExchanges(), exchangeId, context.response)
+			replaceExchangesByChatId(
+				targetChatId,
+				updateExchangeResponse(currentExchanges, exchangeId, context.response)
 			);
 		}
 
 		if (snapshot.status === 'done') {
 			if (context.error === null && (context.promptTokens > 0 || context.responseTokens > 0)) {
-				replaceActiveExchanges(
-					updateExchangeTokens(
-						getActiveExchanges(),
-						exchangeId,
-						context.promptTokens,
-						context.responseTokens
-					)
-				);
+				const latestExchanges = getExchangesByChatId(targetChatId);
+				if (latestExchanges) {
+					replaceExchangesByChatId(
+						targetChatId,
+						updateExchangeTokens(
+							latestExchanges,
+							exchangeId,
+							context.promptTokens,
+							context.responseTokens
+						)
+					);
+				}
 			}
 
 			if (context.error !== null) {
-				replaceActiveExchanges(
-					updateExchangeResponse(getActiveExchanges(), exchangeId, context.response)
-				);
+				const latestExchanges = getExchangesByChatId(targetChatId);
+				if (latestExchanges) {
+					replaceExchangesByChatId(
+						targetChatId,
+						updateExchangeResponse(latestExchanges, exchangeId, context.response)
+					);
+				}
 			}
 
 			cleanup(exchangeId);
@@ -99,5 +120,19 @@ export function cancelStream(exchangeId: string): void {
 export function cancelAllStreams(): void {
 	for (const [exchangeId] of actors) {
 		cancelStream(exchangeId);
+	}
+}
+
+export function cancelStreamsForExchanges(exchangeIds: string[]): void {
+	for (const exchangeId of exchangeIds) {
+		cancelStream(exchangeId);
+	}
+}
+
+export function cancelStreamsForChat(chatId: string): void {
+	for (const [exchangeId, cid] of actorChatIds) {
+		if (cid === chatId) {
+			cancelStream(exchangeId);
+		}
 	}
 }
