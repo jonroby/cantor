@@ -270,6 +270,9 @@ describe('getExchangeNodeData', () => {
 	});
 
 	it('returns null on internal error (try/catch path)', () => {
+		// Suppress the expected console.error from the catch block
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+
 		// An exchange whose childIds reference a missing node triggers an assertion
 		// inside canCreateSideChats → indexTree, which the catch block converts to null
 		const brokenExchanges: ExchangeMap = {

@@ -42,5 +42,7 @@ export function updateContextLength() {
 			providerState.activeModel.provider,
 			providerState.activeModel.modelId
 		);
+	} else {
+		providerState.contextLength = null;
 	}
 }

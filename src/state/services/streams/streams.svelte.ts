@@ -1,38 +1,38 @@
-import { SvelteMap } from 'svelte/reactivity';
-import { createActor, type Actor, type SnapshotFrom } from 'xstate';
-import { streamMachine, type StreamMachineInput } from './stream.machine';
+import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import type { ActiveModel } from '@/domain/models';
 import type { ChatTree } from '@/domain/tree';
-import { getHistory, updateExchangeResponse, updateExchangeTokens } from '@/domain/tree';
 import { getTreeByChatId, replaceTreeByChatId } from '@/state/chats.svelte';
 import { getProviderStream } from '@/app/providers';
+import {
+	isStreaming as _isStreaming,
+	isAnyStreaming as _isAnyStreaming,
+	startStream as _startStream,
+	cancelStream as _cancelStream,
+	cancelAllStreams as _cancelAllStreams,
+	cancelStreamsForExchanges as _cancelStreamsForExchanges,
+	cancelStreamsForChat as _cancelStreamsForChat,
+	type StreamStore,
+	type StreamDeps
+} from './streams';
 
-type StreamActor = Actor<typeof streamMachine>;
+const store: StreamStore = {
+	streamingIds: new SvelteSet<string>(),
+	actors: new SvelteMap(),
+	actorChatIds: new SvelteMap()
+};
 
-let streamingIds: string[] = $state([]);
-const actors = new SvelteMap<string, StreamActor>();
-const actorChatIds = new SvelteMap<string, string>();
+const deps: StreamDeps = {
+	getTreeByChatId,
+	replaceTreeByChatId,
+	getProviderStream
+};
 
 export function isStreaming(exchangeId: string): boolean {
-	return streamingIds.includes(exchangeId);
+	return _isStreaming(store, exchangeId);
 }
 
 export function isAnyStreaming(): boolean {
-	return streamingIds.length > 0;
-}
-
-function addStreamingId(id: string) {
-	streamingIds = [...streamingIds, id];
-}
-
-function removeStreamingId(id: string) {
-	streamingIds = streamingIds.filter((sid) => sid !== id);
-}
-
-function cleanup(exchangeId: string) {
-	removeStreamingId(exchangeId);
-	actors.delete(exchangeId);
-	actorChatIds.delete(exchangeId);
+	return _isAnyStreaming(store);
 }
 
 export function startStream(params: {
@@ -41,98 +41,21 @@ export function startStream(params: {
 	model: ActiveModel;
 	tree: ChatTree;
 }): void {
-	const { exchangeId, chatId, model, tree } = params;
-	const history = getHistory(tree, exchangeId);
-
-	const input: StreamMachineInput = {
-		exchangeId,
-		model,
-		history,
-		getStream: getProviderStream
-	};
-
-	const actor = createActor(streamMachine, { input });
-
-	actors.set(exchangeId, actor);
-	actorChatIds.set(exchangeId, chatId);
-	addStreamingId(exchangeId);
-
-	let lastResponse = '';
-
-	actor.subscribe((snapshot: SnapshotFrom<typeof streamMachine>) => {
-		const { context } = snapshot;
-		const targetChatId = actorChatIds.get(exchangeId);
-		if (!targetChatId) return;
-
-		const currentTree = getTreeByChatId(targetChatId);
-		if (!currentTree) {
-			cleanup(exchangeId);
-			return;
-		}
-
-		if (snapshot.status === 'active' && context.response !== lastResponse) {
-			lastResponse = context.response;
-			replaceTreeByChatId(targetChatId, {
-				rootId: currentTree.rootId,
-				exchanges: updateExchangeResponse(currentTree.exchanges, exchangeId, context.response)
-			});
-		}
-
-		if (snapshot.status === 'done') {
-			if (context.error === null && (context.promptTokens > 0 || context.responseTokens > 0)) {
-				const latestTree = getTreeByChatId(targetChatId);
-				if (latestTree) {
-					replaceTreeByChatId(targetChatId, {
-						rootId: latestTree.rootId,
-						exchanges: updateExchangeTokens(
-							latestTree.exchanges,
-							exchangeId,
-							context.promptTokens,
-							context.responseTokens
-						)
-					});
-				}
-			}
-
-			if (context.error !== null) {
-				const latestTree = getTreeByChatId(targetChatId);
-				if (latestTree) {
-					replaceTreeByChatId(targetChatId, {
-						rootId: latestTree.rootId,
-						exchanges: updateExchangeResponse(latestTree.exchanges, exchangeId, context.response)
-					});
-				}
-			}
-
-			cleanup(exchangeId);
-		}
-	});
-
-	actor.start();
+	_startStream(store, deps, params);
 }
 
 export function cancelStream(exchangeId: string): void {
-	const actor = actors.get(exchangeId);
-	if (!actor) return;
-	actor.send({ type: 'CANCEL' });
+	_cancelStream(store, exchangeId);
 }
 
 export function cancelAllStreams(): void {
-	for (const [exchangeId] of actors) {
-		cancelStream(exchangeId);
-	}
+	_cancelAllStreams(store);
 }
 
 export function cancelStreamsForExchanges(exchangeIds: string[]): void {
-	for (const exchangeId of exchangeIds) {
-		cancelStream(exchangeId);
-	}
+	_cancelStreamsForExchanges(store, exchangeIds);
 }
 
 export function cancelStreamsForChat(chatId: string): void {
-	for (const [exchangeId, cid] of actorChatIds) {
-		if (cid === chatId) {
-			cancelStream(exchangeId);
-		}
-	}
+	_cancelStreamsForChat(store, chatId);
 }

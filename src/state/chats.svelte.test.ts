@@ -266,6 +266,16 @@ describe('chats state', () => {
 			deleteChat(1);
 			expect(chatState.activeChatIndex).toBe(0);
 		});
+
+		it('keeps the same active chat selected when deleting an earlier chat', () => {
+			chatState.chats = [makeChat('A'), makeChat('B'), makeChat('C')];
+			chatState.activeChatIndex = 2;
+
+			deleteChat(0);
+
+			expect(chatState.activeChatIndex).toBe(1);
+			expect(getActiveChat().name).toBe('C');
+		});
 	});
 
 	describe('renameChat', () => {
