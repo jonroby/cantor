@@ -118,6 +118,52 @@ describe('streamMachine', () => {
 		expect(result.context.error).toBeNull();
 	});
 
+	it('swallows AbortError raised by the stream callback during cancellation', async () => {
+		const input: StreamMachineInput = {
+			exchangeId: 'test',
+			model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
+			history: [{ role: 'user', content: 'hello' }] as Message[],
+			// eslint-disable-next-line require-yield
+			getStream: async function* (_model, _history, signal) {
+				await new Promise((_resolve, reject) => {
+					signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+				});
+			}
+		};
+
+		const result = await new Promise<SnapshotFrom<typeof streamMachine>>((resolve) => {
+			const actor = createActor(streamMachine, { input });
+			actor.subscribe((snapshot) => {
+				if (snapshot.value === 'streaming') {
+					actor.send({ type: 'CANCEL' });
+				}
+				if (snapshot.status !== 'active') {
+					resolve(snapshot);
+				}
+			});
+			actor.start();
+		});
+
+		expect(result.value).toBe('done');
+		expect(result.context.error).toBeNull();
+	});
+
+	it('reports a fallback message when a non-Error value is thrown', async () => {
+		const input: StreamMachineInput = {
+			exchangeId: 'test-exchange',
+			model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
+			history: [{ role: 'user', content: 'hello' }] as Message[],
+			// eslint-disable-next-line require-yield
+			getStream: async function* () {
+				throw 'boom';
+			}
+		};
+
+		const final = await collectSnapshots(input);
+		expect(final.value).toBe('error');
+		expect(final.context.error).toBe('Unknown error.');
+	});
+
 	it('initializes context from input', () => {
 		const input = makeInput();
 		const actor = createActor(streamMachine, { input });

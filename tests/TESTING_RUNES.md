@@ -9,9 +9,7 @@ Vitest must resolve browser entry points for runes to work:
 ```js
 // vite.config.js
 export default defineConfig({
-  resolve: process.env.VITEST
-    ? { conditions: ['browser'] }
-    : undefined
+	resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined
 });
 ```
 
@@ -37,13 +35,13 @@ expect(isStreaming(exchangeId)).toBe(true);
 
 ```ts
 test('effect', () => {
-  const cleanup = $effect.root(() => {
-    let count = $state(0);
-    // ... test $effect-based code
-    flushSync();
-    // ... assertions
-  });
-  cleanup();
+	const cleanup = $effect.root(() => {
+		let count = $state(0);
+		// ... test $effect-based code
+		flushSync();
+		// ... assertions
+	});
+	cleanup();
 });
 ```
 

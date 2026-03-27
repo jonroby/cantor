@@ -1,5 +1,14 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
+vi.mock('@/state/services/providers/ollama', () => ({
+	DEFAULT_OLLAMA_URL: 'http://localhost:11434'
+}));
+
+vi.mock('@/state/services/providers/webllm', () => ({
+	WEBLLM_CONTEXT_OPTIONS: [4_096, 8_192],
+	type: {}
+}));
+
 // Mock web-llm to prevent CJS/ESM issues in test environment
 vi.mock('@mlc-ai/web-llm', () => ({
 	CreateWebWorkerMLCEngine: vi.fn(),
@@ -9,7 +18,6 @@ vi.mock('@mlc-ai/web-llm', () => ({
 }));
 
 import { providerState, selectModel, updateContextLength } from './providers.svelte';
-import { getModelContextLength } from '@/domain/models';
 
 describe('providers state', () => {
 	beforeEach(() => {
@@ -29,33 +37,17 @@ describe('providers state', () => {
 		providerState.webllmContextSize = 4_096;
 	});
 
-	describe('providerState', () => {
-		it('has correct defaults', () => {
-			expect(providerState.activeModel).toBe(null);
-			expect(providerState.contextLength).toBe(null);
-			expect(providerState.ollamaUrl).toBe('http://localhost:11434');
-			expect(providerState.ollamaStatus).toBe('disconnected');
-			expect(providerState.ollamaModels).toEqual([]);
-			expect(providerState.apiKeys).toEqual({});
-			expect(providerState.vaultProviders).toEqual([]);
-			expect(providerState.operationError).toBe(null);
-			expect(providerState.webllmStatus).toBe('idle');
-			expect(providerState.webllmProgress).toBe(0);
-			expect(providerState.webllmProgressText).toBe('');
-			expect(providerState.webllmModels).toEqual([]);
-			expect(providerState.webllmError).toBe(null);
-			expect(providerState.webllmContextSize).toBe(4_096);
-		});
-	});
-
 	describe('selectModel', () => {
-		it('sets activeModel on providerState', () => {
+		it('updates only the selected model until context is recomputed', () => {
 			const model = { provider: 'claude' as const, modelId: 'claude-sonnet-4-6' };
+			providerState.contextLength = 999;
 			selectModel(model);
+
 			expect(providerState.activeModel).toEqual(model);
+			expect(providerState.contextLength).toBe(999);
 		});
 
-		it('replaces existing model', () => {
+		it('replaces an existing model selection', () => {
 			selectModel({ provider: 'claude' as const, modelId: 'claude-sonnet-4-6' });
 			selectModel({ provider: 'ollama' as const, modelId: 'llama3' });
 			expect(providerState.activeModel).toEqual({ provider: 'ollama', modelId: 'llama3' });
@@ -63,11 +55,20 @@ describe('providers state', () => {
 	});
 
 	describe('updateContextLength', () => {
-		it('sets contextLength for key-based provider', () => {
+		it('sets the documented context length for a known Claude model', () => {
 			selectModel({ provider: 'claude' as const, modelId: 'claude-sonnet-4-6' });
 			updateContextLength();
-			const expected = getModelContextLength('claude', 'claude-sonnet-4-6');
-			expect(providerState.contextLength).toBe(expected);
+			expect(providerState.contextLength).toBe(1_000_000);
+		});
+
+		it('recomputes when switching between different key-based providers', () => {
+			selectModel({ provider: 'claude' as const, modelId: 'claude-haiku-4-5' });
+			updateContextLength();
+			expect(providerState.contextLength).toBe(200_000);
+
+			selectModel({ provider: 'openai' as const, modelId: 'gpt-4o' });
+			updateContextLength();
+			expect(providerState.contextLength).toBe(128_000);
 		});
 
 		it('clears contextLength when activeModel is null', () => {

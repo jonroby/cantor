@@ -13,11 +13,7 @@ import {
 } from './streams';
 
 import type { ChatTree } from '@/domain/tree';
-import {
-	buildEmptyTree,
-	addExchangeResult,
-	updateExchangeResponse
-} from '@/domain/tree';
+import { buildEmptyTree, addExchangeResult, updateExchangeResponse } from '@/domain/tree';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -62,17 +58,19 @@ function makeSlowDeps(tree: ChatTree): StreamDeps {
 		replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
 			currentTree = nextTree;
 		}),
-		getProviderStream: vi.fn().mockImplementation(
-			async function* (_model: unknown, _history: unknown, signal: AbortSignal) {
-				yield { type: 'delta', delta: 'chunk' };
-				await new Promise<void>((resolve) => {
-					if (signal.aborted) return resolve();
-					signal.addEventListener('abort', () => resolve());
-					setTimeout(resolve, 5000);
-				});
-				yield { type: 'done', promptTokens: 0, responseTokens: 0 };
-			}
-		)
+		getProviderStream: vi.fn().mockImplementation(async function* (
+			_model: unknown,
+			_history: unknown,
+			signal: AbortSignal
+		) {
+			yield { type: 'delta', delta: 'chunk' };
+			await new Promise<void>((resolve) => {
+				if (signal.aborted) return resolve();
+				signal.addEventListener('abort', () => resolve());
+				setTimeout(resolve, 5000);
+			});
+			yield { type: 'done', promptTokens: 0, responseTokens: 0 };
+		})
 	};
 }
 
@@ -221,12 +219,10 @@ describe('streams', () => {
 					return callCount <= 1 ? tree : undefined;
 				}),
 				replaceTreeByChatId: vi.fn(),
-				getProviderStream: vi.fn().mockImplementation(
-					async function* () {
-						yield { type: 'delta', delta: 'Hello' };
-						yield { type: 'done', promptTokens: 5, responseTokens: 10 };
-					}
-				)
+				getProviderStream: vi.fn().mockImplementation(async function* () {
+					yield { type: 'delta', delta: 'Hello' };
+					yield { type: 'done', promptTokens: 5, responseTokens: 10 };
+				})
 			};
 
 			startStream(store, deps, {
@@ -250,6 +246,7 @@ describe('streams', () => {
 					currentTree = nextTree;
 				}),
 				getProviderStream: vi.fn().mockImplementation(
+					// eslint-disable-next-line require-yield
 					async function* () {
 						throw new Error('API error');
 					}
@@ -267,6 +264,72 @@ describe('streams', () => {
 
 			expect(isStreaming(store, exchangeId)).toBe(false);
 			expect(currentTree.exchanges[exchangeId]?.response?.text).toContain('API error');
+		});
+
+		it('cleans up without crashing when the tree disappears before token persistence', async () => {
+			const { tree, exchangeId } = buildTreeWithExchange();
+			let currentTree: ChatTree | undefined = tree;
+			let readCount = 0;
+			const deps: StreamDeps = {
+				getTreeByChatId: vi.fn().mockImplementation(() => {
+					readCount++;
+					if (readCount >= 3) {
+						currentTree = undefined;
+					}
+					return currentTree;
+				}),
+				replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
+					currentTree = nextTree;
+				}),
+				getProviderStream: vi.fn().mockImplementation(async function* () {
+					yield { type: 'delta', delta: 'Hello' };
+					yield { type: 'done', promptTokens: 5, responseTokens: 10 };
+				})
+			};
+
+			startStream(store, deps, {
+				exchangeId,
+				chatId: 'chat-1',
+				model: { provider: PROVIDER, modelId: MODEL },
+				tree
+			});
+
+			await waitForStreamComplete(store, exchangeId);
+
+			expect(isStreaming(store, exchangeId)).toBe(false);
+		});
+
+		it('cleans up without crashing when the tree disappears before error persistence', async () => {
+			const { tree, exchangeId } = buildTreeWithExchange();
+			let currentTree: ChatTree | undefined = tree;
+			let readCount = 0;
+			const deps: StreamDeps = {
+				getTreeByChatId: vi.fn().mockImplementation(() => {
+					readCount++;
+					if (readCount >= 2) {
+						currentTree = undefined;
+					}
+					return currentTree;
+				}),
+				replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
+					currentTree = nextTree;
+				}),
+				// eslint-disable-next-line require-yield
+				getProviderStream: vi.fn().mockImplementation(async function* () {
+					throw new Error('API error');
+				})
+			};
+
+			startStream(store, deps, {
+				exchangeId,
+				chatId: 'chat-1',
+				model: { provider: PROVIDER, modelId: MODEL },
+				tree
+			});
+
+			await waitForStreamComplete(store, exchangeId);
+
+			expect(isStreaming(store, exchangeId)).toBe(false);
 		});
 	});
 

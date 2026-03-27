@@ -76,6 +76,11 @@ export function uploadDocToFolder(folderId: string) {
 	input.onchange = () => {
 		const file = input.files?.[0];
 		if (!file) return;
+		const folder = docState.folders.find((f) => f.id === folderId);
+		if (!folder) {
+			toast.error('Folder not found');
+			return;
+		}
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result === 'string') {
@@ -84,7 +89,6 @@ export function uploadDocToFolder(folderId: string) {
 					toast.error(`Invalid markdown: ${errors.join('; ')}`);
 					return;
 				}
-				const folder = docState.folders.find((f) => f.id === folderId);
 				const existingNames = (folder?.files ?? []).map((f) => f.name);
 				const name = deduplicateName(file.name, existingNames);
 				const docFile: DocFile = {
@@ -125,9 +129,15 @@ export async function downloadFolder(folderId: string) {
 }
 
 function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
-	let imported = 0;
 	const folder = docState.folders.find((f) => f.id === folderId);
-	const existingNames = (folder?.files ?? []).map((f) => f.name);
+	if (!folder) {
+		toast.error('Folder not found');
+		return;
+	}
+
+	let imported = 0;
+	let processed = 0;
+	const existingNames = (folder.files ?? []).map((f) => f.name);
 
 	for (const file of mdFiles) {
 		const reader = new FileReader();
@@ -136,20 +146,22 @@ function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
 				const errors = validate(reader.result);
 				if (errors.length > 0) {
 					toast.error(`Skipped ${file.name}: ${errors.join('; ')}`);
-					return;
+				} else {
+					const name = deduplicateName(file.name, existingNames);
+					existingNames.push(name);
+					const docFile: DocFile = {
+						id: crypto.randomUUID(),
+						name,
+						content: reader.result as string
+					};
+					docState.folders = docState.folders.map((f) =>
+						f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
+					);
+					imported++;
 				}
-				const name = deduplicateName(file.name, existingNames);
-				existingNames.push(name);
-				const docFile: DocFile = {
-					id: crypto.randomUUID(),
-					name,
-					content: reader.result as string
-				};
-				docState.folders = docState.folders.map((f) =>
-					f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
-				);
-				imported++;
-				if (imported === mdFiles.length) {
+
+				processed++;
+				if (processed === mdFiles.length && imported > 0) {
 					toast.success(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
 				}
 			}

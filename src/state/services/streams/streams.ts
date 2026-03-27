@@ -105,11 +105,7 @@ export function startStream(
 				if (latestTree) {
 					deps.replaceTreeByChatId(targetChatId, {
 						rootId: latestTree.rootId,
-						exchanges: updateExchangeResponse(
-							latestTree.exchanges,
-							exchangeId,
-							context.response
-						)
+						exchanges: updateExchangeResponse(latestTree.exchanges, exchangeId, context.response)
 					});
 				}
 			}

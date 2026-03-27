@@ -96,16 +96,27 @@ describe('chats state', () => {
 	});
 
 	describe('getActiveTree', () => {
-		it('returns rootId and exchanges as a ChatTree', () => {
+		it('tracks the currently selected chat', () => {
+			const firstTree = buildTreeWithExchanges(2);
+			const secondTree = buildTreeWithExchanges(3);
+			chatState.chats = [makeChat('A', firstTree), makeChat('B', secondTree)];
+
+			selectChat(1);
+
 			const tree = getActiveTree();
-			expect(tree.rootId).toBe(chatState.chats[0].rootId);
-			expect(tree.exchanges).toBe(chatState.chats[0].exchanges);
+			expect(tree.rootId).toBe(chatState.chats[1].rootId);
+			expect(Object.keys(tree.exchanges)).toHaveLength(Object.keys(secondTree.exchanges).length);
 		});
 	});
 
 	describe('getActiveExchangeId', () => {
-		it('returns activeExchangeId of the active chat', () => {
-			expect(getActiveExchangeId()).toBe(chatState.chats[0].activeExchangeId);
+		it('returns the active exchange for the selected chat', () => {
+			chatState.chats = [
+				makeChat('A', buildTreeWithExchanges(1)),
+				makeChat('B', buildTreeWithExchanges(3))
+			];
+			selectChat(1);
+			expect(getActiveExchangeId()).toBe(chatState.chats[1].activeExchangeId);
 		});
 	});
 
@@ -157,6 +168,18 @@ describe('chats state', () => {
 			replaceExchangesByChatId('nope', {});
 			expect(Object.keys(chatState.chats[0].exchanges).length).toBe(Object.keys(before).length);
 		});
+
+		it('does not modify other chats', () => {
+			const first = makeChat('A', buildTreeWithExchanges(1));
+			const second = makeChat('B', buildTreeWithExchanges(2));
+			const replacement = buildTreeWithExchanges(4);
+			chatState.chats = [first, second];
+
+			replaceExchangesByChatId(second.id, replacement.exchanges);
+
+			expect(Object.keys(chatState.chats[0].exchanges)).toHaveLength(1);
+			expect(Object.keys(chatState.chats[1].exchanges)).toHaveLength(4);
+		});
 	});
 
 	describe('replaceTreeByChatId', () => {
@@ -172,29 +195,65 @@ describe('chats state', () => {
 			replaceTreeByChatId('nope', buildEmptyTree());
 			expect(chatState.chats[0].rootId).toBe(beforeRootId);
 		});
+
+		it('updates only the targeted chat tree', () => {
+			const first = makeChat('A', buildTreeWithExchanges(1));
+			const second = makeChat('B', buildTreeWithExchanges(2));
+			const replacement = buildTreeWithExchanges(3);
+			chatState.chats = [first, second];
+
+			replaceTreeByChatId(second.id, replacement);
+
+			expect(chatState.chats[0].rootId).toBe(first.rootId);
+			expect(chatState.chats[1].rootId).toBe(replacement.rootId);
+		});
 	});
 
 	describe('replaceActiveExchanges', () => {
-		it('replaces exchanges on the active chat', () => {
+		it('replaces exchanges on the selected active chat only', () => {
+			chatState.chats = [
+				makeChat('A', buildTreeWithExchanges(1)),
+				makeChat('B', buildTreeWithExchanges(2))
+			];
+			selectChat(1);
 			const newTree = buildTreeWithExchanges(3);
+
 			replaceActiveExchanges(newTree.exchanges);
-			expect(chatState.chats[0].exchanges).toBe(newTree.exchanges);
+
+			expect(Object.keys(chatState.chats[0].exchanges)).toHaveLength(1);
+			expect(chatState.chats[1].exchanges).toBe(newTree.exchanges);
 		});
 	});
 
 	describe('replaceActiveTree', () => {
-		it('replaces rootId and exchanges on the active chat', () => {
+		it('replaces rootId and exchanges on the selected active chat only', () => {
+			chatState.chats = [
+				makeChat('A', buildTreeWithExchanges(1)),
+				makeChat('B', buildTreeWithExchanges(2))
+			];
+			selectChat(1);
 			const newTree = buildTreeWithExchanges(3);
+
 			replaceActiveTree(newTree);
-			expect(chatState.chats[0].rootId).toBe(newTree.rootId);
-			expect(chatState.chats[0].exchanges).toBe(newTree.exchanges);
+
+			expect(chatState.chats[0].rootId).toBeDefined();
+			expect(chatState.chats[1].rootId).toBe(newTree.rootId);
+			expect(chatState.chats[1].exchanges).toBe(newTree.exchanges);
 		});
 	});
 
 	describe('setActiveExchangeId', () => {
-		it('sets activeExchangeId on the active chat', () => {
+		it('sets activeExchangeId on the selected chat only', () => {
+			chatState.chats = [
+				makeChat('A', buildTreeWithExchanges(1)),
+				makeChat('B', buildTreeWithExchanges(2))
+			];
+			selectChat(1);
+
 			setActiveExchangeId('some-id');
-			expect(chatState.chats[0].activeExchangeId).toBe('some-id');
+
+			expect(chatState.chats[0].activeExchangeId).not.toBe('some-id');
+			expect(chatState.chats[1].activeExchangeId).toBe('some-id');
 		});
 
 		it('can set to null', () => {
@@ -282,6 +341,13 @@ describe('chats state', () => {
 		it('renames the chat at the given index', () => {
 			renameChat(0, 'Renamed');
 			expect(chatState.chats[0].name).toBe('Renamed');
+		});
+
+		it('does not rename other chats', () => {
+			chatState.chats = [makeChat('A'), makeChat('B')];
+			renameChat(1, 'Renamed');
+			expect(chatState.chats[0].name).toBe('A');
+			expect(chatState.chats[1].name).toBe('Renamed');
 		});
 	});
 

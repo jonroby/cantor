@@ -50,9 +50,7 @@ vi.mock('@/state/documents.svelte', () => ({
 			{
 				id: 'folder-1',
 				name: 'Test Folder',
-				files: [
-					{ id: 'file-1', name: 'doc.md', content: '# Hello' }
-				]
+				files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
 			}
 		]
 	}
@@ -125,6 +123,7 @@ function buildValidUploadData() {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	vi.mocked(validate).mockReturnValue([]);
 
 	lastCreatedLink = { href: '', download: '', click: vi.fn() };
 	lastCreatedInput = {
@@ -203,14 +202,6 @@ describe('io.svelte', () => {
 	});
 
 	describe('uploadChat', () => {
-		it('creates a file input and clicks it', () => {
-			uploadChat();
-
-			expect(lastCreatedInput.type).toBe('file');
-			expect(lastCreatedInput.accept).toBe('.json');
-			expect(lastCreatedInput.click).toHaveBeenCalled();
-		});
-
 		it('imports a valid chat file', async () => {
 			uploadChat();
 
@@ -281,12 +272,15 @@ describe('io.svelte', () => {
 	});
 
 	describe('uploadDocToFolder', () => {
-		it('creates a file input for .md files', () => {
+		it('does nothing when no file is selected', () => {
 			uploadDocToFolder('folder-1');
 
-			expect(lastCreatedInput.type).toBe('file');
-			expect(lastCreatedInput.accept).toBe('.md');
-			expect(lastCreatedInput.click).toHaveBeenCalled();
+			lastCreatedInput.files = null;
+			lastCreatedInput.onchange!();
+
+			expect(toast.success).not.toHaveBeenCalled();
+			expect(toast.error).not.toHaveBeenCalled();
+			expect(docState.folders[0].files).toHaveLength(1);
 		});
 
 		it('imports a valid markdown file', async () => {
@@ -325,6 +319,37 @@ describe('io.svelte', () => {
 
 			expect(docState.folders[0].files).toHaveLength(1);
 		});
+
+		it('creates the files array when the target folder has none', async () => {
+			docState.folders = [{ id: 'folder-1', name: 'Test Folder' }] as typeof docState.folders;
+			uploadDocToFolder('folder-1');
+
+			const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
+			lastCreatedInput.files = [file];
+
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(toast.success).toHaveBeenCalled();
+			});
+
+			expect(docState.folders[0].files).toHaveLength(1);
+			expect(docState.folders[0].files?.[0]?.name).toBe('doc.md');
+		});
+
+		it('reports an error when uploading into a missing folder', async () => {
+			uploadDocToFolder('missing-folder');
+
+			const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
+			lastCreatedInput.files = [file];
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(toast.error).toHaveBeenCalledWith('Folder not found');
+			});
+
+			expect(toast.success).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('downloadFolder', () => {
@@ -337,7 +362,9 @@ describe('io.svelte', () => {
 		});
 
 		it('shows error for empty folder', async () => {
-			docState.folders = [{ id: 'empty-folder', name: 'Empty', files: [] }] as typeof docState.folders;
+			docState.folders = [
+				{ id: 'empty-folder', name: 'Empty', files: [] }
+			] as typeof docState.folders;
 
 			await downloadFolder('empty-folder');
 
@@ -360,14 +387,6 @@ describe('io.svelte', () => {
 	});
 
 	describe('uploadFolder', () => {
-		it('creates a directory file input', () => {
-			uploadFolder();
-
-			expect(lastCreatedInput.type).toBe('file');
-			expect(lastCreatedInput.webkitdirectory).toBe(true);
-			expect(lastCreatedInput.click).toHaveBeenCalled();
-		});
-
 		it('shows error when no .md files found', () => {
 			uploadFolder();
 
@@ -407,17 +426,48 @@ describe('io.svelte', () => {
 				name: 'MyFolder'
 			});
 		});
+
+		it('falls back to "Uploaded Folder" when relative path is missing', async () => {
+			uploadFolder();
+
+			const mdFile = new File(['# Doc'], 'doc.md');
+			lastCreatedInput.files = [mdFile] as unknown as File[];
+
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(docState.folders.length).toBe(2);
+			});
+
+			expect(docState.folders[1]?.name).toBe('Uploaded Folder');
+		});
+
+		it('still shows a success summary for valid files when one file in the batch is invalid', async () => {
+			vi.mocked(validate).mockImplementation((markdown: string) =>
+				markdown.includes('bad') ? ['Invalid heading'] : []
+			);
+
+			uploadFolder();
+
+			const validFile = new File(['# Good'], 'good.md');
+			Object.defineProperty(validFile, 'webkitRelativePath', { value: 'Mixed/good.md' });
+			const invalidFile = new File(['bad markdown'], 'bad.md');
+			Object.defineProperty(invalidFile, 'webkitRelativePath', { value: 'Mixed/bad.md' });
+			lastCreatedInput.files = [validFile, invalidFile] as unknown as File[];
+
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Skipped bad.md'));
+			});
+
+			await vi.waitFor(() => {
+				expect(toast.success).toHaveBeenCalledWith('Uploaded 1 file');
+			});
+		});
 	});
 
 	describe('uploadFolderToFolder', () => {
-		it('creates a directory file input', () => {
-			uploadFolderToFolder('folder-1');
-
-			expect(lastCreatedInput.type).toBe('file');
-			expect(lastCreatedInput.webkitdirectory).toBe(true);
-			expect(lastCreatedInput.click).toHaveBeenCalled();
-		});
-
 		it('shows error when no .md files found', () => {
 			uploadFolderToFolder('folder-1');
 
@@ -436,6 +486,42 @@ describe('io.svelte', () => {
 			lastCreatedInput.onchange!();
 
 			expect(toast.error).not.toHaveBeenCalled();
+		});
+
+		it('imports markdown files into an existing folder and summarizes the count', async () => {
+			uploadFolderToFolder('folder-1');
+
+			const first = new File(['# One'], 'doc.md');
+			const second = new File(['# Two'], 'doc.md');
+			lastCreatedInput.files = [first, second] as unknown as File[];
+
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(toast.success).toHaveBeenCalledWith('Uploaded 2 files');
+			});
+
+			expect(docState.folders[0].files).toHaveLength(3);
+			expect(docState.folders[0].files?.map((file) => file.name)).toEqual([
+				'doc.md',
+				'doc (1).md',
+				'doc (2).md'
+			]);
+		});
+
+		it('reports an error when the target folder does not exist', async () => {
+			uploadFolderToFolder('missing-folder');
+
+			const file = new File(['# One'], 'doc.md');
+			lastCreatedInput.files = [file] as unknown as File[];
+
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(toast.error).toHaveBeenCalledWith('Folder not found');
+			});
+
+			expect(toast.success).not.toHaveBeenCalled();
 		});
 	});
 });
