@@ -1,3 +1,15 @@
+I want you to read TESTING_PLAN.md (and CLaude.md
+for info on architecture) and work on writing tests
+for all lib files. These should approach near 100%
+since they are pure. Do NOT test non-public
+functions.
+
+Do not worry about code downstream (if you need to
+change things to make code quality here better). SO
+long as it isn't too much friction for code
+downstream to make changes do not worry about it.
+Do not worry about bacwkard incompatible changes.
+
 # Testing Plan
 
 > Consult `CLAUDE.md` for architecture rules, tooling (`bun run test`), and layer boundaries.

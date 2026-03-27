@@ -83,8 +83,17 @@ export function buildEmptyTree(): ChatTree {
 
 // ── Atomic parent-child primitives ───────────────────────────────────────────
 
-function attachChild(exchanges: ExchangeMap, parentId: string, childId: string, index?: number): ExchangeMap {
-	const parent = requireExchange(exchanges, parentId, `Cannot attach to missing parent "${parentId}".`);
+function attachChild(
+	exchanges: ExchangeMap,
+	parentId: string,
+	childId: string,
+	index?: number
+): ExchangeMap {
+	const parent = requireExchange(
+		exchanges,
+		parentId,
+		`Cannot attach to missing parent "${parentId}".`
+	);
 	const child = requireExchange(exchanges, childId, `Cannot attach missing child "${childId}".`);
 
 	assert(
@@ -118,7 +127,10 @@ function buildChildrenByParentId(exchanges: ExchangeMap): Record<string, Exchang
 		if (exchange.childIds.length === 0) continue;
 		result[exchange.id] = exchange.childIds.map((childId) => {
 			const child = exchanges[childId];
-			assert(child !== undefined, `Exchange "${exchange.id}" references missing child "${childId}".`);
+			assert(
+				child !== undefined,
+				`Exchange "${exchange.id}" references missing child "${childId}".`
+			);
 			assert(
 				child.parentId === exchange.id,
 				`Child "${childId}" parentId "${child.parentId}" does not match parent "${exchange.id}".`
@@ -148,7 +160,10 @@ function validateTree(tree: ChatTree): IndexedTree {
 	const roots = exchangeList.filter((e) => e.parentId === null);
 	assert(roots.length === 1, `Tree must contain exactly one root exchange, found ${roots.length}.`);
 	const root = roots[0]!;
-	assert(tree.rootId === root.id, `rootId must point to root exchange "${root.id}", but points to "${tree.rootId}".`);
+	assert(
+		tree.rootId === root.id,
+		`rootId must point to root exchange "${root.id}", but points to "${tree.rootId}".`
+	);
 
 	for (const exchange of exchangeList) {
 		if (exchange.parentId === null) continue;
@@ -174,7 +189,10 @@ function validateTree(tree: ChatTree): IndexedTree {
 
 		for (const childId of childIds) {
 			const child = tree.exchanges[childId];
-			assert(child !== undefined, `Exchange "${exchange.id}" references missing child "${childId}".`);
+			assert(
+				child !== undefined,
+				`Exchange "${exchange.id}" references missing child "${childId}".`
+			);
 			assert(
 				child.parentId === exchange.id,
 				`Exchange "${exchange.id}" childIds contains "${childId}" but child's parentId is "${child.parentId}".`
@@ -203,10 +221,7 @@ function validateTree(tree: ChatTree): IndexedTree {
 			queue.push(child.id);
 		}
 	}
-	assert(
-		visited.size === exchangeList.length,
-		'Tree contains unreachable or cyclic nodes.'
-	);
+	assert(visited.size === exchangeList.length, 'Tree contains unreachable or cyclic nodes.');
 
 	return indexed;
 }
@@ -288,7 +303,11 @@ function hasBranchingDescendant(tree: IndexedTree, exchangeId: string): boolean 
 // ── Internal mutation helpers ────────────────────────────────────────────────
 
 function spliceExchange(tree: ChatTree, exchangeId: string): ChatTree {
-	const exchange = requireExchange(tree.exchanges, exchangeId, `Cannot remove missing exchange "${exchangeId}".`);
+	const exchange = requireExchange(
+		tree.exchanges,
+		exchangeId,
+		`Cannot remove missing exchange "${exchangeId}".`
+	);
 	const indexed = indexTree(tree);
 	const children = getChildrenFromTree(indexed, exchangeId);
 	const childIds = children.map((c) => c.id);
@@ -304,7 +323,11 @@ function spliceExchange(tree: ChatTree, exchangeId: string): ChatTree {
 		} else {
 			const newRootId = childIds[0]!;
 			nextRootId = newRootId;
-			next[newRootId] = { ...next[newRootId]!, parentId: null, childIds: [...next[newRootId]!.childIds] };
+			next[newRootId] = {
+				...next[newRootId]!,
+				parentId: null,
+				childIds: [...next[newRootId]!.childIds]
+			};
 			for (let i = 1; i < childIds.length; i++) {
 				const cid = childIds[i]!;
 				next[cid] = { ...next[cid]!, parentId: newRootId };
@@ -329,8 +352,15 @@ function spliceExchange(tree: ChatTree, exchangeId: string): ChatTree {
 	return { rootId: nextRootId, exchanges: next };
 }
 
-function exciseSubtree(tree: ChatTree, exchangeId: string): { tree: ChatTree; removedIds: string[] } {
-	const exchange = requireExchange(tree.exchanges, exchangeId, `Cannot remove missing subtree "${exchangeId}".`);
+function exciseSubtree(
+	tree: ChatTree,
+	exchangeId: string
+): { tree: ChatTree; removedIds: string[] } {
+	const exchange = requireExchange(
+		tree.exchanges,
+		exchangeId,
+		`Cannot remove missing subtree "${exchangeId}".`
+	);
 	const indexed = indexTree(tree);
 
 	const removedIds = collectSubtreeIds(indexed, exchangeId);
@@ -340,7 +370,11 @@ function exciseSubtree(tree: ChatTree, exchangeId: string): { tree: ChatTree; re
 		return { tree: { rootId: null, exchanges: {} }, removedIds };
 	}
 
-	const parent = requireExchange(tree.exchanges, exchange.parentId, `Cannot find parent "${exchange.parentId}".`);
+	const parent = requireExchange(
+		tree.exchanges,
+		exchange.parentId,
+		`Cannot find parent "${exchange.parentId}".`
+	);
 	const next = {
 		...tree.exchanges,
 		[exchange.parentId]: { ...parent, childIds: parent.childIds.filter((id) => id !== exchangeId) }
@@ -352,12 +386,14 @@ function exciseSubtree(tree: ChatTree, exchangeId: string): { tree: ChatTree; re
 	return { tree: { rootId: tree.rootId, exchanges: filtered }, removedIds };
 }
 
-// ── Public API ───────────────────────────────────────────────────────────────
+// ── Tree construction & validation ──────────────────────────────────────────
 
 export function validateChatTree(tree: ChatTree): ChatTree {
 	validateTree(tree);
 	return tree;
 }
+
+// ── Adding exchanges ────────────────────────────────────────────────────────
 
 export function addExchange(
 	tree: ChatTree,
@@ -398,7 +434,11 @@ export function addExchangeResult(
 		next = { [id]: { ...newExchange, parentId: null } };
 		nextRootId = id;
 	} else {
-		const parent = requireExchange(indexed.exchanges, parentId, `Cannot add an exchange to missing parent "${parentId}".`);
+		const parent = requireExchange(
+			indexed.exchanges,
+			parentId,
+			`Cannot add an exchange to missing parent "${parentId}".`
+		);
 
 		// Side-chat depth constraint: if parent is a side exchange, it can have at most 1 child
 		if (isSideExchange(indexed, parentId)) {
@@ -414,6 +454,8 @@ export function addExchangeResult(
 
 	return { id, rootId: nextRootId, exchanges: next };
 }
+
+// ── Removing exchanges ──────────────────────────────────────────────────────
 
 export function removeExchange(tree: ChatTree, exchangeId: string): ChatTree {
 	validateTree(tree);
@@ -447,12 +489,20 @@ export function removeSideChatChildren(tree: ChatTree, exchangeId: string): Chat
 	return current;
 }
 
-export function deleteExchangeWithMode(tree: ChatTree, exchangeId: string, mode: DeleteMode): ChatTree {
+export function deleteExchangeWithMode(
+	tree: ChatTree,
+	exchangeId: string,
+	mode: DeleteMode
+): ChatTree {
 	const r = deleteExchangeWithModeResult(tree, exchangeId, mode);
 	return { rootId: r.rootId, exchanges: r.exchanges };
 }
 
-export function deleteExchangeWithModeResult(tree: ChatTree, exchangeId: string, mode: DeleteMode): DeleteResult {
+export function deleteExchangeWithModeResult(
+	tree: ChatTree,
+	exchangeId: string,
+	mode: DeleteMode
+): DeleteResult {
 	const indexed = validateTree(tree);
 	requireExchange(indexed.exchanges, exchangeId, `Cannot delete missing exchange "${exchangeId}".`);
 
@@ -506,7 +556,7 @@ function deleteExchangeAndSideChats(indexed: IndexedTree, exchangeId: string): D
 	return { ...spliced, removedExchangeIds: [exchangeId, ...removedIds] };
 }
 
-// ── Query API ────────────────────────────────────────────────────────────────
+// ── Queries ─────────────────────────────────────────────────────────────────
 
 export function getRootExchange(tree: ChatTree): Exchange | null {
 	if (tree.rootId === null) return null;
@@ -523,9 +573,7 @@ function findRootId(exchanges: ExchangeMap): string | null {
 export function getChildExchanges(exchanges: ExchangeMap, exchangeId: string): Exchange[] {
 	const exchange = exchanges[exchangeId];
 	if (!exchange) return [];
-	return exchange.childIds
-		.map((id) => exchanges[id])
-		.filter((e): e is Exchange => e !== undefined);
+	return exchange.childIds.map((id) => exchanges[id]).filter((e): e is Exchange => e !== undefined);
 }
 
 export function canCreateSideChats(exchanges: ExchangeMap, exchangeId: string): boolean {
@@ -544,7 +592,11 @@ export function canAcceptNewChat(exchanges: ExchangeMap, exchangeId: string): bo
 }
 
 export function getHistory(tree: ChatTree, exchangeId: string): Message[] {
-	requireExchange(tree.exchanges, exchangeId, `Cannot get history for missing exchange "${exchangeId}".`);
+	requireExchange(
+		tree.exchanges,
+		exchangeId,
+		`Cannot get history for missing exchange "${exchangeId}".`
+	);
 	const indexed = indexTree(tree);
 
 	return getPathToRoot(indexed, exchangeId).flatMap((exchange) => {
@@ -568,6 +620,8 @@ export function getPathTokenTotal(exchanges: ExchangeMap, exchangeId: string): n
 
 	return total;
 }
+
+// ── Mutations (immutable updates) ────────────────────────────────────────────
 
 export function updateExchangeTokens(
 	exchanges: ExchangeMap,
@@ -606,12 +660,12 @@ export function updateExchangeResponse(
 		...exchanges,
 		[exchangeId]: {
 			...exchange,
-			response: exchange.response
-				? { ...exchange.response, text }
-				: { text, tokenCount: 0 }
+			response: exchange.response ? { ...exchange.response, text } : { text, tokenCount: 0 }
 		}
 	};
 }
+
+// ── Promote & Fork ──────────────────────────────────────────────────────────
 
 export function getMainChatTail(tree: ChatTree): string | null {
 	const root = getRootExchange(tree);
@@ -642,10 +696,18 @@ export function canPromoteSideChatToMainChat(tree: ChatTree, exchangeId: string)
 
 export function promoteSideChatToMainChat(tree: ChatTree, exchangeId: string): ChatTree {
 	const indexed = validateTree(tree);
-	const exchange = requireExchange(indexed.exchanges, exchangeId, `Cannot promote missing exchange "${exchangeId}".`);
+	const exchange = requireExchange(
+		indexed.exchanges,
+		exchangeId,
+		`Cannot promote missing exchange "${exchangeId}".`
+	);
 
 	assert(exchange.parentId !== null, `Cannot promote root exchange "${exchangeId}".`);
-	const parent = requireExchange(indexed.exchanges, exchange.parentId, `Cannot find parent "${exchange.parentId}".`);
+	const parent = requireExchange(
+		indexed.exchanges,
+		exchange.parentId,
+		`Cannot find parent "${exchange.parentId}".`
+	);
 	const siblingIds = parent.childIds;
 	const index = siblingIds.indexOf(exchangeId);
 	assert(index > 0, `Exchange "${exchangeId}" is not a side chat child of its parent.`);
@@ -662,7 +724,11 @@ export function promoteSideChatToMainChat(tree: ChatTree, exchangeId: string): C
 }
 
 export function getDescendantExchanges(tree: ChatTree, exchangeId: string): string[] {
-	requireExchange(tree.exchanges, exchangeId, `Cannot get descendants for missing exchange "${exchangeId}".`);
+	requireExchange(
+		tree.exchanges,
+		exchangeId,
+		`Cannot get descendants for missing exchange "${exchangeId}".`
+	);
 	const indexed = indexTree(tree);
 	return collectSubtreeIds(indexed, exchangeId).slice(1);
 }
@@ -688,7 +754,11 @@ export function forkExchanges(
 	exchangeId: string
 ): { rootId: string; forkedExchanges: ExchangeMap; firstCopiedId: string } {
 	const indexed = indexTree(tree);
-	requireExchange(indexed.exchanges, exchangeId, `Cannot fork from missing exchange "${exchangeId}".`);
+	requireExchange(
+		indexed.exchanges,
+		exchangeId,
+		`Cannot fork from missing exchange "${exchangeId}".`
+	);
 
 	const path = getPathToRoot(indexed, exchangeId);
 	assert(path.length > 0, `Path to root from "${exchangeId}" is empty.`);
