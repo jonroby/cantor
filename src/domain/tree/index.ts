@@ -13,6 +13,7 @@ export interface Exchange {
 	promptTokens?: number;
 	responseTokens?: number;
 	model?: string;
+	provider?: string;
 }
 
 export type ExchangeMap = Record<string, Exchange>;
@@ -167,9 +168,10 @@ export function addExchange(
 	parentId: string | null,
 	prompt: string,
 	response = '',
-	model?: string
+	model?: string,
+	provider?: string
 ): ExchangeMap {
-	return addExchangeResult(exchanges, parentId, prompt, response, model).exchanges;
+	return addExchangeResult(exchanges, parentId, prompt, response, model, provider).exchanges;
 }
 
 export function addExchangeResult(
@@ -177,7 +179,8 @@ export function addExchangeResult(
 	parentId: string | null,
 	prompt: string,
 	response = '',
-	model?: string
+	model?: string,
+	provider?: string
 ): AddExchangeResult {
 	assert(parentId !== null, 'Cannot add an exchange without a parent.');
 	requireExchange(exchanges, parentId, `Cannot add an exchange to missing parent "${parentId}".`);
@@ -185,7 +188,7 @@ export function addExchangeResult(
 	const id = crypto.randomUUID();
 	const next: ExchangeMap = {
 		...exchanges,
-		[id]: { id, parentId, prompt, response, model }
+		[id]: { id, parentId, prompt, response, model, provider }
 	};
 
 	return {
@@ -657,7 +660,8 @@ export function forkExchanges(
 			response: exchange.response,
 			promptTokens: exchange.promptTokens,
 			responseTokens: exchange.responseTokens,
-			model: exchange.model
+			model: exchange.model,
+			provider: exchange.provider
 		};
 	}
 

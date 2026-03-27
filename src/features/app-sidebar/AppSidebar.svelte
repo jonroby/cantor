@@ -137,6 +137,14 @@
 	}
 
 	let indexedChats = $derived(chats.map((c, i) => ({ chat: c, index: i })));
+
+	let isDark = $state(document.documentElement.classList.contains('dark'));
+
+	function toggleTheme() {
+		isDark = !isDark;
+		document.documentElement.classList.toggle('dark', isDark);
+		localStorage.setItem('theme', isDark ? 'dark' : 'light');
+	}
 </script>
 
 <Sidebar.Root collapsible="icon">
@@ -165,7 +173,9 @@
 					</svg>
 				</button>
 			{:else}
-				<span class="text-sm font-semibold text-sidebar-foreground tracking-widest flex-1">POWERSET</span>
+				<span class="text-sm font-semibold text-sidebar-foreground tracking-widest flex-1"
+					>POWERSET</span
+				>
 				<Sidebar.Trigger />
 			{/if}
 		</div>
@@ -419,6 +429,45 @@
 			{/if}
 		{/if}
 	</Sidebar.Content>
+
+	<Sidebar.Footer class="p-2">
+		<button
+			class="rounded-lg p-2 hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-sidebar-foreground flex items-center justify-center transition-colors"
+			onclick={toggleTheme}
+			aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+		>
+			{#if isDark}
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<circle cx="12" cy="12" r="4" />
+					<path
+						d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+					/>
+				</svg>
+			{:else}
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+				</svg>
+			{/if}
+		</button>
+	</Sidebar.Footer>
 
 	<Sidebar.Rail />
 </Sidebar.Root>

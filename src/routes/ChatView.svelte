@@ -5,7 +5,6 @@
 	import { ChatInput } from '@/features/chat-input';
 	import {
 		getChildExchanges,
-		getMainChatTail,
 		getRootExchange,
 		type Exchange,
 		type DeleteMode
@@ -51,8 +50,8 @@
 	);
 	let sideBranches = $derived(getSideBranches());
 	let activeSideBranch = $derived(
-		sideBranches.length > 0
-			? sideBranches[Math.min(sideBranchIndex, sideBranches.length - 1)]
+		sideBranches.length > 0 && sideBranchIndex < sideBranches.length
+			? sideBranches[sideBranchIndex]
 			: null
 	);
 	let sideBranchTailId = $derived(
@@ -266,7 +265,12 @@
 
 	// Close side panel if parent node was deleted
 	$effect(() => {
-		if (sidePanelOpen && sidePanelParentId && activeExchanges && !activeExchanges[sidePanelParentId]) {
+		if (
+			sidePanelOpen &&
+			sidePanelParentId &&
+			activeExchanges &&
+			!activeExchanges[sidePanelParentId]
+		) {
 			closeSidePanel();
 		}
 	});
@@ -279,9 +283,9 @@
 		}
 	});
 
-	// Clamp branch index
+	// Clamp branch index (allow one past the end for "new branch" empty state)
 	$effect(() => {
-		if (sideBranchIndex >= sideBranches.length && sideBranches.length > 0) {
+		if (sideBranchIndex > sideBranches.length && sideBranches.length > 0) {
 			sideBranchIndex = sideBranches.length - 1;
 		}
 	});
@@ -339,6 +343,7 @@
 		>
 			{#if sidePanelOpen}
 				{#if sideBranches.length > 0}
+					{@const isNewBranch = sideBranchIndex >= sideBranches.length}
 					<div class="chatview-side-header">
 						<Button
 							class="ghost-button"
@@ -359,7 +364,11 @@
 							</svg>
 						</Button>
 						<span class="chatview-side-counter">
-							{sideBranchIndex + 1} / {sideBranches.length}
+							{#if isNewBranch}
+								New
+							{:else}
+								{sideBranchIndex + 1} / {sideBranches.length}
+							{/if}
 						</span>
 						<Button
 							class="ghost-button"
@@ -383,6 +392,7 @@
 							class="ghost-button"
 							variant="ghost"
 							size="sm"
+							disabled={isNewBranch}
 							onclick={newSideBranch}
 							ariaLabel="New side chat"
 						>
@@ -444,7 +454,12 @@
 						<div class="chatview-side-context-label">Branching from</div>
 						<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt}</div>
 						{#if sidePanelParentExchange.response}
-							<div class="chatview-side-context-response">{sidePanelParentExchange.response.slice(0, 150)}{sidePanelParentExchange.response.length > 150 ? '…' : ''}</div>
+							<div class="chatview-side-context-response">
+								{sidePanelParentExchange.response.slice(0, 150)}{sidePanelParentExchange.response
+									.length > 150
+									? '…'
+									: ''}
+							</div>
 						{/if}
 					</div>
 				{/if}
@@ -470,7 +485,11 @@
 			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
 			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
 		>
-			<ChatInput bind:this={chatInputRef} onScrollToNode={scrollToNode} onExpandSideChat={expandSideChat} />
+			<ChatInput
+				bind:this={chatInputRef}
+				onScrollToNode={scrollToNode}
+				onExpandSideChat={expandSideChat}
+			/>
 		</div>
 	</div>
 </div>

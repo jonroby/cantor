@@ -105,7 +105,8 @@
 				parentId,
 				prompt,
 				'',
-				providerState.activeModel.modelId
+				providerState.activeModel.modelId,
+				providerState.activeModel.provider
 			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';

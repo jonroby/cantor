@@ -1,4 +1,4 @@
-import { getProviderForModelId } from '@/lib/models';
+import { getProviderForModelId, type Provider } from '@/lib/models';
 import type { ExchangeNodeData } from '@/features/canvas/ExchangeNode.svelte';
 import {
 	buildExchangesByParentId,
@@ -55,7 +55,9 @@ export function getExchangeNodeData(
 			prompt: exchange.prompt,
 			response: exchange.response,
 			model: exchange.model,
-			provider: exchange.model ? getProviderForModelId(exchange.model) : null,
+			provider:
+				(exchange.provider as Provider) ??
+				(exchange.model ? getProviderForModelId(exchange.model) : null),
 			isActive: activeExchangeId === exchangeId,
 			isStreaming: isExchangeStreaming(exchangeId),
 			canFork: true,
