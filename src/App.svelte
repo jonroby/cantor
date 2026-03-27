@@ -8,8 +8,8 @@
 	import { ChatToolbar } from '@/features/chat-toolbar';
 	import { SearchDialog } from '@/features/search-dialog';
 	import { ChatHeader } from '@/features/chat-header';
-	import ChatTree from '@/features/canvas/ChatTree.svelte';
-	import ChatInput from '@/features/chat-input/ChatInput.svelte';
+	import { ChatTree } from '@/features/canvas';
+	import { ChatInput } from '@/features/chat-input';
 	import {
 		chatState,
 		getActiveChat,
