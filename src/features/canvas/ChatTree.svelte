@@ -24,13 +24,13 @@
 		type ExchangeMap
 	} from '@/domain/tree';
 	import {
-		chatState,
 		getActiveExchanges,
 		getActiveExchangeId,
 		replaceActiveExchanges,
 		setActiveExchangeId,
 		forkChat as forkChatAction
 	} from '@/state/chats.svelte';
+	import { isStreaming as isExchangeStreaming } from '@/services/streams';
 	import { docState, updateDocContent, closeDoc } from '@/state/documents.svelte';
 
 	let expandedSideChatParent: string | null = $state(null);
@@ -212,7 +212,7 @@
 				model: exchange.model,
 				provider: exchange.model ? getProviderForModelId(exchange.model) : null,
 				isActive: activeExchangeId === exchangeId,
-				isStreaming: chatState.streamingExchangeIds.includes(exchangeId),
+				isStreaming: isExchangeStreaming(exchangeId),
 				canFork: true,
 				hasSideChildren,
 				isSideRoot,

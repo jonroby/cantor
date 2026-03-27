@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { tick } from 'svelte';
 	import { Composer } from '@/features/composer';
 	import { ModelPalette } from '@/features/model-palette';
 	import {
@@ -8,15 +8,10 @@
 		buildExchangesByParentId,
 		canAcceptNewChat,
 		getChildExchanges,
-		getHistory,
 		getMainChatTail,
-		getPathTokenTotal,
-		updateExchangeResponse,
-		updateExchangeTokens,
-		type ExchangeMap
+		getPathTokenTotal
 	} from '@/domain/tree';
 	import {
-		chatState,
 		getActiveExchanges,
 		getActiveExchangeId,
 		replaceActiveExchanges,
@@ -25,8 +20,6 @@
 	import {
 		providerState,
 		WEBLLM_CONTEXT_OPTIONS,
-		init as initProviders,
-		autoConnectOllama,
 		connectOllama,
 		loadWebLLMModel_ as loadWebLLMModel,
 		deleteWebLLMCache,
@@ -36,9 +29,9 @@
 		forgetKey,
 		selectModel,
 		updateContextLength,
-		fetchOllamaContextLength,
-		getProviderStream
+		fetchOllamaContextLength
 	} from '@/state/providers.svelte';
+	import { startStream, isAnyStreaming } from '@/services/streams';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
@@ -61,7 +54,7 @@
 		activeExchanges && activeExchangeId ? getPathTokenTotal(activeExchanges, activeExchangeId) : 0
 	);
 	let submitDisabledReason = $derived(
-		chatState.streamingExchangeIds.length > 0
+		isAnyStreaming()
 			? 'Wait for the current response to finish.'
 			: !providerState.activeModel
 				? 'Select a model first.'
@@ -80,15 +73,6 @@
 		fetchOllamaContextLength();
 	});
 
-	onMount(() => {
-		initProviders();
-		autoConnectOllama();
-	});
-
-	function doReplaceActiveExchanges(nextExchanges: ExchangeMap) {
-		replaceActiveExchanges(nextExchanges);
-	}
-
 	async function submitPrompt() {
 		const prompt = composerValue.trim();
 		if (!prompt || !activeExchanges || submitDisabledReason || !providerState.activeModel) return;
@@ -103,7 +87,7 @@
 			onExpandSideChat(activeExchangeId);
 		}
 
-		let created: { id: string; exchanges: ExchangeMap };
+		let created;
 		try {
 			created = addExchangeResult(
 				activeExchanges,
@@ -117,51 +101,17 @@
 			return;
 		}
 
-		doReplaceActiveExchanges(created.exchanges);
+		replaceActiveExchanges(created.exchanges);
 		setActiveExchangeId(created.id);
-		chatState.streamingExchangeIds = [...chatState.streamingExchangeIds, created.id];
 		composerValue = '';
 		await tick();
 		onScrollToNode(created.id);
 
-		const abortController = new AbortController();
-
-		try {
-			const history = getHistory(created.exchanges, created.id);
-			const stream = getProviderStream(providerState.activeModel, history, abortController.signal);
-
-			let response = '';
-			for await (const chunk of stream) {
-				if (chunk.type === 'delta') {
-					response += chunk.delta;
-					doReplaceActiveExchanges(
-						updateExchangeResponse(getActiveExchanges(), created.id, response)
-					);
-				} else {
-					doReplaceActiveExchanges(
-						updateExchangeTokens(
-							getActiveExchanges(),
-							created.id,
-							chunk.promptTokens,
-							chunk.responseTokens
-						)
-					);
-				}
-			}
-		} catch (error) {
-			doReplaceActiveExchanges(
-				updateExchangeResponse(
-					getActiveExchanges(),
-					created.id,
-					`Request failed.\n\n${error instanceof Error ? error.message : 'Unknown error.'}`
-				)
-			);
-			operationError = error instanceof Error ? error.message : 'Request failed.';
-		} finally {
-			chatState.streamingExchangeIds = chatState.streamingExchangeIds.filter(
-				(id) => id !== created.id
-			);
-		}
+		startStream({
+			exchangeId: created.id,
+			model: providerState.activeModel,
+			exchanges: created.exchanges
+		});
 	}
 </script>
 

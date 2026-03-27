@@ -21,8 +21,7 @@ function makeDefaultChat(): Chat {
 
 export const chatState = $state({
 	chats: [makeDefaultChat()] as Chat[],
-	activeChatIndex: 0,
-	streamingExchangeIds: [] as string[]
+	activeChatIndex: 0
 });
 
 export function getActiveChat(): Chat {

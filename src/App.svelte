@@ -40,6 +40,7 @@
 		uploadFolder,
 		uploadFolderToFolder
 	} from '@/services/io.svelte';
+	import { init as initProviders, autoConnectOllama } from '@/state/providers.svelte';
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
@@ -121,6 +122,8 @@
 		}, 2000);
 
 		loadFromStorage();
+		initProviders();
+		autoConnectOllama();
 
 		hasHydrated = true;
 
