@@ -6,6 +6,13 @@ import { validateChatTree, getMainChatTail, type Chat, type ExchangeMap } from '
 import { type ChatFolder, type DocFile } from '@/state/documents.svelte';
 import { validate } from '@/lib/validate-md';
 
+function findRootId(exchanges: ExchangeMap): string | null {
+	for (const exchange of Object.values(exchanges)) {
+		if (exchange.parentId === null) return exchange.id;
+	}
+	return null;
+}
+
 function validateChatUpload(data: unknown): Chat {
 	if (typeof data !== 'object' || data === null || Array.isArray(data)) {
 		throw new Error('Upload must be a JSON object.');
@@ -41,15 +48,15 @@ function validateChatUpload(data: unknown): Chat {
 		if (typeof exchange.id !== 'string') {
 			throw new Error(`Exchange is missing an "id".`);
 		}
-		if (typeof exchange.prompt !== 'string') {
+		if (typeof exchange.prompt !== 'object' && typeof exchange.prompt !== 'string') {
 			throw new Error(`Exchange "${id}" is missing a "prompt".`);
 		}
-		if (typeof exchange.response !== 'string') {
-			throw new Error(`Exchange "${id}" is missing a "response".`);
-		}
 	}
+
+	const rootId = findRootId(exchanges);
+	const tree = { rootId, exchanges };
 	try {
-		validateChatTree(exchanges);
+		validateChatTree(tree);
 	} catch (e) {
 		throw new Error(e instanceof Error ? e.message : String(e));
 	}
@@ -57,9 +64,10 @@ function validateChatUpload(data: unknown): Chat {
 	return {
 		id: obj.id as string,
 		name: obj.name as string,
+		rootId,
 		exchanges,
 		activeExchangeId:
-			typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : getMainChatTail(exchanges)
+			typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : getMainChatTail(tree)
 	};
 }
 

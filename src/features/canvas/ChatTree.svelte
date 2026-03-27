@@ -10,8 +10,9 @@
 	import DrawingBoard from '@/features/drawing-board/DrawingBoard.svelte';
 	import DocsPanel from '@/features/docs-panel/DocsPanel.svelte';
 	import type { Shape } from '@/features/drawing-board/drawing-types';
-	import { getChildExchanges, getDescendantExchanges, type DeleteMode } from '@/domain/tree';
+	import { getChildExchanges, getDescendantExchanges, type DeleteMode, type ChatTree } from '@/domain/tree';
 	import {
+		getActiveChat,
 		getActiveExchanges,
 		getActiveExchangeId,
 		setActiveExchangeId
@@ -22,8 +23,7 @@
 		performDelete,
 		performPromote,
 		performFork,
-		getDeleteMode,
-		buildExchangesByParentId
+		getDeleteMode
 	} from '@/features/chat-ops';
 
 	let expandedSideChatParent: string | null = $state(null);
@@ -36,9 +36,6 @@
 
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
-	let exchangesByParentId = $derived(
-		activeExchanges ? buildExchangesByParentId(activeExchanges) : {}
-	);
 	let collapsedParentIds = $derived(getCollapsedParentIds());
 	let hiddenExchangeIds = $derived(getHiddenExchangeIds());
 	let canvas = $derived(
@@ -78,7 +75,7 @@
 		if (!activeExchanges) return new Set<string>();
 		return new Set(
 			Object.values(activeExchanges)
-				.filter((exchange) => (exchangesByParentId[exchange.id]?.length ?? 0) > 1)
+				.filter((exchange) => exchange.childIds.length > 1)
 				.map((exchange) => exchange.id)
 				.filter((id) => id !== expandedSideChatParent)
 		);
@@ -88,12 +85,13 @@
 		if (!activeExchanges) return new SvelteSet<string>();
 		const hidden = new SvelteSet<string>();
 		for (const parentId of collapsedParentIds) {
-			const children = getChildExchanges(activeExchanges, parentId, exchangesByParentId);
+			const children = getChildExchanges(activeExchanges, parentId);
 			for (let index = 1; index < children.length; index += 1) {
 				const sideRootId = children[index]?.id;
 				if (!sideRootId) continue;
 				hidden.add(sideRootId);
-				for (const descendantId of getDescendantExchanges(activeExchanges, sideRootId)) {
+				const tree: ChatTree = { rootId: getActiveChat().rootId, exchanges: activeExchanges };
+				for (const descendantId of getDescendantExchanges(tree, sideRootId)) {
 					hidden.add(descendantId);
 				}
 			}
@@ -158,7 +156,7 @@
 	function openDeleteDialog(exchangeId: string) {
 		if (!activeExchanges) return;
 		deleteTargetId = exchangeId;
-		deleteMode = getDeleteMode(activeExchanges, exchangeId, exchangesByParentId);
+		deleteMode = getDeleteMode(activeExchanges, exchangeId);
 	}
 
 	function confirmDelete() {
@@ -190,7 +188,7 @@
 
 	function getExchangeNodeData(exchangeId: string) {
 		if (!activeExchanges) return null;
-		return getNodeData(exchangeId, activeExchanges, activeExchangeId, exchangesByParentId, {
+		return getNodeData(exchangeId, activeExchanges, activeExchangeId, {
 			onMeasure: setMeasuredNodeHeight,
 			onSelect: (id) => setActiveExchangeId(id),
 			onFork: forkChat,
@@ -254,7 +252,7 @@
 
 {#if deleteTargetId}
 	{@const children = activeExchanges
-		? getChildExchanges(activeExchanges, deleteTargetId, exchangesByParentId)
+		? getChildExchanges(activeExchanges, deleteTargetId)
 		: []}
 	<button
 		class="modal-scrim"

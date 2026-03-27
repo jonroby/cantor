@@ -3,9 +3,7 @@
 	import { Composer } from '@/features/composer';
 	import { ModelPalette } from '@/features/model-palette';
 	import {
-		ROOT_ANCHOR_ID,
 		addExchangeResult,
-		buildExchangesByParentId,
 		canAcceptNewChat,
 		getChildExchanges,
 		getMainChatTail,
@@ -53,9 +51,6 @@
 
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
-	let exchangesByParentId = $derived(
-		activeExchanges ? buildExchangesByParentId(activeExchanges) : {}
-	);
 	let usedTokens = $derived(
 		activeExchanges && activeExchangeId ? getPathTokenTotal(activeExchanges, activeExchangeId) : 0
 	);
@@ -69,7 +64,7 @@
 			? 'Select a model first.'
 			: activeExchangeId &&
 				  activeExchanges &&
-				  !canAcceptNewChat(activeExchanges, activeExchangeId, exchangesByParentId)
+				  !canAcceptNewChat(activeExchanges, activeExchangeId)
 				? 'Choose a branch tip or main-chain node to continue.'
 				: null
 	);
@@ -88,12 +83,13 @@
 
 		operationError = null;
 
-		const chatId = getActiveChat().id;
-		const parentId = activeExchangeId ?? getMainChatTail(activeExchanges) ?? ROOT_ANCHOR_ID;
+		const activeChat = getActiveChat();
+		const chatId = activeChat.id;
+		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
+		const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
 		if (
 			activeExchangeId &&
-			activeExchangeId !== ROOT_ANCHOR_ID &&
-			getChildExchanges(activeExchanges, activeExchangeId, exchangesByParentId).length > 0
+			getChildExchanges(activeExchanges, activeExchangeId).length > 0
 		) {
 			onExpandSideChat(activeExchangeId);
 		}
@@ -101,10 +97,9 @@
 		let created;
 		try {
 			created = addExchangeResult(
-				activeExchanges,
+				tree,
 				parentId,
 				prompt,
-				'',
 				providerState.activeModel.modelId,
 				providerState.activeModel.provider
 			);

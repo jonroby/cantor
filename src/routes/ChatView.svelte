@@ -9,6 +9,7 @@
 		type Exchange,
 		type DeleteMode
 	} from '@/domain/tree';
+	import type { ChatTree } from '@/domain/tree';
 	import {
 		getActiveChat,
 		getActiveExchanges,
@@ -20,8 +21,7 @@
 		performDelete,
 		performPromote,
 		performFork,
-		getDeleteMode,
-		buildExchangesByParentId
+		getDeleteMode
 	} from '@/features/chat-ops';
 
 	type FocusedPane = 'main' | 'side';
@@ -40,10 +40,6 @@
 
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
-	let exchangesByParentId = $derived(
-		activeExchanges ? buildExchangesByParentId(activeExchanges) : {}
-	);
-
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
 		mainChatPath.length > 0 ? mainChatPath[mainChatPath.length - 1]!.id : null
@@ -65,17 +61,15 @@
 
 	function getMainChatPath(): Exchange[] {
 		if (!activeExchanges) return [];
-		const root = getRootExchange(activeExchanges);
+		const root = getRootExchange({ rootId: getActiveChat().rootId, exchanges: activeExchanges });
 		if (!root) return [];
 		const path: Exchange[] = [];
 		let currentId: string | null = root.id;
 		while (currentId) {
-			const children = getChildExchanges(activeExchanges, currentId, exchangesByParentId);
+			const children = getChildExchanges(activeExchanges, currentId);
 			if (children.length === 0) break;
 			const mainChild = children[0]!;
-			if (!mainChild.isAnchor) {
-				path.push(mainChild);
-			}
+			path.push(mainChild);
 			currentId = mainChild.id;
 		}
 		return path;
@@ -83,7 +77,7 @@
 
 	function getSideBranches(): Exchange[][] {
 		if (!activeExchanges || !sidePanelParentId) return [];
-		const children = getChildExchanges(activeExchanges, sidePanelParentId, exchangesByParentId);
+		const children = getChildExchanges(activeExchanges, sidePanelParentId);
 		if (children.length <= 1) return [];
 
 		const branches: Exchange[][] = [];
@@ -92,7 +86,7 @@
 			let current: Exchange | undefined = children[i];
 			while (current) {
 				branch.push(current);
-				const grandChildren = getChildExchanges(activeExchanges, current.id, exchangesByParentId);
+				const grandChildren = getChildExchanges(activeExchanges, current.id);
 				current = grandChildren[0];
 			}
 			branches.push(branch);
@@ -125,14 +119,14 @@
 		focusedPane = 'side';
 
 		const children = activeExchanges
-			? getChildExchanges(activeExchanges, parentId, exchangesByParentId)
+			? getChildExchanges(activeExchanges, parentId)
 			: [];
 		if (children.length > 1) {
 			sideBranchIndex = children.length - 2;
 			let current = children[children.length - 1];
 			while (current) {
 				const grandChildren = activeExchanges
-					? getChildExchanges(activeExchanges, current.id, exchangesByParentId)
+					? getChildExchanges(activeExchanges, current.id)
 					: [];
 				if (grandChildren.length === 0) break;
 				current = grandChildren[0];
@@ -182,7 +176,7 @@
 	function openDeleteDialog(exchangeId: string) {
 		if (!activeExchanges) return;
 		deleteTargetId = exchangeId;
-		deleteMode = getDeleteMode(activeExchanges, exchangeId, exchangesByParentId);
+		deleteMode = getDeleteMode(activeExchanges, exchangeId);
 	}
 
 	function confirmDelete() {
@@ -213,7 +207,7 @@
 
 	function getNodeDataForExchange(exchangeId: string) {
 		if (!activeExchanges) return null;
-		return getNodeData(exchangeId, activeExchanges, activeExchangeId, exchangesByParentId, {
+		return getNodeData(exchangeId, activeExchanges, activeExchangeId, {
 			onSelect: (id) => setActiveExchangeId(id),
 			onFork: forkChat,
 			onToggleSideChildren: toggleSideChildren,
@@ -452,10 +446,10 @@
 				{#if sidePanelParentExchange}
 					<div class="chatview-side-context">
 						<div class="chatview-side-context-label">Branching from</div>
-						<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt}</div>
+						<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt.text}</div>
 						{#if sidePanelParentExchange.response}
 							<div class="chatview-side-context-response">
-								{sidePanelParentExchange.response.slice(0, 150)}{sidePanelParentExchange.response
+								{sidePanelParentExchange.response.text.slice(0, 150)}{sidePanelParentExchange.response.text
 									.length > 150
 									? '…'
 									: ''}
@@ -496,7 +490,7 @@
 
 {#if deleteTargetId}
 	{@const children = activeExchanges
-		? getChildExchanges(activeExchanges, deleteTargetId, exchangesByParentId)
+		? getChildExchanges(activeExchanges, deleteTargetId)
 		: []}
 	<button
 		class="modal-scrim"

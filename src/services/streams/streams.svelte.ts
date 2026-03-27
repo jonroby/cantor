@@ -35,6 +35,13 @@ function cleanup(exchangeId: string) {
 	actorChatIds.delete(exchangeId);
 }
 
+function findRootId(exchanges: ExchangeMap): string | null {
+	for (const exchange of Object.values(exchanges)) {
+		if (exchange.parentId === null) return exchange.id;
+	}
+	return null;
+}
+
 export function startStream(params: {
 	exchangeId: string;
 	chatId: string;
@@ -42,7 +49,7 @@ export function startStream(params: {
 	exchanges: ExchangeMap;
 }): void {
 	const { exchangeId, chatId, model, exchanges } = params;
-	const history = getHistory(exchanges, exchangeId);
+	const history = getHistory({ rootId: findRootId(exchanges), exchanges }, exchangeId);
 
 	const input: StreamMachineInput = {
 		exchangeId,

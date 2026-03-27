@@ -1,27 +1,35 @@
-import { ROOT_ANCHOR_ID, type ExchangeMap } from '@/domain/tree';
+import { type ChatTree, type Exchange } from '@/domain/tree';
+import type { Provider } from '@/lib/models';
 
-export function buildInitialExchanges(): ExchangeMap {
-	const root: ExchangeMap = {};
-
-	root[ROOT_ANCHOR_ID] = {
-		id: ROOT_ANCHOR_ID,
-		parentId: null,
-		prompt: '',
-		response: '',
-		isAnchor: true
+function exchange(
+	id: string,
+	parentId: string | null,
+	prompt: string,
+	response: string,
+	childIds: string[],
+	opts: { promptTokens?: number; responseTokens?: number; model?: string; provider?: Provider } = {}
+): Exchange {
+	return {
+		id,
+		parentId,
+		childIds,
+		prompt: { text: prompt, tokenCount: opts.promptTokens ?? 0 },
+		response: { text: response, tokenCount: opts.responseTokens ?? 0 },
+		model: opts.model ?? 'claude-haiku-4-5',
+		provider: opts.provider ?? 'claude',
+		createdAt: Date.now()
 	};
+}
+
+export function buildInitialExchanges(): ChatTree {
+	const exchanges: Record<string, Exchange> = {};
 
 	// ── Exchange 1: Attention mechanism overview ──────────────────────────────
-	const n1 = '1';
-	root[n1] = {
-		id: n1,
-		parentId: ROOT_ANCHOR_ID,
-		promptTokens: 42,
-		responseTokens: 380,
-		model: 'claude-haiku-4-5',
-		prompt:
-			"[1] Can you explain how the attention mechanism works in transformers? I understand it has something to do with queries, keys, and values, but I'm fuzzy on the math.",
-		response: `Attention is the core innovation that makes transformers so powerful. Let me build it up from first principles.
+	exchanges['1'] = exchange(
+		'1',
+		null,
+		"[1] Can you explain how the attention mechanism works in transformers? I understand it has something to do with queries, keys, and values, but I'm fuzzy on the math.",
+		`Attention is the core innovation that makes transformers so powerful. Let me build it up from first principles.
 
 **The intuition**
 
@@ -69,20 +77,17 @@ Each head can learn to attend to different kinds of relationships simultaneously
 
 **Complexity**
 
-The $QK^\\top$ product is $O(n^2 d_k)$ in time and $O(n^2)$ in memory, which is why long-context transformers are expensive. Techniques like sparse attention, linear attention, and FlashAttention all try to tame this quadratic cost.`
-	};
+The $QK^\\top$ product is $O(n^2 d_k)$ in time and $O(n^2)$ in memory, which is why long-context transformers are expensive. Techniques like sparse attention, linear attention, and FlashAttention all try to tame this quadratic cost.`,
+		['1.1', '1.2', '1.3'],
+		{ promptTokens: 42, responseTokens: 380 }
+	);
 
 	// ── Exchange 1.1: Why sqrt(d_k)? ─────────────────────────────────────────
-	const n1_1 = '1.1';
-	root[n1_1] = {
-		id: n1_1,
-		parentId: n1,
-		promptTokens: 464,
-		responseTokens: 312,
-		model: 'claude-haiku-4-5',
-		prompt:
-			'[1.1] Why exactly does dividing by √d_k prevent vanishing gradients? Can you show the variance calculation?',
-		response: `Good question — the argument is a straightforward variance calculation.
+	exchanges['1.1'] = exchange(
+		'1.1',
+		'1',
+		'[1.1] Why exactly does dividing by √d_k prevent vanishing gradients? Can you show the variance calculation?',
+		`Good question — the argument is a straightforward variance calculation.
 
 **Setup**
 
@@ -136,20 +141,17 @@ $$
 \\text{Var}\\!\\left(\\frac{q \\cdot k}{\\sqrt{d_k}}\\right) = \\frac{\\text{Var}(q \\cdot k)}{d_k} = \\frac{d_k}{d_k} = 1
 $$
 
-The variance is now independent of $d_k$, so you can scale up the model without softmax behavior degrading.`
-	};
+The variance is now independent of $d_k$, so you can scale up the model without softmax behavior degrading.`,
+		['1.1.1'],
+		{ promptTokens: 464, responseTokens: 312 }
+	);
 
 	// ── Exchange 1.1.1: Softmax temperature ──────────────────────────────────
-	const n1_1_1 = '1.1.1';
-	root[n1_1_1] = {
-		id: n1_1_1,
-		parentId: n1_1,
-		promptTokens: 818,
-		responseTokens: 290,
-		model: 'claude-haiku-4-5',
-		prompt:
-			'[1.1.1] So the 1/√d_k is essentially a temperature parameter? How does temperature affect a distribution generally?',
-		response: `Exactly right — $1/\\sqrt{d_k}$ is a fixed temperature, and the connection to the general temperature concept is clean.
+	exchanges['1.1.1'] = exchange(
+		'1.1.1',
+		'1.1',
+		'[1.1.1] So the 1/√d_k is essentially a temperature parameter? How does temperature affect a distribution generally?',
+		`Exactly right — $1/\\sqrt{d_k}$ is a fixed temperature, and the connection to the general temperature concept is clean.
 
 **Temperature-scaled softmax**
 
@@ -188,20 +190,17 @@ The entropy of the distribution $H = -\\sum_i p_i \\log p_i$ increases monotonic
 
 When sampling from a language model's output distribution, temperature $T > 1$ makes the model more "creative" (flatter distribution, less predictable), while $T < 1$ makes it more "conservative" (sharper, closer to greedy). Setting $T = 1$ recovers the raw model probabilities.
 
-The $1/\\sqrt{d_k}$ scaling in attention is equivalent to setting $T = \\sqrt{d_k}$, which grows with model dimension — a deliberate choice to keep attention diffuse enough to learn well early in training.`
-	};
+The $1/\\sqrt{d_k}$ scaling in attention is equivalent to setting $T = \\sqrt{d_k}$, which grows with model dimension — a deliberate choice to keep attention diffuse enough to learn well early in training.`,
+		[],
+		{ promptTokens: 818, responseTokens: 290 }
+	);
 
 	// ── Exchange 1.2: Positional encodings ───────────────────────────────────
-	const n1_2 = '1.2';
-	root[n1_2] = {
-		id: n1_2,
-		parentId: n1,
-		promptTokens: 464,
-		responseTokens: 340,
-		model: 'claude-haiku-4-5',
-		prompt:
-			'[1.2] Attention is permutation-invariant, right? So how do transformers know about token order?',
-		response: `Correct — raw attention has no notion of position. If you shuffle the tokens, the attention scores change (because different tokens are now in Q and K), but there's no structural awareness of *which position came first*. Positional encodings inject that information.
+	exchanges['1.2'] = exchange(
+		'1.2',
+		'1',
+		'[1.2] Attention is permutation-invariant, right? So how do transformers know about token order?',
+		`Correct — raw attention has no notion of position. If you shuffle the tokens, the attention scores change (because different tokens are now in Q and K), but there's no structural awareness of *which position came first*. Positional encodings inject that information.
 
 **Sinusoidal encodings (original "Attention Is All You Need")**
 
@@ -239,20 +238,17 @@ $$
 \\langle R(\\theta_m) q,\\, R(\\theta_n) k \\rangle = \\langle q,\\, R(\\theta_n - \\theta_m) k \\rangle
 $$
 
-This gives the model access to relative positions $(m - n)$ in a way that's compatible with length extrapolation.`
-	};
+This gives the model access to relative positions $(m - n)$ in a way that's compatible with length extrapolation.`,
+		['1.2.1'],
+		{ promptTokens: 464, responseTokens: 340 }
+	);
 
 	// ── Exchange 1.2.1: RoPE details ──────────────────────────────────────────
-	const n1_2_1 = '1.2.1';
-	root[n1_2_1] = {
-		id: n1_2_1,
-		parentId: n1_2,
-		promptTokens: 846,
-		responseTokens: 358,
-		model: 'claude-haiku-4-5',
-		prompt:
-			'[1.2.1] Can you expand on RoPE? What does applying a rotation to Q and K actually look like in practice?',
-		response: `RoPE is elegant once you see it in 2D, then the generalization to higher dimensions follows naturally.
+	exchanges['1.2.1'] = exchange(
+		'1.2.1',
+		'1.2',
+		'[1.2.1] Can you expand on RoPE? What does applying a rotation to Q and K actually look like in practice?',
+		`RoPE is elegant once you see it in 2D, then the generalization to higher dimensions follows naturally.
 
 **2D case**
 
@@ -294,20 +290,17 @@ where $x' = (-x_2, x_1, -x_4, x_3, \\ldots)$ is the "rotated" version of $x$ wit
 
 **Why RoPE extrapolates better**
 
-Learned absolute embeddings can only represent positions seen during training. RoPE's relative-position formulation means the model sees $(n - m)$ values, and if it learns to handle offsets up to $n_{\\text{train}}$, it has some ability to handle longer offsets — though in practice, techniques like YaRN (Yet another RoPE extensioN) further adjust the frequency schedule for long-context fine-tuning.`
-	};
+Learned absolute embeddings can only represent positions seen during training. RoPE's relative-position formulation means the model sees $(n - m)$ values, and if it learns to handle offsets up to $n_{\\text{train}}$, it has some ability to handle longer offsets — though in practice, techniques like YaRN (Yet another RoPE extensioN) further adjust the frequency schedule for long-context fine-tuning.`,
+		[],
+		{ promptTokens: 846, responseTokens: 358 }
+	);
 
 	// ── Exchange 1.3: Bayes' theorem in ML ────────────────────────────────────
-	const n1_3 = '1.3';
-	root[n1_3] = {
-		id: n1_3,
-		parentId: n1,
-		promptTokens: 464,
-		responseTokens: 410,
-		model: 'claude-haiku-4-5',
-		prompt:
-			"[1.3] I keep seeing Bayes' theorem come up in machine learning papers. Can you give me a thorough explanation of how it applies?",
-		response: `Bayes' theorem is the backbone of probabilistic inference, and it shows up everywhere in ML — from naive Bayes classifiers to variational autoencoders to Bayesian neural networks. Let me build it up carefully.
+	exchanges['1.3'] = exchange(
+		'1.3',
+		'1',
+		"[1.3] I keep seeing Bayes' theorem come up in machine learning papers. Can you give me a thorough explanation of how it applies?",
+		`Bayes' theorem is the backbone of probabilistic inference, and it shows up everywhere in ML — from naive Bayes classifiers to variational autoencoders to Bayesian neural networks. Let me build it up carefully.
 
 **The theorem**
 
@@ -366,20 +359,17 @@ This integral is usually intractable, leading to approximations:
 
 **The Bayesian perspective on neural networks**
 
-A neural network with weights $\\theta$ defines $P(y \\mid x, \\theta)$. From a Bayesian view, training is posterior inference. The prior $P(\\theta)$ encodes inductive biases; the posterior $P(\\theta \\mid \\mathcal{D})$ represents everything the model has learned. Practical Bayesian deep learning (e.g., MC Dropout, deep ensembles) approximates this posterior to get calibrated uncertainty estimates.`
-	};
+A neural network with weights $\\theta$ defines $P(y \\mid x, \\theta)$. From a Bayesian view, training is posterior inference. The prior $P(\\theta)$ encodes inductive biases; the posterior $P(\\theta \\mid \\mathcal{D})$ represents everything the model has learned. Practical Bayesian deep learning (e.g., MC Dropout, deep ensembles) approximates this posterior to get calibrated uncertainty estimates.`,
+		['1.3.1'],
+		{ promptTokens: 464, responseTokens: 410 }
+	);
 
 	// ── Exchange 1.3.1: KL divergence ─────────────────────────────────────────
-	const n1_3_1 = '1.3.1';
-	root[n1_3_1] = {
-		id: n1_3_1,
-		parentId: n1_3,
-		promptTokens: 916,
-		responseTokens: 388,
-		model: 'claude-haiku-4-5',
-		prompt:
-			'[1.3.1] You mentioned minimizing KL divergence in variational inference. What is KL divergence and why do we minimize it?',
-		response: `KL divergence is a measure of how different two probability distributions are. It's asymmetric and not a true distance, but it has properties that make it the natural choice for variational inference.
+	exchanges['1.3.1'] = exchange(
+		'1.3.1',
+		'1.3',
+		'[1.3.1] You mentioned minimizing KL divergence in variational inference. What is KL divergence and why do we minimize it?',
+		`KL divergence is a measure of how different two probability distributions are. It's asymmetric and not a true distance, but it has properties that make it the natural choice for variational inference.
 
 **Definition**
 
@@ -436,8 +426,10 @@ The direction matters:
 - **Reverse KL** $D_{\\text{KL}}(q \\| P)$ — zero-forcing: $q$ avoids placing mass where $P$ is small. Tends to produce underestimates of variance (mode-seeking).
 - **Forward KL** $D_{\\text{KL}}(P \\| q)$ — zero-avoiding: $q$ must cover all regions where $P$ is nonzero. Tends to overestimate variance (mean-seeking).
 
-Variational inference uses reverse KL because it's tractable (we sample from $q$, which we control). This explains why VI posteriors tend to be overconfident (underestimate uncertainty) compared to exact Bayesian inference.`
-	};
+Variational inference uses reverse KL because it's tractable (we sample from $q$, which we control). This explains why VI posteriors tend to be overconfident (underestimate uncertainty) compared to exact Bayesian inference.`,
+		[],
+		{ promptTokens: 916, responseTokens: 388 }
+	);
 
-	return root;
+	return { rootId: '1', exchanges };
 }

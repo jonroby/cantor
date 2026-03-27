@@ -1,4 +1,4 @@
-import { buildExchangesByParentId, getChildExchanges, type ExchangeMap } from '@/domain/tree';
+import { getChildExchanges, type ExchangeMap } from '@/domain/tree';
 
 export const NODE_WIDTH = 768;
 export const NODE_MIN_HEIGHT = 260;
@@ -72,7 +72,7 @@ export function computeCanvasLayout(
 	exchanges: ExchangeMap,
 	options: LayoutOptions = {}
 ): CanvasLayout {
-	const anchor = Object.values(exchanges).find((exchange) => exchange.isAnchor);
+	const anchor = Object.values(exchanges).find((exchange) => exchange.parentId === null);
 	const hiddenExchangeIds = options.hiddenExchangeIds ?? new Set<string>();
 	const measuredHeights = options.measuredHeights ?? {};
 	const docsPanelCount = Math.max(1, options.docsPanelCount ?? 1);
@@ -110,7 +110,6 @@ export function computeCanvasLayout(
 		};
 	}
 
-	const exchangesByParentId = buildExchangesByParentId(exchanges);
 	const nodes: CanvasNode[] = [];
 	const edges: CanvasEdge[] = [];
 	const columnBottoms = new Map<number, number>();
@@ -139,7 +138,7 @@ export function computeCanvasLayout(
 		maxDepth = Math.max(maxDepth, depth);
 		maxColumn = Math.max(maxColumn, column);
 
-		const children = getChildExchanges(exchanges, exchange.id, exchangesByParentId).filter(
+		const children = getChildExchanges(exchanges, exchange.id).filter(
 			(child) => !hiddenExchangeIds.has(child.id)
 		);
 
@@ -151,7 +150,7 @@ export function computeCanvasLayout(
 		}
 	}
 
-	const rootChildren = getChildExchanges(exchanges, anchor.id, exchangesByParentId).filter(
+	const rootChildren = getChildExchanges(exchanges, anchor.id).filter(
 		(child) => !hiddenExchangeIds.has(child.id)
 	);
 

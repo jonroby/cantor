@@ -1,7 +1,6 @@
 import { getProviderForModelId, type Provider } from '@/lib/models';
 import type { ExchangeNodeData } from '@/features/canvas/ExchangeNode.svelte';
 import {
-	buildExchangesByParentId,
 	canCreateSideChats,
 	canPromoteSideChatToMainChat,
 	deleteExchangeWithModeResult,
@@ -9,8 +8,7 @@ import {
 	getMainChatTail,
 	promoteSideChatToMainChat,
 	type DeleteMode,
-	type ExchangeMap,
-	type ExchangesByParentId
+	type ExchangeMap
 } from '@/domain/tree';
 import {
 	replaceActiveExchanges,
@@ -29,7 +27,6 @@ export function getExchangeNodeData(
 	exchangeId: string,
 	activeExchanges: ExchangeMap,
 	activeExchangeId: string | null,
-	exchangesByParentId: ExchangesByParentId,
 	callbacks: {
 		onMeasure?: (exchangeId: string, height: number) => void;
 		onSelect: (exchangeId: string) => void;
@@ -41,30 +38,33 @@ export function getExchangeNodeData(
 ): ExchangeNodeData | null {
 	try {
 		const exchange = activeExchanges[exchangeId];
-		if (!exchange) return null;
-		const children = getChildExchanges(activeExchanges, exchangeId, exchangesByParentId);
+		if (!exchange || exchange.parentId === null) return null;
+		const children = getChildExchanges(activeExchanges, exchangeId);
 		const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
 		const hasSideChildren =
-			canCreateSideChats(activeExchanges, exchangeId, exchangesByParentId) && sideChildrenCount > 0;
+			canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
 		const isSideRoot = exchange.parentId
-			? (getChildExchanges(activeExchanges, exchange.parentId, exchangesByParentId)[0]?.id ??
-					null) !== exchangeId
+			? (getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !== exchangeId
 			: false;
 
 		return {
-			prompt: exchange.prompt,
-			response: exchange.response,
+			prompt: exchange.prompt.text,
+			response: exchange.response?.text ?? '',
 			model: exchange.model,
 			provider:
-				(exchange.provider as Provider) ??
-				(exchange.model ? getProviderForModelId(exchange.model) : null),
+				(exchange.provider as Provider) ||
+				getProviderForModelId(exchange.model) ||
+				null,
 			isActive: activeExchangeId === exchangeId,
 			isStreaming: isExchangeStreaming(exchangeId),
 			canFork: true,
 			hasSideChildren,
 			sideChildrenCount,
 			isSideRoot,
-			canPromote: canPromoteSideChatToMainChat(activeExchanges, exchangeId, exchangesByParentId),
+			canPromote: canPromoteSideChatToMainChat(
+				{ rootId: findRootId(activeExchanges), exchanges: activeExchanges },
+				exchangeId
+			),
 			onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
 			onSelect: () => callbacks.onSelect(exchangeId),
 			onFork: () => callbacks.onFork(exchangeId),
@@ -86,12 +86,13 @@ export function performDelete(
 	onResetMeasuredHeights?: () => void
 ): { error: string | null } {
 	try {
-		const result = deleteExchangeWithModeResult(activeExchanges, deleteTargetId, deleteMode);
+		const tree = { rootId: findRootId(activeExchanges), exchanges: activeExchanges };
+		const result = deleteExchangeWithModeResult(tree, deleteTargetId, deleteMode);
 		cancelStreamsForExchanges(result.removedExchangeIds);
 		onResetMeasuredHeights?.();
 		replaceActiveExchanges(result.exchanges);
 		if (deleteTargetId === activeExchangeId || !result.exchanges[activeExchangeId ?? '']) {
-			setActiveExchangeId(getMainChatTail(result.exchanges));
+			setActiveExchangeId(getMainChatTail(result));
 		}
 		return { error: null };
 	} catch (error) {
@@ -107,7 +108,9 @@ export function performPromote(
 	try {
 		setActiveExchangeId(exchangeId);
 		onResetMeasuredHeights?.();
-		replaceActiveExchanges(promoteSideChatToMainChat(activeExchanges, exchangeId));
+		const tree = { rootId: findRootId(activeExchanges), exchanges: activeExchanges };
+		const result = promoteSideChatToMainChat(tree, exchangeId);
+		replaceActiveExchanges(result.exchanges);
 		return { error: null };
 	} catch (error) {
 		return { error: error instanceof Error ? error.message : 'Unable to promote exchange.' };
@@ -120,18 +123,22 @@ export function performFork(exchangeId: string) {
 
 export function getDeleteMode(
 	activeExchanges: ExchangeMap,
-	exchangeId: string,
-	exchangesByParentId: ExchangesByParentId
+	exchangeId: string
 ): DeleteMode {
-	const children = getChildExchanges(activeExchanges, exchangeId, exchangesByParentId);
+	const children = getChildExchanges(activeExchanges, exchangeId);
 	return children.length > 1 ? 'exchangeAndSideChats' : 'exchange';
 }
 
+function findRootId(exchanges: ExchangeMap): string | null {
+	for (const exchange of Object.values(exchanges)) {
+		if (exchange.parentId === null) return exchange.id;
+	}
+	return null;
+}
+
 export {
-	buildExchangesByParentId,
 	getChildExchanges,
 	getMainChatTail,
 	type DeleteMode,
-	type ExchangeMap,
-	type ExchangesByParentId
+	type ExchangeMap
 };

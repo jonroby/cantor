@@ -89,7 +89,7 @@ function getMainPath(exchanges: ExchangeMap): string[] {
 	while (current) {
 		ids.push(current.id);
 		const children = getChildExchanges(exchanges, current.id, byParent);
-		current = children.length > 0 ? children[0] : undefined;
+		current = children.length > 0 ? children[0]! : undefined;
 	}
 	return ids;
 }
