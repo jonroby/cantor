@@ -9,6 +9,7 @@
 	import { routerState } from '@/routes/router.svelte';
 	import ChatView from '@/routes/ChatView.svelte';
 	import CanvasView from '@/routes/CanvasView.svelte';
+	import LandingPage from '@/routes/LandingPage.svelte';
 	import {
 		chatState,
 		newChat as newChatAction,
@@ -145,6 +146,9 @@
 	<title>Superset Svelte</title>
 </svelte:head>
 
+{#if routerState.route === 'landing'}
+	<LandingPage />
+{:else}
 <SidebarPrimitive.Provider>
 	<AppSidebar
 		chats={chatState.chats}
@@ -186,4 +190,5 @@
 		{/if}
 	</SidebarPrimitive.Inset>
 </SidebarPrimitive.Provider>
+{/if}
 <Toaster position="top-center" />

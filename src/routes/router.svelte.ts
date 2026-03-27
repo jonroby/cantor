@@ -1,7 +1,9 @@
-export type Route = 'chat' | 'canvas';
+export type Route = 'chat' | 'canvas' | 'landing';
 
 function parseHash(hash: string): Route {
-	return hash === '#/canvas' ? 'canvas' : 'chat';
+	if (hash === '#/canvas') return 'canvas';
+	if (hash === '#/landing') return 'landing';
+	return 'chat';
 }
 
 export const routerState = $state({
@@ -13,5 +15,7 @@ window.addEventListener('hashchange', () => {
 });
 
 export function navigate(route: Route) {
-	window.location.hash = route === 'canvas' ? '#/canvas' : '#/';
+	if (route === 'canvas') window.location.hash = '#/canvas';
+	else if (route === 'landing') window.location.hash = '#/landing';
+	else window.location.hash = '#/';
 }
