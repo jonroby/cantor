@@ -2,9 +2,9 @@ import { SvelteMap } from 'svelte/reactivity';
 import { createActor, type Actor, type SnapshotFrom } from 'xstate';
 import { streamMachine, type StreamMachineInput } from './stream.machine';
 import type { ActiveModel } from '@/lib/models';
-import type { ExchangeMap } from '@/domain/tree';
+import type { ChatTree } from '@/domain/tree';
 import { getHistory, updateExchangeResponse, updateExchangeTokens } from '@/domain/tree';
-import { getExchangesByChatId, replaceExchangesByChatId } from '@/state/chats.svelte';
+import { getTreeByChatId, replaceTreeByChatId } from '@/state/chats.svelte';
 import { getProviderStream } from '@/state/providers.svelte';
 
 type StreamActor = Actor<typeof streamMachine>;
@@ -35,21 +35,14 @@ function cleanup(exchangeId: string) {
 	actorChatIds.delete(exchangeId);
 }
 
-function findRootId(exchanges: ExchangeMap): string | null {
-	for (const exchange of Object.values(exchanges)) {
-		if (exchange.parentId === null) return exchange.id;
-	}
-	return null;
-}
-
 export function startStream(params: {
 	exchangeId: string;
 	chatId: string;
 	model: ActiveModel;
-	exchanges: ExchangeMap;
+	tree: ChatTree;
 }): void {
-	const { exchangeId, chatId, model, exchanges } = params;
-	const history = getHistory({ rootId: findRootId(exchanges), exchanges }, exchangeId);
+	const { exchangeId, chatId, model, tree } = params;
+	const history = getHistory(tree, exchangeId);
 
 	const input: StreamMachineInput = {
 		exchangeId,
@@ -71,42 +64,55 @@ export function startStream(params: {
 		const targetChatId = actorChatIds.get(exchangeId);
 		if (!targetChatId) return;
 
-		const currentExchanges = getExchangesByChatId(targetChatId);
-		if (!currentExchanges) {
+		const currentTree = getTreeByChatId(targetChatId);
+		if (!currentTree) {
 			cleanup(exchangeId);
 			return;
 		}
 
 		if (snapshot.status === 'active' && context.response !== lastResponse) {
 			lastResponse = context.response;
-			replaceExchangesByChatId(
+			replaceTreeByChatId(
 				targetChatId,
-				updateExchangeResponse(currentExchanges, exchangeId, context.response)
+				{
+					rootId: currentTree.rootId,
+					exchanges: updateExchangeResponse(currentTree.exchanges, exchangeId, context.response)
+				}
 			);
 		}
 
 		if (snapshot.status === 'done') {
 			if (context.error === null && (context.promptTokens > 0 || context.responseTokens > 0)) {
-				const latestExchanges = getExchangesByChatId(targetChatId);
-				if (latestExchanges) {
-					replaceExchangesByChatId(
+				const latestTree = getTreeByChatId(targetChatId);
+				if (latestTree) {
+					replaceTreeByChatId(
 						targetChatId,
-						updateExchangeTokens(
-							latestExchanges,
-							exchangeId,
-							context.promptTokens,
-							context.responseTokens
-						)
+						{
+							rootId: latestTree.rootId,
+							exchanges: updateExchangeTokens(
+								latestTree.exchanges,
+								exchangeId,
+								context.promptTokens,
+								context.responseTokens
+							)
+						}
 					);
 				}
 			}
 
 			if (context.error !== null) {
-				const latestExchanges = getExchangesByChatId(targetChatId);
-				if (latestExchanges) {
-					replaceExchangesByChatId(
+				const latestTree = getTreeByChatId(targetChatId);
+				if (latestTree) {
+					replaceTreeByChatId(
 						targetChatId,
-						updateExchangeResponse(latestExchanges, exchangeId, context.response)
+						{
+							rootId: latestTree.rootId,
+							exchanges: updateExchangeResponse(
+								latestTree.exchanges,
+								exchangeId,
+								context.response
+							)
+						}
 					);
 				}
 			}

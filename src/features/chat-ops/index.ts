@@ -11,7 +11,7 @@ import {
 	type ExchangeMap
 } from '@/domain/tree';
 import {
-	replaceActiveExchanges,
+	replaceActiveTree,
 	setActiveExchangeId,
 	forkChat as forkChatAction
 } from '@/state/chats.svelte';
@@ -90,7 +90,7 @@ export function performDelete(
 		const result = deleteExchangeWithModeResult(tree, deleteTargetId, deleteMode);
 		cancelStreamsForExchanges(result.removedExchangeIds);
 		onResetMeasuredHeights?.();
-		replaceActiveExchanges(result.exchanges);
+		replaceActiveTree(result);
 		if (deleteTargetId === activeExchangeId || !result.exchanges[activeExchangeId ?? '']) {
 			setActiveExchangeId(getMainChatTail(result));
 		}
@@ -110,7 +110,7 @@ export function performPromote(
 		onResetMeasuredHeights?.();
 		const tree = { rootId: findRootId(activeExchanges), exchanges: activeExchanges };
 		const result = promoteSideChatToMainChat(tree, exchangeId);
-		replaceActiveExchanges(result.exchanges);
+		replaceActiveTree(result);
 		return { error: null };
 	} catch (error) {
 		return { error: error instanceof Error ? error.message : 'Unable to promote exchange.' };

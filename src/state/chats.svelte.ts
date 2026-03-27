@@ -2,6 +2,7 @@ import {
 	buildEmptyTree,
 	forkExchanges,
 	getMainChatTail,
+	type ChatTree,
 	type Chat,
 	type ExchangeMap
 } from '@/domain/tree';
@@ -31,6 +32,11 @@ export function getActiveExchanges(): ExchangeMap {
 	return getActiveChat().exchanges;
 }
 
+export function getActiveTree(): ChatTree {
+	const chat = getActiveChat();
+	return { rootId: chat.rootId, exchanges: chat.exchanges };
+}
+
 export function getActiveExchangeId(): string | null {
 	return getActiveChat().activeExchangeId;
 }
@@ -43,9 +49,22 @@ export function getExchangesByChatId(chatId: string): ExchangeMap | undefined {
 	return getChatById(chatId)?.exchanges;
 }
 
+export function getTreeByChatId(chatId: string): ChatTree | undefined {
+	const chat = getChatById(chatId);
+	if (!chat) return undefined;
+	return { rootId: chat.rootId, exchanges: chat.exchanges };
+}
+
 export function replaceExchangesByChatId(chatId: string, nextExchanges: ExchangeMap) {
 	const chat = chatState.chats.find((c) => c.id === chatId);
 	if (chat) chat.exchanges = nextExchanges;
+}
+
+export function replaceTreeByChatId(chatId: string, nextTree: ChatTree) {
+	const chat = chatState.chats.find((c) => c.id === chatId);
+	if (!chat) return;
+	chat.rootId = nextTree.rootId;
+	chat.exchanges = nextTree.exchanges;
 }
 
 function hasRenderableExchanges(exchanges: ExchangeMap) {
@@ -54,6 +73,12 @@ function hasRenderableExchanges(exchanges: ExchangeMap) {
 
 export function replaceActiveExchanges(nextExchanges: ExchangeMap) {
 	chatState.chats[chatState.activeChatIndex].exchanges = nextExchanges;
+}
+
+export function replaceActiveTree(nextTree: ChatTree) {
+	const chat = chatState.chats[chatState.activeChatIndex];
+	chat.rootId = nextTree.rootId;
+	chat.exchanges = nextTree.exchanges;
 }
 
 export function setActiveExchangeId(exchangeId: string | null) {

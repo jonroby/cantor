@@ -17,35 +17,108 @@ Always use `bun`.
 - Use `bun run test` or `bun run test:unit` for tests.
 - Do not use `npm`, `pnpm`, or `yarn` commands in this repo unless the user explicitly asks for that.
 
-## High-Level Architecture
+## Architecture
 
-The app is mostly client-side and centered around one top-level UI shell in `src/App.svelte`.
+The app has four layers. Each layer can only depend on layers above it. Dependencies flow downward, never upward.
 
-- `src/main.ts` mounts the Svelte app and loads global CSS.
-- `src/App.svelte` is a thin orchestrator that wires together features and state; it does not own business logic directly.
-- `src/state/*` contains reactive Svelte stores for chat state (`chats.svelte.ts`), document/folder state (`documents.svelte.ts`), and provider/model state (`providers.svelte.ts`).
-- `src/services/*` contains infrastructure and async/side-effectful modules: localStorage persistence (`database.svelte.ts`), browser file I/O (`io.svelte.ts`), and provider-specific networking (`providers/` — Claude, Ollama, Gemini, OpenAI-compatible, WebLLM, API-key vault).
-- `src/domain/tree/*` contains the core data structures and tree manipulation algorithms for chat exchanges.
-- `src/lib/models/*` defines supported providers, model lists, and logo assets.
-- `src/lib/search/*` provides local in-browser search across prompts and responses.
-- `src/lib/validate-md/*` contains markdown validation utilities and tests.
-- `src/routes/router.svelte.ts` provides hash-based routing between `chat` (Classic View) and `canvas` (Canvas View).
-- `src/routes/ChatView.svelte` is the Classic View — linear message list with a split-pane layout for side chats.
-- `src/routes/CanvasView.svelte` is the Canvas View — visual node graph on a pan/zoom canvas.
-- `src/features/chat-ops/` contains shared operations used by both views: `getExchangeNodeData`, `performDelete`, `performPromote`, `performFork`, `getDeleteMode`, and re-exports of tree helpers like `buildExchangesByParentId`.
-- `src/features/*` contains feature-specific components (canvas, app-sidebar, chat-input, chat-message, chat-header, chat-toolbar, model-palette, composer, search-dialog, docs-panel, code-editor, python-editor, drawing-board).
-- `src/components/custom/*` contains small reusable UI primitives such as buttons and inputs.
-- `src/components/shadcn/ui/*` contains shadcn-svelte primitives (sidebar, tooltip, sheet, etc.).
+```
+┌─────────────────────────────────────────────────┐
+│  Domain (pure)                                  │
+│  Types, data structures, tree operations        │
+│  No state. No side effects. No imports from     │
+│  lower layers. Fully testable with plain data.  │
+├─────────────────────────────────────────────────┤
+│  State + Services (effects)                     │
+│  Reactive stores, persistence, networking,      │
+│  streaming. Owns IO and browser APIs.           │
+│  Imports from Domain only.                      │
+├─────────────────────────────────────────────────┤
+│  App (orchestration)                            │
+│  Use cases that sequence domain logic with      │
+│  state mutations and service calls.             │
+│  "What happens when the user does X."           │
+│  Imports from Domain, State, and Services.      │
+├─────────────────────────────────────────────────┤
+│  View (presentation)                            │
+│  Svelte components, routes, layout.             │
+│  Renders state, calls App functions.            │
+│  Imports from all layers above.                 │
+└─────────────────────────────────────────────────┘
+```
+
+### Domain — `src/domain/`, `src/lib/`
+
+Pure functions and types. Given the same input, always the same output. No reactive state (`$state`, `$derived`), no `fetch`, no `localStorage`, no timers, no randomness outside of explicitly passed parameters. The only acceptable import is TypeScript types from other domain modules.
+
+- `src/domain/tree/` — `ChatTree`, `Exchange`, `ExchangeMap`, and all tree operations (add, remove, promote, fork, validate, query). This is the core data model.
+- `src/lib/models/` — provider definitions, model lists, logo assets. Static data.
+- `src/lib/search/` — search algorithms (substring, trigram). Pure functions over `Chat[]`.
+- `src/lib/validate-md/` — markdown validation. Pure string processing.
+
+**Test rule:** Domain tests need no mocks. If you need a mock to test something in domain, it doesn't belong in domain.
+
+### State + Services — `src/state/`, `src/services/`
+
+This is where effects live. Reactive Svelte stores, browser APIs, network calls, persistence.
+
+- `src/state/chats.svelte.ts` — reactive chat state: the list of chats, active chat index, active exchange. Simple getters and setters. No orchestration logic.
+- `src/state/documents.svelte.ts` — reactive document/folder state.
+- `src/state/providers.svelte.ts` — active provider/model selection, context length, API key state.
+- `src/services/streams/` — XState actors for streaming LLM responses. Manages stream lifecycle, writes response chunks into state.
+- `src/services/database.svelte.ts` — localStorage persistence (read/write the full app state).
+- `src/services/io.svelte.ts` — file import/export (JSON chat files, markdown docs, zip folders).
+- `src/services/providers/` — provider-specific HTTP clients (Claude, Ollama, Gemini, OpenAI-compatible, WebLLM, vault).
+
+**Rule:** State modules are reactive containers. They hold data and expose read/write access. They do not sequence multi-step operations — that's the App layer's job. Services are effectful utilities that talk to the outside world.
+
+### App — `src/app/`
+
+Orchestration. Each function in this layer represents a user-initiated action that requires coordinating domain logic, state updates, and service calls.
+
+Examples of what belongs here:
+- `deleteExchange(id, mode)` — calls the domain delete function, cancels affected streams, updates state, redirects the active exchange if needed.
+- `promoteExchange(id)` — calls domain promote, updates state, optionally resets UI measurements.
+- `submitPrompt(prompt)` — creates an exchange via domain, updates state, starts a stream via services.
+- `getExchangeNodeData(id)` — builds the view-model for an exchange node by reading domain data and service state (e.g., `isStreaming`).
+
+**Rule:** App functions are the only place where domain + state + services are composed together. Views should not orchestrate multi-step operations themselves — they call an App function. If you're writing `replaceActiveExchanges(...)` followed by `setActiveExchangeId(...)` followed by `cancelStreamsForExchanges(...)` inside a Svelte component, that logic belongs in App instead.
+
+### View — `src/views/`, `src/features/`, `src/routes/`, `src/components/`
+
+Svelte components. They render state, handle user interactions, and delegate actions to the App layer.
+
+- `src/views/classic/` — Classic View. `ChatView.svelte`, `ChatMessage.svelte`, side pane logic. Everything specific to the linear chat experience.
+- `src/views/canvas/` — Canvas View. `CanvasView.svelte`, `ExchangeNode.svelte`, `Canvas.svelte`, `layout.ts`. Everything specific to the node graph experience.
+- `src/views/shared/` — Components used by both views: `ChatInput`, `AppSidebar`, `SearchDialog`.
+- `src/features/` — Self-contained feature modules with their own logic and UI. These are complex components that views compose but don't own: model-palette, docs-panel, code-editor, python-editor, drawing-board. A feature never imports from a view.
+- `src/components/custom/` — Small reusable UI primitives (buttons, inputs).
+- `src/components/shadcn/ui/` — shadcn-svelte primitives (sidebar, tooltip, sheet).
+- `src/routes/` — Router only. Picks which view to render based on the URL hash.
+
+**Rule:** View components can read state directly (via `$derived`) and call App functions. They should not import domain mutation functions directly or sequence multiple state updates. Pure domain queries (e.g., `getChildExchanges`) are fine to call from views for rendering purposes. If a component is only used by one view, it lives in that view's folder. Only move it to `shared/` when both views actually use it.
+
+### Where things go — decision guide
+
+| You're writing... | It goes in... | Because... |
+|---|---|---|
+| A function that takes data and returns data | Domain | No effects needed |
+| A reactive `$state` or `$derived` store | State | It's reactive container |
+| A function that calls `fetch`, `localStorage`, or browser APIs | Services | It's IO |
+| A function that calls domain + updates state + triggers services | App | It's orchestration |
+| A Svelte component | View | It renders |
+| A function you're not sure about | Ask: does it need effects? No → Domain. Does it sequence multiple steps? Yes → App. Does it talk to the outside world? Yes → Services. |
 
 ## Core Data Model
 
-The central state shape is an `ExchangeMap` from `src/domain/tree/index.ts`.
+The central types are `ChatTree` and `Exchange` from `src/domain/tree/index.ts`.
 
-- Each `Exchange` is a chat node with `id`, `parentId`, `prompt`, `response`, optional token counts, and optional model metadata.
-- A hidden root anchor (`ROOT_ANCHOR_ID`) is the single tree root.
-- The first child path is treated as the main chat.
+- `ChatTree` bundles a `rootId: string | null` with an `ExchangeMap`. These two are always passed together — never separately.
+- Each `Exchange` has `id`, `parentId`, `childIds`, `prompt: MessagePart`, `response: MessagePart | null`, `model`, `provider`, and `createdAt`.
+- `response` is `null` until the model responds. This distinguishes "no response yet" from "responded with empty text."
+- The exchange with `parentId === null` is the tree root. `rootId` on `ChatTree` must point to it.
+- The first child path (following `childIds[0]` at each node) is the main chat.
 - Additional siblings represent side chats.
-- Tree utilities enforce structural invariants, add/remove nodes, promote side chats, and compute history/token totals.
+- Tree utilities enforce structural invariants: parent/child consistency, single root, reachability, and the side-chat depth constraint (side exchanges can have at most 1 child).
 
 ## Branching Concepts
 
@@ -63,7 +136,7 @@ There are three distinct branching concepts. **Do not confuse them.**
 - Forks appear as separate trees, navigable via the top header bar ("Main Chat", "Fork 1", "Fork 2", etc.).
 - Created via fork actions, triggered by the fork button (`+` icon) on exchange nodes.
 - Forks have no depth restriction — you can fork a fork.
-- Each fork is a separate `ExchangeMap` in the `roots[]` array.
+- Each fork is a separate `Chat` (with its own `ChatTree`).
 - Prop: `canFork` / `onFork` on `ExchangeNodeData`.
 
 ### Side Chats
@@ -85,38 +158,32 @@ The app has two views that share the same underlying data model, state stores, a
 
 Both views consume:
 
-- **State**: `src/state/chats.svelte.ts` (active root, active exchange, hidden side branches, token usage), `src/state/documents.svelte.ts`, `src/state/providers.svelte.ts`.
-- **Domain logic**: `src/domain/tree/index.ts` — tree traversal, add/remove/promote/fork operations, structural invariants.
-- **Chat operations**: `src/features/chat-ops/index.ts` — `getExchangeNodeData()` builds the display data for an exchange node, `performDelete()`, `performPromote()`, `performFork()`, `getDeleteMode()`. Both views call these same functions and wire the callbacks to their own UI actions.
-- **Shared components**: `ChatInput` (`src/features/chat-input/`), `AppSidebar` (`src/features/app-sidebar/`), `SearchDialog` (`src/features/search-dialog/`).
+- **State**: `src/state/chats.svelte.ts` (active chat, active exchange), `src/state/documents.svelte.ts`, `src/state/providers.svelte.ts`.
+- **Domain logic**: `src/domain/tree/index.ts` — tree queries for rendering (child lookups, main chat path traversal).
+- **App operations**: `src/app/` — `deleteExchange()`, `promoteExchange()`, `forkChat()`, `getExchangeNodeData()`. Both views call these same functions.
+- **Shared view components**: `src/views/shared/` — `ChatInput`, `AppSidebar`, `SearchDialog`.
 
-### Classic View (`src/routes/ChatView.svelte`)
+### Classic View (`src/views/classic/`)
 
 A traditional linear chat interface. Default route (`#/`).
 
+- `ChatView.svelte` — the page shell: main pane, side pane, chat input anchor, delete dialog.
+- `ChatMessage.svelte` — renders an exchange as a prompt/response pair with provider logo, action buttons, and rich text (markdown + KaTeX).
 - **Main pane**: Scrollable message list rendering the main chat path (first-child traversal from root).
 - **Side pane**: Opens to the right when a node's side children are toggled. Shows one branch at a time with prev/next navigation and a "new branch" action.
 - **Chat input**: Anchored at the bottom, shifts to follow the focused pane (main or side).
 - **Focus model**: Clicking a pane sets it as focused; `activeExchangeId` tracks the tail of the focused pane.
-- Uses `ChatMessage` component (`src/features/chat-message/ChatMessage.svelte`) to render exchanges.
-- Delete dialog is inline in the component.
 
-### Canvas View (`src/routes/CanvasView.svelte`)
+### Canvas View (`src/views/canvas/`)
 
 A visual node graph on a pan/zoom canvas.
 
-- `src/features/canvas/layout.ts` converts the exchange tree into positioned canvas nodes and edges. Also computes positions for canvas panels.
-- `src/features/canvas/Canvas.svelte` renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
-- `src/features/canvas/ExchangeNode.svelte` renders each exchange card with action buttons.
+- `CanvasView.svelte` — the page shell: canvas, floating actions, delete dialog.
+- `Canvas.svelte` — renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
+- `ExchangeNode.svelte` — renders each exchange card with action buttons on hover.
+- `layout.ts` — converts the exchange tree into positioned canvas nodes and edges. Also computes positions for canvas panels.
 - Collapsed side branches are hidden from layout until expanded.
-- Hosts additional canvas panels (not available in Classic View):
-
-#### Canvas Panels
-
-- **Document panels** (`DocsPanel.svelte`) — Markdown viewer/editor with KaTeX math support. Multiple panels can be open simultaneously, stacked vertically in the left column. Each has its own content and optional link to a folder file.
-- **Code editor** (`CodeEditor.svelte`) — JavaScript editor.
-- **Python editor** (`PythonEditor.svelte`) — Python editor.
-- **Drawing board** (`DrawingBoard.svelte`) — Freeform drawing canvas.
+- Hosts features as canvas panels (docs-panel, code-editor, python-editor, drawing-board).
 
 Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling without triggering canvas pan.
 
@@ -131,24 +198,12 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 - Uploading a file with a duplicate name auto-increments: `name (1).md`, `name (2).md`, etc.
 - Closing a panel with unsaved edits shows a confirmation dialog.
 
-## UI Components
+## UI Component Notes
 
-### Shared
-
-- **Sidebar** (`src/features/app-sidebar/AppSidebar.svelte`) — session list, folder/doc management, new chat, delete session. Uses shadcn-svelte sidebar primitives. Floats over content; does not push the main area.
-- **Chat input** (`src/features/chat-input/ChatInput.svelte`) — used by both views. In Classic View, anchors to the focused pane. In Canvas View, overlays the bottom of the canvas.
-
-### Canvas View Only
-
-- **Floating Action Buttons** — fixed on the right side, vertically centered. Search, Fit view, Go to top, Go to active, Download chat. Use shadcn Tooltip components.
-- **Exchange Node Actions** — action buttons appear on hover in a pill-shaped overlay. Use custom CSS tooltips (`.action-tip-wrap` / `.action-tip`) because the canvas CSS transform breaks Floating UI tooltip positioning. Buttons: Fork (`+`), Side chats (branch icon), Promote (up arrow), Delete (trash).
-- **Chat Header** — fixed top-center, shows "Main Chat" or "Fork N" with navigation arrows. Auto-hides on scroll-down after 2s.
-
-### Classic View Only
-
-- **Chat Message** (`src/features/chat-message/ChatMessage.svelte`) — renders an exchange as a prompt/response pair with provider logo, action buttons (fork, side chats, promote, delete), and rich text (markdown + KaTeX). Action buttons appear inline rather than as hover overlays.
-- **Side pane header** — branch navigation (prev/next counter), new branch button, close button. Inline in `ChatView.svelte`.
-- **Delete dialog** — modal with radio options for delete mode. Inline in `ChatView.svelte`.
+- **Sidebar** (`src/views/shared/AppSidebar.svelte`) — pushes the main content area when open.
+- **Chat input** (`src/views/shared/ChatInput.svelte`) — in Classic View, anchors to the focused pane. In Canvas View, overlays the bottom of the canvas.
+- **Canvas exchange node actions** — use custom CSS tooltips (`.action-tip-wrap` / `.action-tip`), not Floating UI, because the canvas CSS transform breaks Floating UI positioning.
+- **Classic chat message actions** — appear inline rather than as hover overlays.
 
 ## Model / Provider Flow
 
@@ -171,27 +226,9 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 - Search uses substring matching for short queries and trigram similarity for longer queries.
 - Results can be scoped to the active chat or all chat roots.
 
-## Working Rules For This Repo
+## Working Rules
 
-- Preserve the current architecture: state in `src/state/`, domain logic in `src/lib/`, UI in `src/features/`.
-- Put tree invariants and chat-structure behavior in `src/domain/tree/`, not inline in components.
-- Keep provider-specific networking in `src/lib/providers/`.
-- Keep canvas layout math in `src/features/canvas/layout.ts`.
-- Put shared view logic (node data building, delete/promote/fork operations) in `src/features/chat-ops/`, not duplicated in view components.
-- Classic View logic lives in `src/routes/ChatView.svelte` and `src/features/chat-message/`. Canvas View logic lives in `src/routes/CanvasView.svelte` and `src/features/canvas/`.
 - Treat `localStorage` hydration and persistence changes carefully; avoid breaking existing saved chat state.
-- Prefer small focused Svelte components and keep reusable logic in `src/lib`.
-- When adding commands to docs or scripts, use `bun` syntax.
+- Prefer small focused Svelte components.
 - Use custom CSS tooltips (not Floating UI / bits-ui Tooltip) for anything rendered inside the Canvas View, since the CSS transform breaks Floating UI positioning.
 - Do not confuse forks (new roots) with side chats (sibling branches). See "Branching Concepts" above.
-
-## Useful Commands
-
-```bash
-bun install
-bun run dev
-bun run check
-bun run lint
-bun run test
-bun run build
-```

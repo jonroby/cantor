@@ -13,7 +13,7 @@
 		getActiveChat,
 		getActiveExchanges,
 		getActiveExchangeId,
-		replaceActiveExchanges,
+		replaceActiveTree,
 		setActiveExchangeId
 	} from '@/state/chats.svelte';
 	import {
@@ -108,7 +108,7 @@
 			return;
 		}
 
-		replaceActiveExchanges(created.exchanges);
+		replaceActiveTree(created);
 		setActiveExchangeId(created.id);
 		composerValue = '';
 		await tick();
@@ -118,7 +118,7 @@
 			exchangeId: created.id,
 			chatId,
 			model: providerState.activeModel,
-			exchanges: created.exchanges
+			tree: created
 		});
 	}
 </script>

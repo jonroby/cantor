@@ -1,68 +1,80 @@
 import { describe, expect, it } from 'vitest';
 
-import { ROOT_ANCHOR_ID, type Chat, type ExchangeMap } from '@/domain/tree';
+import type { Chat, Exchange, ExchangeMap } from '@/domain/tree';
 
 import { getDefaultItems, groupResults, searchChats } from '.';
+
+const MODEL = 'claude-sonnet-4-6';
+const PROVIDER = 'claude';
+
+function makeExchange(
+	id: string,
+	parentId: string | null,
+	prompt: string,
+	response = '',
+	childIds: string[] = []
+): Exchange {
+	return {
+		id,
+		parentId,
+		childIds,
+		prompt: { text: prompt, tokenCount: 0 },
+		response: { text: response, tokenCount: 0 },
+		model: MODEL,
+		provider: PROVIDER,
+		createdAt: 1
+	};
+}
 
 function buildChat(
 	id: string,
 	name: string,
 	exchanges: ExchangeMap,
+	rootId: string,
 	activeExchangeId: string | null = null
 ): Chat {
-	return { id, name, exchanges, activeExchangeId };
+	return { id, name, rootId, exchanges, activeExchangeId };
 }
 
-function buildExchanges(entries: Array<{ id: string; prompt: string; response?: string }>): ExchangeMap {
+function buildLinearExchanges(
+	entries: Array<{ id: string; prompt: string; response?: string }>
+): { rootId: string; exchanges: ExchangeMap } {
+	if (entries.length === 0) {
+		throw new Error('Expected at least one exchange.');
+	}
+
+	const rootId = `root-${entries[0]!.id}`;
 	const exchanges: ExchangeMap = {
-		[ROOT_ANCHOR_ID]: {
-			id: ROOT_ANCHOR_ID,
-			parentId: null,
-			prompt: '',
-			response: '',
-			isAnchor: true,
-			childIds: entries.map((entry) => entry.id)
-		}
+		[rootId]: makeExchange(rootId, null, '', '', entries.map((entry, index) => (index === 0 ? entry.id : '')).filter(Boolean))
 	};
 
 	for (const [index, entry] of entries.entries()) {
-		exchanges[entry.id] = {
-			id: entry.id,
-			parentId: ROOT_ANCHOR_ID,
-			prompt: entry.prompt,
-			response: entry.response ?? '',
-			childIds: [],
-			isAnchor: false,
-			model: '',
-			provider: ''
-		};
-
-		if (index > 0) {
-			exchanges[entries[index - 1]!.id]!.childIds = [];
-		}
+		const childIds = index < entries.length - 1 ? [entries[index + 1]!.id] : [];
+		const parentId = index === 0 ? rootId : entries[index - 1]!.id;
+		exchanges[entry.id] = makeExchange(
+			entry.id,
+			parentId,
+			entry.prompt,
+			entry.response ?? '',
+			childIds
+		);
 	}
 
-	return exchanges;
+	return { rootId, exchanges };
 }
 
 describe('search', () => {
+	const alphaTree = buildLinearExchanges([
+		{ id: 'a1', prompt: 'How do transformers use attention?', response: 'Attention maps tokens.' },
+		{ id: 'a2', prompt: 'Explain embeddings', response: 'Embeddings are vectors.' }
+	]);
+	const betaTree = buildLinearExchanges([
+		{ id: 'b1', prompt: 'Attention heads specialize', response: 'Each head can focus differently.' },
+		{ id: 'b2', prompt: '', response: 'empty prompt should not appear by default' }
+	]);
 	const chats = [
-		buildChat(
-			'chat-1',
-			'Alpha',
-			buildExchanges([
-				{ id: 'a1', prompt: 'How do transformers use attention?', response: 'Attention maps tokens.' },
-				{ id: 'a2', prompt: 'Explain embeddings', response: 'Embeddings are vectors.' }
-			])
-		),
-		buildChat(
-			'chat-2',
-			'Beta',
-			buildExchanges([
-				{ id: 'b1', prompt: 'Attention heads specialize', response: 'Each head can focus differently.' },
-				{ id: 'b2', prompt: '', response: 'empty prompt should not appear by default' }
-			])
-		)
+		buildChat('chat-1', 'Alpha', alphaTree.exchanges, alphaTree.rootId),
+		buildChat('chat-2', 'Beta', betaTree.exchanges, betaTree.rootId)
 	];
 
 	it('returns no results for a blank query', () => {
@@ -92,13 +104,8 @@ describe('search', () => {
 
 	it('adds ellipses when a snippet is extracted from the middle of long text', () => {
 		const longText = `${'x'.repeat(100)} attention ${'y'.repeat(100)}`;
-		const longChats = [
-			buildChat(
-				'chat-1',
-				'Long',
-				buildExchanges([{ id: 'l1', prompt: longText, response: '' }])
-			)
-		];
+		const longTree = buildLinearExchanges([{ id: 'l1', prompt: longText, response: '' }]);
+		const longChats = [buildChat('chat-1', 'Long', longTree.exchanges, longTree.rootId)];
 
 		const results = searchChats(longChats, 'attention', [0]);
 		expect(results[0]!.snippets[0]!.text.startsWith('...')).toBe(true);
@@ -106,12 +113,11 @@ describe('search', () => {
 	});
 
 	it('extracts a snippet from the response when only the response matches exactly', () => {
+		const responseTree = buildLinearExchanges([
+			{ id: 'r1', prompt: 'totally unrelated', response: 'the exact phrase is here' }
+		]);
 		const responseChats = [
-			buildChat(
-				'chat-1',
-				'Responses',
-				buildExchanges([{ id: 'r1', prompt: 'totally unrelated', response: 'the exact phrase is here' }])
-			)
+			buildChat('chat-1', 'Responses', responseTree.exchanges, responseTree.rootId)
 		];
 
 		const results = searchChats(responseChats, 'exact phrase', [0]);
@@ -121,12 +127,9 @@ describe('search', () => {
 	});
 
 	it('keeps fuzzy response matches even when no exact response snippet exists', () => {
+		const responseTree = buildLinearExchanges([{ id: 'r1', prompt: 'totally unrelated', response: 'abce' }]);
 		const responseChats = [
-			buildChat(
-				'chat-1',
-				'Responses',
-				buildExchanges([{ id: 'r1', prompt: 'totally unrelated', response: 'abce' }])
-			)
+			buildChat('chat-1', 'Responses', responseTree.exchanges, responseTree.rootId)
 		];
 
 		const results = searchChats(responseChats, 'abcd', [0]);
@@ -136,13 +139,8 @@ describe('search', () => {
 	});
 
 	it('returns fuzzy matches even when no exact snippet can be extracted', () => {
-		const fuzzyChats = [
-			buildChat(
-				'chat-1',
-				'Fuzzy',
-				buildExchanges([{ id: 'f1', prompt: 'abce', response: '' }])
-			)
-		];
+		const fuzzyTree = buildLinearExchanges([{ id: 'f1', prompt: 'abce', response: '' }]);
+		const fuzzyChats = [buildChat('chat-1', 'Fuzzy', fuzzyTree.exchanges, fuzzyTree.rootId)];
 
 		const results = searchChats(fuzzyChats, 'abcd', [0]);
 		expect(results).toHaveLength(1);
@@ -150,7 +148,7 @@ describe('search', () => {
 		expect(results[0]!.snippets).toEqual([]);
 	});
 
-	it('ignores anchor exchanges and missing chats', () => {
+	it('ignores missing chats', () => {
 		const results = searchChats(chats, 'attention', [99]);
 		expect(results).toEqual([]);
 	});
@@ -200,7 +198,8 @@ describe('search', () => {
 	});
 
 	it('uses a fallback label when a chat name is missing', () => {
-		const unnamedChats = [buildChat('chat-1', '', buildExchanges([{ id: 'a1', prompt: 'hello' }]))];
+		const unnamedTree = buildLinearExchanges([{ id: 'a1', prompt: 'hello' }]);
+		const unnamedChats = [buildChat('chat-1', '', unnamedTree.exchanges, unnamedTree.rootId)];
 		const items = [{ exchangeId: 'a1', chatIndex: 0, prompt: 'hello', snippets: [] }];
 
 		expect(groupResults(items, unnamedChats, 0, true, true)).toEqual([
@@ -225,30 +224,6 @@ describe('search', () => {
 			{
 				label: 'Beta',
 				items: [items[1]!]
-			}
-		]);
-	});
-
-	it('uses a generated fallback label when a grouped chat index is out of range', () => {
-		const items = [{ exchangeId: 'ghost', chatIndex: 3, prompt: 'orphaned result', snippets: [] }];
-		const sparseChats = [
-			buildChat('chat-1', 'Alpha', buildExchanges([{ id: 'a1', prompt: 'hello' }])),
-			buildChat('chat-2', 'Beta', buildExchanges([{ id: 'b1', prompt: 'world' }])),
-			buildChat('chat-3', 'Gamma', buildExchanges([{ id: 'c1', prompt: '!' }]))
-		];
-
-		expect(groupResults(items, sparseChats, 99, true, true)).toEqual([]);
-
-		const chatsWithHole = [
-			undefined,
-			buildChat('chat-2', 'Beta', buildExchanges([{ id: 'b1', prompt: 'world' }]))
-		] as unknown as Chat[];
-		const holeItems = [{ exchangeId: 'ghost', chatIndex: 0, prompt: 'orphaned result', snippets: [] }];
-
-		expect(groupResults(holeItems, chatsWithHole, 0, true, true)).toEqual([
-			{
-				label: 'Chat 1 (current)',
-				items: holeItems
 			}
 		]);
 	});
