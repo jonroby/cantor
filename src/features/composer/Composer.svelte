@@ -1,8 +1,6 @@
 <script lang="ts">
 	import Button from '@/components/custom/button.svelte';
 	import Input from '@/components/custom/input.svelte';
-	import logoDark from '@/assets/logo_dark.svg';
-	import logoLight from '@/assets/logo_light.svg';
 
 	interface Props {
 		composerValue: string;
@@ -31,6 +29,12 @@
 		onToggleCanvasMode,
 		onOpenPalette
 	}: Props = $props();
+
+	let inputRef: ReturnType<typeof Input> | undefined = $state();
+
+	export function focus() {
+		inputRef?.focus();
+	}
 </script>
 
 <form
@@ -42,15 +46,8 @@
 >
 	<div class="composer-shell" class:canvas-mode={canvasMode}>
 		<div class="composer-row">
-			<button
-				type="button"
-				class="canvas-toggle"
-				onclick={onToggleCanvasMode}
-				aria-label={canvasMode ? 'Disable canvas mode' : 'Enable canvas mode'}
-			>
-				<img src={canvasMode ? logoDark : logoLight} alt="Canvas mode" width="24" height="24" />
-			</button>
 			<Input
+				bind:this={inputRef}
 				bind:value={composerValue}
 				class="composer-input"
 				placeholder={canvasMode

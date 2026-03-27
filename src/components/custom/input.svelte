@@ -22,10 +22,17 @@
 		autofocus = false,
 		onkeydown
 	}: Props = $props();
+
+	let inputEl: HTMLInputElement | undefined = $state();
+
+	export function focus() {
+		inputEl?.focus();
+	}
 </script>
 
 <input
 	{id}
+	bind:this={inputEl}
 	bind:value
 	{type}
 	{placeholder}

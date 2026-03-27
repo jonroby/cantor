@@ -45,6 +45,11 @@
 	let canvasMode = $state(false);
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
+	let composerRef: ReturnType<typeof Composer> | undefined = $state();
+
+	export function focus() {
+		composerRef?.focus();
+	}
 
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
@@ -127,6 +132,7 @@
 {/if}
 
 <Composer
+	bind:this={composerRef}
 	bind:composerValue
 	bind:canvasMode
 	{submitDisabledReason}

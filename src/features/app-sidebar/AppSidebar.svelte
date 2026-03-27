@@ -6,7 +6,6 @@
 	import { useSidebar } from '@/components/shadcn/ui/sidebar/context.svelte.js';
 	import type { Chat } from '@/domain/tree';
 	import type { ChatFolder } from '@/state/documents.svelte';
-	import newLogo from '@/assets/new-logo.png';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from './ConfirmDeleteDialog.svelte';
@@ -58,9 +57,6 @@
 	}: Props = $props();
 
 	const sidebar = useSidebar();
-
-	// Logo hover state
-	let logoHovered = $state(false);
 
 	// Folder expansion
 	let expandedFolders: Record<string, boolean> = $state({});
@@ -145,62 +141,32 @@
 
 <Sidebar.Root collapsible="icon">
 	<Sidebar.Header class="p-0">
-		<div
-			class="h-14 px-3 flex items-center group-data-[state=collapsed]:justify-center"
-			role="button"
-			tabindex={-1}
-			onmouseenter={() => (logoHovered = true)}
-			onmouseleave={() => (logoHovered = false)}
-		>
-			{#if sidebar.state === 'collapsed' && logoHovered}
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<button
-								{...props}
-								class="rounded-lg hover:bg-sidebar-accent flex cursor-e-resize items-center justify-center overflow-hidden transition-colors"
-								onclick={() => sidebar.toggle()}
-								aria-label="Open sidebar"
-							>
-								<svg
-									width="20"
-									height="20"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									class="text-sidebar-foreground"
-								>
-									<rect x="3" y="3" width="18" height="18" rx="2" />
-									<path d="M9 3v18" />
-									<path d="M14 9l3 3-3 3" />
-								</svg>
-							</button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
-						Open sidebar
-					</Tooltip.Content>
-				</Tooltip.Root>
+		<div class="h-14 px-3 flex items-center group-data-[state=collapsed]:justify-center">
+			{#if sidebar.state === 'collapsed'}
+				<button
+					class="rounded-lg hover:bg-sidebar-accent p-1 flex cursor-e-resize items-center justify-center overflow-hidden transition-colors"
+					onclick={() => sidebar.toggle()}
+					aria-label="Open sidebar"
+				>
+					<svg
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="text-sidebar-foreground"
+					>
+						<rect x="3" y="3" width="18" height="18" rx="2" />
+						<path d="M9 3v18" />
+						<path d="M14 9l3 3-3 3" />
+					</svg>
+				</button>
 			{:else}
-				<div class="gap-2 min-w-0 flex flex-1 items-center overflow-hidden">
-					<img
-						src={newLogo}
-						alt="Powerset"
-						class="shrink-0 transition-all duration-200"
-						style="width: {sidebar.state === 'collapsed'
-							? '20px'
-							: '32px'}; height: auto; mix-blend-mode: multiply;"
-					/>
-					{#if sidebar.state === 'expanded'}
-						<span class="text-sm font-semibold text-sidebar-foreground truncate">powerset</span>
-					{/if}
-				</div>
-				{#if sidebar.state === 'expanded'}
-					<Sidebar.Trigger />
-				{/if}
+				<span class="text-sm font-semibold text-sidebar-foreground tracking-widest flex-1">POWERSET</span>
+				<Sidebar.Trigger />
 			{/if}
 		</div>
 	</Sidebar.Header>

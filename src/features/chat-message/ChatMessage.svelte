@@ -13,19 +13,7 @@
 	);
 </script>
 
-<div
-	class="chatmsg"
-	class:chatmsg-active={data.isActive}
-	role="button"
-	tabindex="0"
-	onclick={data.onSelect}
-	onkeydown={(event) => {
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			data.onSelect();
-		}
-	}}
->
+<div class="chatmsg">
 	<div class="chatmsg-prompt-row">
 		<div class="chatmsg-prompt">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
@@ -60,32 +48,6 @@
 	</div>
 
 	<div class="chatmsg-toolbar">
-		{#if data.hasSideChildren}
-			<button
-				class="chatmsg-branch-badge"
-				type="button"
-				onclick={(event: MouseEvent) => {
-					event.stopPropagation();
-					data.onToggleSideChildren();
-				}}
-			>
-				<svg
-					width="14"
-					height="14"
-					viewBox="0 0 14 14"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-					><path
-						d="M3 3v8M3 7h4M7 7v4M7 7h4"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/></svg
-				>
-				<span>{data.sideChildrenCount}</span>
-			</button>
-		{/if}
-
 		<div class="chatmsg-actions">
 			{#if data.canFork}
 				<span class="action-tip-wrap">
@@ -169,5 +131,56 @@
 				<span class="action-tip">Delete</span>
 			</span>
 		</div>
+		{#if !data.isSideRoot}
+			{#if data.hasSideChildren}
+				<button
+					class="chatmsg-branch-badge"
+					type="button"
+					onclick={(event: MouseEvent) => {
+						event.stopPropagation();
+						data.onToggleSideChildren();
+					}}
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						><path d="M3 3v8M3 7h4M7 7v4M7 7h4" stroke-linecap="round" stroke-linejoin="round" /></svg
+					>
+					<span>{data.sideChildrenCount}</span>
+				</button>
+			{:else}
+				<span class="action-tip-wrap chatmsg-branch-action">
+					<Button
+						class="icon-chip"
+						variant="ghost"
+						size="icon"
+						onclick={(event: MouseEvent) => {
+							event.stopPropagation();
+							data.onToggleSideChildren();
+						}}
+						ariaLabel="Side chat"
+					>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							><path
+								d="M3 3v8M3 7h4M7 7v4M7 7h4"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/></svg
+						>
+					</Button>
+					<span class="action-tip">Side chat</span>
+				</span>
+			{/if}
+		{/if}
 	</div>
 </div>

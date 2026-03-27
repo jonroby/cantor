@@ -4,13 +4,14 @@
 	import { ChatMessage } from '@/features/chat-message';
 	import { ChatInput } from '@/features/chat-input';
 	import {
-		ROOT_ANCHOR_ID,
 		getChildExchanges,
 		getMainChatTail,
+		getRootExchange,
 		type Exchange,
 		type DeleteMode
 	} from '@/domain/tree';
 	import {
+		getActiveChat,
 		getActiveExchanges,
 		getActiveExchangeId,
 		setActiveExchangeId
@@ -36,6 +37,7 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
+	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
 
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
@@ -58,11 +60,16 @@
 			? activeSideBranch[activeSideBranch.length - 1]!.id
 			: null
 	);
+	let sidePanelParentExchange = $derived(
+		sidePanelParentId && activeExchanges ? activeExchanges[sidePanelParentId] : null
+	);
 
 	function getMainChatPath(): Exchange[] {
 		if (!activeExchanges) return [];
+		const root = getRootExchange(activeExchanges);
+		if (!root) return [];
 		const path: Exchange[] = [];
-		let currentId: string | null = ROOT_ANCHOR_ID;
+		let currentId: string | null = root.id;
 		while (currentId) {
 			const children = getChildExchanges(activeExchanges, currentId, exchangesByParentId);
 			if (children.length === 0) break;
@@ -98,22 +105,45 @@
 		focusedPane = pane;
 		if (pane === 'main') {
 			setActiveExchangeId(mainChatTailId);
-		} else if (pane === 'side' && sideBranchTailId) {
-			setActiveExchangeId(sideBranchTailId);
+		} else if (pane === 'side') {
+			if (sideBranchTailId) {
+				setActiveExchangeId(sideBranchTailId);
+			} else if (sidePanelParentId) {
+				setActiveExchangeId(sidePanelParentId);
+			}
 		}
+		tick().then(() => chatInputRef?.focus());
 	}
 
 	function openSidePanel(parentId: string) {
 		if (sidePanelOpen && sidePanelParentId === parentId) {
-			sidePanelOpen = false;
-			sidePanelParentId = null;
-			focusPane('main');
+			closeSidePanel();
 			return;
 		}
+
 		sidePanelParentId = parentId;
-		sideBranchIndex = 0;
 		sidePanelOpen = true;
 		focusedPane = 'side';
+
+		const children = activeExchanges
+			? getChildExchanges(activeExchanges, parentId, exchangesByParentId)
+			: [];
+		if (children.length > 1) {
+			sideBranchIndex = children.length - 2;
+			let current = children[children.length - 1];
+			while (current) {
+				const grandChildren = activeExchanges
+					? getChildExchanges(activeExchanges, current.id, exchangesByParentId)
+					: [];
+				if (grandChildren.length === 0) break;
+				current = grandChildren[0];
+			}
+			if (current) setActiveExchangeId(current.id);
+		} else {
+			sideBranchIndex = 0;
+			setActiveExchangeId(parentId);
+		}
+		tick().then(() => chatInputRef?.focus());
 	}
 
 	function closeSidePanel() {
@@ -134,6 +164,16 @@
 			sideBranchIndex++;
 			focusPane('side');
 		}
+	}
+
+	function newSideBranch() {
+		if (!sidePanelParentId) return;
+		// If current branch is already empty, do nothing
+		if (!activeSideBranch || activeSideBranch.length === 0) return;
+		// Jump past existing branches to show empty state
+		sideBranchIndex = sideBranches.length;
+		setActiveExchangeId(sidePanelParentId);
+		tick().then(() => chatInputRef?.focus());
 	}
 
 	function forkChat(exchangeId: string) {
@@ -204,9 +244,13 @@
 	function expandSideChat(exchangeId: string) {
 		trackLatestBranch = true;
 		focusedPane = 'side';
-		if (sidePanelOpen && sidePanelParentId === exchangeId) return;
+		if (sidePanelOpen && sidePanelParentId === exchangeId) {
+			tick().then(() => chatInputRef?.focus());
+			return;
+		}
 		sidePanelParentId = exchangeId;
 		sidePanelOpen = true;
+		tick().then(() => chatInputRef?.focus());
 	}
 
 	export function resetUIState() {
@@ -220,13 +264,10 @@
 		}
 	});
 
-	// Close side panel when exchanges change and parent no longer has side children
+	// Close side panel if parent node was deleted
 	$effect(() => {
-		if (sidePanelOpen && sidePanelParentId && activeExchanges) {
-			const children = getChildExchanges(activeExchanges, sidePanelParentId, exchangesByParentId);
-			if (children.length <= 1) {
-				closeSidePanel();
-			}
+		if (sidePanelOpen && sidePanelParentId && activeExchanges && !activeExchanges[sidePanelParentId]) {
+			closeSidePanel();
 		}
 	});
 
@@ -262,119 +303,175 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="chatview-main"
+			class="chatview-pane"
 			class:chatview-pane-focused={focusedPane === 'main'}
-			bind:this={mainScrollContainer}
 			onclick={() => focusPane('main')}
 		>
-			<div class="chatview-exchanges">
-				{#each mainChatPath as exchange (exchange.id)}
-					{@const nodeData = getNodeDataForExchange(exchange.id)}
-					{#if nodeData}
-						<div
-							class="chatview-exchange-wrap"
-							class:chatview-branch-source={sidePanelOpen && sidePanelParentId === exchange.id}
-							data-exchange-id={exchange.id}
-						>
-							<ChatMessage data={nodeData} />
-						</div>
-					{/if}
-				{/each}
-				{#if mainChatPath.length === 0}
-					<div class="chatview-empty">Start a conversation below.</div>
-				{/if}
-			</div>
-			{#if focusedPane === 'main' || !sidePanelOpen}
-				<div class="chatview-input-anchor">
-					<ChatInput onScrollToNode={scrollToNode} onExpandSideChat={expandSideChat} />
-				</div>
-			{/if}
-		</div>
-
-		{#if sidePanelOpen && activeSideBranch}
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div
-				class="chatview-side"
-				class:chatview-pane-focused={focusedPane === 'side'}
-				onclick={() => focusPane('side')}
-			>
-				<div class="chatview-side-header">
-					<Button
-						class="ghost-button"
-						variant="ghost"
-						size="sm"
-						disabled={sideBranchIndex <= 0}
-						onclick={prevBranch}
-					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<path d="M8.5 3L4.5 7l4 4" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-					</Button>
-					<span class="chatview-side-counter">
-						{sideBranchIndex + 1} / {sideBranches.length}
-					</span>
-					<Button
-						class="ghost-button"
-						variant="ghost"
-						size="sm"
-						disabled={sideBranchIndex >= sideBranches.length - 1}
-						onclick={nextBranch}
-					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<path d="M5.5 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-					</Button>
-					<Button
-						class="ghost-button chatview-side-close"
-						variant="ghost"
-						size="sm"
-						onclick={closeSidePanel}
-						ariaLabel="Close side panel"
-					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-						</svg>
-					</Button>
-				</div>
-				<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
-					{#each activeSideBranch as exchange (exchange.id)}
+			<div class="chatview-main-title">{getActiveChat().name}</div>
+			<div class="chatview-main" bind:this={mainScrollContainer}>
+				<div class="chatview-exchanges">
+					{#each mainChatPath as exchange (exchange.id)}
 						{@const nodeData = getNodeDataForExchange(exchange.id)}
 						{#if nodeData}
-							<div class="chatview-exchange-wrap" data-exchange-id={exchange.id}>
+							<div
+								class="chatview-exchange-wrap"
+								class:chatview-branch-source={sidePanelOpen && sidePanelParentId === exchange.id}
+								data-exchange-id={exchange.id}
+							>
 								<ChatMessage data={nodeData} />
 							</div>
 						{/if}
 					{/each}
+					{#if mainChatPath.length === 0}
+						<div class="chatview-empty">Start a conversation below.</div>
+					{/if}
 				</div>
-				{#if focusedPane === 'side'}
-					<div class="chatview-input-anchor">
-						<ChatInput onScrollToNode={scrollToNode} onExpandSideChat={expandSideChat} />
+			</div>
+		</div>
+
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="chatview-side"
+			class:chatview-side-open={sidePanelOpen}
+			class:chatview-pane-focused={focusedPane === 'side'}
+			onclick={() => focusPane('side')}
+		>
+			{#if sidePanelOpen}
+				{#if sideBranches.length > 0}
+					<div class="chatview-side-header">
+						<Button
+							class="ghost-button"
+							variant="ghost"
+							size="sm"
+							disabled={sideBranchIndex <= 0}
+							onclick={prevBranch}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path d="M8.5 3L4.5 7l4 4" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						</Button>
+						<span class="chatview-side-counter">
+							{sideBranchIndex + 1} / {sideBranches.length}
+						</span>
+						<Button
+							class="ghost-button"
+							variant="ghost"
+							size="sm"
+							disabled={sideBranchIndex >= sideBranches.length - 1}
+							onclick={nextBranch}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path d="M5.5 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						</Button>
+						<Button
+							class="ghost-button"
+							variant="ghost"
+							size="sm"
+							onclick={newSideBranch}
+							ariaLabel="New side chat"
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path d="M7 2v10M2 7h10" stroke-linecap="round" />
+							</svg>
+						</Button>
+						<Button
+							class="ghost-button chatview-side-close"
+							variant="ghost"
+							size="sm"
+							onclick={closeSidePanel}
+							ariaLabel="Close side panel"
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
+							</svg>
+						</Button>
+					</div>
+				{:else}
+					<div class="chatview-side-header">
+						<span class="chatview-side-counter">New side chat</span>
+						<Button
+							class="ghost-button chatview-side-close"
+							variant="ghost"
+							size="sm"
+							onclick={closeSidePanel}
+							ariaLabel="Close side panel"
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
+							</svg>
+						</Button>
 					</div>
 				{/if}
-			</div>
-		{/if}
+				{#if sidePanelParentExchange}
+					<div class="chatview-side-context">
+						<div class="chatview-side-context-label">Branching from</div>
+						<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt}</div>
+						{#if sidePanelParentExchange.response}
+							<div class="chatview-side-context-response">{sidePanelParentExchange.response.slice(0, 150)}{sidePanelParentExchange.response.length > 150 ? '…' : ''}</div>
+						{/if}
+					</div>
+				{/if}
+				<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
+					{#if activeSideBranch}
+						{#each activeSideBranch as exchange (exchange.id)}
+							{@const nodeData = getNodeDataForExchange(exchange.id)}
+							{#if nodeData}
+								<div class="chatview-exchange-wrap" data-exchange-id={exchange.id}>
+									<ChatMessage data={nodeData} />
+								</div>
+							{/if}
+						{/each}
+					{:else}
+						<div class="chatview-empty">Type a message to start a side chat.</div>
+					{/if}
+				</div>
+			{/if}
+		</div>
+
+		<div
+			class="chatview-input-anchor"
+			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
+			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
+		>
+			<ChatInput bind:this={chatInputRef} onScrollToNode={scrollToNode} onExpandSideChat={expandSideChat} />
+		</div>
 	</div>
 </div>
 
