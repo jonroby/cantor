@@ -36,16 +36,23 @@ function buildChat(
 	return { id, name, rootId, exchanges, activeExchangeId };
 }
 
-function buildLinearExchanges(
-	entries: Array<{ id: string; prompt: string; response?: string }>
-): { rootId: string; exchanges: ExchangeMap } {
+function buildLinearExchanges(entries: Array<{ id: string; prompt: string; response?: string }>): {
+	rootId: string;
+	exchanges: ExchangeMap;
+} {
 	if (entries.length === 0) {
 		throw new Error('Expected at least one exchange.');
 	}
 
 	const rootId = `root-${entries[0]!.id}`;
 	const exchanges: ExchangeMap = {
-		[rootId]: makeExchange(rootId, null, '', '', entries.map((entry, index) => (index === 0 ? entry.id : '')).filter(Boolean))
+		[rootId]: makeExchange(
+			rootId,
+			null,
+			'',
+			'',
+			entries.map((entry, index) => (index === 0 ? entry.id : '')).filter(Boolean)
+		)
 	};
 
 	for (const [index, entry] of entries.entries()) {
@@ -69,7 +76,11 @@ describe('search', () => {
 		{ id: 'a2', prompt: 'Explain embeddings', response: 'Embeddings are vectors.' }
 	]);
 	const betaTree = buildLinearExchanges([
-		{ id: 'b1', prompt: 'Attention heads specialize', response: 'Each head can focus differently.' },
+		{
+			id: 'b1',
+			prompt: 'Attention heads specialize',
+			response: 'Each head can focus differently.'
+		},
 		{ id: 'b2', prompt: '', response: 'empty prompt should not appear by default' }
 	]);
 	const chats = [
@@ -97,9 +108,9 @@ describe('search', () => {
 
 		expect(first).toBeDefined();
 		expect(first!.snippets.length).toBeGreaterThan(0);
-		expect(first!.snippets.some((snippet) => snippet.text.toLowerCase().includes('attention'))).toBe(
-			true
-		);
+		expect(
+			first!.snippets.some((snippet) => snippet.text.toLowerCase().includes('attention'))
+		).toBe(true);
 	});
 
 	it('adds ellipses when a snippet is extracted from the middle of long text', () => {
@@ -127,7 +138,9 @@ describe('search', () => {
 	});
 
 	it('keeps fuzzy response matches even when no exact response snippet exists', () => {
-		const responseTree = buildLinearExchanges([{ id: 'r1', prompt: 'totally unrelated', response: 'abce' }]);
+		const responseTree = buildLinearExchanges([
+			{ id: 'r1', prompt: 'totally unrelated', response: 'abce' }
+		]);
 		const responseChats = [
 			buildChat('chat-1', 'Responses', responseTree.exchanges, responseTree.rootId)
 		];
@@ -187,7 +200,9 @@ describe('search', () => {
 	});
 
 	it('omits chats that have no grouped items', () => {
-		const items = [{ exchangeId: 'a1', chatIndex: 0, prompt: 'How do transformers use attention?', snippets: [] }];
+		const items = [
+			{ exchangeId: 'a1', chatIndex: 0, prompt: 'How do transformers use attention?', snippets: [] }
+		];
 
 		expect(groupResults(items, chats, 0, true, true)).toEqual([
 			{
@@ -210,9 +225,40 @@ describe('search', () => {
 		]);
 	});
 
+	it('searches exchanges that have a null response', () => {
+		const tree = buildLinearExchanges([{ id: 'n1', prompt: 'attention query' }]);
+		const exchanges = { ...tree.exchanges };
+		exchanges['n1'] = { ...exchanges['n1']!, response: null } as Exchange;
+		const nullChats = [buildChat('chat-1', 'Null', exchanges, tree.rootId)];
+
+		const results = searchChats(nullChats, 'attention', [0]);
+		expect(results).toHaveLength(1);
+		expect(results[0]!.exchangeId).toBe('n1');
+	});
+
+	it('uses a generated label when a chat has no name property', () => {
+		const tree = buildLinearExchanges([{ id: 'u1', prompt: 'hello' }]);
+		const unnamedChats = [
+			{
+				id: 'chat-1',
+				rootId: tree.rootId,
+				exchanges: tree.exchanges,
+				activeExchangeId: null
+			} as Chat
+		];
+		const items = [{ exchangeId: 'u1', chatIndex: 0, prompt: 'hello', snippets: [] }];
+		const groups = groupResults(items, unnamedChats, 0, true, true);
+		expect(groups[0]!.label).toBe('Chat 1 (current)');
+	});
+
 	it('falls back to natural chat order when the active chat index is invalid', () => {
 		const items = [
-			{ exchangeId: 'a1', chatIndex: 0, prompt: 'How do transformers use attention?', snippets: [] },
+			{
+				exchangeId: 'a1',
+				chatIndex: 0,
+				prompt: 'How do transformers use attention?',
+				snippets: []
+			},
 			{ exchangeId: 'b1', chatIndex: 1, prompt: 'Attention heads specialize', snippets: [] }
 		];
 

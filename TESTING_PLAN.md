@@ -8,6 +8,7 @@
 - **High coverage** for App layer (orchestration logic, mocked dependencies).
 - Tests flow from pure → effectful, mirroring the architecture.
 - ~3/4 of this work is writing tests. ~1/4 is refactoring code to make it testable (extracting pure logic, breaking hidden dependencies).
+- Aim for clear, functional code. Your mantra should be "make impossible states are impossible" but if the trade off for call site friction is too high, or if performance would suffer you may write imperative code.
 
 ```
 ┌──────────────────────────────────┐

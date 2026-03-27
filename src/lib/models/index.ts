@@ -15,10 +15,17 @@ export type Provider = (typeof PROVIDERS)[number];
 export type LocalProvider = (typeof LOCAL_PROVIDERS)[number];
 export type KeyBasedProvider = (typeof KEY_BASED_PROVIDERS)[number];
 
-export interface ActiveModel {
-	provider: Provider;
+export interface KeyBasedActiveModel {
+	provider: KeyBasedProvider;
 	modelId: string;
 }
+
+export interface LocalActiveModel {
+	provider: LocalProvider;
+	modelId: string;
+}
+
+export type ActiveModel = KeyBasedActiveModel | LocalActiveModel;
 
 export type OllamaStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -146,9 +153,14 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<KeyBasedProvider, KeyBasedProviderD
 	}
 };
 
-const providerEntries = <T>(project: (definition: KeyBasedProviderDefinition) => T): Record<KeyBasedProvider, T> =>
+const providerEntries = <T>(
+	project: (definition: KeyBasedProviderDefinition) => T
+): Record<KeyBasedProvider, T> =>
 	Object.fromEntries(
-		KEY_BASED_PROVIDERS.map((provider) => [provider, project(KEY_BASED_PROVIDER_DEFINITIONS[provider])])
+		KEY_BASED_PROVIDERS.map((provider) => [
+			provider,
+			project(KEY_BASED_PROVIDER_DEFINITIONS[provider])
+		])
 	) as Record<KeyBasedProvider, T>;
 
 export const PROVIDER_CONFIG = providerEntries((definition) => definition.config);
@@ -180,6 +192,6 @@ export function getModelContextLength(provider: Provider, modelId: string): numb
 	return MODEL_CONTEXT_LENGTH_BY_PROVIDER[provider][modelId] ?? null;
 }
 
-export function getProviderForModelId(modelId: string): Provider | null {
+export function getProviderForModelId(modelId: string): KeyBasedProvider | null {
 	return MODEL_PROVIDER_BY_ID[modelId] ?? null;
 }
