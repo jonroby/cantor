@@ -4,11 +4,14 @@
 	import * as Sidebar from '@/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/components/shadcn/ui/sidebar/context.svelte.js';
+	import { HugeiconsIcon } from '@hugeicons/svelte';
+	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
 	import type { Chat } from '@/domain/tree';
 	import type { ChatFolder } from '@/state/documents.svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from './ConfirmDeleteDialog.svelte';
+	import powersetLogo from '@/assets/powerset-logo.svg';
 
 	interface Props {
 		chats: Chat[];
@@ -149,36 +152,41 @@
 
 <Sidebar.Root collapsible="icon">
 	<Sidebar.Header class="p-0">
-		<div class="h-14 px-3 flex items-center group-data-[state=collapsed]:justify-center">
-			{#if sidebar.state === 'collapsed'}
+		{#if sidebar.state === 'expanded'}
+			<div class="h-14 px-3 flex items-center">
+				<span class="text-sm font-semibold text-sidebar-foreground flex-1">Cantor</span>
 				<button
-					class="rounded-lg hover:bg-sidebar-accent p-1 flex cursor-e-resize items-center justify-center overflow-hidden transition-colors"
+					class="rounded-lg hover:bg-sidebar-accent p-1 flex items-center justify-center transition-colors cursor-pointer"
 					onclick={() => sidebar.toggle()}
-					aria-label="Open sidebar"
+					aria-label="Collapse sidebar"
 				>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="text-sidebar-foreground"
-					>
-						<rect x="3" y="3" width="18" height="18" rx="2" />
-						<path d="M9 3v18" />
-						<path d="M14 9l3 3-3 3" />
-					</svg>
+					<HugeiconsIcon icon={SidebarLeftIcon} size={20} />
 				</button>
-			{:else}
-				<span class="text-sm font-semibold text-sidebar-foreground tracking-widest flex-1"
-					>POWERSET</span
-				>
-				<Sidebar.Trigger />
-			{/if}
-		</div>
+			</div>
+		{:else}
+			<div class="h-14 flex items-center justify-center">
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								class="group/logo rounded-lg hover:bg-sidebar-accent p-1 flex items-center justify-center transition-colors cursor-pointer"
+								onclick={() => sidebar.toggle()}
+								aria-label="Open sidebar"
+							>
+								<img src={powersetLogo} alt="Powerset Labs" width="24" height="28" class="block group-hover/logo:hidden" />
+								<span class="hidden group-hover/logo:block">
+									<HugeiconsIcon icon={SidebarLeftIcon} size={20} />
+								</span>
+							</button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
+						Open sidebar
+					</Tooltip.Content>
+				</Tooltip.Root>
+			</div>
+		{/if}
 	</Sidebar.Header>
 
 	<Sidebar.Content class="px-2">

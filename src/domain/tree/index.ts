@@ -70,11 +70,23 @@ function requireExchange(exchanges: ExchangeMap, exchangeId: string, message: st
 	return exchange;
 }
 
+function requireParentId(exchange: Exchange): string {
+	assert(exchange.parentId !== null, `Exchange "${exchange.id}" has no parent.`);
+	return exchange.parentId;
+}
+
 function finalizeChatTree(exchanges: ExchangeMap): ExchangeMap {
-	if (import.meta.env.DEV) {
-		return validateChatTree(exchanges);
-	}
-	return exchanges;
+	return validateChatTree(exchanges);
+}
+
+function isFirstChild(
+	exchanges: ExchangeMap,
+	parentId: string,
+	childId: string,
+	exchangesByParentId: ExchangesByParentId
+): boolean {
+	const siblings = getChildExchanges(exchanges, parentId, exchangesByParentId);
+	return siblings.length > 0 && siblings[0].id === childId;
 }
 
 function isSideExchange(
@@ -85,8 +97,7 @@ function isSideExchange(
 	let current = exchanges[exchangeId];
 
 	while (current?.parentId) {
-		const siblings = getChildExchanges(exchanges, current.parentId, exchangesByParentId);
-		if (siblings[0]?.id !== current.id) {
+		if (!isFirstChild(exchanges, current.parentId, current.id, exchangesByParentId)) {
 			return true;
 		}
 		current = exchanges[current.parentId];
@@ -102,7 +113,8 @@ export function validateChatTree(exchanges: ExchangeMap): ExchangeMap {
 		`Tree must contain exactly one root, found ${rootExchanges.length}.`
 	);
 
-	const root = rootExchanges[0]!;
+	const root = rootExchanges[0];
+	assert(root !== undefined, 'Tree must contain exactly one root.');
 	assert(root.isAnchor === true, 'Tree root must be the anchor exchange.');
 
 	const exchangesByParentId = buildExchangesByParentId(exchanges);
@@ -111,7 +123,7 @@ export function validateChatTree(exchanges: ExchangeMap): ExchangeMap {
 		if (exchange.id !== root.id) {
 			assert(exchange.parentId !== null, `Exchange "${exchange.id}" must have a parent.`);
 			assert(
-				exchanges[exchange.parentId!] !== undefined,
+				exchanges[exchange.parentId] !== undefined,
 				`Exchange "${exchange.id}" has missing parent "${exchange.parentId}".`
 			);
 		}
@@ -122,12 +134,13 @@ export function validateChatTree(exchanges: ExchangeMap): ExchangeMap {
 			`Exchange "${exchange.id}" has duplicate child ids.`
 		);
 		for (const childId of childIds) {
+			const child = exchanges[childId];
 			assert(
-				exchanges[childId] !== undefined,
+				child !== undefined,
 				`Exchange "${exchange.id}" references missing child "${childId}".`
 			);
 			assert(
-				exchanges[childId]!.parentId === exchange.id,
+				child.parentId === exchange.id,
 				`Exchange "${exchange.id}" has invalid child reference "${childId}".`
 			);
 		}
@@ -145,14 +158,11 @@ export function validateChatTree(exchanges: ExchangeMap): ExchangeMap {
 	const visited = new Set<string>();
 	const queue = [root.id];
 	while (queue.length > 0) {
-		const currentId = queue.shift()!;
-		if (visited.has(currentId)) {
-			continue;
-		}
+		const currentId = queue.shift() as string;
 		visited.add(currentId);
-		getChildExchanges(exchanges, currentId, exchangesByParentId).forEach((child) =>
-			queue.push(child.id)
-		);
+		for (const child of getChildExchanges(exchanges, currentId, exchangesByParentId)) {
+			queue.push(child.id);
+		}
 	}
 
 	assert(
@@ -207,6 +217,7 @@ export function removeExchange(exchanges: ExchangeMap, exchangeId: string): Exch
 	);
 	assert(!removed.isAnchor, 'Cannot remove the root anchor exchange.');
 
+	const parentId = requireParentId(removed);
 	const exchangesByParentId = buildExchangesByParentId(exchanges);
 	const removedChildIds = getChildExchanges(exchanges, exchangeId, exchangesByParentId).map(
 		(child) => child.id
@@ -215,26 +226,18 @@ export function removeExchange(exchanges: ExchangeMap, exchangeId: string): Exch
 	delete next[exchangeId];
 
 	for (const childId of removedChildIds) {
-		const child = next[childId];
-		if (child) {
-			next[childId] = { ...child, parentId: removed.parentId };
-		}
+		const child = requireExchange(next, childId, `Child "${childId}" not found during reparent.`);
+		next[childId] = { ...child, parentId: removed.parentId };
 	}
 
-	if (removed.parentId && next[removed.parentId]) {
-		const siblingIds = getChildExchanges(exchanges, removed.parentId, exchangesByParentId).map(
-			(child) => child.id
-		);
-		const removedIndex = siblingIds.indexOf(exchangeId);
-		const reorderedSiblingIds = siblingIds.filter((id) => id !== exchangeId);
+	const siblingIds = getChildExchanges(exchanges, parentId, exchangesByParentId).map(
+		(child) => child.id
+	);
+	const removedIndex = siblingIds.indexOf(exchangeId);
+	const reorderedSiblingIds = siblingIds.filter((id) => id !== exchangeId);
 
-		reorderedSiblingIds.splice(
-			removedIndex < 0 ? reorderedSiblingIds.length : removedIndex,
-			0,
-			...removedChildIds
-		);
-		next = setChildOrder(next, removed.parentId, reorderedSiblingIds);
-	}
+	reorderedSiblingIds.splice(removedIndex, 0, ...removedChildIds);
+	next = setChildOrder(next, parentId, reorderedSiblingIds);
 
 	return finalizeChatTree(next);
 }
@@ -300,30 +303,28 @@ function removeExchangeSubtreeResult(exchanges: ExchangeMap, exchangeId: string)
 	);
 	assert(!subtreeRoot.isAnchor, 'Cannot remove the root anchor subtree.');
 
+	const parentId = requireParentId(subtreeRoot);
 	const exchangesByParentId = buildExchangesByParentId(exchanges);
 	const removedIds = new Set<string>();
 	const queue = [exchangeId];
 
 	while (queue.length > 0) {
-		const currentId = queue.shift()!;
-		if (removedIds.has(currentId)) continue;
+		const currentId = queue.shift() as string;
 		removedIds.add(currentId);
-		getChildExchanges(exchanges, currentId, exchangesByParentId).forEach((child) =>
-			queue.push(child.id)
-		);
+		for (const child of getChildExchanges(exchanges, currentId, exchangesByParentId)) {
+			queue.push(child.id);
+		}
 	}
 
 	let next = { ...exchanges };
-	removedIds.forEach((id) => {
+	for (const id of removedIds) {
 		delete next[id];
-	});
-
-	if (subtreeRoot.parentId && next[subtreeRoot.parentId]) {
-		const siblingIds = getChildExchanges(exchanges, subtreeRoot.parentId, exchangesByParentId)
-			.map((child) => child.id)
-			.filter((id) => id !== exchangeId);
-		next = setChildOrder(next, subtreeRoot.parentId, siblingIds);
 	}
+
+	const siblingIds = getChildExchanges(exchanges, parentId, exchangesByParentId)
+		.map((child) => child.id)
+		.filter((id) => id !== exchangeId);
+	next = setChildOrder(next, parentId, siblingIds);
 
 	return {
 		exchanges: finalizeChatTree(next),
@@ -414,8 +415,7 @@ export function canCreateSideChats(
 	let current = exchanges[exchangeId];
 
 	while (current?.parentId) {
-		const siblings = getChildExchanges(exchanges, current.parentId, exchangesByParentId);
-		if (siblings[0]?.id !== current.id) {
+		if (!isFirstChild(exchanges, current.parentId, current.id, exchangesByParentId)) {
 			return false;
 		}
 		current = exchanges[current.parentId];
@@ -498,22 +498,17 @@ export function getMainChatTail(exchanges: ExchangeMap): string | null {
 	if (!root) return null;
 	const exchangesByParentId = buildExchangesByParentId(exchanges);
 
+	let current: Exchange = root;
 	if (root.isAnchor) {
 		const rootChildren = getChildExchanges(exchanges, root.id, exchangesByParentId);
 		if (rootChildren.length === 0) return null;
-		let current = rootChildren[0]!;
-		while (true) {
-			const children = getChildExchanges(exchanges, current.id, exchangesByParentId);
-			if (children.length === 0) return current.id;
-			current = children[0]!;
-		}
+		current = rootChildren[0];
 	}
 
-	let current = root;
 	while (true) {
 		const children = getChildExchanges(exchanges, current.id, exchangesByParentId);
 		if (children.length === 0) return current.id;
-		current = children[0]!;
+		current = children[0];
 	}
 }
 
@@ -525,12 +520,14 @@ function hasBranchingExchangeDescendant(
 	const queue = [exchangeId];
 
 	while (queue.length > 0) {
-		const currentId = queue.shift()!;
+		const currentId = queue.shift() as string;
 		const children = getChildExchanges(exchanges, currentId, exchangesByParentId);
 		if (children.length > 1) {
 			return true;
 		}
-		children.forEach((child) => queue.push(child.id));
+		for (const child of children) {
+			queue.push(child.id);
+		}
 	}
 
 	return false;
@@ -545,14 +542,11 @@ export function canPromoteSideChatToMainChat(
 	if (!exchange?.parentId) return false;
 
 	const siblings = getChildExchanges(exchanges, exchange.parentId, exchangesByParentId);
-	const siblingIds = siblings.map((child) => child.id);
-	const index = siblingIds.indexOf(exchangeId);
+	const index = siblings.findIndex((s) => s.id === exchangeId);
 	if (index <= 0) return false;
 
-	const currentMainChild = siblings[0];
-	if (!currentMainChild) return false;
-
-	return !hasBranchingExchangeDescendant(exchanges, currentMainChild.id, exchangesByParentId);
+	const mainChild = siblings[0];
+	return !hasBranchingExchangeDescendant(exchanges, mainChild.id, exchangesByParentId);
 }
 
 export function promoteSideChatToMainChat(exchanges: ExchangeMap, exchangeId: string): ExchangeMap {
@@ -589,12 +583,12 @@ export function getDescendantExchanges(exchanges: ExchangeMap, exchangeId: strin
 		(exchange) => exchange.id
 	);
 
-	while (queue.length) {
-		const id = queue.shift()!;
+	while (queue.length > 0) {
+		const id = queue.shift() as string;
 		result.push(id);
-		getChildExchanges(exchanges, id, exchangesByParentId).forEach((exchange) =>
-			queue.push(exchange.id)
-		);
+		for (const child of getChildExchanges(exchanges, id, exchangesByParentId)) {
+			queue.push(child.id);
+		}
 	}
 
 	return result;
@@ -612,8 +606,8 @@ export function findSideChatParent(exchanges: ExchangeMap, exchangeId: string): 
 	while (current && current.parentId) {
 		const parent = exchanges[current.parentId];
 		if (!parent) break;
-		const siblings = exchangesByParentId[parent.id] ?? [];
-		if (siblings.length > 1 && siblings[0]?.id !== current.id) {
+		const siblings = getChildExchanges(exchanges, parent.id, exchangesByParentId);
+		if (siblings.length > 1 && siblings[0].id !== current.id) {
 			outermostSideChatParent = parent.id;
 		}
 		current = parent;
@@ -639,19 +633,18 @@ export function forkExchanges(
 	const copiedExchanges: ExchangeMap = {
 		[anchorId]: { id: anchorId, parentId: null, prompt: '', response: '', isAnchor: true }
 	};
-	const idMap: Record<string, string> = {};
+	const idMap = new Map<string, string>();
 
 	for (const exchange of path) {
-		idMap[exchange.id] = crypto.randomUUID();
+		idMap.set(exchange.id, crypto.randomUUID());
 	}
 
 	let firstCopiedId = '';
 	for (const exchange of path) {
-		const copiedId = idMap[exchange.id];
-		if (!copiedId) continue;
+		const copiedId = idMap.get(exchange.id) as string;
 		if (!firstCopiedId) firstCopiedId = copiedId;
-		const copiedParentId =
-			exchange.parentId && idMap[exchange.parentId] ? idMap[exchange.parentId] : anchorId;
+		const mappedParentId = exchange.parentId ? idMap.get(exchange.parentId) : undefined;
+		const copiedParentId = mappedParentId ?? anchorId;
 
 		copiedExchanges[copiedId] = {
 			id: copiedId,

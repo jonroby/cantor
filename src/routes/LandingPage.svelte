@@ -1,98 +1,78 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	interface Particle {
-		x: number;
-		y: number;
-		vx: number;
-		vy: number;
-		size: number;
-		color: string;
-		rotation: number;
-		rotationSpeed: number;
-		shape: 'rect' | 'circle' | 'line';
-		opacity: number;
-	}
-
 	let canvas: HTMLCanvasElement;
-	let particles: Particle[] = [];
 	let animationId: number;
+	let mouseX = -1000;
+	let mouseY = -1000;
 
-	const colors = [
-		'#6366f1', // indigo
-		'#8b5cf6', // violet
-		'#ec4899', // pink
-		'#f43f5e', // rose
-		'#3b82f6', // blue
-		'#06b6d4', // cyan
-		'#10b981', // emerald
-		'#f59e0b' // amber
-	];
+	const SPACING = 80;
+	const MAX_RADIUS = 350;
+	const BASE_DOT = 3;
+	const MAX_DOT = 14;
 
-	function createParticle(): Particle {
-		const shape = (['rect', 'circle', 'line'] as const)[Math.floor(Math.random() * 3)];
-		return {
-			x: Math.random() * window.innerWidth,
-			y: Math.random() * window.innerHeight,
-			vx: (Math.random() - 0.5) * 0.4,
-			vy: (Math.random() - 0.5) * 0.4,
-			size: Math.random() * 6 + 2,
-			color: colors[Math.floor(Math.random() * colors.length)],
-			rotation: Math.random() * Math.PI * 2,
-			rotationSpeed: (Math.random() - 0.5) * 0.02,
-			shape,
-			opacity: Math.random() * 0.5 + 0.2
-		};
+	function setupCanvas() {
+		const dpr = window.devicePixelRatio || 1;
+		const w = window.innerWidth;
+		const h = window.innerHeight;
+		canvas.width = w * dpr;
+		canvas.height = h * dpr;
+		canvas.style.width = w + 'px';
+		canvas.style.height = h + 'px';
+		const ctx = canvas.getContext('2d');
+		if (ctx) ctx.scale(dpr, dpr);
 	}
 
 	function animate() {
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
 
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		const dpr = window.devicePixelRatio || 1;
+		const w = canvas.width / dpr;
+		const h = canvas.height / dpr;
 
-		for (const p of particles) {
-			p.x += p.vx;
-			p.y += p.vy;
-			p.rotation += p.rotationSpeed;
+		ctx.save();
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, w, h);
 
-			// wrap around
-			if (p.x < -20) p.x = canvas.width + 20;
-			if (p.x > canvas.width + 20) p.x = -20;
-			if (p.y < -20) p.y = canvas.height + 20;
-			if (p.y > canvas.height + 20) p.y = -20;
+		const cols = Math.ceil(w / SPACING) + 1;
+		const rows = Math.ceil(h / SPACING) + 1;
+		const offsetX = (w - (cols - 1) * SPACING) / 2;
+		const offsetY = (h - (rows - 1) * SPACING) / 2;
 
-			ctx.save();
-			ctx.translate(p.x, p.y);
-			ctx.rotate(p.rotation);
-			ctx.globalAlpha = p.opacity;
-			ctx.fillStyle = p.color;
-			ctx.strokeStyle = p.color;
+		for (let r = 0; r < rows; r++) {
+			for (let c = 0; c < cols; c++) {
+				const x = offsetX + c * SPACING;
+				const y = offsetY + r * SPACING;
 
-			if (p.shape === 'rect') {
-				ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.4);
-			} else if (p.shape === 'circle') {
+				const dx = x - mouseX;
+				const dy = y - mouseY;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+
+				// concentric: closer to mouse = bigger & darker
+				const t = dist < MAX_RADIUS ? 1 - dist / MAX_RADIUS : 0;
+				const radius = BASE_DOT + t * (MAX_DOT - BASE_DOT);
+				const opacity = 0.15 + t * 0.7;
+
 				ctx.beginPath();
-				ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+				ctx.arc(x, y, radius, 0, Math.PI * 2);
+				ctx.fillStyle = `rgba(30, 30, 30, ${opacity})`;
 				ctx.fill();
-			} else {
-				ctx.lineWidth = 1.5;
-				ctx.beginPath();
-				ctx.moveTo(-p.size, 0);
-				ctx.lineTo(p.size, 0);
-				ctx.stroke();
 			}
-
-			ctx.restore();
 		}
 
+		ctx.restore();
 		animationId = requestAnimationFrame(animate);
 	}
 
 	function handleResize() {
 		if (!canvas) return;
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
+		setupCanvas();
+	}
+
+	function handleMouseMove(e: MouseEvent) {
+		mouseX = e.clientX;
+		mouseY = e.clientY;
 	}
 
 	function goToApp() {
@@ -100,20 +80,16 @@
 	}
 
 	onMount(() => {
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
-
-		for (let i = 0; i < 120; i++) {
-			particles.push(createParticle());
-		}
-
+		setupCanvas();
 		animate();
 
 		window.addEventListener('resize', handleResize);
+		window.addEventListener('mousemove', handleMouseMove);
 
 		return () => {
 			cancelAnimationFrame(animationId);
 			window.removeEventListener('resize', handleResize);
+			window.removeEventListener('mousemove', handleMouseMove);
 		};
 	});
 </script>
@@ -123,7 +99,17 @@
 
 	<nav class="nav">
 		<div class="nav-left">
-			<span class="logo">Superset</span>
+			<svg class="logo-icon" width="35" height="40" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+				<circle cx="70" cy="25" r="8.5" fill="#2b2b2b"/>
+				<circle cx="30" cy="60" r="8.5" fill="#4a4a4a"/>
+				<circle cx="70" cy="60" r="8.5" fill="#4a4a4a"/>
+				<circle cx="110" cy="60" r="8.5" fill="#4a4a4a"/>
+				<circle cx="30" cy="95" r="8.5" fill="#6e6e6e"/>
+				<circle cx="70" cy="95" r="8.5" fill="#6e6e6e"/>
+				<circle cx="110" cy="95" r="8.5" fill="#6e6e6e"/>
+				<circle cx="70" cy="130" r="8.5" fill="#949494"/>
+			</svg>
+			<span class="logo">Powerset Labs</span>
 		</div>
 		<div class="nav-right">
 			<a href="#/landing" class="nav-link">Features</a>
@@ -150,8 +136,7 @@
 	<main class="hero">
 		<div class="hero-badge">Branching Chat Interface</div>
 		<h1 class="hero-title">
-			LLMs for
-			<span class="gradient-text">Power Users</span>
+			<span class="gradient-text">CANTOR</span>
 		</h1>
 		<p class="hero-subtitle">
 			Fork conversations. Explore side branches. Visualize your thinking on a canvas. One interface
@@ -273,7 +258,7 @@
 		position: relative;
 		min-height: 100vh;
 		background: #fafafa;
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
+		font-family: 'Inter', ui-sans-serif, sans-serif;
 		overflow-x: hidden;
 	}
 
@@ -380,10 +365,10 @@
 	}
 
 	.hero-title {
-		font-size: clamp(40px, 8vw, 72px);
+		font-size: clamp(48px, 10vw, 88px);
 		font-weight: 800;
 		line-height: 1.05;
-		letter-spacing: -2px;
+		letter-spacing: 0.02em;
 		color: #111;
 		margin: 0 0 20px;
 	}
