@@ -203,7 +203,7 @@
 
 			<ChatInput
 				onScrollToNode={(nodeId) => chatTreeRef?.scrollToNode(nodeId)}
-				onExpandSideChat={() => {}}
+				onExpandSideChat={(exchangeId) => chatTreeRef?.expandSideChat(exchangeId)}
 			/>
 
 			{#if searchOpen}

@@ -150,6 +150,10 @@
 		}
 	}
 
+	export function expandSideChat(exchangeId: string) {
+		expandedSideChatParent = exchangeId;
+	}
+
 	export function resetUIState() {
 		expandedSideChatParent = null;
 		measuredNodeHeights = {};
