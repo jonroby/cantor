@@ -28,18 +28,6 @@ export interface Chat {
 	activeExchangeId: string | null;
 }
 
-export interface DocFile {
-	id: string;
-	name: string;
-	content: string;
-}
-
-export interface ChatFolder {
-	id: string;
-	name: string;
-	files?: DocFile[];
-}
-
 export interface DeleteResult {
 	exchanges: ExchangeMap;
 	removedExchangeIds: string[];
@@ -172,63 +160,6 @@ export function validateChatTree(exchanges: ExchangeMap): ExchangeMap {
 	);
 
 	return exchanges;
-}
-
-export function validateChatUpload(data: unknown): Chat {
-	if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-		throw new Error('Upload must be a JSON object.');
-	}
-
-	const obj = data as Record<string, unknown>;
-
-	if (typeof obj.id !== 'string' || !obj.id) {
-		throw new Error('Chat is missing a valid "id".');
-	}
-	if (typeof obj.name !== 'string' || !obj.name) {
-		throw new Error('Chat is missing a valid "name".');
-	}
-
-	// Support new format (exchanges) and legacy format (roots[])
-	let exchanges: ExchangeMap;
-	if (obj.exchanges && typeof obj.exchanges === 'object' && !Array.isArray(obj.exchanges)) {
-		exchanges = obj.exchanges as ExchangeMap;
-	} else if (Array.isArray(obj.roots) && obj.roots.length > 0) {
-		const rootIndex = typeof obj.activeRootIndex === 'number' ? obj.activeRootIndex : 0;
-		exchanges = obj.roots[rootIndex] as ExchangeMap;
-	} else {
-		throw new Error('Chat must have an "exchanges" map.');
-	}
-
-	if (Object.keys(exchanges).length === 0) {
-		throw new Error('Exchanges map is empty.');
-	}
-	for (const [id, exchange] of Object.entries(exchanges)) {
-		if (typeof exchange !== 'object' || exchange === null) {
-			throw new Error(`Exchange "${id}" is not a valid object.`);
-		}
-		if (typeof exchange.id !== 'string') {
-			throw new Error(`Exchange is missing an "id".`);
-		}
-		if (typeof exchange.prompt !== 'string') {
-			throw new Error(`Exchange "${id}" is missing a "prompt".`);
-		}
-		if (typeof exchange.response !== 'string') {
-			throw new Error(`Exchange "${id}" is missing a "response".`);
-		}
-	}
-	try {
-		validateChatTree(exchanges);
-	} catch (e) {
-		throw new Error(e instanceof Error ? e.message : String(e));
-	}
-
-	return {
-		id: obj.id as string,
-		name: obj.name as string,
-		exchanges,
-		activeExchangeId:
-			typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : getMainChatTail(exchanges)
-	};
 }
 
 export function addExchange(
