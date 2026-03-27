@@ -31,9 +31,7 @@ import {
 	addExchangeResult,
 	buildEmptyTree,
 	updateExchangeResponse,
-	type ChatTree,
-	type Exchange,
-	type ExchangeMap
+	type ChatTree
 } from '@/domain/tree';
 
 /** Convenience: update response on a ChatTree, returning a new ChatTree */
@@ -46,19 +44,6 @@ import type { Provider } from '@/domain/models';
 
 const PROVIDER: Provider = 'claude';
 const MODEL = 'claude-sonnet-4-6';
-
-function exchange(overrides: Partial<Exchange> & Pick<Exchange, 'id'>): Exchange {
-	return {
-		parentId: overrides.parentId ?? null,
-		childIds: overrides.childIds ?? [],
-		prompt: overrides.prompt ?? { text: '', tokenCount: 0 },
-		response: overrides.response ?? null,
-		model: overrides.model ?? MODEL,
-		provider: overrides.provider ?? PROVIDER,
-		createdAt: overrides.createdAt ?? 1,
-		...overrides
-	};
-}
 
 function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
 	return {
@@ -267,30 +252,6 @@ describe('getExchangeNodeData', () => {
 		// leaf has no response set
 		const result = getExchangeNodeData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.response).toBe('');
-	});
-
-	it('returns null on internal error (try/catch path)', () => {
-		// Suppress the expected console.error from the catch block
-		vi.spyOn(console, 'error').mockImplementation(() => {});
-
-		// An exchange whose childIds reference a missing node triggers an assertion
-		// inside canCreateSideChats → indexTree, which the catch block converts to null
-		const brokenExchanges: ExchangeMap = {
-			root: exchange({ id: 'root', parentId: null, childIds: ['broken'] }),
-			broken: exchange({
-				id: 'broken',
-				parentId: 'root',
-				childIds: ['also-missing']
-			})
-		};
-		const result = getExchangeNodeData(
-			'broken',
-			brokenExchanges,
-			null,
-			mockCallbacks(),
-			mockDeps()
-		);
-		expect(result).toBeNull();
 	});
 });
 

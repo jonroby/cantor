@@ -2,20 +2,8 @@
 	import { tick } from 'svelte';
 	import Composer from './Composer.svelte';
 	import { ModelPalette } from '@/view/features/model-palette';
-	import {
-		addExchangeResult,
-		canAcceptNewChat,
-		getChildExchanges,
-		getMainChatTail,
-		getPathTokenTotal
-	} from '@/domain/tree';
-	import {
-		getActiveChat,
-		getActiveExchanges,
-		getActiveExchangeId,
-		replaceActiveTree,
-		setActiveExchangeId
-	} from '@/state/chats.svelte';
+	import { canAcceptNewChat, getPathTokenTotal } from '@/domain/tree';
+	import { getActiveChat, getActiveExchanges, getActiveExchangeId } from '@/state/chats.svelte';
 	import {
 		providerState,
 		WEBLLM_CONTEXT_OPTIONS,
@@ -32,7 +20,8 @@
 		forgetKey,
 		fetchOllamaContextLength
 	} from '@/app/providers';
-	import { startStream, isStreaming, cancelStream } from '@/state/services/streams';
+	import { performSubmitPrompt } from '@/app/chat-actions';
+	import { isStreaming, cancelStream } from '@/state/services/streams';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
@@ -84,39 +73,29 @@
 		operationError = null;
 
 		const activeChat = getActiveChat();
-		const chatId = activeChat.id;
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
-		const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
-		if (activeExchangeId && getChildExchanges(activeExchanges, activeExchangeId).length > 0) {
-			onExpandSideChat(activeExchangeId);
-		}
 
-		let created;
+		let result;
 		try {
-			created = addExchangeResult(
+			result = performSubmitPrompt(
+				activeChat.id,
 				tree,
-				parentId,
+				activeExchangeId,
 				prompt,
-				providerState.activeModel.modelId,
-				providerState.activeModel.provider
+				providerState.activeModel
 			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
 			return;
 		}
 
-		replaceActiveTree(created);
-		setActiveExchangeId(created.id);
+		if (result.hasSideChildren && activeExchangeId) {
+			onExpandSideChat(activeExchangeId);
+		}
+
 		composerValue = '';
 		await tick();
-		onScrollToNode(created.id);
-
-		startStream({
-			exchangeId: created.id,
-			chatId,
-			model: providerState.activeModel,
-			tree: created
-		});
+		onScrollToNode(result.id);
 	}
 </script>
 

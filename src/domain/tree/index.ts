@@ -563,7 +563,7 @@ export function getRootExchange(tree: ChatTree): Exchange | null {
 	return tree.exchanges[tree.rootId] ?? null;
 }
 
-function findRootId(exchanges: ExchangeMap): string | null {
+export function findRootId(exchanges: ExchangeMap): string | null {
 	for (const exchange of Object.values(exchanges)) {
 		if (exchange.parentId === null) return exchange.id;
 	}

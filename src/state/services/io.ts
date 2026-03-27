@@ -1,11 +1,12 @@
-import { validateChatTree, getMainChatTail, type Chat, type ExchangeMap } from '@/domain/tree';
+import {
+	validateChatTree,
+	getMainChatTail,
+	findRootId,
+	type Chat,
+	type ExchangeMap
+} from '@/domain/tree';
 
-export function findRootId(exchanges: ExchangeMap): string | null {
-	for (const exchange of Object.values(exchanges)) {
-		if (exchange.parentId === null) return exchange.id;
-	}
-	return null;
-}
+export { findRootId };
 
 export function deduplicateName(name: string, existingNames: string[]): string {
 	if (!existingNames.includes(name)) return name;
@@ -50,7 +51,10 @@ export function validateChatUpload(data: unknown): Chat {
 		if (typeof exchange.id !== 'string') {
 			throw new Error(`Exchange is missing an "id".`);
 		}
-		if (typeof exchange.prompt !== 'object' && typeof exchange.prompt !== 'string') {
+		if (
+			exchange.prompt === null ||
+			(typeof exchange.prompt !== 'object' && typeof exchange.prompt !== 'string')
+		) {
 			throw new Error(`Exchange "${id}" is missing a "prompt".`);
 		}
 	}

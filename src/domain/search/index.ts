@@ -57,7 +57,7 @@ function buildTrigrams(text: string): Set<string> {
 }
 
 function isSearchableExchange(exchange: Exchange): boolean {
-	return exchange.parentId !== null;
+	return exchange.prompt.text.length > 0;
 }
 
 function getSearchableExchanges(chat: Chat | undefined): SearchableExchange[] {

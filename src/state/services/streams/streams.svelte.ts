@@ -2,7 +2,7 @@ import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import type { ActiveModel } from '@/domain/models';
 import type { ChatTree } from '@/domain/tree';
 import { getTreeByChatId, replaceTreeByChatId } from '@/state/chats.svelte';
-import { getProviderStream } from '@/app/providers';
+import { getProviderStream } from '@/state/services/providers/stream';
 import {
 	isStreaming as _isStreaming,
 	isAnyStreaming as _isAnyStreaming,

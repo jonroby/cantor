@@ -1,9 +1,11 @@
-import { getProviderForModelId, type Provider } from '@/domain/models';
+import { getProviderForModelId, type ActiveModel, type Provider } from '@/domain/models';
 import type { ExchangeNodeData } from './types';
 import {
+	addExchangeResult,
 	canCreateSideChats,
 	canPromoteSideChatToMainChat,
 	deleteExchangeWithModeResult,
+	findRootId,
 	getChildExchanges,
 	getMainChatTail,
 	promoteSideChatToMainChat,
@@ -18,7 +20,8 @@ import {
 } from '@/state/chats.svelte';
 import {
 	isStreaming as isExchangeStreaming,
-	cancelStreamsForExchanges
+	cancelStreamsForExchanges,
+	startStream
 } from '@/state/services/streams';
 
 // ── Dependency interface for testability ─────────────────────────────────────
@@ -55,42 +58,36 @@ export function getExchangeNodeData(
 	},
 	deps: ChatActionDeps = defaultDeps
 ): ExchangeNodeData | null {
-	try {
-		const exchange = activeExchanges[exchangeId];
-		if (!exchange || exchange.parentId === null) return null;
-		const children = getChildExchanges(activeExchanges, exchangeId);
-		const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
-		const hasSideChildren =
-			canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
-		const isSideRoot = exchange.parentId
-			? (getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !== exchangeId
-			: false;
+	const exchange = activeExchanges[exchangeId];
+	if (!exchange || exchange.parentId === null) return null;
+	const children = getChildExchanges(activeExchanges, exchangeId);
+	const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
+	const hasSideChildren = canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
+	const isSideRoot = exchange.parentId
+		? (getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !== exchangeId
+		: false;
 
-		return {
-			prompt: exchange.prompt.text,
-			response: exchange.response?.text ?? '',
-			model: exchange.model,
-			provider: (exchange.provider as Provider) || getProviderForModelId(exchange.model) || null,
-			isActive: activeExchangeId === exchangeId,
-			isStreaming: deps.isStreaming(exchangeId),
-			hasSideChildren,
-			sideChildrenCount,
-			isSideRoot,
-			canPromote: canPromoteSideChatToMainChat(
-				{ rootId: findRootId(activeExchanges), exchanges: activeExchanges },
-				exchangeId
-			),
-			onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
-			onSelect: () => callbacks.onSelect(exchangeId),
-			onCopy: () => callbacks.onCopy(exchangeId),
-			onToggleSideChildren: () => callbacks.onToggleSideChildren(exchangeId),
-			onPromote: () => callbacks.onPromote(exchangeId),
-			onDelete: () => callbacks.onDelete(exchangeId)
-		};
-	} catch (error) {
-		console.error(`Failed to render exchange "${exchangeId}":`, error);
-		return null;
-	}
+	return {
+		prompt: exchange.prompt.text,
+		response: exchange.response?.text ?? '',
+		model: exchange.model,
+		provider: (exchange.provider as Provider) || getProviderForModelId(exchange.model) || null,
+		isActive: activeExchangeId === exchangeId,
+		isStreaming: deps.isStreaming(exchangeId),
+		hasSideChildren,
+		sideChildrenCount,
+		isSideRoot,
+		canPromote: canPromoteSideChatToMainChat(
+			{ rootId: findRootId(activeExchanges), exchanges: activeExchanges },
+			exchangeId
+		),
+		onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
+		onSelect: () => callbacks.onSelect(exchangeId),
+		onCopy: () => callbacks.onCopy(exchangeId),
+		onToggleSideChildren: () => callbacks.onToggleSideChildren(exchangeId),
+		onPromote: () => callbacks.onPromote(exchangeId),
+		onDelete: () => callbacks.onDelete(exchangeId)
+	};
 }
 
 export function performDelete(
@@ -143,9 +140,29 @@ export function getDeleteMode(activeExchanges: ExchangeMap, exchangeId: string):
 	return children.length > 1 ? 'exchangeAndSideChats' : 'exchange';
 }
 
-function findRootId(exchanges: ExchangeMap): string | null {
-	for (const exchange of Object.values(exchanges)) {
-		if (exchange.parentId === null) return exchange.id;
-	}
-	return null;
+export function performSubmitPrompt(
+	chatId: string,
+	tree: ChatTree,
+	activeExchangeId: string | null,
+	prompt: string,
+	model: ActiveModel,
+	deps: ChatActionDeps = defaultDeps
+): { id: string; hasSideChildren: boolean } {
+	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
+	const hasSideChildren =
+		activeExchangeId !== null && getChildExchanges(tree.exchanges, activeExchangeId).length > 0;
+
+	const created = addExchangeResult(tree, parentId, prompt, model.modelId, model.provider);
+
+	deps.replaceActiveTree(created);
+	deps.setActiveExchangeId(created.id);
+
+	startStream({
+		exchangeId: created.id,
+		chatId,
+		model,
+		tree: created
+	});
+
+	return { id: created.id, hasSideChildren };
 }

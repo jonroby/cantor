@@ -122,12 +122,13 @@ export function copyToNewChat(exchangeId: string) {
 		exchangeId
 	);
 
+	const copiedTree: ChatTree = { rootId: result.rootId, exchanges: result.copiedExchanges };
 	const copiedChat: Chat = {
 		id: crypto.randomUUID(),
 		name: `${activeChat.name} (copy ${chatState.chats.length + 1})`,
 		rootId: result.rootId,
 		exchanges: result.copiedExchanges,
-		activeExchangeId: result.firstCopiedId
+		activeExchangeId: getMainChatTail(copiedTree)
 	};
 	chatState.chats = [...chatState.chats, copiedChat];
 	chatState.activeChatIndex = chatState.chats.length - 1;

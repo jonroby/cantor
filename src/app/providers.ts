@@ -1,20 +1,14 @@
-import { PROVIDER_CONFIG, type ActiveModel, type Provider } from '@/domain/models';
 import {
 	DEFAULT_OLLAMA_URL,
 	fetchAvailableModels,
-	fetchModelContextLength,
-	streamOllamaChat
+	fetchModelContextLength
 } from '@/state/services/providers/ollama';
 import {
 	getWebLLMModels,
 	loadWebLLMModel,
-	streamWebLLMChat,
 	deleteModelCache,
 	deleteAllModelCaches
 } from '@/state/services/providers/webllm';
-import { streamClaudeChat } from '@/state/services/providers/claude';
-import { streamGeminiChat } from '@/state/services/providers/gemini';
-import { streamOpenAICompatChat } from '@/state/services/providers/openai-compat';
 import {
 	clearProviderKey,
 	loadAllApiKeys,
@@ -23,7 +17,6 @@ import {
 	storedProviders as getStoredProviders
 } from '@/state/services/providers/vault';
 import { providerState } from '@/state/providers.svelte';
-import type { Message } from '@/domain/tree';
 
 export function init() {
 	migrateVault();
@@ -142,15 +135,4 @@ export async function fetchOllamaContextLength() {
 			}
 		}
 	}
-}
-
-export function getProviderStream(model: ActiveModel, history: Message[], signal: AbortSignal) {
-	const key = providerState.apiKeys[model.provider] ?? '';
-	if (model.provider === 'webllm') return streamWebLLMChat(history, signal);
-	if (model.provider === 'ollama')
-		return streamOllamaChat(model.modelId, history, signal, providerState.ollamaUrl);
-	if (model.provider === 'claude') return streamClaudeChat(model.modelId, history, key, signal);
-	if (model.provider === 'gemini') return streamGeminiChat(model.modelId, history, key, signal);
-	const config = PROVIDER_CONFIG[model.provider as Exclude<Provider, 'ollama' | 'webllm'>];
-	return streamOpenAICompatChat(config.baseUrl, model.modelId, history, key, signal);
 }
