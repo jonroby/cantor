@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository is a Svelte 5 + Vite single-page app for exploring branching chat conversations on a visual canvas. The app supports both Claude and Ollama models, stores chat state in the browser, and renders exchanges as a node graph with main-chat, side-chat, and fork branches.
+This repository is a Svelte 5 + Vite single-page app for exploring branching chat conversations. The app supports Claude, Ollama, Gemini, OpenAI-compatible, and WebLLM models, stores chat state in the browser, and provides two views over the same data: a Classic View (default, linear chat with side pane) and a Canvas View (visual node graph).
 
 ## Tooling Rule
 
@@ -29,7 +29,11 @@ The app is mostly client-side and centered around one top-level UI shell in `src
 - `src/lib/models/*` defines supported providers, model lists, and logo assets.
 - `src/lib/search/*` provides local in-browser search across prompts and responses.
 - `src/lib/validate-md/*` contains markdown validation utilities and tests.
-- `src/features/*` contains feature-specific components (canvas, app-sidebar, chat-input, chat-header, chat-toolbar, model-palette, composer, search-dialog, docs-panel, code-editor, python-editor, drawing-board).
+- `src/routes/router.svelte.ts` provides hash-based routing between `chat` (Classic View) and `canvas` (Canvas View).
+- `src/routes/ChatView.svelte` is the Classic View — linear message list with a split-pane layout for side chats.
+- `src/routes/CanvasView.svelte` is the Canvas View — visual node graph on a pan/zoom canvas.
+- `src/features/chat-ops/` contains shared operations used by both views: `getExchangeNodeData`, `performDelete`, `performPromote`, `performFork`, `getDeleteMode`, and re-exports of tree helpers like `buildExchangesByParentId`.
+- `src/features/*` contains feature-specific components (canvas, app-sidebar, chat-input, chat-message, chat-header, chat-toolbar, model-palette, composer, search-dialog, docs-panel, code-editor, python-editor, drawing-board).
 - `src/components/custom/*` contains small reusable UI primitives such as buttons and inputs.
 - `src/components/shadcn/ui/*` contains shadcn-svelte primitives (sidebar, tooltip, sheet, etc.).
 
@@ -73,9 +77,41 @@ There are three distinct branching concepts. **Do not confuse them.**
 - A side chat can be **promoted** to become the main chat path via the promote button.
 - Prop: `isSideRoot` / `canPromote` / `onPromote` on `ExchangeNodeData`.
 
-## Canvas Panels
+## Views
 
-The canvas hosts several panel types alongside chat nodes. All panels are positioned by `src/features/canvas/layout.ts` and rendered via snippets in `Canvas.svelte`.
+The app has two views that share the same underlying data model, state stores, and operations. Routing is hash-based via `src/routes/router.svelte.ts`: `#/` is Classic View (default), `#/canvas` is Canvas View.
+
+### Shared Layer
+
+Both views consume:
+
+- **State**: `src/state/chats.svelte.ts` (active root, active exchange, hidden side branches, token usage), `src/state/documents.svelte.ts`, `src/state/providers.svelte.ts`.
+- **Domain logic**: `src/domain/tree/index.ts` — tree traversal, add/remove/promote/fork operations, structural invariants.
+- **Chat operations**: `src/features/chat-ops/index.ts` — `getExchangeNodeData()` builds the display data for an exchange node, `performDelete()`, `performPromote()`, `performFork()`, `getDeleteMode()`. Both views call these same functions and wire the callbacks to their own UI actions.
+- **Shared components**: `ChatInput` (`src/features/chat-input/`), `AppSidebar` (`src/features/app-sidebar/`), `SearchDialog` (`src/features/search-dialog/`).
+
+### Classic View (`src/routes/ChatView.svelte`)
+
+A traditional linear chat interface. Default route (`#/`).
+
+- **Main pane**: Scrollable message list rendering the main chat path (first-child traversal from root).
+- **Side pane**: Opens to the right when a node's side children are toggled. Shows one branch at a time with prev/next navigation and a "new branch" action.
+- **Chat input**: Anchored at the bottom, shifts to follow the focused pane (main or side).
+- **Focus model**: Clicking a pane sets it as focused; `activeExchangeId` tracks the tail of the focused pane.
+- Uses `ChatMessage` component (`src/features/chat-message/ChatMessage.svelte`) to render exchanges.
+- Delete dialog is inline in the component.
+
+### Canvas View (`src/routes/CanvasView.svelte`)
+
+A visual node graph on a pan/zoom canvas.
+
+- `src/features/canvas/layout.ts` converts the exchange tree into positioned canvas nodes and edges. Also computes positions for canvas panels.
+- `src/features/canvas/Canvas.svelte` renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
+- `src/features/canvas/ExchangeNode.svelte` renders each exchange card with action buttons.
+- Collapsed side branches are hidden from layout until expanded.
+- Hosts additional canvas panels (not available in Classic View):
+
+#### Canvas Panels
 
 - **Document panels** (`DocsPanel.svelte`) — Markdown viewer/editor with KaTeX math support. Multiple panels can be open simultaneously, stacked vertically in the left column. Each has its own content and optional link to a folder file.
 - **Code editor** (`CodeEditor.svelte`) — JavaScript editor.
@@ -95,40 +131,24 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 - Uploading a file with a duplicate name auto-increments: `name (1).md`, `name (2).md`, etc.
 - Closing a panel with unsaved edits shows a confirmation dialog.
 
-## Rendering Flow
-
-- `src/state/chats.svelte.ts` derives the active root, active exchange, hidden side branches, and token usage.
-- `src/features/canvas/layout.ts` converts the exchange tree into positioned canvas nodes and edges. Also computes positions for all canvas panels (doc panels, code editors, drawing board).
-- `src/features/canvas/Canvas.svelte` renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
-- `src/features/canvas/ExchangeNode.svelte` renders each exchange card with action buttons.
-- Collapsed side branches are hidden from layout until expanded.
-
 ## UI Components
 
-### Sidebar
+### Shared
 
-- `src/features/app-sidebar/AppSidebar.svelte` — session list, folder/doc management, new chat, delete session.
-- Uses shadcn-svelte sidebar primitives from `src/components/shadcn/ui/sidebar/`.
-- Floats over content (gap always icon-width); does not push the main canvas.
-- Folders contain documents; each doc has a dropdown menu with Open, Rename, Download, Delete.
+- **Sidebar** (`src/features/app-sidebar/AppSidebar.svelte`) — session list, folder/doc management, new chat, delete session. Uses shadcn-svelte sidebar primitives. Floats over content; does not push the main area.
+- **Chat input** (`src/features/chat-input/ChatInput.svelte`) — used by both views. In Classic View, anchors to the focused pane. In Canvas View, overlays the bottom of the canvas.
 
-### Floating Action Buttons
+### Canvas View Only
 
-- Fixed on the right side, vertically centered.
-- Search, Fit view, Go to top, Go to active, Download chat.
-- Use shadcn Tooltip components (positioned to the left).
+- **Floating Action Buttons** — fixed on the right side, vertically centered. Search, Fit view, Go to top, Go to active, Download chat. Use shadcn Tooltip components.
+- **Exchange Node Actions** — action buttons appear on hover in a pill-shaped overlay. Use custom CSS tooltips (`.action-tip-wrap` / `.action-tip`) because the canvas CSS transform breaks Floating UI tooltip positioning. Buttons: Fork (`+`), Side chats (branch icon), Promote (up arrow), Delete (trash).
+- **Chat Header** — fixed top-center, shows "Main Chat" or "Fork N" with navigation arrows. Auto-hides on scroll-down after 2s.
 
-### Exchange Node Actions
+### Classic View Only
 
-- Action buttons appear on hover in a pill-shaped overlay.
-- Use custom CSS tooltips (`.action-tip-wrap` / `.action-tip`) because the canvas CSS transform breaks Floating UI tooltip positioning.
-- Buttons: Fork (`+`), Side chats (branch icon, only if node has side children), Promote (up arrow, only on side roots), Delete (trash).
-
-### Chat Header
-
-- Fixed top-center, shows "Main Chat" or "Fork N" with navigation arrows.
-- Auto-hides: visible on load and scroll-up, hides on scroll-down after 2s.
-- Controlled by `headerVisible` state and `handleCanvasWheel()`.
+- **Chat Message** (`src/features/chat-message/ChatMessage.svelte`) — renders an exchange as a prompt/response pair with provider logo, action buttons (fork, side chats, promote, delete), and rich text (markdown + KaTeX). Action buttons appear inline rather than as hover overlays.
+- **Side pane header** — branch navigation (prev/next counter), new branch button, close button. Inline in `ChatView.svelte`.
+- **Delete dialog** — modal with radio options for delete mode. Inline in `ChatView.svelte`.
 
 ## Model / Provider Flow
 
@@ -156,11 +176,13 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 - Preserve the current architecture: state in `src/state/`, domain logic in `src/lib/`, UI in `src/features/`.
 - Put tree invariants and chat-structure behavior in `src/domain/tree/`, not inline in components.
 - Keep provider-specific networking in `src/lib/providers/`.
-- Keep layout math in `src/features/canvas/layout.ts`.
+- Keep canvas layout math in `src/features/canvas/layout.ts`.
+- Put shared view logic (node data building, delete/promote/fork operations) in `src/features/chat-ops/`, not duplicated in view components.
+- Classic View logic lives in `src/routes/ChatView.svelte` and `src/features/chat-message/`. Canvas View logic lives in `src/routes/CanvasView.svelte` and `src/features/canvas/`.
 - Treat `localStorage` hydration and persistence changes carefully; avoid breaking existing saved chat state.
 - Prefer small focused Svelte components and keep reusable logic in `src/lib`.
 - When adding commands to docs or scripts, use `bun` syntax.
-- Use custom CSS tooltips (not Floating UI / bits-ui Tooltip) for anything rendered inside the canvas, since the CSS transform breaks Floating UI positioning.
+- Use custom CSS tooltips (not Floating UI / bits-ui Tooltip) for anything rendered inside the Canvas View, since the CSS transform breaks Floating UI positioning.
 - Do not confuse forks (new roots) with side chats (sibling branches). See "Branching Concepts" above.
 
 ## Useful Commands

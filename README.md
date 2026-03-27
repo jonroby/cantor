@@ -1,22 +1,44 @@
 # Superset Svelte
 
-A visual canvas app for exploring branching chat conversations. Built with Svelte 5 + Vite.
+A branching chat app with two views for exploring conversations. Built with Svelte 5 + Vite.
 
 ## Features
 
 - Chat with Claude (via API), local Ollama models, or WebLLM (in-browser)
-- Visual node graph renders conversations on a pan/zoom canvas
+- **Two views** — Classic View (default) and Canvas View, sharing the same data model and operations
 - **Sessions** — independent top-level chat workspaces, managed in the sidebar
 - **Forks** — copy a conversation into a new independent tree within a session
 - **Side chats** — branch off any main-path node for a quick thread (1 level deep)
 - Promote side chats back to the main path
-- **Document panels** — open multiple Markdown documents on the canvas with rendered preview, KaTeX math, and inline editing
-- **Folders** — organize documents into folders in the sidebar; upload, rename, download, move, and delete docs
-- **Code editors** — JavaScript and Python editors live on the canvas alongside chat nodes
-- **Drawing board** — freeform drawing canvas
 - In-browser search across all conversations
 - Encrypted API key storage (PBKDF2 + AES-GCM)
 - All state stored in browser localStorage
+
+## Views
+
+Both views operate on the same underlying tree data model (`ExchangeMap`) and call the same shared operations from `src/features/chat-ops/` and `src/domain/tree/`. The difference is purely in how the UI presents the conversation.
+
+### Classic View (`#/` — default)
+
+A traditional linear chat interface with a split-pane layout for side chats.
+
+- `src/routes/ChatView.svelte` — main component
+- Main chat renders as a scrollable message list (left pane)
+- Side chats open in a right pane with branch navigation (prev/next/new)
+- Chat input anchors to the bottom and follows the focused pane
+- Uses `ChatMessage` component (`src/features/chat-message/`) for rendering exchanges
+
+### Canvas View (`#/canvas`)
+
+A visual node graph on a pan/zoom canvas.
+
+- `src/routes/CanvasView.svelte` — main component
+- `src/features/canvas/` — Canvas.svelte, ChatTree.svelte, ExchangeNode.svelte, layout.ts
+- Exchanges rendered as positioned cards with edges connecting them
+- Side branches expand/collapse inline on the canvas
+- Hosts additional panels: document panels, code editors, Python editor, drawing board
+- Auto-hiding chat header with fork navigation ("Main Chat", "Fork 1", etc.)
+- Floating action buttons: search, fit view, go to top/active, download
 
 ## Getting Started
 
@@ -54,18 +76,25 @@ src/
 │   ├── initial-exchanges.ts
 │   └── providers.svelte.ts
 │
+├── routes/
+│   ├── router.svelte.ts                            hash-based routing (chat | canvas)
+│   ├── ChatView.svelte                             Classic View
+│   └── CanvasView.svelte                           Canvas View
+│
 ├── features/
-│   ├── app-sidebar/
-│   ├── canvas/          Canvas.svelte, ChatTree.svelte, ExchangeNode.svelte, layout.ts, katex.ts
-│   ├── chat-header/
-│   ├── chat-input/
-│   ├── chat-toolbar/
-│   ├── code-editor/     CodeEditor.svelte
-│   ├── composer/
-│   ├── docs-panel/      DocsPanel.svelte
-│   ├── drawing-board/   DrawingBoard.svelte, drawing-types.ts
+│   ├── app-sidebar/                                shared sidebar
+│   ├── chat-ops/        index.ts                   shared operations (delete, promote, fork, node data)
+│   ├── chat-input/                                 shared chat input
+│   ├── chat-message/    ChatMessage.svelte          Classic View message component
+│   ├── canvas/          Canvas.svelte, ChatTree.svelte, ExchangeNode.svelte, layout.ts, katex.ts   Canvas View
+│   ├── chat-header/                                Canvas View header
+│   ├── chat-toolbar/                               Canvas View toolbar
+│   ├── code-editor/     CodeEditor.svelte          Canvas View panel
+│   ├── composer/                                   Canvas View
+│   ├── docs-panel/      DocsPanel.svelte           Canvas View panel
+│   ├── drawing-board/   DrawingBoard.svelte        Canvas View panel
 │   ├── model-palette/
-│   ├── python-editor/   PythonEditor.svelte
+│   ├── python-editor/   PythonEditor.svelte        Canvas View panel
 │   └── search-dialog/
 │
 ├── components/
