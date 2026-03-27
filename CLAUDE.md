@@ -22,15 +22,20 @@ Always use `bun`.
 The app is mostly client-side and centered around one top-level UI shell in `src/App.svelte`.
 
 - `src/main.ts` mounts the Svelte app and loads global CSS.
-- `src/App.svelte` owns the primary application state, hydration from `localStorage`, model selection, composer flow, search UI, branching-chat actions, and response streaming.
-- `src/lib/chat/*` contains the domain logic for chat trees, model metadata, provider integrations, search, layout, seed data, and API-key storage.
-- `src/features/*` contains feature-specific components (canvas, app-sidebar, composer, chat-header, model-palette, search-dialog, floating-actions).
+- `src/App.svelte` is a thin orchestrator that wires together features and state; it does not own business logic directly.
+- `src/state/*` contains reactive Svelte stores for chat state (`chats.svelte.ts`), document/folder state (`documents.svelte.ts`), provider/model state (`providers.svelte.ts`), and persistence (`persistence.svelte.ts`).
+- `src/lib/tree/*` contains the core data structures and tree manipulation algorithms for chat exchanges.
+- `src/lib/providers/*` contains provider-specific networking (Claude, Ollama, Gemini, OpenAI-compatible, WebLLM) and API-key vault.
+- `src/lib/models/*` defines supported providers, model lists, and logo assets.
+- `src/lib/search/*` provides local in-browser search across prompts and responses.
+- `src/lib/validate-md/*` contains markdown validation utilities and tests.
+- `src/features/*` contains feature-specific components (canvas, app-sidebar, chat-input, chat-header, chat-toolbar, model-palette, composer, search-dialog, docs-panel, code-editor, python-editor, drawing-board).
 - `src/components/custom/*` contains small reusable UI primitives such as buttons and inputs.
 - `src/components/shadcn/ui/*` contains shadcn-svelte primitives (sidebar, tooltip, sheet, etc.).
 
 ## Core Data Model
 
-The central state shape is an `ExchangeMap` from `src/lib/chat/tree.ts`.
+The central state shape is an `ExchangeMap` from `src/lib/tree/index.ts`.
 
 - Each `Exchange` is a chat node with `id`, `parentId`, `prompt`, `response`, optional token counts, and optional model metadata.
 - A hidden root anchor (`ROOT_ANCHOR_ID`) is the single tree root.
@@ -46,13 +51,13 @@ There are three distinct branching concepts. **Do not confuse them.**
 
 - Top-level chat sessions managed in the sidebar (`AppSidebar.svelte`).
 - Each session has its own set of roots (main chat + forks).
-- Stored as `sessions[]` in `App.svelte`.
+- Stored in `chatState` in `src/state/chats.svelte.ts`.
 
 ### Forks
 
 - A **fork** copies the conversation from root down to a selected node into a **new root** within the same session.
 - Forks appear as separate trees, navigable via the top header bar ("Main Chat", "Fork 1", "Fork 2", etc.).
-- Created via `forkChat()` in `App.svelte`, triggered by the fork button (`+` icon) on exchange nodes.
+- Created via fork actions, triggered by the fork button (`+` icon) on exchange nodes.
 - Forks have no depth restriction — you can fork a fork.
 - Each fork is a separate `ExchangeMap` in the `roots[]` array.
 - Prop: `canFork` / `onFork` on `ExchangeNodeData`.
@@ -62,7 +67,7 @@ There are three distinct branching concepts. **Do not confuse them.**
 - A **side chat** is a sibling branch off an existing node within the same tree.
 - Created implicitly by selecting a node and typing a new message (no dedicated button).
 - Side chats are **1 level deep only** — a side chat node can have at most 1 child.
-- Restriction enforced by `canCreateSideChats()` and `canAcceptNewChat()` in `src/lib/chat/tree.ts`.
+- Restriction enforced by `canCreateSideChats()` and `canAcceptNewChat()` in `src/lib/tree/index.ts`.
 - The "Side chats" button (branch icon) on a node **toggles visibility** of its side branches; it does not create them.
 - Prop: `hasSideChildren` / `onToggleSideChildren` on `ExchangeNodeData`.
 - A side chat can be **promoted** to become the main chat path via the promote button.
@@ -70,7 +75,7 @@ There are three distinct branching concepts. **Do not confuse them.**
 
 ## Canvas Panels
 
-The canvas hosts several panel types alongside chat nodes. All panels are positioned by `layout.ts` and rendered via snippets in `Canvas.svelte`.
+The canvas hosts several panel types alongside chat nodes. All panels are positioned by `src/features/canvas/layout.ts` and rendered via snippets in `Canvas.svelte`.
 
 - **Document panels** (`DocsPanel.svelte`) — Markdown viewer/editor with KaTeX math support. Multiple panels can be open simultaneously, stacked vertically in the left column. Each has its own content and optional link to a folder file.
 - **Code editor** (`CodeEditor.svelte`) — JavaScript editor.
@@ -81,9 +86,9 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 
 ## Documents and Folders
 
-- `ChatFolder` and `DocFile` types are defined in `src/lib/chat/tree.ts`.
-- Folders and their files are stored in `folders[]` in `App.svelte` and persisted to `localStorage`.
-- Open doc panels are tracked as `openDocs[]` in `App.svelte` — this is transient UI state (not persisted across reloads).
+- `ChatFolder` and `DocFile` types are defined in `src/lib/tree/index.ts`.
+- Folders and their files are stored in `docState` in `src/state/documents.svelte.ts` and persisted to `localStorage`.
+- Open doc panels are tracked as `openDocs[]` in `docState` — this is transient UI state (not persisted across reloads).
 - Each open doc has an `id`, `content`, and optional `docKey` linking it to a folder file.
 - When a doc is saved in the panel, changes persist back to `folders` if it has a `docKey`.
 - Users open docs via the dropdown menu on a file in the sidebar (not by clicking the file directly).
@@ -92,8 +97,8 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 
 ## Rendering Flow
 
-- `src/App.svelte` derives the active root, active exchange, hidden side branches, token usage, and search results.
-- `src/lib/chat/layout.ts` converts the exchange tree into positioned canvas nodes and edges. Also computes positions for all canvas panels (doc panels, code editors, drawing board).
+- `src/state/chats.svelte.ts` derives the active root, active exchange, hidden side branches, and token usage.
+- `src/features/canvas/layout.ts` converts the exchange tree into positioned canvas nodes and edges. Also computes positions for all canvas panels (doc panels, code editors, drawing board).
 - `src/features/canvas/Canvas.svelte` renders the pan/zoom canvas with CSS transforms (`translate` + `scale`). Has `overflow: hidden`.
 - `src/features/canvas/ExchangeNode.svelte` renders each exchange card with action buttons.
 - Collapsed side branches are hidden from layout until expanded.
@@ -127,30 +132,31 @@ Panels inside the canvas use `onwheel stopPropagation` to allow native scrolling
 
 ## Model / Provider Flow
 
-- `src/lib/chat/models.ts` defines supported providers and the built-in Claude model list.
-- `src/lib/chat/claude.ts` sends browser-side requests directly to Anthropic and returns streamed chunks in a normalized format.
-- `src/lib/chat/ollama.ts` talks to a local Ollama server, fetches model metadata, and streams chat responses.
-- `src/App.svelte` selects the provider implementation, streams output into the active exchange, and records token usage.
+- `src/lib/models/index.ts` defines supported providers and model lists.
+- `src/lib/providers/claude.ts` sends browser-side requests directly to Anthropic and returns streamed chunks in a normalized format.
+- `src/lib/providers/ollama.ts` talks to a local Ollama server, fetches model metadata, and streams chat responses.
+- `src/lib/providers/gemini.ts`, `openai-compat.ts`, and `webllm.ts` handle Gemini, OpenAI-compatible, and WebLLM providers respectively.
+- `src/state/providers.svelte.ts` manages the active provider/model selection and streams output into the active exchange.
 
 ## Persistence
 
 - Chat trees, active root index, and folders (with document contents) are stored in `localStorage` under `chat-tree-store-svelte`.
 - Open doc panels (`openDocs`) are transient — not persisted across reloads.
-- Claude API keys are stored in browser `localStorage` via `src/lib/chat/vault.ts`.
+- Claude API keys are stored in browser `localStorage` via `src/lib/providers/vault.ts`.
 - The vault encrypts the key with `PBKDF2` + `AES-GCM` using a user-supplied password.
 
 ## Search
 
-- `src/lib/chat/search.ts` provides local in-browser search across prompts and responses.
+- `src/lib/search/index.ts` provides local in-browser search across prompts and responses.
 - Search uses substring matching for short queries and trigram similarity for longer queries.
 - Results can be scoped to the active chat or all chat roots.
 
 ## Working Rules For This Repo
 
-- Preserve the current architecture unless there is a clear reason to extract logic from `src/App.svelte`.
-- Put tree invariants and chat-structure behavior in `src/lib/chat/tree.ts`, not inline in components.
-- Keep provider-specific networking in `src/lib/chat/claude.ts` and `src/lib/chat/ollama.ts`.
-- Keep layout math in `src/lib/chat/layout.ts`.
+- Preserve the current architecture: state in `src/state/`, domain logic in `src/lib/`, UI in `src/features/`.
+- Put tree invariants and chat-structure behavior in `src/lib/tree/`, not inline in components.
+- Keep provider-specific networking in `src/lib/providers/`.
+- Keep layout math in `src/features/canvas/layout.ts`.
 - Treat `localStorage` hydration and persistence changes carefully; avoid breaking existing saved chat state.
 - Prefer small focused Svelte components and keep reusable logic in `src/lib`.
 - When adding commands to docs or scripts, use `bun` syntax.
