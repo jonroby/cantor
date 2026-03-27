@@ -8,10 +8,12 @@
 		composerValue: string;
 		canvasMode: boolean;
 		submitDisabledReason: string | null;
+		streaming: boolean;
 		activeModelId: string | null;
 		usedTokens: number;
 		contextLength: number | null;
 		onSubmit: () => void;
+		onStop: () => void;
 		onToggleCanvasMode: () => void;
 		onOpenPalette: () => void;
 	}
@@ -20,10 +22,12 @@
 		composerValue = $bindable(),
 		canvasMode = $bindable(),
 		submitDisabledReason,
+		streaming,
 		activeModelId,
 		usedTokens,
 		contextLength,
 		onSubmit,
+		onStop,
 		onToggleCanvasMode,
 		onOpenPalette
 	}: Props = $props();
@@ -53,23 +57,37 @@
 					? 'Ask about the canvas...'
 					: (submitDisabledReason ?? 'Message...')}
 			/>
-			<Button
-				class="composer-send"
-				type="submit"
-				size="icon"
-				disabled={!!submitDisabledReason || !composerValue.trim()}
-				ariaLabel="Send message"
-			>
-				<svg
-					width="16"
-					height="16"
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.6"
-					><path d="M8 3v7M5 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" /></svg
+			{#if streaming}
+				<Button
+					class="composer-send composer-stop"
+					type="button"
+					size="icon"
+					onclick={onStop}
+					ariaLabel="Stop response"
 				>
-			</Button>
+					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+						<rect x="4" y="4" width="8" height="8" rx="1" />
+					</svg>
+				</Button>
+			{:else}
+				<Button
+					class="composer-send"
+					type="submit"
+					size="icon"
+					disabled={!!submitDisabledReason || !composerValue.trim()}
+					ariaLabel="Send message"
+				>
+					<svg
+						width="16"
+						height="16"
+						viewBox="0 0 16 16"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.6"
+						><path d="M8 3v7M5 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" /></svg
+					>
+				</Button>
+			{/if}
 		</div>
 		<div class="composer-footer">
 			<Button class="model-chip" variant="outline" size="sm" onclick={onOpenPalette}>

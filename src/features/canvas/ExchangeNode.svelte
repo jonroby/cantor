@@ -240,7 +240,7 @@
 				<div class="exchange-response">{@html responseHtml}</div>
 			{:else}
 				<div class="exchange-response exchange-response-plain">
-					{data.response || 'Waiting for response…'}
+					{data.response || (data.isStreaming ? 'Waiting for response…' : 'Cancelled')}
 				</div>
 			{/if}
 		{/if}

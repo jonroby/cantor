@@ -31,7 +31,7 @@
 		updateContextLength,
 		fetchOllamaContextLength
 	} from '@/state/providers.svelte';
-	import { startStream, isAnyStreaming } from '@/services/streams';
+	import { startStream, isAnyStreaming, cancelAllStreams } from '@/services/streams';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
@@ -123,10 +123,12 @@
 	bind:composerValue
 	bind:canvasMode
 	{submitDisabledReason}
+	streaming={isAnyStreaming()}
 	activeModelId={providerState.activeModel?.modelId ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
 	onSubmit={submitPrompt}
+	onStop={cancelAllStreams}
 	onToggleCanvasMode={() => (canvasMode = !canvasMode)}
 	onOpenPalette={() => (paletteOpen = true)}
 />
