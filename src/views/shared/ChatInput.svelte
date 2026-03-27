@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { Composer } from '@/features/composer';
+	import Composer from './Composer.svelte';
 	import { ModelPalette } from '@/features/model-palette';
 	import {
 		addExchangeResult,

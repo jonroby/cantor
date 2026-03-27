@@ -1,5 +1,5 @@
 import { getProviderForModelId, type Provider } from '@/lib/models';
-import type { ExchangeNodeData } from '@/features/canvas/ExchangeNode.svelte';
+import type { ExchangeNodeData } from '@/views/shared/types';
 import {
 	canCreateSideChats,
 	canPromoteSideChatToMainChat,
@@ -16,12 +16,6 @@ import {
 	forkChat as forkChatAction
 } from '@/state/chats.svelte';
 import { isStreaming as isExchangeStreaming, cancelStreamsForExchanges } from '@/services/streams';
-
-export interface ChatOpsCallbacks {
-	onScrollToNode: (nodeId: string | null) => void;
-	onResetMeasuredHeights?: () => void;
-	onExpandSideChat?: (parentId: string) => void;
-}
 
 export function getExchangeNodeData(
 	exchangeId: string,
@@ -135,10 +129,3 @@ function findRootId(exchanges: ExchangeMap): string | null {
 	}
 	return null;
 }
-
-export {
-	getChildExchanges,
-	getMainChatTail,
-	type DeleteMode,
-	type ExchangeMap
-};

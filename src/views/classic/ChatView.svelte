@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import Button from '@/components/custom/button.svelte';
-	import { ChatMessage } from '@/features/chat-message';
-	import { ChatInput } from '@/features/chat-input';
+	import ChatMessage from './ChatMessage.svelte';
+	import { ChatInput } from '@/views/shared';
 	import {
 		getChildExchanges,
 		getRootExchange,
@@ -22,7 +22,7 @@
 		performPromote,
 		performFork,
 		getDeleteMode
-	} from '@/features/chat-ops';
+	} from '@/app/chat-actions';
 
 	type FocusedPane = 'main' | 'side';
 

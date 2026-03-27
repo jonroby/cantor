@@ -1,9 +1,9 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
 	import Button from '@/components/custom/button.svelte';
-	import { renderRichText } from '@/features/canvas/katex';
+	import { renderRichText } from '@/views/shared/katex';
 	import { PROVIDER_LOGOS } from '@/lib/models/logos';
-	import type { ExchangeNodeData } from '@/features/canvas/ExchangeNode.svelte';
+	import type { ExchangeNodeData } from '@/views/shared/types';
 
 	let { data }: { data: ExchangeNodeData } = $props();
 

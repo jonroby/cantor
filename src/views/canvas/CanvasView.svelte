@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { ChatHeader } from '@/features/chat-header';
-	import { ChatToolbar } from '@/features/chat-toolbar';
-	import { ChatTree } from '@/features/canvas';
-	import { ChatInput } from '@/features/chat-input';
+	import ChatHeader from './ChatHeader.svelte';
+	import ChatToolbar from './ChatToolbar.svelte';
+	import ChatTree from './ChatTree.svelte';
+	import { ChatInput } from '@/views/shared';
 	import { getActiveChat, getActiveExchangeId } from '@/state/chats.svelte';
 	import { downloadToFile } from '@/services/io.svelte';
 

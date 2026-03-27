@@ -3,10 +3,10 @@
 	import { computeCanvasLayout, NODE_WIDTH } from './layout';
 	import type { CanvasNode } from './layout';
 	import Button from '@/components/custom/button.svelte';
-	import ExchangeNode from '@/features/canvas/ExchangeNode.svelte';
+	import ExchangeNode from './ExchangeNode.svelte';
 	import CodeEditor from '@/features/code-editor/CodeEditor.svelte';
 	import PythonEditor from '@/features/python-editor/PythonEditor.svelte';
-	import Canvas from '@/features/canvas/Canvas.svelte';
+	import Canvas from './Canvas.svelte';
 	import DrawingBoard from '@/features/drawing-board/DrawingBoard.svelte';
 	import DocsPanel from '@/features/docs-panel/DocsPanel.svelte';
 	import type { Shape } from '@/features/drawing-board/drawing-types';
@@ -24,7 +24,7 @@
 		performPromote,
 		performFork,
 		getDeleteMode
-	} from '@/features/chat-ops';
+	} from '@/app/chat-actions';
 
 	let expandedSideChatParent: string | null = $state(null);
 	let measuredNodeHeights: Record<string, number> = $state({});

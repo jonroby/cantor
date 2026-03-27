@@ -4,11 +4,10 @@
 	import { getDefaultItems, searchChats, type SearchResult } from '@/lib/search';
 	import type { Chat } from '@/domain/tree';
 	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
-	import { AppSidebar } from '@/features/app-sidebar';
-	import { SearchDialog } from '@/features/search-dialog';
+	import { AppSidebar, SearchDialog } from '@/views/shared';
 	import { routerState } from '@/routes/router.svelte';
-	import ChatView from '@/routes/ChatView.svelte';
-	import CanvasView from '@/routes/CanvasView.svelte';
+	import { ChatView } from '@/views/classic';
+	import { CanvasView } from '@/views/canvas';
 	import LandingPage from '@/routes/LandingPage.svelte';
 	import {
 		chatState,

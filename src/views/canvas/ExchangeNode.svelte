@@ -1,29 +1,9 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
 	import Button from '@/components/custom/button.svelte';
-	import type { Provider } from '@/lib/models';
-	import { renderRichText } from './katex';
+	import { renderRichText } from '@/views/shared/katex';
 	import { PROVIDER_LOGOS } from '@/lib/models/logos';
-
-	export interface ExchangeNodeData {
-		prompt: string;
-		response: string;
-		model?: string;
-		provider?: Provider | null;
-		isActive: boolean;
-		isStreaming: boolean;
-		canFork: boolean;
-		hasSideChildren: boolean;
-		sideChildrenCount: number;
-		isSideRoot: boolean;
-		canPromote: boolean;
-		onMeasure: (height: number) => void;
-		onSelect: () => void;
-		onFork: () => void;
-		onToggleSideChildren: () => void;
-		onPromote: () => void;
-		onDelete: () => void;
-	}
+	import type { ExchangeNodeData } from '@/views/shared/types';
 
 	let { data }: { data: ExchangeNodeData } = $props();
 	let cardElement: HTMLDivElement | null = $state(null);
