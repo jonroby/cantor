@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import {
 	CLAUDE_MODELS,
@@ -19,19 +19,24 @@ import {
 import { PROVIDER_LOGOS } from './logos';
 
 describe('models', () => {
-	it('defines providers as local plus key-based providers', () => {
-		expect(PROVIDERS).toEqual([...LOCAL_PROVIDERS, ...KEY_BASED_PROVIDERS]);
+	it('declares unique provider ids with no overlap between local and key-based providers', () => {
+		expect(new Set(PROVIDERS).size).toBe(PROVIDERS.length);
+		expect(
+			LOCAL_PROVIDERS.filter((provider) => KEY_BASED_PROVIDERS.includes(provider as never))
+		).toEqual([]);
 	});
 
-	it('keeps provider config and models aligned for every key-based provider', () => {
+	it('defines usable config and at least one model for every key-based provider', () => {
 		for (const provider of KEY_BASED_PROVIDERS) {
-			expect(PROVIDER_CONFIG[provider]).toBeDefined();
+			expect(() => new URL(PROVIDER_CONFIG[provider].baseUrl)).not.toThrow();
+			expect(PROVIDER_CONFIG[provider].name.trim().length).toBeGreaterThan(0);
+			expect(PROVIDER_CONFIG[provider].keyPlaceholder.trim().length).toBeGreaterThan(0);
 			expect(PROVIDER_MODELS[provider].length).toBeGreaterThan(0);
 		}
 	});
 
-	it('exports claude models as an alias of the claude provider list', () => {
-		expect(CLAUDE_MODELS).toBe(PROVIDER_MODELS.claude);
+	it('keeps Claude models in sync with the provider registry', () => {
+		expect(CLAUDE_MODELS).toEqual(PROVIDER_MODELS.claude);
 	});
 
 	it('identifies key-based providers precisely', () => {
@@ -67,15 +72,20 @@ describe('models', () => {
 		expect(getProviderForModelId('missing-model')).toBeNull();
 	});
 
-	it('narrows getProviderForModelId to KeyBasedProvider', () => {
-		const result = getProviderForModelId('gpt-4o');
-		expect(result).toBe('openai');
-		// Type-level check: result is KeyBasedProvider | null, not Provider | null
-		const _: KeyBasedProvider | null = result;
-		expect(_).toBeDefined();
+	it('declares globally unique key-based model ids for reverse lookup', () => {
+		const ids = KEY_BASED_PROVIDERS.flatMap((provider) =>
+			PROVIDER_MODELS[provider].map((model) => model.id)
+		);
+		expect(new Set(ids).size).toBe(ids.length);
 	});
 
-	it('ActiveModel discriminates between key-based and local variants', () => {
+	it('types getProviderForModelId as KeyBasedProvider | null', () => {
+		const result = getProviderForModelId('gpt-4o');
+		expect(result).toBe('openai');
+		expectTypeOf(result).toEqualTypeOf<KeyBasedProvider | null>();
+	});
+
+	it('models ActiveModel as a union of key-based and local variants', () => {
 		const keyBased: KeyBasedActiveModel = { provider: 'claude', modelId: 'claude-opus-4-6' };
 		const local: LocalActiveModel = { provider: 'ollama', modelId: 'llama3' };
 		const models: ActiveModel[] = [keyBased, local];
@@ -83,6 +93,8 @@ describe('models', () => {
 		expect(models).toHaveLength(2);
 		expect(isKeyBasedProvider(models[0]!.provider)).toBe(true);
 		expect(isKeyBasedProvider(models[1]!.provider)).toBe(false);
+		expectTypeOf<KeyBasedActiveModel>().toMatchTypeOf<ActiveModel>();
+		expectTypeOf<LocalActiveModel>().toMatchTypeOf<ActiveModel>();
 	});
 
 	it('defines a logo for every provider', () => {

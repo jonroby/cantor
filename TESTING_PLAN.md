@@ -339,11 +339,13 @@ These are effectful.
 
 ## Phase 4: View (presentation)
 
-Extract testable pure logic first, then component tests. View tests are the lowest priority — only test behavior that can't be covered by lower layers.
+Integration-style tests that verify **workflows and functionality**, not DOM structure. Query by role/label/text, assert on behavior. Uses `@testing-library/svelte` with jsdom (per-file `// @vitest-environment jsdom`).
 
 - [x] `src/view/shared/katex.ts` (pure — `renderRichText`)
-- [ ] `src/view/classic/`
-- [ ] `src/view/shared/`
+- [x] `src/view/shared/Composer.svelte` (prop-driven component)
+- [x] `src/view/classic/ChatMessage.svelte` (prop-driven component)
+- [x] `src/view/classic/ChatView.svelte` (integration — full chat workflow)
+- [ ] `src/view/shared/SearchDialog.svelte`
 
 ### `src/view/shared/katex.ts` (pure logic, no mocks)
 
@@ -357,24 +359,55 @@ Extract testable pure logic first, then component tests. View tests are the lowe
 - [x] `renderRichText` — invalid LaTeX doesn't throw (falls back gracefully)
 - [x] `renderRichText` — code blocks are not treated as math
 
-### `src/view/classic/`
+### `src/view/shared/Composer.svelte`
 
-- [ ] `ChatMessage.svelte` — renders prompt and response HTML
-- [ ] `ChatMessage.svelte` — shows streaming indicator when `isStreaming` is true
-- [ ] `ChatMessage.svelte` — shows provider logo and model name
-- [ ] `ChatMessage.svelte` — action buttons (copy, promote, delete) call correct callbacks
-- [ ] `ChatMessage.svelte` — promote button only visible for side roots, disabled when `canPromote` is false
-- [ ] `ChatMessage.svelte` — branch badge shows side children count
+- [x] Submit fires onSubmit callback
+- [x] Send button disabled when input is empty
+- [x] Send button disabled when submitDisabledReason is set
+- [x] Shows disabled reason hint text
+- [x] Stop button appears during streaming, fires onStop
+- [x] Model chip shows model name or "Connect a model"
+- [x] Model chip opens palette
+- [x] Shows token count
 
-### `src/view/shared/`
+### `src/view/classic/ChatMessage.svelte`
 
-- [ ] `ChatInput.svelte` — submits prompt text on enter
-- [ ] `ChatInput.svelte` — does not submit empty input
+- [x] Displays prompt and response text
+- [x] Shows "Waiting for response…" during streaming with no response
+- [x] Shows "Cancelled" when no response and not streaming
+- [x] Shows model name
+- [x] Copy button fires onCopy
+- [x] Delete button fires onDelete
+- [x] Side chat button visible for non-side-root exchanges, fires onToggleSideChildren
+- [x] Promote button visible only for side roots, disabled when canPromote is false
+- [x] Branch badge shows side children count, fires onToggleSideChildren
+
+### `src/view/classic/ChatView.svelte` (integration)
+
+- [x] Empty chat shows starter text
+- [x] Renders prompt and response text for each exchange
+- [x] Shows chat name
+- [x] Submitting a message adds it to the chat
+- [x] Clears input after submit
+- [x] Send button disabled without a model
+- [x] Calls startStream after submit
+- [x] Clicking branch badge opens side panel
+- [x] Side panel shows parent exchange context
+- [x] Side panel shows branch exchanges
+- [x] Close button closes side panel
+- [x] Submitting in side panel adds exchange to side branch
+- [x] New side chat button creates empty branch state
+- [x] Shows branch counter in side panel
+- [x] Clicking delete opens confirmation dialog
+- [x] Confirming delete removes the exchange
+- [x] Cancel closes delete dialog without removing
+- [x] Copy button is available on exchanges
+
+### `src/view/shared/SearchDialog.svelte`
+
 - [ ] `SearchDialog.svelte` — renders search results
 - [ ] `SearchDialog.svelte` — calls `onSelect` with correct result
 - [ ] `SearchDialog.svelte` — toggles between active chat and all chats scope
-
-> Component tests are lowest priority. Extract testable logic into App or Domain first. Only test view behavior that can't be covered by lower layers (rendering conditions, user interaction wiring).
 
 ---
 

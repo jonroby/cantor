@@ -27,7 +27,6 @@ import {
 	updateExchangeTokens,
 	validateChatTree,
 	type ChatTree,
-	type DeleteMode,
 	type Exchange
 } from './index';
 import type { Provider } from '@/domain/models';
@@ -289,11 +288,6 @@ describe('deleteExchangeWithMode and deleteExchangeWithModeResult', () => {
 		expect(result.rootId).toBeNull();
 		expect(result.exchanges).toEqual({});
 		expect(result.removedExchangeIds).toEqual([root.id]);
-	});
-
-	it('supports all public delete modes', () => {
-		const modes: DeleteMode[] = ['exchange', 'exchangeAndMainChat', 'exchangeAndSideChats'];
-		expect(modes).toHaveLength(3);
 	});
 });
 

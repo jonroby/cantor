@@ -169,7 +169,9 @@ function getOrderedGroupIndices(chats: Chat[], activeChatIndex: number): number[
 }
 
 function getChatLabel(chats: Chat[], chatIndex: number, activeChatIndex: number): string {
-	const chatName = chats[chatIndex]?.name ?? `Chat ${chatIndex + 1}`;
+	const rawName = chats[chatIndex]?.name;
+	const chatName =
+		typeof rawName === 'string' && rawName.trim().length > 0 ? rawName : `Chat ${chatIndex + 1}`;
 	return chatIndex === activeChatIndex ? `${chatName} (current)` : chatName;
 }
 

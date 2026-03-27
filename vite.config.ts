@@ -8,11 +8,13 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@': '/Users/jonroby/ai/superset-svelte/src'
-		}
+		},
+		conditions: process.env.VITEST ? ['browser'] : undefined
 	},
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',
-		include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}']
+		include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
+		setupFiles: ['src/view/vitest-setup-view.ts']
 	}
 });

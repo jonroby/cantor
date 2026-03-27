@@ -212,14 +212,14 @@ describe('search', () => {
 		]);
 	});
 
-	it('uses a fallback label when a chat name is missing', () => {
+	it('uses a fallback label when a chat name is blank', () => {
 		const unnamedTree = buildLinearExchanges([{ id: 'a1', prompt: 'hello' }]);
 		const unnamedChats = [buildChat('chat-1', '', unnamedTree.exchanges, unnamedTree.rootId)];
 		const items = [{ exchangeId: 'a1', chatIndex: 0, prompt: 'hello', snippets: [] }];
 
 		expect(groupResults(items, unnamedChats, 0, true, true)).toEqual([
 			{
-				label: ' (current)',
+				label: 'Chat 1 (current)',
 				items
 			}
 		]);
