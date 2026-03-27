@@ -40,18 +40,12 @@ function hasRenderableExchanges(exchanges: ExchangeMap) {
 	return Object.values(exchanges).some((exchange) => !exchange.isAnchor);
 }
 
-export function updateActiveChat(patch: Partial<Pick<Chat, 'exchanges' | 'activeExchangeId'>>) {
-	chatState.chats = chatState.chats.map((c, i) =>
-		i === chatState.activeChatIndex ? { ...c, ...patch } : c
-	);
-}
-
 export function replaceActiveExchanges(nextExchanges: ExchangeMap) {
-	updateActiveChat({ exchanges: nextExchanges });
+	chatState.chats[chatState.activeChatIndex].exchanges = nextExchanges;
 }
 
 export function setActiveExchangeId(exchangeId: string | null) {
-	updateActiveChat({ activeExchangeId: exchangeId });
+	chatState.chats[chatState.activeChatIndex].activeExchangeId = exchangeId;
 }
 
 export function newChat(): number {
@@ -79,7 +73,6 @@ export function deleteChat(index: number) {
 
 export function renameChat(index: number, name: string) {
 	chatState.chats[index].name = name;
-	chatState.chats = [...chatState.chats];
 }
 
 export function forkChat(exchangeId: string) {

@@ -63,7 +63,8 @@ export function deleteFolder(folderId: string) {
 export function renameFolder(folderId: string, name: string): boolean {
 	const conflict = docState.folders.some((f) => f.id !== folderId && f.name === name);
 	if (conflict) return false;
-	docState.folders = docState.folders.map((f) => (f.id === folderId ? { ...f, name } : f));
+	const folder = docState.folders.find((f) => f.id === folderId);
+	if (folder) folder.name = name;
 	return true;
 }
 
@@ -84,18 +85,14 @@ export function selectDoc(folderId: string, fileId: string) {
 export function renameDocInFolder(folderId: string, fileId: string, name: string): boolean {
 	const folder = docState.folders.find((f) => f.id === folderId);
 	if (folder?.files?.some((f) => f.id !== fileId && f.name === name)) return false;
-	docState.folders = docState.folders.map((f) =>
-		f.id === folderId
-			? { ...f, files: (f.files ?? []).map((d) => (d.id === fileId ? { ...d, name } : d)) }
-			: f
-	);
+	const file = folder?.files?.find((f) => f.id === fileId);
+	if (file) file.name = name;
 	return true;
 }
 
 export function deleteDocFromFolder(folderId: string, fileId: string) {
-	docState.folders = docState.folders.map((f) =>
-		f.id === folderId ? { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) } : f
-	);
+	const folder = docState.folders.find((f) => f.id === folderId);
+	if (folder) folder.files = (folder.files ?? []).filter((d) => d.id !== fileId);
 	docState.openDocs = docState.openDocs.filter(
 		(d) => !(d.docKey?.folderId === folderId && d.docKey?.fileId === fileId)
 	);
@@ -107,34 +104,25 @@ export function moveDocToFolder(fromFolderId: string, fileId: string, toFolderId
 	const file = fromFolder?.files?.find((f) => f.id === fileId);
 	if (!file || !toFolder) return false;
 	if (toFolder.files?.some((f) => f.name === file.name)) return false;
-	docState.folders = docState.folders.map((f) => {
-		if (f.id === fromFolderId)
-			return { ...f, files: (f.files ?? []).filter((d) => d.id !== fileId) };
-		if (f.id === toFolderId) return { ...f, files: [...(f.files ?? []), file] };
-		return f;
-	});
-	docState.openDocs = docState.openDocs.map((d) =>
-		d.docKey?.folderId === fromFolderId && d.docKey?.fileId === fileId
-			? { ...d, docKey: { folderId: toFolderId, fileId } }
-			: d
+	fromFolder!.files = (fromFolder!.files ?? []).filter((d) => d.id !== fileId);
+	toFolder.files = [...(toFolder.files ?? []), file];
+	const openDoc = docState.openDocs.find(
+		(d) => d.docKey?.folderId === fromFolderId && d.docKey?.fileId === fileId
 	);
+	if (openDoc?.docKey) openDoc.docKey = { folderId: toFolderId, fileId };
 	return true;
 }
 
 export function updateDocContent(index: number, content: string) {
 	const doc = docState.openDocs[index];
 	if (!doc) return;
-	docState.openDocs = docState.openDocs.map((d, i) => (i === index ? { ...d, content } : d));
+	doc.content = content;
 	if (doc.docKey) {
 		const { folderId, fileId } = doc.docKey;
-		docState.folders = docState.folders.map((f) =>
-			f.id === folderId
-				? {
-						...f,
-						files: (f.files ?? []).map((d) => (d.id === fileId ? { ...d, content } : d))
-					}
-				: f
-		);
+		const file = docState.folders
+			.find((f) => f.id === folderId)
+			?.files?.find((f) => f.id === fileId);
+		if (file) file.content = content;
 	}
 }
 
