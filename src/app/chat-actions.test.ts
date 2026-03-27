@@ -8,7 +8,7 @@ vi.mock('@/state/chats.svelte', () => ({
 	replaceTreeByChatId: vi.fn()
 }));
 
-vi.mock('@/services/streams', () => ({
+vi.mock('@/state/services/streams', () => ({
 	isStreaming: vi.fn(() => false),
 	cancelStreamsForExchanges: vi.fn(),
 	startStream: vi.fn(),
@@ -40,7 +40,7 @@ import {
 function setResponse(tree: ChatTree, exchangeId: string, text: string): ChatTree {
 	return { ...tree, exchanges: updateExchangeResponse(tree.exchanges, exchangeId, text) };
 }
-import type { Provider } from '@/lib/models';
+import type { Provider } from '@/domain/models';
 
 // ── Constants & helpers ──────────────────────────────────────────────────────
 

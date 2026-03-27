@@ -1,5 +1,5 @@
 import { type ChatTree, type Exchange } from '@/domain/tree';
-import type { Provider } from '@/lib/models';
+import type { Provider } from '@/domain/models';
 
 function exchange(
 	id: string,

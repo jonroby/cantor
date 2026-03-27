@@ -30,7 +30,7 @@ import {
 	type DeleteMode,
 	type Exchange
 } from './index';
-import type { Provider } from '@/lib/models';
+import type { Provider } from '@/domain/models';
 
 // ── Test helpers ────────────────────────────────────────────────────────────
 

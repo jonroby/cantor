@@ -1,4 +1,4 @@
-import { getProviderForModelId, type Provider } from '@/lib/models';
+import { getProviderForModelId, type Provider } from '@/domain/models';
 import type { ExchangeNodeData } from './types';
 import {
 	canCreateSideChats,
@@ -16,7 +16,7 @@ import {
 	setActiveExchangeId,
 	forkChat as forkChatAction
 } from '@/state/chats.svelte';
-import { isStreaming as isExchangeStreaming, cancelStreamsForExchanges } from '@/services/streams';
+import { isStreaming as isExchangeStreaming, cancelStreamsForExchanges } from '@/state/services/streams';
 
 // ── Dependency interface for testability ─────────────────────────────────────
 

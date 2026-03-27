@@ -1,4 +1,4 @@
-import type { Provider } from '@/lib/models';
+import type { Provider } from '@/domain/models';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

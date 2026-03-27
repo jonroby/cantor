@@ -193,22 +193,89 @@ Orchestration tests. These verify that domain logic, state mutations, and servic
 
 ## Phase 3: State + Services (selective)
 
-These are effectful — test only where logic lives (not simple getters/setters).
+These are effectful.
 
-- [ ] `src/state/`
-- [ ] `src/services/`
-
-### `src/state/chats.svelte.ts`
-
-- [ ] `forkChat` — creates new chat with forked tree, correct rootId
-- [ ] `newChat` — initializes with empty tree or default exchanges
-- [ ] Chat selection, deletion — index management is correct
+- [x] `src/state/`
+- [x] `src/services/`
 
 ### `src/state/initial-exchanges.ts`
 
-- [ ] Returns a valid `ChatTree` with root and initial exchanges
+- [x] `buildInitialExchanges` returns a valid ChatTree
+- [x] Root exchange has no parent
+- [x] Main chat path has depth > 1
+- [x] Root has side chat branches (multiple children)
+- [x] All exchanges have prompt and response
 
-> State tests may require Svelte's test utilities for reactive state. Keep these minimal — most logic should live in Domain or App where it's testable without framework machinery.
+### `src/state/chats.svelte.ts`
+
+- [x] `getActiveChat` — returns chat at activeChatIndex, falls back to first
+- [x] `getActiveExchanges` — returns exchanges of active chat
+- [x] `getActiveTree` — returns rootId and exchanges as ChatTree
+- [x] `getActiveExchangeId` — returns activeExchangeId of active chat
+- [x] `getChatById` — finds by id, returns undefined for missing
+- [x] `getExchangesByChatId` / `getTreeByChatId` — find by chat id
+- [x] `replaceExchangesByChatId` / `replaceTreeByChatId` — update by chat id, no-op for missing
+- [x] `replaceActiveExchanges` / `replaceActiveTree` — update active chat
+- [x] `setActiveExchangeId` — sets on active chat, supports null
+- [x] `newChat` — adds empty tree, sets activeChatIndex, increments name
+- [x] `selectChat` — clamps to valid range
+- [x] `deleteChat` — removes chat, clamps index, refuses to delete last chat
+- [x] `renameChat` — renames at index
+- [x] `forkChat` — creates new chat with forked tree, validates result, no-op for empty chats
+- [x] `hydrate` — restores chats, ignores empty/non-renderable, clamps activeChatIndex
+
+### `src/state/documents.svelte.ts`
+
+- [x] `newFolder` — creates with default name, auto-increments on conflict
+- [x] `deleteFolder` — removes by id, no-op for missing
+- [x] `renameFolder` — renames, returns false on conflict, allows same-name
+- [x] `selectDoc` — opens doc from folder file, no-ops for duplicates/missing
+- [x] `renameDocInFolder` — renames file, returns false on conflict
+- [x] `deleteDocFromFolder` — removes file and closes open doc
+- [x] `moveDocToFolder` — moves file, returns false on conflict/missing, updates docKey on open doc
+- [x] `updateDocContent` — updates open doc and syncs to folder file
+- [x] `closeDoc` — removes open doc at index
+
+### `src/services/streams/stream.machine.ts`
+
+- [x] Starts in streaming state
+- [x] DELTA events accumulate response text
+- [x] DONE event records token counts and transitions to done
+- [x] ERROR event transitions to error with message in response
+- [x] CANCEL transitions to done, preserving partial response
+- [x] Context initializes from input correctly
+
+### Refactoring done
+
+- [x] **Extracted pure logic from `io.svelte.ts` into `io.ts`.** `findRootId`, `validateChatUpload`, and `deduplicateName` are now in `src/services/io.ts` — a plain TS file with no reactive state, no DOM, no toast. The `.svelte.ts` file imports from it and handles only the effectful parts (DOM file pickers, toast notifications, state mutations). The duplicate-name logic that was copy-pasted 3 times is now a single `deduplicateName` function.
+- [x] **Split `providers.svelte.ts` into state container + app orchestration.** `src/state/providers.svelte.ts` now holds only `providerState`, `selectModel`, and `updateContextLength` (reactive state + simple setters). All orchestration functions (`connectOllama`, `autoConnectOllama`, `loadWebLLMModel_`, `deleteWebLLMCache`, `deleteAllWebLLMCaches`, `unlockKeys`, `saveKey`, `forgetKey`, `getProviderStream`, `fetchOllamaContextLength`, `init`) moved to `src/app/providers.ts`. This fixes the architecture violation where the state layer was importing from services and doing multi-step orchestration. Updated consumers: `App.svelte`, `ChatInput.svelte`, `streams.svelte.ts`.
+
+### `src/services/io.ts` (extracted pure logic)
+
+- [x] `findRootId` — finds exchange with null parentId, returns null for empty/orphan maps
+- [x] `deduplicateName` — returns name unchanged when no conflict
+- [x] `deduplicateName` — appends (1) on first conflict
+- [x] `deduplicateName` — increments past existing duplicates
+- [x] `deduplicateName` — handles names without extensions
+- [x] `deduplicateName` — handles names with multiple dots
+- [x] `deduplicateName` — handles deep conflict chains
+- [x] `validateChatUpload` — accepts valid chat object
+- [x] `validateChatUpload` — sets activeExchangeId from data or computes via getMainChatTail
+- [x] `validateChatUpload` — supports legacy roots[] format
+- [x] `validateChatUpload` — throws for non-object, missing id/name, missing/empty exchanges
+- [x] `validateChatUpload` — throws for invalid exchange entries (missing id, missing prompt, null value)
+- [x] `validateChatUpload` — throws for structurally invalid tree
+
+### `src/services/database.svelte.ts`
+
+- [x] `saveToStorage` / `loadFromStorage` — round-trips chats, activeChatIndex, and folders
+- [x] `loadFromStorage` — no-op when storage is empty
+- [x] `loadFromStorage` — ignores invalid JSON
+- [x] `getVaultStore` — returns empty object when no vault, parses when present
+- [x] `setVaultStore` — writes to localStorage, removes key when store is empty
+- [x] `migrateVaultStorage` — migrates legacy vault under "claude" key, removes legacy
+- [x] `migrateVaultStorage` — no-op if new vault already exists or no legacy exists
+- [x] `clearVaultStorage` — removes the vault key
 
 ---
 

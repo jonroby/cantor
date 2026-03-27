@@ -1,0 +1,392 @@
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import {
+	chatState,
+	getActiveChat,
+	getActiveExchanges,
+	getActiveTree,
+	getActiveExchangeId,
+	getChatById,
+	getExchangesByChatId,
+	getTreeByChatId,
+	replaceExchangesByChatId,
+	replaceTreeByChatId,
+	replaceActiveExchanges,
+	replaceActiveTree,
+	setActiveExchangeId,
+	newChat,
+	selectChat,
+	deleteChat,
+	renameChat,
+	forkChat,
+	hydrate
+} from './chats.svelte';
+import {
+	buildEmptyTree,
+	addExchangeResult,
+	getMainChatTail,
+	validateChatTree,
+	type Chat,
+	type ChatTree,
+	type ExchangeMap
+} from '@/domain/tree';
+import type { Provider } from '@/domain/models';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const PROVIDER: Provider = 'claude';
+const MODEL = 'claude-sonnet-4-6';
+
+function buildTreeWithExchanges(n: number): ChatTree {
+	let tree = buildEmptyTree();
+	let parentId = 'unused';
+	for (let i = 0; i < n; i++) {
+		const result = addExchangeResult(tree, parentId, `prompt-${i}`, MODEL, PROVIDER);
+		tree = { rootId: result.rootId, exchanges: result.exchanges };
+		parentId = result.id;
+	}
+	return tree;
+}
+
+function makeChat(name: string, tree?: ChatTree): Chat {
+	const t = tree ?? buildTreeWithExchanges(2);
+	return {
+		id: crypto.randomUUID(),
+		name,
+		rootId: t.rootId,
+		exchanges: t.exchanges,
+		activeExchangeId: getMainChatTail(t)
+	};
+}
+
+function resetState() {
+	const tree = buildTreeWithExchanges(1);
+	const chat: Chat = {
+		id: 'test-chat-1',
+		name: 'Chat 1',
+		rootId: tree.rootId,
+		exchanges: tree.exchanges,
+		activeExchangeId: getMainChatTail(tree)
+	};
+	chatState.chats = [chat];
+	chatState.activeChatIndex = 0;
+}
+
+// ── Tests ────────────────────────────────────────────────────────────────────
+
+describe('chats state', () => {
+	beforeEach(() => {
+		resetState();
+	});
+
+	describe('getActiveChat', () => {
+		it('returns the chat at activeChatIndex', () => {
+			expect(getActiveChat().name).toBe('Chat 1');
+		});
+
+		it('falls back to first chat if index is out of range', () => {
+			chatState.activeChatIndex = 999;
+			expect(getActiveChat().name).toBe('Chat 1');
+		});
+	});
+
+	describe('getActiveExchanges', () => {
+		it('returns the exchanges of the active chat', () => {
+			const exchanges = getActiveExchanges();
+			expect(Object.keys(exchanges).length).toBeGreaterThan(0);
+		});
+	});
+
+	describe('getActiveTree', () => {
+		it('returns rootId and exchanges as a ChatTree', () => {
+			const tree = getActiveTree();
+			expect(tree.rootId).toBe(chatState.chats[0].rootId);
+			expect(tree.exchanges).toBe(chatState.chats[0].exchanges);
+		});
+	});
+
+	describe('getActiveExchangeId', () => {
+		it('returns activeExchangeId of the active chat', () => {
+			expect(getActiveExchangeId()).toBe(chatState.chats[0].activeExchangeId);
+		});
+	});
+
+	describe('getChatById', () => {
+		it('returns the chat with matching id', () => {
+			expect(getChatById('test-chat-1')?.name).toBe('Chat 1');
+		});
+
+		it('returns undefined for nonexistent id', () => {
+			expect(getChatById('nonexistent')).toBeUndefined();
+		});
+	});
+
+	describe('getExchangesByChatId', () => {
+		it('returns exchanges for existing chat', () => {
+			const exchanges = getExchangesByChatId('test-chat-1');
+			expect(exchanges).toBeDefined();
+			expect(Object.keys(exchanges!).length).toBeGreaterThan(0);
+		});
+
+		it('returns undefined for nonexistent chat', () => {
+			expect(getExchangesByChatId('nope')).toBeUndefined();
+		});
+	});
+
+	describe('getTreeByChatId', () => {
+		it('returns ChatTree for existing chat', () => {
+			const tree = getTreeByChatId('test-chat-1');
+			expect(tree).toBeDefined();
+			expect(tree!.rootId).toBe(chatState.chats[0].rootId);
+		});
+
+		it('returns undefined for nonexistent chat', () => {
+			expect(getTreeByChatId('nope')).toBeUndefined();
+		});
+	});
+
+	describe('replaceExchangesByChatId', () => {
+		it('replaces exchanges on the matching chat', () => {
+			const newTree = buildTreeWithExchanges(3);
+			replaceExchangesByChatId('test-chat-1', newTree.exchanges);
+			expect(Object.keys(chatState.chats[0].exchanges).length).toBe(
+				Object.keys(newTree.exchanges).length
+			);
+		});
+
+		it('does nothing for nonexistent chat id', () => {
+			const before = { ...chatState.chats[0].exchanges };
+			replaceExchangesByChatId('nope', {});
+			expect(Object.keys(chatState.chats[0].exchanges).length).toBe(Object.keys(before).length);
+		});
+	});
+
+	describe('replaceTreeByChatId', () => {
+		it('replaces rootId and exchanges on the matching chat', () => {
+			const newTree = buildTreeWithExchanges(3);
+			replaceTreeByChatId('test-chat-1', newTree);
+			expect(chatState.chats[0].rootId).toBe(newTree.rootId);
+			expect(chatState.chats[0].exchanges).toBe(newTree.exchanges);
+		});
+
+		it('does nothing for nonexistent chat id', () => {
+			const beforeRootId = chatState.chats[0].rootId;
+			replaceTreeByChatId('nope', buildEmptyTree());
+			expect(chatState.chats[0].rootId).toBe(beforeRootId);
+		});
+	});
+
+	describe('replaceActiveExchanges', () => {
+		it('replaces exchanges on the active chat', () => {
+			const newTree = buildTreeWithExchanges(3);
+			replaceActiveExchanges(newTree.exchanges);
+			expect(chatState.chats[0].exchanges).toBe(newTree.exchanges);
+		});
+	});
+
+	describe('replaceActiveTree', () => {
+		it('replaces rootId and exchanges on the active chat', () => {
+			const newTree = buildTreeWithExchanges(3);
+			replaceActiveTree(newTree);
+			expect(chatState.chats[0].rootId).toBe(newTree.rootId);
+			expect(chatState.chats[0].exchanges).toBe(newTree.exchanges);
+		});
+	});
+
+	describe('setActiveExchangeId', () => {
+		it('sets activeExchangeId on the active chat', () => {
+			setActiveExchangeId('some-id');
+			expect(chatState.chats[0].activeExchangeId).toBe('some-id');
+		});
+
+		it('can set to null', () => {
+			setActiveExchangeId(null);
+			expect(chatState.chats[0].activeExchangeId).toBeNull();
+		});
+	});
+
+	describe('newChat', () => {
+		it('adds a new chat with empty tree', () => {
+			const index = newChat();
+			expect(chatState.chats.length).toBe(2);
+			expect(chatState.activeChatIndex).toBe(index);
+			expect(chatState.chats[index].name).toBe('Chat 2');
+		});
+
+		it('new chat has null rootId (empty tree)', () => {
+			const index = newChat();
+			expect(chatState.chats[index].rootId).toBeNull();
+		});
+
+		it('sets activeChatIndex to the new chat', () => {
+			newChat();
+			expect(chatState.activeChatIndex).toBe(1);
+		});
+
+		it('increments name based on chat count', () => {
+			newChat();
+			newChat();
+			expect(chatState.chats[2].name).toBe('Chat 3');
+		});
+	});
+
+	describe('selectChat', () => {
+		it('sets activeChatIndex to the given index', () => {
+			chatState.chats = [makeChat('A'), makeChat('B'), makeChat('C')];
+			selectChat(2);
+			expect(chatState.activeChatIndex).toBe(2);
+		});
+
+		it('clamps to 0 for negative index', () => {
+			selectChat(-5);
+			expect(chatState.activeChatIndex).toBe(0);
+		});
+
+		it('clamps to last index for out-of-range', () => {
+			selectChat(999);
+			expect(chatState.activeChatIndex).toBe(chatState.chats.length - 1);
+		});
+	});
+
+	describe('deleteChat', () => {
+		it('removes the chat at the given index', () => {
+			chatState.chats = [makeChat('A'), makeChat('B'), makeChat('C')];
+			chatState.activeChatIndex = 0;
+			deleteChat(1);
+			expect(chatState.chats.length).toBe(2);
+			expect(chatState.chats.map((c) => c.name)).toEqual(['A', 'C']);
+		});
+
+		it('does not delete the last remaining chat', () => {
+			deleteChat(0);
+			expect(chatState.chats.length).toBe(1);
+		});
+
+		it('clamps activeChatIndex if it would be out of range', () => {
+			chatState.chats = [makeChat('A'), makeChat('B')];
+			chatState.activeChatIndex = 1;
+			deleteChat(1);
+			expect(chatState.activeChatIndex).toBe(0);
+		});
+	});
+
+	describe('renameChat', () => {
+		it('renames the chat at the given index', () => {
+			renameChat(0, 'Renamed');
+			expect(chatState.chats[0].name).toBe('Renamed');
+		});
+	});
+
+	describe('forkChat', () => {
+		it('creates a new chat from forked exchanges', () => {
+			const tree = buildTreeWithExchanges(3);
+			chatState.chats = [
+				{
+					id: 'src',
+					name: 'Source',
+					rootId: tree.rootId,
+					exchanges: tree.exchanges,
+					activeExchangeId: getMainChatTail(tree)
+				}
+			];
+			chatState.activeChatIndex = 0;
+
+			const tail = getMainChatTail(tree)!;
+			forkChat(tail);
+
+			expect(chatState.chats.length).toBe(2);
+			expect(chatState.activeChatIndex).toBe(1);
+			expect(chatState.chats[1].name).toContain('fork');
+		});
+
+		it('forked chat has a valid tree', () => {
+			const tree = buildTreeWithExchanges(3);
+			chatState.chats = [
+				{
+					id: 'src',
+					name: 'Source',
+					rootId: tree.rootId,
+					exchanges: tree.exchanges,
+					activeExchangeId: getMainChatTail(tree)
+				}
+			];
+			chatState.activeChatIndex = 0;
+
+			const tail = getMainChatTail(tree)!;
+			forkChat(tail);
+
+			const forkedTree = getTreeByChatId(chatState.chats[1].id);
+			expect(forkedTree).toBeDefined();
+			expect(() => validateChatTree(forkedTree!)).not.toThrow();
+		});
+
+		it('does nothing if no active chat', () => {
+			chatState.chats = [];
+			chatState.activeChatIndex = 0;
+			forkChat('some-id');
+			expect(chatState.chats.length).toBe(0);
+		});
+	});
+
+	describe('hydrate', () => {
+		it('restores chats from parsed data', () => {
+			const tree = buildTreeWithExchanges(2);
+			const chats: Chat[] = [
+				{
+					id: 'h1',
+					name: 'Hydrated',
+					rootId: tree.rootId,
+					exchanges: tree.exchanges,
+					activeExchangeId: getMainChatTail(tree)
+				}
+			];
+			hydrate({ chats, activeChatIndex: 0 });
+			expect(chatState.chats[0].name).toBe('Hydrated');
+		});
+
+		it('ignores empty chats array', () => {
+			const before = chatState.chats[0].name;
+			hydrate({ chats: [] });
+			expect(chatState.chats[0].name).toBe(before);
+		});
+
+		it('ignores chats with no renderable exchanges', () => {
+			const before = chatState.chats[0].name;
+			hydrate({
+				chats: [
+					{ id: 'empty', name: 'Empty', rootId: null, exchanges: {}, activeExchangeId: null }
+				]
+			});
+			expect(chatState.chats[0].name).toBe(before);
+		});
+
+		it('clamps activeChatIndex to valid range', () => {
+			const tree = buildTreeWithExchanges(2);
+			const chats: Chat[] = [
+				{
+					id: 'h1',
+					name: 'H1',
+					rootId: tree.rootId,
+					exchanges: tree.exchanges,
+					activeExchangeId: getMainChatTail(tree)
+				}
+			];
+			hydrate({ chats, activeChatIndex: 99 });
+			expect(chatState.activeChatIndex).toBe(0);
+		});
+
+		it('clamps negative activeChatIndex to 0', () => {
+			const tree = buildTreeWithExchanges(2);
+			const chats: Chat[] = [
+				{
+					id: 'h1',
+					name: 'H1',
+					rootId: tree.rootId,
+					exchanges: tree.exchanges,
+					activeExchangeId: getMainChatTail(tree)
+				}
+			];
+			hydrate({ chats, activeChatIndex: -3 });
+			expect(chatState.activeChatIndex).toBe(0);
+		});
+	});
+});

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Toaster from '@/components/shadcn/ui/sonner/sonner.svelte';
-	import { getDefaultItems, searchChats, type SearchResult } from '@/lib/search';
+	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
+	import { getDefaultItems, searchChats, type SearchResult } from '@/domain/search';
 	import type { Chat } from '@/domain/tree';
-	import * as SidebarPrimitive from '@/components/shadcn/ui/sidebar/index.js';
-	import { AppSidebar, SearchDialog } from '@/views/shared';
-	import { routerState } from '@/routes/router.svelte';
-	import { ChatView } from '@/views/classic';
-	import { CanvasView } from '@/views/canvas';
-	import LandingPage from '@/routes/LandingPage.svelte';
+	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
+	import { AppSidebar, SearchDialog } from '@/view/shared';
+	import { routerState } from '@/view/routes/router.svelte';
+	import { ChatView } from '@/view/classic';
+	import { CanvasView } from '@/view/canvas';
+	import LandingPage from '@/view/routes/LandingPage.svelte';
 	import {
 		chatState,
 		newChat as newChatAction,
@@ -27,7 +27,7 @@
 		renameDocInFolder,
 		moveDocToFolder
 	} from '@/state/documents.svelte';
-	import { loadFromStorage, saveToStorage } from '@/services/database.svelte';
+	import { loadFromStorage, saveToStorage } from '@/state/services/database.svelte';
 	import {
 		downloadChat,
 		uploadChat,
@@ -35,9 +35,9 @@
 		uploadDocToFolder,
 		uploadFolder,
 		uploadFolderToFolder
-	} from '@/services/io.svelte';
-	import { init as initProviders, autoConnectOllama } from '@/state/providers.svelte';
-	import { cancelStreamsForChat } from '@/services/streams';
+	} from '@/state/services/io.svelte';
+	import { init as initProviders, autoConnectOllama } from '@/app/providers';
+	import { cancelStreamsForChat } from '@/state/services/streams';
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
