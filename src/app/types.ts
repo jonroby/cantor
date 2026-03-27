@@ -7,7 +7,6 @@ export interface ExchangeNodeData {
 	provider?: Provider | null;
 	isActive: boolean;
 	isStreaming: boolean;
-	canFork: boolean;
 	hasSideChildren: boolean;
 	sideChildrenCount: number;
 	isSideRoot: boolean;

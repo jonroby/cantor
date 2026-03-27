@@ -3,7 +3,7 @@
 	import Button from '@/components/custom/button.svelte';
 	import { renderRichText } from '@/views/shared/katex';
 	import { PROVIDER_LOGOS } from '@/lib/models/logos';
-	import type { ExchangeNodeData } from '@/views/shared/types';
+	import type { ExchangeNodeData } from '@/app/types';
 
 	let { data }: { data: ExchangeNodeData } = $props();
 
@@ -49,30 +49,28 @@
 
 	<div class="chatmsg-toolbar">
 		<div class="chatmsg-actions">
-			{#if data.canFork}
-				<span class="action-tip-wrap">
-					<Button
-						class="icon-chip"
-						variant="ghost"
-						size="icon"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							data.onFork();
-						}}
-						ariaLabel="Fork"
+			<span class="action-tip-wrap">
+				<Button
+					class="icon-chip"
+					variant="ghost"
+					size="icon"
+					onclick={(event: MouseEvent) => {
+						event.stopPropagation();
+						data.onFork();
+					}}
+					ariaLabel="Fork"
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg
-						>
-					</Button>
-					<span class="action-tip">Fork</span>
-				</span>
-			{/if}
+				</Button>
+				<span class="action-tip">Fork</span>
+			</span>
 			{#if data.isSideRoot}
 				<span class="action-tip-wrap">
 					<Button
@@ -148,7 +146,11 @@
 						fill="none"
 						stroke="currentColor"
 						stroke-width="1.5"
-						><path d="M3 3v8M3 7h4M7 7v4M7 7h4" stroke-linecap="round" stroke-linejoin="round" /></svg
+						><path
+							d="M3 3v8M3 7h4M7 7v4M7 7h4"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/></svg
 					>
 					<span>{data.sideChildrenCount}</span>
 				</button>

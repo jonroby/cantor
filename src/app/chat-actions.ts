@@ -1,5 +1,5 @@
 import { getProviderForModelId, type Provider } from '@/lib/models';
-import type { ExchangeNodeData } from '@/views/shared/types';
+import type { ExchangeNodeData } from './types';
 import {
 	canCreateSideChats,
 	canPromoteSideChatToMainChat,
@@ -7,6 +7,7 @@ import {
 	getChildExchanges,
 	getMainChatTail,
 	promoteSideChatToMainChat,
+	type ChatTree,
 	type DeleteMode,
 	type ExchangeMap
 } from '@/domain/tree';
@@ -16,6 +17,26 @@ import {
 	forkChat as forkChatAction
 } from '@/state/chats.svelte';
 import { isStreaming as isExchangeStreaming, cancelStreamsForExchanges } from '@/services/streams';
+
+// ── Dependency interface for testability ─────────────────────────────────────
+
+export interface ChatActionDeps {
+	replaceActiveTree: (tree: ChatTree) => void;
+	setActiveExchangeId: (id: string | null) => void;
+	forkChat: (exchangeId: string) => void;
+	isStreaming: (exchangeId: string) => boolean;
+	cancelStreamsForExchanges: (ids: string[]) => void;
+}
+
+const defaultDeps: ChatActionDeps = {
+	replaceActiveTree,
+	setActiveExchangeId,
+	forkChat: forkChatAction,
+	isStreaming: isExchangeStreaming,
+	cancelStreamsForExchanges
+};
+
+// ── Public API ───────────────────────────────────────────────────────────────
 
 export function getExchangeNodeData(
 	exchangeId: string,
@@ -28,7 +49,8 @@ export function getExchangeNodeData(
 		onToggleSideChildren: (exchangeId: string) => void;
 		onPromote: (exchangeId: string) => void;
 		onDelete: (exchangeId: string) => void;
-	}
+	},
+	deps: ChatActionDeps = defaultDeps
 ): ExchangeNodeData | null {
 	try {
 		const exchange = activeExchanges[exchangeId];
@@ -45,13 +67,9 @@ export function getExchangeNodeData(
 			prompt: exchange.prompt.text,
 			response: exchange.response?.text ?? '',
 			model: exchange.model,
-			provider:
-				(exchange.provider as Provider) ||
-				getProviderForModelId(exchange.model) ||
-				null,
+			provider: (exchange.provider as Provider) || getProviderForModelId(exchange.model) || null,
 			isActive: activeExchangeId === exchangeId,
-			isStreaming: isExchangeStreaming(exchangeId),
-			canFork: true,
+			isStreaming: deps.isStreaming(exchangeId),
 			hasSideChildren,
 			sideChildrenCount,
 			isSideRoot,
@@ -77,16 +95,17 @@ export function performDelete(
 	deleteTargetId: string,
 	deleteMode: DeleteMode,
 	activeExchangeId: string | null,
-	onResetMeasuredHeights?: () => void
+	onResetMeasuredHeights?: () => void,
+	deps: ChatActionDeps = defaultDeps
 ): { error: string | null } {
 	try {
 		const tree = { rootId: findRootId(activeExchanges), exchanges: activeExchanges };
 		const result = deleteExchangeWithModeResult(tree, deleteTargetId, deleteMode);
-		cancelStreamsForExchanges(result.removedExchangeIds);
+		deps.cancelStreamsForExchanges(result.removedExchangeIds);
 		onResetMeasuredHeights?.();
-		replaceActiveTree(result);
+		deps.replaceActiveTree(result);
 		if (deleteTargetId === activeExchangeId || !result.exchanges[activeExchangeId ?? '']) {
-			setActiveExchangeId(getMainChatTail(result));
+			deps.setActiveExchangeId(getMainChatTail(result));
 		}
 		return { error: null };
 	} catch (error) {
@@ -97,28 +116,26 @@ export function performDelete(
 export function performPromote(
 	activeExchanges: ExchangeMap,
 	exchangeId: string,
-	onResetMeasuredHeights?: () => void
+	onResetMeasuredHeights?: () => void,
+	deps: ChatActionDeps = defaultDeps
 ): { error: string | null } {
 	try {
-		setActiveExchangeId(exchangeId);
-		onResetMeasuredHeights?.();
 		const tree = { rootId: findRootId(activeExchanges), exchanges: activeExchanges };
 		const result = promoteSideChatToMainChat(tree, exchangeId);
-		replaceActiveTree(result);
+		deps.setActiveExchangeId(exchangeId);
+		onResetMeasuredHeights?.();
+		deps.replaceActiveTree(result);
 		return { error: null };
 	} catch (error) {
 		return { error: error instanceof Error ? error.message : 'Unable to promote exchange.' };
 	}
 }
 
-export function performFork(exchangeId: string) {
-	forkChatAction(exchangeId);
+export function performFork(exchangeId: string, deps: ChatActionDeps = defaultDeps) {
+	deps.forkChat(exchangeId);
 }
 
-export function getDeleteMode(
-	activeExchanges: ExchangeMap,
-	exchangeId: string
-): DeleteMode {
+export function getDeleteMode(activeExchanges: ExchangeMap, exchangeId: string): DeleteMode {
 	const children = getChildExchanges(activeExchanges, exchangeId);
 	return children.length > 1 ? 'exchangeAndSideChats' : 'exchange';
 }

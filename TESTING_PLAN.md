@@ -139,43 +139,55 @@ Pure in, pure out. No mocks needed. If you need a mock, the function doesn't bel
 
 Orchestration tests. These verify that domain logic, state mutations, and service calls are composed correctly. Dependencies (state, services) should be mocked or injected.
 
-- [ ] `src/app/`
+- [x] `src/app/`
 
-### Refactoring needed
+### Refactoring done
 
-- [ ] **Extract dependencies to make app functions testable.** Currently `chat-actions.ts` imports `replaceActiveTree`, `setActiveExchangeId`, `cancelStreamsForExchanges`, etc. directly. Consider passing these as a dependency bag or restructuring so tests can intercept calls without module mocking hacks.
+- [x] **Extract dependencies to make app functions testable.** Introduced `ChatActionDeps` interface in `chat-actions.ts`. Effectful dependencies (`replaceActiveTree`, `setActiveExchangeId`, `forkChat`, `isStreaming`, `cancelStreamsForExchanges`) are now passed as an optional `deps` parameter with real implementations as defaults. Tests pass mock deps directly — no module mocking hacks needed for the functions under test. (Module-level `vi.mock` is still used to prevent `web-llm` from loading during import resolution.)
+- [x] **Moved `ExchangeNodeData` type from `src/views/shared/types.ts` to `src/app/types.ts`.** App was importing from View, violating the one-way dependency rule. Views now import the type from `@/app/types`. The old `src/views/shared/types.ts` file was deleted.
+- [x] **Removed `canFork` from `ExchangeNodeData`.** It was hardcoded to `true` — every exchange can fork, there is no domain constraint. Removed the property, the assignment in `chat-actions.ts`, and the `{#if data.canFork}` guards in both `ExchangeNode.svelte` and `ChatMessage.svelte`.
+- [x] **Fixed `performPromote` state discipline.** `setActiveExchangeId` was called before the domain operation (`promoteSideChatToMainChat`), so failure left partial side effects. Reordered so side effects only execute after the domain call succeeds.
 
 ### `getExchangeNodeData`
 
-- [ ] Returns null for root exchange (parentId === null)
-- [ ] Returns null for nonexistent exchange
-- [ ] Correctly computes `hasSideChildren`, `sideChildrenCount`, `isSideRoot`
-- [ ] `canPromote` reflects domain's `canPromoteSideChatToMainChat`
-- [ ] `isStreaming` reflects service state
-- [ ] All callbacks (`onFork`, `onDelete`, `onPromote`, `onSelect`, `onToggleSideChildren`) are wired to the passed-in callbacks
-- [ ] Error in rendering returns null (try/catch path)
+- [x] Returns null for root exchange (parentId === null)
+- [x] Returns null for nonexistent exchange
+- [x] Correctly computes `hasSideChildren`, `sideChildrenCount`, `isSideRoot`
+- [x] `canPromote` reflects domain's `canPromoteSideChatToMainChat`
+- [x] `isStreaming` reflects service state
+- [x] `isActive` is true when exchangeId matches activeExchangeId
+- [x] `isActive` is false when exchangeId does not match
+- [x] All callbacks (`onFork`, `onDelete`, `onPromote`, `onSelect`, `onToggleSideChildren`, `onMeasure`) are wired to the passed-in callbacks
+- [x] Returns prompt and response text from the exchange
+- [x] Returns empty string when response is null
+- [x] Error in rendering returns null (try/catch path — verified with a structurally broken exchange map)
 
 ### `performDelete`
 
-- [ ] Calls domain delete, cancels streams for removed IDs, replaces tree in state
-- [ ] Redirects `activeExchangeId` to main chat tail when deleting active exchange
-- [ ] Returns `{ error: null }` on success
-- [ ] Returns `{ error: string }` when domain throws
+- [x] Calls domain delete, cancels streams for removed IDs, replaces tree in state
+- [x] Redirects `activeExchangeId` to main chat tail when deleting active exchange
+- [x] Does not redirect `activeExchangeId` when deleting non-active exchange
+- [x] Calls `onResetMeasuredHeights` when provided
+- [x] Returns `{ error: null }` on success
+- [x] Returns `{ error: string }` when domain throws (nonexistent exchange)
 
 ### `performPromote`
 
-- [ ] Calls domain promote, updates state
-- [ ] Returns `{ error: null }` on success
-- [ ] Returns `{ error: string }` when domain throws
+- [x] Calls domain promote, updates state, returns no error
+- [x] Calls `onResetMeasuredHeights` when provided
+- [x] Returns `{ error: null }` on success
+- [x] Returns `{ error: string }` when domain throws (non-side-root) — and does not mutate state
+- [x] Returns `{ error: string }` for nonexistent exchange — and does not mutate state
 
 ### `performFork`
 
-- [ ] Delegates to state's `forkChat`
+- [x] Delegates to `deps.forkChat`
 
 ### `getDeleteMode`
 
-- [ ] Returns `'exchangeAndSideChats'` when node has multiple children
-- [ ] Returns `'exchange'` when node has 0 or 1 child
+- [x] Returns `'exchangeAndSideChats'` when node has multiple children
+- [x] Returns `'exchange'` when node has 0 children
+- [x] Returns `'exchange'` when node has 1 child
 
 ---
 
