@@ -99,15 +99,21 @@
 
 	<nav class="nav">
 		<div class="nav-left">
-			<svg class="logo-icon" width="35" height="40" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
-				<circle cx="70" cy="25" r="8.5" fill="#2b2b2b"/>
-				<circle cx="30" cy="60" r="8.5" fill="#4a4a4a"/>
-				<circle cx="70" cy="60" r="8.5" fill="#4a4a4a"/>
-				<circle cx="110" cy="60" r="8.5" fill="#4a4a4a"/>
-				<circle cx="30" cy="95" r="8.5" fill="#6e6e6e"/>
-				<circle cx="70" cy="95" r="8.5" fill="#6e6e6e"/>
-				<circle cx="110" cy="95" r="8.5" fill="#6e6e6e"/>
-				<circle cx="70" cy="130" r="8.5" fill="#949494"/>
+			<svg
+				class="logo-icon"
+				width="35"
+				height="40"
+				viewBox="0 0 140 160"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<circle cx="70" cy="25" r="8.5" fill="#2b2b2b" />
+				<circle cx="30" cy="60" r="8.5" fill="#4a4a4a" />
+				<circle cx="70" cy="60" r="8.5" fill="#4a4a4a" />
+				<circle cx="110" cy="60" r="8.5" fill="#4a4a4a" />
+				<circle cx="30" cy="95" r="8.5" fill="#6e6e6e" />
+				<circle cx="70" cy="95" r="8.5" fill="#6e6e6e" />
+				<circle cx="110" cy="95" r="8.5" fill="#6e6e6e" />
+				<circle cx="70" cy="130" r="8.5" fill="#949494" />
 			</svg>
 			<span class="logo">Powerset Labs</span>
 		</div>
@@ -139,7 +145,7 @@
 			<span class="gradient-text">CANTOR</span>
 		</h1>
 		<p class="hero-subtitle">
-			Fork conversations. Explore side branches. Visualize your thinking on a canvas. One interface
+			Copy conversations. Explore side branches. Visualize your thinking on a canvas. One interface
 			for Claude, Gemini, Ollama, OpenAI, and WebLLM.
 		</p>
 		<div class="hero-actions">
@@ -182,7 +188,7 @@
 					</svg>
 				</div>
 				<h3>Branching Conversations</h3>
-				<p>Fork any message to explore alternative directions without losing context.</p>
+				<p>Copy any message to explore alternative directions without losing context.</p>
 			</div>
 			<div class="feature-card">
 				<div class="feature-icon">

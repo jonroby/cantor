@@ -14,16 +14,19 @@ import {
 import {
 	replaceActiveTree,
 	setActiveExchangeId,
-	forkChat as forkChatAction
+	copyToNewChat as copyToNewChatAction
 } from '@/state/chats.svelte';
-import { isStreaming as isExchangeStreaming, cancelStreamsForExchanges } from '@/state/services/streams';
+import {
+	isStreaming as isExchangeStreaming,
+	cancelStreamsForExchanges
+} from '@/state/services/streams';
 
 // ── Dependency interface for testability ─────────────────────────────────────
 
 export interface ChatActionDeps {
 	replaceActiveTree: (tree: ChatTree) => void;
 	setActiveExchangeId: (id: string | null) => void;
-	forkChat: (exchangeId: string) => void;
+	copyToNewChat: (exchangeId: string) => void;
 	isStreaming: (exchangeId: string) => boolean;
 	cancelStreamsForExchanges: (ids: string[]) => void;
 }
@@ -31,7 +34,7 @@ export interface ChatActionDeps {
 const defaultDeps: ChatActionDeps = {
 	replaceActiveTree,
 	setActiveExchangeId,
-	forkChat: forkChatAction,
+	copyToNewChat: copyToNewChatAction,
 	isStreaming: isExchangeStreaming,
 	cancelStreamsForExchanges
 };
@@ -45,7 +48,7 @@ export function getExchangeNodeData(
 	callbacks: {
 		onMeasure?: (exchangeId: string, height: number) => void;
 		onSelect: (exchangeId: string) => void;
-		onFork: (exchangeId: string) => void;
+		onCopy: (exchangeId: string) => void;
 		onToggleSideChildren: (exchangeId: string) => void;
 		onPromote: (exchangeId: string) => void;
 		onDelete: (exchangeId: string) => void;
@@ -79,7 +82,7 @@ export function getExchangeNodeData(
 			),
 			onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
 			onSelect: () => callbacks.onSelect(exchangeId),
-			onFork: () => callbacks.onFork(exchangeId),
+			onCopy: () => callbacks.onCopy(exchangeId),
 			onToggleSideChildren: () => callbacks.onToggleSideChildren(exchangeId),
 			onPromote: () => callbacks.onPromote(exchangeId),
 			onDelete: () => callbacks.onDelete(exchangeId)
@@ -131,8 +134,8 @@ export function performPromote(
 	}
 }
 
-export function performFork(exchangeId: string, deps: ChatActionDeps = defaultDeps) {
-	deps.forkChat(exchangeId);
+export function performCopy(exchangeId: string, deps: ChatActionDeps = defaultDeps) {
+	deps.copyToNewChat(exchangeId);
 }
 
 export function getDeleteMode(activeExchanges: ExchangeMap, exchangeId: string): DeleteMode {

@@ -9,7 +9,6 @@
 		type Exchange,
 		type DeleteMode
 	} from '@/domain/tree';
-	import type { ChatTree } from '@/domain/tree';
 	import {
 		getActiveChat,
 		getActiveExchanges,
@@ -20,7 +19,7 @@
 		getExchangeNodeData as getNodeData,
 		performDelete,
 		performPromote,
-		performFork,
+		performCopy,
 		getDeleteMode
 	} from '@/app/chat-actions';
 
@@ -118,16 +117,12 @@
 		sidePanelOpen = true;
 		focusedPane = 'side';
 
-		const children = activeExchanges
-			? getChildExchanges(activeExchanges, parentId)
-			: [];
+		const children = activeExchanges ? getChildExchanges(activeExchanges, parentId) : [];
 		if (children.length > 1) {
 			sideBranchIndex = children.length - 2;
 			let current = children[children.length - 1];
 			while (current) {
-				const grandChildren = activeExchanges
-					? getChildExchanges(activeExchanges, current.id)
-					: [];
+				const grandChildren = activeExchanges ? getChildExchanges(activeExchanges, current.id) : [];
 				if (grandChildren.length === 0) break;
 				current = grandChildren[0];
 			}
@@ -169,8 +164,8 @@
 		tick().then(() => chatInputRef?.focus());
 	}
 
-	function forkChat(exchangeId: string) {
-		performFork(exchangeId);
+	function copyChat(exchangeId: string) {
+		performCopy(exchangeId);
 	}
 
 	function openDeleteDialog(exchangeId: string) {
@@ -209,7 +204,7 @@
 		if (!activeExchanges) return null;
 		return getNodeData(exchangeId, activeExchanges, activeExchangeId, {
 			onSelect: (id) => setActiveExchangeId(id),
-			onFork: forkChat,
+			onCopy: copyChat,
 			onToggleSideChildren: toggleSideChildren,
 			onPromote: promoteExchange,
 			onDelete: openDeleteDialog
@@ -449,8 +444,8 @@
 						<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt.text}</div>
 						{#if sidePanelParentExchange.response}
 							<div class="chatview-side-context-response">
-								{sidePanelParentExchange.response.text.slice(0, 150)}{sidePanelParentExchange.response.text
-									.length > 150
+								{sidePanelParentExchange.response.text.slice(0, 150)}{sidePanelParentExchange
+									.response.text.length > 150
 									? '…'
 									: ''}
 							</div>
@@ -489,9 +484,7 @@
 </div>
 
 {#if deleteTargetId}
-	{@const children = activeExchanges
-		? getChildExchanges(activeExchanges, deleteTargetId)
-		: []}
+	{@const children = activeExchanges ? getChildExchanges(activeExchanges, deleteTargetId) : []}
 	<button
 		class="modal-scrim"
 		type="button"

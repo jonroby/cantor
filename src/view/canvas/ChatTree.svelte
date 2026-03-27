@@ -10,7 +10,12 @@
 	import DrawingBoard from '@/view/features/drawing-board/DrawingBoard.svelte';
 	import DocsPanel from '@/view/features/docs-panel/DocsPanel.svelte';
 	import type { Shape } from '@/view/features/drawing-board/drawing-types';
-	import { getChildExchanges, getDescendantExchanges, type DeleteMode, type ChatTree } from '@/domain/tree';
+	import {
+		getChildExchanges,
+		getDescendantExchanges,
+		type DeleteMode,
+		type ChatTree
+	} from '@/domain/tree';
 	import {
 		getActiveChat,
 		getActiveExchanges,
@@ -22,7 +27,7 @@
 		getExchangeNodeData as getNodeData,
 		performDelete,
 		performPromote,
-		performFork,
+		performCopy,
 		getDeleteMode
 	} from '@/app/chat-actions';
 
@@ -106,9 +111,9 @@
 		measuredNodeHeights = { ...measuredNodeHeights, [exchangeId]: roundedHeight };
 	}
 
-	function forkChat(exchangeId: string) {
+	function copyChat(exchangeId: string) {
 		if (!activeExchanges) return;
-		performFork(exchangeId);
+		performCopy(exchangeId);
 		expandedSideChatParent = null;
 		scrollToNode(getActiveExchangeId());
 	}
@@ -191,7 +196,7 @@
 		return getNodeData(exchangeId, activeExchanges, activeExchangeId, {
 			onMeasure: setMeasuredNodeHeight,
 			onSelect: (id) => setActiveExchangeId(id),
-			onFork: forkChat,
+			onCopy: copyChat,
 			onToggleSideChildren: toggleSideChildren,
 			onPromote: promoteExchange,
 			onDelete: openDeleteDialog
@@ -251,9 +256,7 @@
 </div>
 
 {#if deleteTargetId}
-	{@const children = activeExchanges
-		? getChildExchanges(activeExchanges, deleteTargetId)
-		: []}
+	{@const children = activeExchanges ? getChildExchanges(activeExchanges, deleteTargetId) : []}
 	<button
 		class="modal-scrim"
 		type="button"

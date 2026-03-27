@@ -665,7 +665,7 @@ export function updateExchangeResponse(
 	};
 }
 
-// ── Promote & Fork ──────────────────────────────────────────────────────────
+// ── Promote & Copy ──────────────────────────────────────────────────────────
 
 export function getMainChatTail(tree: ChatTree): string | null {
 	const root = getRootExchange(tree);
@@ -749,15 +749,15 @@ export function findSideChatParent(tree: ChatTree, exchangeId: string): string |
 	return outermostSideChatParent;
 }
 
-export function forkExchanges(
+export function copyPath(
 	tree: ChatTree,
 	exchangeId: string
-): { rootId: string; forkedExchanges: ExchangeMap; firstCopiedId: string } {
+): { rootId: string; copiedExchanges: ExchangeMap; firstCopiedId: string } {
 	const indexed = indexTree(tree);
 	requireExchange(
 		indexed.exchanges,
 		exchangeId,
-		`Cannot fork from missing exchange "${exchangeId}".`
+		`Cannot copy from missing exchange "${exchangeId}".`
 	);
 
 	const path = getPathToRoot(indexed, exchangeId);
@@ -799,5 +799,5 @@ export function forkExchanges(
 		}
 	}
 
-	return { rootId: newRootId, forkedExchanges: result, firstCopiedId };
+	return { rootId: newRootId, copiedExchanges: result, firstCopiedId };
 }

@@ -11,7 +11,7 @@ import {
 	deleteExchangeWithMode,
 	deleteExchangeWithModeResult,
 	findSideChatParent,
-	forkExchanges,
+	copyPath,
 	getChildExchanges,
 	getDescendantExchanges,
 	getHistory,
@@ -412,7 +412,7 @@ describe('updateExchangeResponse', () => {
 	});
 });
 
-// ── Promote & Fork ──────────────────────────────────────────────────────────
+// ── Promote & Copy ──────────────────────────────────────────────────────────
 
 describe('getMainChatTail', () => {
 	it('follows the first-child path as the main chat tail', () => {
@@ -445,26 +445,26 @@ describe('promoteSideChatToMainChat', () => {
 	});
 });
 
-describe('forkExchanges', () => {
-	it('forks the path to a selected exchange', () => {
+describe('copyPath', () => {
+	it('copies the path from root to a selected exchange', () => {
 		vi.spyOn(Date, 'now').mockReturnValue(500);
 
 		const { tree, childId, leafId } = buildLinearTree();
-		const fork = forkExchanges(tree, leafId);
+		const copy = copyPath(tree, leafId);
 
-		expect(fork.rootId).toBe(fork.firstCopiedId);
-		expect(Object.keys(fork.forkedExchanges)).toHaveLength(3);
+		expect(copy.rootId).toBe(copy.firstCopiedId);
+		expect(Object.keys(copy.copiedExchanges)).toHaveLength(3);
 		expect(
-			getHistory({ rootId: fork.rootId, exchanges: fork.forkedExchanges }, fork.firstCopiedId)
+			getHistory({ rootId: copy.rootId, exchanges: copy.copiedExchanges }, copy.firstCopiedId)
 		).toEqual([{ role: 'user', content: 'root prompt' }]);
 
-		const copiedRoot = fork.forkedExchanges[fork.rootId]!;
+		const copiedRoot = copy.copiedExchanges[copy.rootId]!;
 		const copiedChildId = copiedRoot.childIds[0]!;
-		const copiedLeafId = fork.forkedExchanges[copiedChildId]!.childIds[0]!;
+		const copiedLeafId = copy.copiedExchanges[copiedChildId]!.childIds[0]!;
 
-		expect(fork.forkedExchanges[copiedChildId]!.parentId).toBe(fork.rootId);
-		expect(fork.forkedExchanges[copiedLeafId]!.parentId).toBe(copiedChildId);
-		expect(fork.forkedExchanges[copiedLeafId]!.id).not.toBe(leafId);
-		expect(fork.forkedExchanges[copiedChildId]!.id).not.toBe(childId);
+		expect(copy.copiedExchanges[copiedChildId]!.parentId).toBe(copy.rootId);
+		expect(copy.copiedExchanges[copiedLeafId]!.parentId).toBe(copiedChildId);
+		expect(copy.copiedExchanges[copiedLeafId]!.id).not.toBe(leafId);
+		expect(copy.copiedExchanges[copiedChildId]!.id).not.toBe(childId);
 	});
 });

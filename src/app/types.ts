@@ -13,7 +13,7 @@ export interface ExchangeNodeData {
 	canPromote: boolean;
 	onMeasure: (height: number) => void;
 	onSelect: () => void;
-	onFork: () => void;
+	onCopy: () => void;
 	onToggleSideChildren: () => void;
 	onPromote: () => void;
 	onDelete: () => void;

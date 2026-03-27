@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/state/chats.svelte', () => ({
 	replaceActiveTree: vi.fn(),
 	setActiveExchangeId: vi.fn(),
-	forkChat: vi.fn(),
+	copyToNewChat: vi.fn(),
 	getTreeByChatId: vi.fn(),
 	replaceTreeByChatId: vi.fn()
 }));
@@ -22,7 +22,7 @@ import {
 	getExchangeNodeData,
 	performDelete,
 	performPromote,
-	performFork,
+	performCopy,
 	getDeleteMode,
 	type ChatActionDeps
 } from './chat-actions';
@@ -64,7 +64,7 @@ function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
 	return {
 		replaceActiveTree: vi.fn(),
 		setActiveExchangeId: vi.fn(),
-		forkChat: vi.fn(),
+		copyToNewChat: vi.fn(),
 		isStreaming: vi.fn(() => false),
 		cancelStreamsForExchanges: vi.fn(),
 		...overrides
@@ -75,7 +75,7 @@ function mockCallbacks() {
 	return {
 		onMeasure: vi.fn(),
 		onSelect: vi.fn(),
-		onFork: vi.fn(),
+		onCopy: vi.fn(),
 		onToggleSideChildren: vi.fn(),
 		onPromote: vi.fn(),
 		onDelete: vi.fn()
@@ -239,8 +239,8 @@ describe('getExchangeNodeData', () => {
 		result!.onSelect();
 		expect(cbs.onSelect).toHaveBeenCalledWith(childId);
 
-		result!.onFork();
-		expect(cbs.onFork).toHaveBeenCalledWith(childId);
+		result!.onCopy();
+		expect(cbs.onCopy).toHaveBeenCalledWith(childId);
 
 		result!.onToggleSideChildren();
 		expect(cbs.onToggleSideChildren).toHaveBeenCalledWith(childId);
@@ -378,13 +378,13 @@ describe('performPromote', () => {
 	});
 });
 
-// ── performFork ──────────────────────────────────────────────────────────────
+// ── performCopy ──────────────────────────────────────────────────────────────
 
-describe('performFork', () => {
-	it('delegates to deps.forkChat', () => {
+describe('performCopy', () => {
+	it('delegates to deps.copyToNewChat', () => {
 		const deps = mockDeps();
-		performFork('exchange-123', deps);
-		expect(deps.forkChat).toHaveBeenCalledWith('exchange-123');
+		performCopy('exchange-123', deps);
+		expect(deps.copyToNewChat).toHaveBeenCalledWith('exchange-123');
 	});
 });
 

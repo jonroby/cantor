@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { buildInitialExchanges } from './initial-exchanges';
-import { validateChatTree, getRootExchange, getMainChatTail, getChildExchanges } from '@/domain/tree';
+import {
+	validateChatTree,
+	getRootExchange,
+	getMainChatTail,
+	getChildExchanges
+} from '@/domain/tree';
 
 describe('buildInitialExchanges', () => {
 	it('returns a valid ChatTree', () => {

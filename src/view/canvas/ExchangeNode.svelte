@@ -57,9 +57,9 @@
 				size="icon"
 				onclick={(event: MouseEvent) => {
 					event.stopPropagation();
-					data.onFork();
+					data.onCopy();
 				}}
-				ariaLabel="Fork"
+				ariaLabel="Copy"
 			>
 				<svg
 					width="14"
@@ -70,7 +70,7 @@
 					stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg
 				>
 			</Button>
-			<span class="action-tip">Fork</span>
+			<span class="action-tip">Copy</span>
 		</span>
 		{#if data.hasSideChildren}
 			<span class="action-tip-wrap">

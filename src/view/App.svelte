@@ -148,46 +148,46 @@
 {#if routerState.route === 'landing'}
 	<LandingPage />
 {:else}
-<SidebarPrimitive.Provider>
-	<AppSidebar
-		chats={chatState.chats}
-		activeChatIndex={chatState.activeChatIndex}
-		onSelectChat={selectChat}
-		onNewChat={newChat}
-		onDeleteChat={doDeleteChat}
-		onRenameChat={renameChat}
-		onDownloadChat={downloadChat}
-		onUploadChat={uploadChat}
-		folders={docState.folders}
-		onNewFolder={newFolder}
-		onDeleteFolder={deleteFolder}
-		onDownloadFolder={downloadFolder}
-		onRenameFolder={renameFolder}
-		onUploadDoc={uploadDocToFolder}
-		onUploadFolder={uploadFolderToFolder}
-		onUploadNewFolder={uploadFolder}
-		onSelectDoc={selectDoc}
-		onDeleteDoc={deleteDocFromFolder}
-		onRenameDoc={renameDocInFolder}
-		onMoveDoc={moveDocToFolder}
-	/>
-	<SidebarPrimitive.Inset>
-		{#if routerState.route === 'canvas'}
-			<CanvasView bind:this={canvasViewRef} onSearchOpen={() => (searchOpen = true)} />
-		{:else}
-			<ChatView bind:this={chatViewRef} />
-		{/if}
+	<SidebarPrimitive.Provider>
+		<AppSidebar
+			chats={chatState.chats}
+			activeChatIndex={chatState.activeChatIndex}
+			onSelectChat={selectChat}
+			onNewChat={newChat}
+			onDeleteChat={doDeleteChat}
+			onRenameChat={renameChat}
+			onDownloadChat={downloadChat}
+			onUploadChat={uploadChat}
+			folders={docState.folders}
+			onNewFolder={newFolder}
+			onDeleteFolder={deleteFolder}
+			onDownloadFolder={downloadFolder}
+			onRenameFolder={renameFolder}
+			onUploadDoc={uploadDocToFolder}
+			onUploadFolder={uploadFolderToFolder}
+			onUploadNewFolder={uploadFolder}
+			onSelectDoc={selectDoc}
+			onDeleteDoc={deleteDocFromFolder}
+			onRenameDoc={renameDocInFolder}
+			onMoveDoc={moveDocToFolder}
+		/>
+		<SidebarPrimitive.Inset>
+			{#if routerState.route === 'canvas'}
+				<CanvasView bind:this={canvasViewRef} onSearchOpen={() => (searchOpen = true)} />
+			{:else}
+				<ChatView bind:this={chatViewRef} />
+			{/if}
 
-		{#if searchOpen}
-			<SearchDialog
-				bind:searchQuery
-				bind:searchAllChats
-				{searchItems}
-				onClose={() => (searchOpen = false)}
-				onSelect={handleSearchSelect}
-			/>
-		{/if}
-	</SidebarPrimitive.Inset>
-</SidebarPrimitive.Provider>
+			{#if searchOpen}
+				<SearchDialog
+					bind:searchQuery
+					bind:searchAllChats
+					{searchItems}
+					onClose={() => (searchOpen = false)}
+					onSelect={handleSearchSelect}
+				/>
+			{/if}
+		</SidebarPrimitive.Inset>
+	</SidebarPrimitive.Provider>
 {/if}
 <Toaster position="top-center" />

@@ -72,48 +72,35 @@ export function startStream(params: {
 
 		if (snapshot.status === 'active' && context.response !== lastResponse) {
 			lastResponse = context.response;
-			replaceTreeByChatId(
-				targetChatId,
-				{
-					rootId: currentTree.rootId,
-					exchanges: updateExchangeResponse(currentTree.exchanges, exchangeId, context.response)
-				}
-			);
+			replaceTreeByChatId(targetChatId, {
+				rootId: currentTree.rootId,
+				exchanges: updateExchangeResponse(currentTree.exchanges, exchangeId, context.response)
+			});
 		}
 
 		if (snapshot.status === 'done') {
 			if (context.error === null && (context.promptTokens > 0 || context.responseTokens > 0)) {
 				const latestTree = getTreeByChatId(targetChatId);
 				if (latestTree) {
-					replaceTreeByChatId(
-						targetChatId,
-						{
-							rootId: latestTree.rootId,
-							exchanges: updateExchangeTokens(
-								latestTree.exchanges,
-								exchangeId,
-								context.promptTokens,
-								context.responseTokens
-							)
-						}
-					);
+					replaceTreeByChatId(targetChatId, {
+						rootId: latestTree.rootId,
+						exchanges: updateExchangeTokens(
+							latestTree.exchanges,
+							exchangeId,
+							context.promptTokens,
+							context.responseTokens
+						)
+					});
 				}
 			}
 
 			if (context.error !== null) {
 				const latestTree = getTreeByChatId(targetChatId);
 				if (latestTree) {
-					replaceTreeByChatId(
-						targetChatId,
-						{
-							rootId: latestTree.rootId,
-							exchanges: updateExchangeResponse(
-								latestTree.exchanges,
-								exchangeId,
-								context.response
-							)
-						}
-					);
+					replaceTreeByChatId(targetChatId, {
+						rootId: latestTree.rootId,
+						exchanges: updateExchangeResponse(latestTree.exchanges, exchangeId, context.response)
+					});
 				}
 			}
 

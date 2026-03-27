@@ -64,9 +64,7 @@
 	let submitDisabledReason = $derived(
 		!providerState.activeModel
 			? 'Select a model first.'
-			: activeExchangeId &&
-				  activeExchanges &&
-				  !canAcceptNewChat(activeExchanges, activeExchangeId)
+			: activeExchangeId && activeExchanges && !canAcceptNewChat(activeExchanges, activeExchangeId)
 				? 'Choose a branch tip or main-chain node to continue.'
 				: null
 	);
@@ -89,10 +87,7 @@
 		const chatId = activeChat.id;
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 		const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
-		if (
-			activeExchangeId &&
-			getChildExchanges(activeExchanges, activeExchangeId).length > 0
-		) {
+		if (activeExchangeId && getChildExchanges(activeExchanges, activeExchangeId).length > 0) {
 			onExpandSideChat(activeExchangeId);
 		}
 

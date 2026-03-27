@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import {
 	chatState,
 	getActiveChat,
@@ -17,7 +17,7 @@ import {
 	selectChat,
 	deleteChat,
 	renameChat,
-	forkChat,
+	copyToNewChat,
 	hydrate
 } from './chats.svelte';
 import {
@@ -26,8 +26,7 @@ import {
 	getMainChatTail,
 	validateChatTree,
 	type Chat,
-	type ChatTree,
-	type ExchangeMap
+	type ChatTree
 } from '@/domain/tree';
 import type { Provider } from '@/domain/models';
 
@@ -276,8 +275,8 @@ describe('chats state', () => {
 		});
 	});
 
-	describe('forkChat', () => {
-		it('creates a new chat from forked exchanges', () => {
+	describe('copyToNewChat', () => {
+		it('creates a new chat from copied path', () => {
 			const tree = buildTreeWithExchanges(3);
 			chatState.chats = [
 				{
@@ -291,14 +290,14 @@ describe('chats state', () => {
 			chatState.activeChatIndex = 0;
 
 			const tail = getMainChatTail(tree)!;
-			forkChat(tail);
+			copyToNewChat(tail);
 
 			expect(chatState.chats.length).toBe(2);
 			expect(chatState.activeChatIndex).toBe(1);
-			expect(chatState.chats[1].name).toContain('fork');
+			expect(chatState.chats[1].name).toContain('copy');
 		});
 
-		it('forked chat has a valid tree', () => {
+		it('copied chat has a valid tree', () => {
 			const tree = buildTreeWithExchanges(3);
 			chatState.chats = [
 				{
@@ -312,17 +311,17 @@ describe('chats state', () => {
 			chatState.activeChatIndex = 0;
 
 			const tail = getMainChatTail(tree)!;
-			forkChat(tail);
+			copyToNewChat(tail);
 
-			const forkedTree = getTreeByChatId(chatState.chats[1].id);
-			expect(forkedTree).toBeDefined();
-			expect(() => validateChatTree(forkedTree!)).not.toThrow();
+			const copiedTree = getTreeByChatId(chatState.chats[1].id);
+			expect(copiedTree).toBeDefined();
+			expect(() => validateChatTree(copiedTree!)).not.toThrow();
 		});
 
 		it('does nothing if no active chat', () => {
 			chatState.chats = [];
 			chatState.activeChatIndex = 0;
-			forkChat('some-id');
+			copyToNewChat('some-id');
 			expect(chatState.chats.length).toBe(0);
 		});
 	});
@@ -352,9 +351,7 @@ describe('chats state', () => {
 		it('ignores chats with no renderable exchanges', () => {
 			const before = chatState.chats[0].name;
 			hydrate({
-				chats: [
-					{ id: 'empty', name: 'Empty', rootId: null, exchanges: {}, activeExchangeId: null }
-				]
+				chats: [{ id: 'empty', name: 'Empty', rootId: null, exchanges: {}, activeExchangeId: null }]
 			});
 			expect(chatState.chats[0].name).toBe(before);
 		});

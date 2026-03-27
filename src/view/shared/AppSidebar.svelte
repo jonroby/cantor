@@ -156,7 +156,7 @@
 			<div class="h-14 px-3 flex items-center">
 				<span class="text-sm font-semibold text-sidebar-foreground flex-1">Cantor</span>
 				<button
-					class="rounded-lg hover:bg-sidebar-accent p-1 flex items-center justify-center transition-colors cursor-pointer"
+					class="rounded-lg hover:bg-sidebar-accent p-1 flex cursor-pointer items-center justify-center transition-colors"
 					onclick={() => sidebar.toggle()}
 					aria-label="Collapse sidebar"
 				>
@@ -170,11 +170,17 @@
 						{#snippet child({ props })}
 							<button
 								{...props}
-								class="group/logo rounded-lg hover:bg-sidebar-accent p-1 flex items-center justify-center transition-colors cursor-pointer"
+								class="group/logo rounded-lg hover:bg-sidebar-accent p-1 flex cursor-pointer items-center justify-center transition-colors"
 								onclick={() => sidebar.toggle()}
 								aria-label="Open sidebar"
 							>
-								<img src={powersetLogo} alt="Powerset Labs" width="24" height="28" class="block group-hover/logo:hidden" />
+								<img
+									src={powersetLogo}
+									alt="Powerset Labs"
+									width="24"
+									height="28"
+									class="block group-hover/logo:hidden"
+								/>
 								<span class="hidden group-hover/logo:block">
 									<HugeiconsIcon icon={SidebarLeftIcon} size={20} />
 								</span>

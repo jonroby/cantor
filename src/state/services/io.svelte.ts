@@ -53,7 +53,10 @@ export function uploadChat(): void {
 			const chat = validateChatUpload(data);
 			chat.id = crypto.randomUUID();
 			const baseName = file.name.replace(/\.json$/i, '');
-			chat.name = deduplicateName(baseName, chatState.chats.map((c) => c.name));
+			chat.name = deduplicateName(
+				baseName,
+				chatState.chats.map((c) => c.name)
+			);
 			chatState.chats = [...chatState.chats, chat];
 			chatState.activeChatIndex = chatState.chats.length - 1;
 			toast.success(`Imported "${chat.name}"`);
@@ -170,7 +173,10 @@ export function uploadFolder() {
 		}
 
 		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
-		const folderName = deduplicateName(dirName, docState.folders.map((f) => f.name));
+		const folderName = deduplicateName(
+			dirName,
+			docState.folders.map((f) => f.name)
+		);
 
 		const folderId = crypto.randomUUID();
 		const newFolderObj: ChatFolder = { id: folderId, name: folderName, files: [] };

@@ -94,7 +94,9 @@ describe('database', () => {
 		});
 
 		it('persists and restores folders', () => {
-			docState.folders = [{ id: 'f1', name: 'Docs', files: [{ id: 'd1', name: 'test.md', content: '# Hi' }] }];
+			docState.folders = [
+				{ id: 'f1', name: 'Docs', files: [{ id: 'd1', name: 'test.md', content: '# Hi' }] }
+			];
 			saveToStorage();
 
 			docState.folders = [];

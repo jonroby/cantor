@@ -6,10 +6,7 @@ import type { Message } from '@/domain/tree';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeInput(
-	chunks: StreamChunk[] = [],
-	opts?: { throwError?: string }
-): StreamMachineInput {
+function makeInput(chunks: StreamChunk[] = [], opts?: { throwError?: string }): StreamMachineInput {
 	return {
 		exchangeId: 'test-exchange',
 		model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
@@ -71,9 +68,7 @@ describe('streamMachine', () => {
 	});
 
 	it('transitions to done state on completion', async () => {
-		const input = makeInput([
-			{ type: 'done', promptTokens: 0, responseTokens: 0 }
-		]);
+		const input = makeInput([{ type: 'done', promptTokens: 0, responseTokens: 0 }]);
 
 		const final = await collectSnapshots(input);
 		expect(final.value).toBe('done');

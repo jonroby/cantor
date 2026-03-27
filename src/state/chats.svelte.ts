@@ -1,6 +1,6 @@
 import {
 	buildEmptyTree,
-	forkExchanges,
+	copyPath,
 	getMainChatTail,
 	type ChatTree,
 	type Chat,
@@ -113,30 +113,27 @@ export function renameChat(index: number, name: string) {
 	chatState.chats[index].name = name;
 }
 
-export function forkChat(exchangeId: string) {
+export function copyToNewChat(exchangeId: string) {
 	const activeChat = chatState.chats[chatState.activeChatIndex];
 	if (!activeChat) return;
 
-	const result = forkExchanges(
+	const result = copyPath(
 		{ rootId: activeChat.rootId, exchanges: activeChat.exchanges },
 		exchangeId
 	);
 
-	const forkedChat: Chat = {
+	const copiedChat: Chat = {
 		id: crypto.randomUUID(),
-		name: `${activeChat.name} (fork ${chatState.chats.length + 1})`,
+		name: `${activeChat.name} (copy ${chatState.chats.length + 1})`,
 		rootId: result.rootId,
-		exchanges: result.forkedExchanges,
+		exchanges: result.copiedExchanges,
 		activeExchangeId: result.firstCopiedId
 	};
-	chatState.chats = [...chatState.chats, forkedChat];
+	chatState.chats = [...chatState.chats, copiedChat];
 	chatState.activeChatIndex = chatState.chats.length - 1;
 }
 
-export function hydrate(parsed: {
-	chats?: Chat[];
-	activeChatIndex?: number;
-}) {
+export function hydrate(parsed: { chats?: Chat[]; activeChatIndex?: number }) {
 	if (parsed.chats?.length) {
 		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
 			chatState.chats = parsed.chats;

@@ -95,13 +95,13 @@ Pure in, pure out. No mocks needed. If you need a mock, the function doesn't bel
 - [ ] `updateExchangeTokens` — updates token counts on a specific exchange
 - [ ] `updateExchangeResponse` — sets response on an exchange, null → MessagePart
 
-#### Promote & Fork
+#### Promote & Copy
 
 - [ ] `canPromoteSideChatToMainChat` — true only for side roots
 - [ ] `promoteSideChatToMainChat` — swaps side branch into first-child position
 - [ ] `promoteSideChatToMainChat` — throws for non-side-root
-- [ ] `forkExchanges` — creates independent copy of path from root to target
-- [ ] `forkExchanges` — forked tree has new IDs, no shared references
+- [ ] `copyPath` — creates independent copy of path from root to target
+- [ ] `copyPath` — copied tree has new IDs, no shared references
 
 #### Edge cases
 
@@ -143,9 +143,9 @@ Orchestration tests. These verify that domain logic, state mutations, and servic
 
 ### Refactoring done
 
-- [x] **Extract dependencies to make app functions testable.** Introduced `ChatActionDeps` interface in `chat-actions.ts`. Effectful dependencies (`replaceActiveTree`, `setActiveExchangeId`, `forkChat`, `isStreaming`, `cancelStreamsForExchanges`) are now passed as an optional `deps` parameter with real implementations as defaults. Tests pass mock deps directly — no module mocking hacks needed for the functions under test. (Module-level `vi.mock` is still used to prevent `web-llm` from loading during import resolution.)
+- [x] **Extract dependencies to make app functions testable.** Introduced `ChatActionDeps` interface in `chat-actions.ts`. Effectful dependencies (`replaceActiveTree`, `setActiveExchangeId`, `copyToNewChat`, `isStreaming`, `cancelStreamsForExchanges`) are now passed as an optional `deps` parameter with real implementations as defaults. Tests pass mock deps directly — no module mocking hacks needed for the functions under test. (Module-level `vi.mock` is still used to prevent `web-llm` from loading during import resolution.)
 - [x] **Moved `ExchangeNodeData` type from `src/views/shared/types.ts` to `src/app/types.ts`.** App was importing from View, violating the one-way dependency rule. Views now import the type from `@/app/types`. The old `src/views/shared/types.ts` file was deleted.
-- [x] **Removed `canFork` from `ExchangeNodeData`.** It was hardcoded to `true` — every exchange can fork, there is no domain constraint. Removed the property, the assignment in `chat-actions.ts`, and the `{#if data.canFork}` guards in both `ExchangeNode.svelte` and `ChatMessage.svelte`.
+- [x] **Removed `canCopy` from `ExchangeNodeData`.** It was hardcoded to `true` — every exchange can copy, there is no domain constraint. Removed the property, the assignment in `chat-actions.ts`, and the `{#if data.canCopy}` guards in both `ExchangeNode.svelte` and `ChatMessage.svelte`.
 - [x] **Fixed `performPromote` state discipline.** `setActiveExchangeId` was called before the domain operation (`promoteSideChatToMainChat`), so failure left partial side effects. Reordered so side effects only execute after the domain call succeeds.
 
 ### `getExchangeNodeData`
@@ -157,7 +157,7 @@ Orchestration tests. These verify that domain logic, state mutations, and servic
 - [x] `isStreaming` reflects service state
 - [x] `isActive` is true when exchangeId matches activeExchangeId
 - [x] `isActive` is false when exchangeId does not match
-- [x] All callbacks (`onFork`, `onDelete`, `onPromote`, `onSelect`, `onToggleSideChildren`, `onMeasure`) are wired to the passed-in callbacks
+- [x] All callbacks (`onCopy`, `onDelete`, `onPromote`, `onSelect`, `onToggleSideChildren`, `onMeasure`) are wired to the passed-in callbacks
 - [x] Returns prompt and response text from the exchange
 - [x] Returns empty string when response is null
 - [x] Error in rendering returns null (try/catch path — verified with a structurally broken exchange map)
@@ -179,9 +179,9 @@ Orchestration tests. These verify that domain logic, state mutations, and servic
 - [x] Returns `{ error: string }` when domain throws (non-side-root) — and does not mutate state
 - [x] Returns `{ error: string }` for nonexistent exchange — and does not mutate state
 
-### `performFork`
+### `performCopy`
 
-- [x] Delegates to `deps.forkChat`
+- [x] Delegates to `deps.copyToNewChat`
 
 ### `getDeleteMode`
 
@@ -221,7 +221,7 @@ These are effectful.
 - [x] `selectChat` — clamps to valid range
 - [x] `deleteChat` — removes chat, clamps index, refuses to delete last chat
 - [x] `renameChat` — renames at index
-- [x] `forkChat` — creates new chat with forked tree, validates result, no-op for empty chats
+- [x] `copyToNewChat` — creates new chat with copied tree, validates result, no-op for empty chats
 - [x] `hydrate` — restores chats, ignores empty/non-renderable, clamps activeChatIndex
 
 ### `src/state/documents.svelte.ts`
@@ -291,7 +291,7 @@ Component tests. Verify that views render correctly and delegate actions to the 
 - [ ] `ChatMessage.svelte` — renders prompt and response HTML
 - [ ] `ChatMessage.svelte` — shows streaming indicator when `isStreaming` is true
 - [ ] `ChatMessage.svelte` — shows provider logo and model name
-- [ ] `ChatMessage.svelte` — action buttons (fork, promote, delete) call correct callbacks
+- [ ] `ChatMessage.svelte` — action buttons (copy, promote, delete) call correct callbacks
 - [ ] `ChatMessage.svelte` — promote button only visible for side roots, disabled when `canPromote` is false
 - [ ] `ChatMessage.svelte` — branch badge shows side children count
 

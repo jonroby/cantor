@@ -60,7 +60,7 @@
 	<div
 		bind:this={ref}
 		class={cn(
-			'text-sidebar-foreground group peer md:flex hidden flex-col h-svh flex-none',
+			'text-sidebar-foreground group peer md:flex hidden h-svh flex-none flex-col',
 			'transition-[width] duration-200 ease-linear',
 			sidebar.state === 'expanded' ? 'w-(--sidebar-width)' : 'w-(--sidebar-width-icon)',
 			className
@@ -76,7 +76,7 @@
 			data-sidebar="sidebar"
 			data-slot="sidebar-inner"
 			class={cn(
-				'bg-sidebar flex size-full flex-col border-sidebar-border overflow-hidden',
+				'bg-sidebar border-sidebar-border flex size-full flex-col overflow-hidden',
 				side === 'left' ? 'border-e' : 'border-s'
 			)}
 		>
