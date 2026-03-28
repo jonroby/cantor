@@ -18,11 +18,12 @@
 			: []
 	);
 
-	let contextMenuBlock: { source: string; x: number; y: number } | null = $state(null);
+	let contextMenuBlock: { source: string; index: number; x: number; y: number } | null =
+		$state(null);
 
-	function handleBlockContextMenu(event: MouseEvent, source: string) {
+	function handleBlockContextMenu(event: MouseEvent, source: string, index: number) {
 		event.preventDefault();
-		contextMenuBlock = { source, x: event.clientX, y: event.clientY };
+		contextMenuBlock = { source, index, x: event.clientX, y: event.clientY };
 	}
 
 	function handleQuickAsk() {
@@ -63,11 +64,12 @@
 		{#if responseBlocks.length > 0}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="chatmsg-response-body" onmousedown={closeContextMenu}>
-				{#each responseBlocks as block}
+				{#each responseBlocks as block, i}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div
 						class="chatmsg-block"
-						oncontextmenu={(e) => handleBlockContextMenu(e, block.source)}
+						class:chatmsg-block-active={contextMenuBlock?.index === i}
+						oncontextmenu={(e) => handleBlockContextMenu(e, block.source, i)}
 					>
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 						{@html block.html}

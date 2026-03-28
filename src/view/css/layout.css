@@ -1048,7 +1048,20 @@
 }
 
 .chatmsg-block {
-	cursor: context-menu;
+	position: relative;
+	padding: 0.15rem 0.5rem;
+	margin: 0 -0.5rem;
+	border-radius: 0.4rem;
+	border-left: 2px solid transparent;
+	transition:
+		background 150ms ease,
+		border-color 150ms ease;
+}
+
+.chatmsg-block:hover,
+.chatmsg-block-active {
+	background: hsl(var(--foreground) / 0.04);
+	border-left-color: hsl(var(--primary) / 0.5);
 }
 
 .chatmsg-context-scrim {
