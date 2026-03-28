@@ -10,8 +10,7 @@ vi.mock('@/view/shared/katex', () => ({
 }));
 
 vi.mock('@/domain/document-map/index', () => ({
-	mapDocument: (text: string) =>
-		text ? [{ source: text, html: text }] : [],
+	mapDocument: (text: string) => (text ? [{ source: text, html: text }] : []),
 	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
 }));
 

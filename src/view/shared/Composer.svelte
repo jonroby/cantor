@@ -26,7 +26,7 @@
 		contextLength,
 		onSubmit,
 		onStop,
-		onToggleCanvasMode,
+		onToggleCanvasMode: _onToggleCanvasMode,
 		onOpenPalette
 	}: Props = $props();
 

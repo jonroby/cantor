@@ -49,7 +49,7 @@ const blockMathDollar: TokenizerAndRendererExtension = {
 		return { type: 'blockMathDollar', raw, latex };
 	},
 	renderer(token) {
-		return renderKatex((token as any).latex, true);
+		return renderKatex((token as { latex: string }).latex, true);
 	}
 };
 
@@ -69,7 +69,7 @@ const blockMathBracket: TokenizerAndRendererExtension = {
 		return { type: 'blockMathBracket', raw, latex };
 	},
 	renderer(token) {
-		return renderKatex((token as any).latex, true);
+		return renderKatex((token as { latex: string }).latex, true);
 	}
 };
 
@@ -92,7 +92,7 @@ const inlineMathDollar: TokenizerAndRendererExtension = {
 		return { type: 'inlineMathDollar', raw, latex };
 	},
 	renderer(token) {
-		return renderKatex((token as any).latex, false);
+		return renderKatex((token as { latex: string }).latex, false);
 	}
 };
 
@@ -112,7 +112,7 @@ const inlineMathParen: TokenizerAndRendererExtension = {
 		return { type: 'inlineMathParen', raw, latex };
 	},
 	renderer(token) {
-		return renderKatex((token as any).latex, false);
+		return renderKatex((token as { latex: string }).latex, false);
 	}
 };
 
