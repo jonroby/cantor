@@ -85,7 +85,7 @@ describe('ApiKeyFlow', () => {
 
 		it('shows error when onSaveKey rejects', async () => {
 			const { props } = renderFlow();
-			props.onSaveKey.mockRejectedValueOnce(new Error('Storage full'));
+			vi.mocked(props.onSaveKey).mockRejectedValueOnce(new Error('Storage full'));
 
 			await userEvent.type(screen.getByLabelText('API Key'), 'sk-ant-xxx');
 			await userEvent.type(screen.getByLabelText('Master Password'), 'password123');
@@ -136,7 +136,7 @@ describe('ApiKeyFlow', () => {
 
 		it('shows error when unlock fails', async () => {
 			const { props } = renderFlow({ flow: { provider: 'claude', mode: 'unlock' } });
-			props.onUnlockKeys.mockRejectedValueOnce(new Error('Incorrect password'));
+			vi.mocked(props.onUnlockKeys).mockRejectedValueOnce(new Error('Incorrect password'));
 
 			await userEvent.type(screen.getByLabelText('Password'), 'wrong');
 			await userEvent.click(screen.getByText('Unlock'));

@@ -15,6 +15,7 @@ const CONTEXT_OPTIONS: ReadonlyArray<{ label: string; value: WebLLMContextSize }
 function makeModels(n: number): WebLLMModelEntry[] {
 	return Array.from({ length: n }, (_, i) => ({
 		id: `model-${i}`,
+		label: `model-${i}`,
 		vramMB: (i + 1) * 256
 	}));
 }
@@ -85,12 +86,12 @@ describe('WebLLMTab', () => {
 		});
 
 		it('shows VRAM in MB for small models', () => {
-			renderTab({ webllmModels: [{ id: 'small-model', vramMB: 512 }] });
+			renderTab({ webllmModels: [{ id: 'small-model', label: 'small-model', vramMB: 512 }] });
 			expect(screen.getByText('512MB')).toBeInTheDocument();
 		});
 
 		it('shows VRAM in GB for large models', () => {
-			renderTab({ webllmModels: [{ id: 'big-model', vramMB: 2048 }] });
+			renderTab({ webllmModels: [{ id: 'big-model', label: 'big-model', vramMB: 2048 }] });
 			expect(screen.getByText('2.0GB')).toBeInTheDocument();
 		});
 
@@ -131,9 +132,9 @@ describe('WebLLMTab', () => {
 	describe('search', () => {
 		it('filters models by search query', async () => {
 			const models: WebLLMModelEntry[] = [
-				{ id: 'Llama-3-8B', vramMB: 512 },
-				{ id: 'Phi-3-mini', vramMB: 256 },
-				{ id: 'Llama-2-7B', vramMB: 1024 }
+				{ id: 'Llama-3-8B', label: 'Llama-3-8B', vramMB: 512 },
+				{ id: 'Phi-3-mini', label: 'Phi-3-mini', vramMB: 256 },
+				{ id: 'Llama-2-7B', label: 'Llama-2-7B', vramMB: 1024 }
 			];
 			renderTab({ webllmModels: models });
 

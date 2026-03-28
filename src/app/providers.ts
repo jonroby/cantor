@@ -45,6 +45,16 @@ export async function connectOllama(url: string) {
 		providerState.ollamaUrl = url;
 		providerState.ollamaModels = models;
 		providerState.ollamaStatus = 'connected';
+		if (providerState.activeModel?.provider === 'ollama') {
+			if (models.includes(providerState.activeModel.modelId)) {
+				providerState.activeModel = {
+					provider: 'ollama',
+					modelId: providerState.activeModel.modelId
+				};
+			} else {
+				providerState.activeModel = models[0] ? { provider: 'ollama', modelId: models[0] } : null;
+			}
+		}
 	} catch (error) {
 		providerState.ollamaStatus = 'error';
 		providerState.ollamaModels = [];
