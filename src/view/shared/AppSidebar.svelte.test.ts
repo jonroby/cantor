@@ -109,8 +109,8 @@ describe('AppSidebar', () => {
 		await user.click(screen.getByText('New chat'));
 
 		expect(screen.getByText('Chat 1')).toBeInTheDocument();
-		expect(screen.getByText('Chat 2')).toBeInTheDocument();
-		expect(screen.getByText('Chat 3')).toBeInTheDocument();
+		expect(screen.getByText('Chat (1)')).toBeInTheDocument();
+		expect(screen.getByText('Chat (2)')).toBeInTheDocument();
 	});
 
 	it('creates a new folder when the button is clicked', async () => {
@@ -167,7 +167,7 @@ describe('AppSidebar', () => {
 			onRenameFolder: vi
 				.fn()
 				.mockImplementation(
-					(folderId: string, name: string) => folderId === 'folder-2' && name === 'Docs 1'
+					(folderId: string, name: string) => folderId === 'folder-2' && name === 'Docs (1)'
 				),
 			onUploadDoc: vi.fn(),
 			onUploadFolder: vi.fn(),
@@ -186,8 +186,8 @@ describe('AppSidebar', () => {
 		await user.tab();
 
 		expect(props.onRenameFolder).toHaveBeenNthCalledWith(1, 'folder-2', 'Docs');
-		expect(props.onRenameFolder).toHaveBeenNthCalledWith(2, 'folder-2', 'Docs 1');
-		expect(toast.warning).toHaveBeenCalledWith('Renamed to "Docs 1" to avoid duplicate');
+		expect(props.onRenameFolder).toHaveBeenNthCalledWith(2, 'folder-2', 'Docs (1)');
+		expect(toast.warning).toHaveBeenCalledWith('Renamed to "Docs (1)" to avoid duplicate');
 	});
 
 	it('deduplicates chat renames in the UI before saving', async () => {
@@ -203,7 +203,7 @@ describe('AppSidebar', () => {
 			onDeleteChat: vi.fn(),
 			onRenameChat: vi
 				.fn()
-				.mockImplementation((index: number, name: string) => index === 1 && name === 'Alpha 1'),
+				.mockImplementation((index: number, name: string) => index === 1 && name === 'Alpha (1)'),
 			onDownloadChat: vi.fn(),
 			onUploadChat: vi.fn(),
 			folders: [],
@@ -228,8 +228,8 @@ describe('AppSidebar', () => {
 		await fireEvent.blur(input);
 
 		expect(props.onRenameChat).toHaveBeenNthCalledWith(1, 1, 'Alpha');
-		expect(props.onRenameChat).toHaveBeenNthCalledWith(2, 1, 'Alpha 1');
-		expect(toast.warning).toHaveBeenCalledWith('Renamed to "Alpha 1" to avoid duplicate');
+		expect(props.onRenameChat).toHaveBeenNthCalledWith(2, 1, 'Alpha (1)');
+		expect(toast.warning).toHaveBeenCalledWith('Renamed to "Alpha (1)" to avoid duplicate');
 	});
 
 	it('deduplicates doc renames in the UI before saving', async () => {
@@ -268,7 +268,7 @@ describe('AppSidebar', () => {
 				.fn()
 				.mockImplementation(
 					(folderId: string, fileId: string, name: string) =>
-						folderId === 'folder-1' && fileId === 'doc-2' && name === 'a.md 1'
+						folderId === 'folder-1' && fileId === 'doc-2' && name === 'a.md (1)'
 				),
 			onMoveDoc: vi.fn(() => true)
 		};
@@ -282,7 +282,7 @@ describe('AppSidebar', () => {
 		await fireEvent.blur(input);
 
 		expect(props.onRenameDoc).toHaveBeenNthCalledWith(1, 'folder-1', 'doc-2', 'a.md');
-		expect(props.onRenameDoc).toHaveBeenNthCalledWith(2, 'folder-1', 'doc-2', 'a.md 1');
-		expect(toast.warning).toHaveBeenCalledWith('Renamed to "a.md 1" to avoid duplicate');
+		expect(props.onRenameDoc).toHaveBeenNthCalledWith(2, 'folder-1', 'doc-2', 'a.md (1)');
+		expect(toast.warning).toHaveBeenCalledWith('Renamed to "a.md (1)" to avoid duplicate');
 	});
 });

@@ -289,19 +289,19 @@ describe('chats state', () => {
 
 		it('reuses freed name after deleting a chat', () => {
 			const i1 = newChat();
-			expect(chatState.chats[i1].name).toBe('Chat 2');
+			expect(chatState.chats[i1].name).toBe('Chat (1)');
 			deleteChat(i1);
 			const i2 = newChat();
-			expect(chatState.chats[i2].name).toBe('Chat 2');
+			expect(chatState.chats[i2].name).toBe('Chat (1)');
 		});
 
 		it('skips names that are already taken', () => {
-			newChat(); // Chat 2
-			newChat(); // Chat 3
-			expect(chatState.chats.map((c) => c.name)).toEqual(['Chat 1', 'Chat 2', 'Chat 3']);
-			deleteChat(1); // remove Chat 2
+			newChat(); // Chat (1)
+			newChat(); // Chat (2)
+			expect(chatState.chats.map((c) => c.name)).toEqual(['Chat 1', 'Chat (1)', 'Chat (2)']);
+			deleteChat(1); // remove Chat (1)
 			const i = newChat();
-			expect(chatState.chats[i].name).toBe('Chat 2');
+			expect(chatState.chats[i].name).toBe('Chat (1)');
 		});
 	});
 
@@ -410,7 +410,7 @@ describe('chats state', () => {
 
 			expect(chatState.chats.length).toBe(2);
 			expect(chatState.activeChatIndex).toBe(1);
-			expect(chatState.chats[1].name).toBe('Copy Path 1');
+			expect(chatState.chats[1].name).toBe('Copy Path (1)');
 		});
 
 		it('copied chat has a valid tree', () => {
@@ -451,14 +451,14 @@ describe('chats state', () => {
 					exchanges: tree.exchanges,
 					activeExchangeId: getMainChatTail(tree)
 				},
-				makeChat('Copy Path 1'),
-				makeChat('Copy Path 2')
+				makeChat('Copy Path (1)'),
+				makeChat('Copy Path (2)')
 			];
 			chatState.activeChatIndex = 0;
 
 			copyToNewChat(getMainChatTail(tree)!);
 
-			expect(chatState.chats.at(-1)?.name).toBe('Copy Path 3');
+			expect(chatState.chats.at(-1)?.name).toBe('Copy Path (3)');
 			const names = chatState.chats.map((chat) => chat.name);
 			expect(new Set(names).size).toBe(names.length);
 		});

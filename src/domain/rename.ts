@@ -1,5 +1,5 @@
 /**
- * Attempts a rename. If the name conflicts, auto-increments ("name 1", "name 2", ...)
+ * Attempts a rename. If the name conflicts, auto-increments ("name (1)", "name (2)", ...)
  * until it succeeds. Returns the final name used, or null if the input was empty.
  */
 export function renameWithDedup(
@@ -12,7 +12,7 @@ export function renameWithDedup(
 	let candidate = trimmed;
 	let i = 1;
 	while (!tryRename(candidate)) {
-		candidate = `${trimmed} ${i}`;
+		candidate = `${trimmed} (${i})`;
 		i++;
 	}
 	return candidate;

@@ -24,17 +24,17 @@ describe('renameWithDedup', () => {
 			existing.add(c);
 			return true;
 		});
-		expect(result).toBe('Foo 1');
+		expect(result).toBe('Foo (1)');
 	});
 
 	it('skips existing numbered names', () => {
-		const existing = new Set(['Foo', 'Foo 1', 'Foo 2']);
+		const existing = new Set(['Foo', 'Foo (1)', 'Foo (2)']);
 		const result = renameWithDedup('Foo', (c) => {
 			if (existing.has(c)) return false;
 			existing.add(c);
 			return true;
 		});
-		expect(result).toBe('Foo 3');
+		expect(result).toBe('Foo (3)');
 	});
 
 	it('handles multiple duplicates in sequence', () => {
@@ -46,8 +46,8 @@ describe('renameWithDedup', () => {
 		};
 
 		expect(renameWithDedup('Chat', tryRename)).toBe('Chat');
-		expect(renameWithDedup('Chat', tryRename)).toBe('Chat 1');
-		expect(renameWithDedup('Chat', tryRename)).toBe('Chat 2');
-		expect(renameWithDedup('Chat', tryRename)).toBe('Chat 3');
+		expect(renameWithDedup('Chat', tryRename)).toBe('Chat (1)');
+		expect(renameWithDedup('Chat', tryRename)).toBe('Chat (2)');
+		expect(renameWithDedup('Chat', tryRename)).toBe('Chat (3)');
 	});
 });

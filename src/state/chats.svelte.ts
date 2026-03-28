@@ -88,8 +88,8 @@ export function setActiveExchangeId(exchangeId: string | null) {
 function nextChatName(): string {
 	const names = new Set(chatState.chats.map((c) => c.name));
 	let i = 1;
-	while (names.has(`Chat ${i}`)) i++;
-	return `Chat ${i}`;
+	while (names.has(`Chat (${i})`)) i++;
+	return `Chat (${i})`;
 }
 
 export function newChat(): number {
@@ -126,8 +126,8 @@ export function renameChat(index: number, name: string): boolean {
 function nextCopyName(): string {
 	const names = new Set(chatState.chats.map((c) => c.name));
 	let i = 1;
-	while (names.has(`Copy Path ${i}`)) i++;
-	return `Copy Path ${i}`;
+	while (names.has(`Copy Path (${i})`)) i++;
+	return `Copy Path (${i})`;
 }
 
 export function copyToNewChat(exchangeId: string) {
