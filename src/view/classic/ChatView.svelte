@@ -143,6 +143,7 @@
 	}
 
 	function focusPanel(panelId: string) {
+		if (focusedPanelId === panelId) return;
 		focusedPanelId = panelId;
 		if (panelId === mainPanel.id) {
 			setActiveExchangeId(mainChatTailId);
@@ -153,7 +154,9 @@
 				setActiveExchangeId(sidePanelParentId);
 			}
 		}
-		tick().then(() => chatInputRef?.focus());
+		if (!isDocPanel) {
+			tick().then(() => chatInputRef?.focus());
+		}
 	}
 
 	function focusMain() {
