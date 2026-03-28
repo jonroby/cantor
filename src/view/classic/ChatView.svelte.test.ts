@@ -70,11 +70,10 @@ function addExchange(tree: ChatTree, parentId: string, prompt: string, response:
 
 /**
  * Builds a tree with visible exchanges.
- * Root is always hidden. N visible exchanges appear in the main path.
+ * Root is visible. N additional exchanges appear in the main path.
  */
 function buildVisibleTree(n: number): ChatTree {
 	let tree = buildEmptyTree();
-	// Root (hidden)
 	const root = addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
 	tree = root;
 	tree.exchanges[root.id] = {
@@ -92,8 +91,8 @@ function buildVisibleTree(n: number): ChatTree {
 
 /**
  * Builds a tree with a side branch off a visible exchange.
- * Structure: root (hidden) → e1 (visible) → e2 (visible, main)
- *                                         → side1 (visible, side branch)
+ * Structure: root (visible) → e1 (visible) → e2 (visible, main)
+ *                                           → side1 (visible, side branch)
  */
 function buildTreeWithBranch(): { tree: ChatTree; branchParentId: string } {
 	let tree = buildEmptyTree();
@@ -381,7 +380,8 @@ describe('ChatView', () => {
 		it('copy button is available on exchanges', () => {
 			resetState(buildVisibleTree(1));
 			render(ChatView);
-			expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument();
+			const copyButtons = screen.getAllByRole('button', { name: 'Copy' });
+			expect(copyButtons.length).toBeGreaterThan(0);
 		});
 	});
 });

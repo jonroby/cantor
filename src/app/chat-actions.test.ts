@@ -100,10 +100,12 @@ function buildTreeWithSideChat(): {
 // ── getExchangeNodeData ──────────────────────────────────────────────────────
 
 describe('getExchangeNodeData', () => {
-	it('returns null for root exchange (parentId === null)', () => {
+	it('returns data for root exchange (parentId === null)', () => {
 		const { tree, rootId } = buildLinearTree();
 		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
-		expect(result).toBeNull();
+		expect(result).not.toBeNull();
+		expect(result!.prompt).toBe('root prompt');
+		expect(result!.response).toBe('root response');
 	});
 
 	it('returns null for nonexistent exchange', () => {
@@ -120,12 +122,19 @@ describe('getExchangeNodeData', () => {
 
 	it('correctly computes hasSideChildren and sideChildrenCount', () => {
 		const { tree, mainId } = buildTreeWithSideChat();
-		// rootId has 2 children (main + side), but root is filtered out (parentId === null)
 		// mainId has 0 children
 		const result = getExchangeNodeData(mainId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.hasSideChildren).toBe(false);
 		expect(result!.sideChildrenCount).toBe(0);
+	});
+
+	it('root exchange shows hasSideChildren when it has side children', () => {
+		const { tree, rootId } = buildTreeWithSideChat();
+		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result).not.toBeNull();
+		expect(result!.hasSideChildren).toBe(true);
+		expect(result!.sideChildrenCount).toBe(1);
 	});
 
 	it('hasSideChildren is true when a node has side children', () => {
@@ -153,6 +162,13 @@ describe('getExchangeNodeData', () => {
 		const result = getExchangeNodeData(sideId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.isSideRoot).toBe(true);
+	});
+
+	it('root exchange is not isSideRoot', () => {
+		const { tree, rootId } = buildLinearTree();
+		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result).not.toBeNull();
+		expect(result!.isSideRoot).toBe(false);
 	});
 
 	it('main child is not isSideRoot', () => {

@@ -62,7 +62,7 @@
 		if (!activeExchanges) return [];
 		const root = getRootExchange({ rootId: getActiveChat().rootId, exchanges: activeExchanges });
 		if (!root) return [];
-		const path: Exchange[] = [];
+		const path: Exchange[] = [root];
 		let currentId: string | null = root.id;
 		while (currentId) {
 			const children = getChildExchanges(activeExchanges, currentId);

@@ -59,7 +59,7 @@ export function getExchangeNodeData(
 	deps: ChatActionDeps = defaultDeps
 ): ExchangeNodeData | null {
 	const exchange = activeExchanges[exchangeId];
-	if (!exchange || exchange.parentId === null) return null;
+	if (!exchange) return null;
 	const children = getChildExchanges(activeExchanges, exchangeId);
 	const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
 	const hasSideChildren = canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
