@@ -22,7 +22,7 @@
 		$state(null);
 
 	function handleBlockContextMenu(event: MouseEvent, source: string, index: number) {
-		if (data.isSideRoot) return;
+		if (!data.canQuickAsk) return;
 		event.preventDefault();
 		contextMenuBlock = { source, index, x: event.clientX, y: event.clientY };
 	}
@@ -111,6 +111,7 @@
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="chatmsg-block"
+							class:chatmsg-block-askable={data.canQuickAsk}
 							class:chatmsg-block-active={contextMenuBlock?.index === i}
 							oncontextmenu={(e) => handleBlockContextMenu(e, block.source, i)}
 						>

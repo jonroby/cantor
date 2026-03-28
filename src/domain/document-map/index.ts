@@ -6,6 +6,10 @@ export interface DocumentBlock {
 	html: string;
 }
 
+interface MathToken {
+	latex: string;
+}
+
 function escapeHtml(str: string): string {
 	return str
 		.replace(/&/g, '&amp;')
@@ -46,10 +50,10 @@ const blockMathDollar: TokenizerAndRendererExtension = {
 		if (end === -1) return undefined;
 		const raw = src.slice(0, end + 2);
 		const latex = src.slice(2, end);
-		return { type: 'blockMathDollar', raw, latex };
+		return { type: 'blockMathDollar', raw, latex } as const;
 	},
 	renderer(token) {
-		return renderKatex((token as { latex: string }).latex, true);
+		return renderKatex((token as unknown as MathToken).latex, true);
 	}
 };
 
@@ -66,10 +70,10 @@ const blockMathBracket: TokenizerAndRendererExtension = {
 		if (end === -1) return undefined;
 		const raw = src.slice(0, end + 2);
 		const latex = src.slice(2, end);
-		return { type: 'blockMathBracket', raw, latex };
+		return { type: 'blockMathBracket', raw, latex } as const;
 	},
 	renderer(token) {
-		return renderKatex((token as { latex: string }).latex, true);
+		return renderKatex((token as unknown as MathToken).latex, true);
 	}
 };
 
@@ -89,10 +93,10 @@ const inlineMathDollar: TokenizerAndRendererExtension = {
 		if (src[end + 1] === '$') return undefined;
 		const raw = src.slice(0, end + 1);
 		const latex = src.slice(1, end);
-		return { type: 'inlineMathDollar', raw, latex };
+		return { type: 'inlineMathDollar', raw, latex } as const;
 	},
 	renderer(token) {
-		return renderKatex((token as { latex: string }).latex, false);
+		return renderKatex((token as unknown as MathToken).latex, false);
 	}
 };
 
@@ -109,10 +113,10 @@ const inlineMathParen: TokenizerAndRendererExtension = {
 		if (end === -1) return undefined;
 		const raw = src.slice(0, end + 2);
 		const latex = src.slice(2, end);
-		return { type: 'inlineMathParen', raw, latex };
+		return { type: 'inlineMathParen', raw, latex } as const;
 	},
 	renderer(token) {
-		return renderKatex((token as { latex: string }).latex, false);
+		return renderKatex((token as unknown as MathToken).latex, false);
 	}
 };
 

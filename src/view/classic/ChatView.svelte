@@ -21,7 +21,7 @@
 		performDelete,
 		performPromote,
 		performCopy,
-		performSubmitPrompt,
+		performQuickAsk,
 		getDeleteMode
 	} from '@/app/chat-actions';
 	import { providerState } from '@/state/providers.svelte';
@@ -209,20 +209,22 @@
 
 		const activeChat = getActiveChat();
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
-		const prompt = `Can you explain more:\n\n${sourceText}`;
 
 		let result;
 		try {
-			result = performSubmitPrompt(
+			result = performQuickAsk(
 				activeChat.id,
 				tree,
 				exchangeId,
-				prompt,
+				sourceText,
 				providerState.activeModel
 			);
-		} catch {
+		} catch (error) {
+			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
 			return;
 		}
+
+		operationError = null;
 
 		if (result.hasSideChildren) {
 			expandSideChat(result.parentId);

@@ -35,6 +35,7 @@ function makeNodeData(overrides: Partial<ExchangeNodeData> = {}): ExchangeNodeDa
 		isSideRoot: false,
 		canCreateSideChat: false,
 		canPromote: false,
+		canQuickAsk: true,
 		onMeasure: vi.fn(),
 		onSelect: vi.fn(),
 		onCopy: vi.fn(),

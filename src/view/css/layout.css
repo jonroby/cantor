@@ -1098,7 +1098,7 @@
 		border-color 150ms ease;
 }
 
-.chatmsg-block:hover,
+.chatmsg-block-askable:hover,
 .chatmsg-block-active {
 	background: hsl(var(--foreground) / 0.04);
 	border-left-color: hsl(var(--primary) / 0.5);
