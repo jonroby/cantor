@@ -308,11 +308,11 @@ describe('getRootExchange and getChildExchanges', () => {
 });
 
 describe('canCreateSideChats and canAcceptNewChat', () => {
-	it('distinguishes main-path exchanges from side exchanges', () => {
+	it('returns true for main-path exchanges with children, false for leaves and side exchanges', () => {
 		const { tree, rootId, mainId, sideId } = buildRootWithSideChat();
 
 		expect(canCreateSideChats(tree.exchanges, rootId)).toBe(true);
-		expect(canCreateSideChats(tree.exchanges, mainId)).toBe(true);
+		expect(canCreateSideChats(tree.exchanges, mainId)).toBe(false);
 		expect(canCreateSideChats(tree.exchanges, sideId)).toBe(false);
 	});
 
@@ -335,9 +335,9 @@ describe('canCreateSideChats and canAcceptNewChat', () => {
 		expect(() => canAcceptNewChat(empty.exchanges, 'missing')).toThrow('not found in tree');
 	});
 
-	it('returns false from side detection for a root-only tree', () => {
+	it('returns false for a root-only tree (no children)', () => {
 		const root = addExchangeResult(buildEmptyTree(), 'ignored', 'root prompt', MODEL, PROVIDER);
-		expect(canCreateSideChats(root.exchanges, root.id)).toBe(true);
+		expect(canCreateSideChats(root.exchanges, root.id)).toBe(false);
 	});
 });
 

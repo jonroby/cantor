@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import Button from '@/view/components/custom/button.svelte';
 	import ChatMessage from './ChatMessage.svelte';
 	import { ChatInput } from '@/view/shared';
@@ -62,7 +63,7 @@
 		if (!activeExchanges) return [];
 		const root = getRootExchange({ rootId: getActiveChat().rootId, exchanges: activeExchanges });
 		if (!root) return [];
-		const path: Exchange[] = [];
+		const path: Exchange[] = [root];
 		let currentId: string | null = root.id;
 		while (currentId) {
 			const children = getChildExchanges(activeExchanges, currentId);
@@ -166,6 +167,7 @@
 
 	function copyChat(exchangeId: string) {
 		performCopy(exchangeId);
+		toast.success('Copied to new chat');
 	}
 
 	function openDeleteDialog(exchangeId: string) {

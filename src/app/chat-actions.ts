@@ -59,14 +59,13 @@ export function getExchangeNodeData(
 	deps: ChatActionDeps = defaultDeps
 ): ExchangeNodeData | null {
 	const exchange = activeExchanges[exchangeId];
-	if (!exchange || exchange.parentId === null) return null;
+	if (!exchange) return null;
 	const children = getChildExchanges(activeExchanges, exchangeId);
 	const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
 	const hasSideChildren = canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
 	const isSideRoot = exchange.parentId
 		? (getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !== exchangeId
 		: false;
-
 	return {
 		prompt: exchange.prompt.text,
 		response: exchange.response?.text ?? '',
@@ -77,6 +76,7 @@ export function getExchangeNodeData(
 		hasSideChildren,
 		sideChildrenCount,
 		isSideRoot,
+		canCreateSideChat: canCreateSideChats(activeExchanges, exchangeId),
 		canPromote: canPromoteSideChatToMainChat(
 			{ rootId: findRootId(activeExchanges), exchanges: activeExchanges },
 			exchangeId
@@ -147,7 +147,7 @@ export function performSubmitPrompt(
 	prompt: string,
 	model: ActiveModel,
 	deps: ChatActionDeps = defaultDeps
-): { id: string; hasSideChildren: boolean } {
+): { id: string; parentId: string; hasSideChildren: boolean } {
 	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
 	const hasSideChildren =
 		activeExchangeId !== null && getChildExchanges(tree.exchanges, activeExchangeId).length > 0;
@@ -164,5 +164,5 @@ export function performSubmitPrompt(
 		tree: created
 	});
 
-	return { id: created.id, hasSideChildren };
+	return { id: created.id, parentId, hasSideChildren };
 }

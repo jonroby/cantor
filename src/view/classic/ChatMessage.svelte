@@ -160,6 +160,7 @@
 						class="icon-chip"
 						variant="ghost"
 						size="icon"
+						disabled={!data.canCreateSideChat}
 						onclick={(event: MouseEvent) => {
 							event.stopPropagation();
 							data.onToggleSideChildren();

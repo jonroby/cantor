@@ -58,6 +58,12 @@
 				: null
 	);
 
+	let activeChatId = $derived(getActiveChat().id);
+	$effect(() => {
+		void activeChatId;
+		tick().then(() => composerRef?.focus());
+	});
+
 	$effect(() => {
 		updateContextLength();
 	});
@@ -89,8 +95,8 @@
 			return;
 		}
 
-		if (result.hasSideChildren && activeExchangeId) {
-			onExpandSideChat(activeExchangeId);
+		if (result.hasSideChildren) {
+			onExpandSideChat(result.parentId);
 		}
 
 		composerValue = '';

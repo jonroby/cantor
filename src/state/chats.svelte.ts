@@ -85,11 +85,18 @@ export function setActiveExchangeId(exchangeId: string | null) {
 	chatState.chats[chatState.activeChatIndex].activeExchangeId = exchangeId;
 }
 
+function nextChatName(): string {
+	const names = new Set(chatState.chats.map((c) => c.name));
+	let i = 1;
+	while (names.has(`Chat (${i})`)) i++;
+	return `Chat (${i})`;
+}
+
 export function newChat(): number {
 	const tree = buildEmptyTree();
 	const chat: Chat = {
 		id: crypto.randomUUID(),
-		name: `Chat ${chatState.chats.length + 1}`,
+		name: nextChatName(),
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
 		activeExchangeId: getMainChatTail(tree)
@@ -109,8 +116,18 @@ export function deleteChat(index: number) {
 	chatState.activeChatIndex = Math.min(chatState.activeChatIndex, chatState.chats.length - 1);
 }
 
-export function renameChat(index: number, name: string) {
+export function renameChat(index: number, name: string): boolean {
+	const conflict = chatState.chats.some((c, i) => i !== index && c.name === name);
+	if (conflict) return false;
 	chatState.chats[index].name = name;
+	return true;
+}
+
+function nextCopyName(): string {
+	const names = new Set(chatState.chats.map((c) => c.name));
+	let i = 1;
+	while (names.has(`Copy Path (${i})`)) i++;
+	return `Copy Path (${i})`;
 }
 
 export function copyToNewChat(exchangeId: string) {
@@ -123,9 +140,10 @@ export function copyToNewChat(exchangeId: string) {
 	);
 
 	const copiedTree: ChatTree = { rootId: result.rootId, exchanges: result.copiedExchanges };
+	const name = nextCopyName();
 	const copiedChat: Chat = {
 		id: crypto.randomUUID(),
-		name: `${activeChat.name} (copy ${chatState.chats.length + 1})`,
+		name,
 		rootId: result.rootId,
 		exchanges: result.copiedExchanges,
 		activeExchangeId: getMainChatTail(copiedTree)

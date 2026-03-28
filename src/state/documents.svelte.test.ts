@@ -10,9 +10,7 @@ import {
 	moveDocToFolder,
 	updateDocContent,
 	closeDoc,
-	type ChatFolder,
-	type DocFile,
-	type OpenDoc
+	type DocFile
 } from './documents.svelte';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -88,6 +86,7 @@ describe('documents state', () => {
 			const id2 = docState.folders[1].id;
 			const result = renameFolder(id2, 'A');
 			expect(result).toBe(false);
+			expect(docState.folders.map((folder) => folder.name)).toEqual(['A', 'New Folder 2']);
 		});
 
 		it('allows renaming to the same name', () => {
@@ -146,6 +145,7 @@ describe('documents state', () => {
 
 			const result = renameDocInFolder('f1', f2.id, 'a.md');
 			expect(result).toBe(false);
+			expect(docState.folders[0].files!.map((file) => file.name)).toEqual(['a.md', 'b.md']);
 		});
 	});
 
@@ -194,6 +194,8 @@ describe('documents state', () => {
 
 			const result = moveDocToFolder('f1', f1.id, 'f2');
 			expect(result).toBe(false);
+			expect(docState.folders[0].files!.map((file) => file.id)).toEqual([f1.id]);
+			expect(docState.folders[1].files!.map((file) => file.id)).toEqual([f2.id]);
 		});
 
 		it('returns false if source file does not exist', () => {

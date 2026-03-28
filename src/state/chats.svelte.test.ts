@@ -267,7 +267,6 @@ describe('chats state', () => {
 			const index = newChat();
 			expect(chatState.chats.length).toBe(2);
 			expect(chatState.activeChatIndex).toBe(index);
-			expect(chatState.chats[index].name).toBe('Chat 2');
 		});
 
 		it('new chat has null rootId (empty tree)', () => {
@@ -280,10 +279,29 @@ describe('chats state', () => {
 			expect(chatState.activeChatIndex).toBe(1);
 		});
 
-		it('increments name based on chat count', () => {
-			newChat();
-			newChat();
-			expect(chatState.chats[2].name).toBe('Chat 3');
+		it('generates unique names that never collide', () => {
+			const i1 = newChat();
+			const i2 = newChat();
+			const names = chatState.chats.map((c) => c.name);
+			expect(new Set(names).size).toBe(names.length);
+			expect(chatState.chats[i1].name).not.toBe(chatState.chats[i2].name);
+		});
+
+		it('reuses freed name after deleting a chat', () => {
+			const i1 = newChat();
+			expect(chatState.chats[i1].name).toBe('Chat (1)');
+			deleteChat(i1);
+			const i2 = newChat();
+			expect(chatState.chats[i2].name).toBe('Chat (1)');
+		});
+
+		it('skips names that are already taken', () => {
+			newChat(); // Chat (1)
+			newChat(); // Chat (2)
+			expect(chatState.chats.map((c) => c.name)).toEqual(['Chat 1', 'Chat (1)', 'Chat (2)']);
+			deleteChat(1); // remove Chat (1)
+			const i = newChat();
+			expect(chatState.chats[i].name).toBe('Chat (1)');
 		});
 	});
 
@@ -349,6 +367,28 @@ describe('chats state', () => {
 			expect(chatState.chats[0].name).toBe('A');
 			expect(chatState.chats[1].name).toBe('Renamed');
 		});
+
+		it('returns true on success and has no duplicate names', () => {
+			chatState.chats = [makeChat('A'), makeChat('B')];
+			expect(renameChat(0, 'C')).toBe(true);
+			const names = chatState.chats.map((c) => c.name);
+			expect(new Set(names).size).toBe(names.length);
+		});
+
+		it('returns false when the name conflicts and has no duplicate names', () => {
+			chatState.chats = [makeChat('A'), makeChat('B')];
+			expect(renameChat(1, 'A')).toBe(false);
+			expect(chatState.chats[1].name).toBe('B');
+			const names = chatState.chats.map((c) => c.name);
+			expect(new Set(names).size).toBe(names.length);
+		});
+
+		it('allows renaming a chat to its own name and has no duplicate names', () => {
+			chatState.chats = [makeChat('A'), makeChat('B')];
+			expect(renameChat(0, 'A')).toBe(true);
+			const names = chatState.chats.map((c) => c.name);
+			expect(new Set(names).size).toBe(names.length);
+		});
 	});
 
 	describe('copyToNewChat', () => {
@@ -370,7 +410,7 @@ describe('chats state', () => {
 
 			expect(chatState.chats.length).toBe(2);
 			expect(chatState.activeChatIndex).toBe(1);
-			expect(chatState.chats[1].name).toContain('copy');
+			expect(chatState.chats[1].name).toBe('Copy Path (1)');
 		});
 
 		it('copied chat has a valid tree', () => {
@@ -399,6 +439,28 @@ describe('chats state', () => {
 			chatState.activeChatIndex = 0;
 			copyToNewChat('some-id');
 			expect(chatState.chats.length).toBe(0);
+		});
+
+		it('skips copy names that are already taken', () => {
+			const tree = buildTreeWithExchanges(3);
+			chatState.chats = [
+				{
+					id: 'src',
+					name: 'Source',
+					rootId: tree.rootId,
+					exchanges: tree.exchanges,
+					activeExchangeId: getMainChatTail(tree)
+				},
+				makeChat('Copy Path (1)'),
+				makeChat('Copy Path (2)')
+			];
+			chatState.activeChatIndex = 0;
+
+			copyToNewChat(getMainChatTail(tree)!);
+
+			expect(chatState.chats.at(-1)?.name).toBe('Copy Path (3)');
+			const names = chatState.chats.map((chat) => chat.name);
+			expect(new Set(names).size).toBe(names.length);
 		});
 	});
 

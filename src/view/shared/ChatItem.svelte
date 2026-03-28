@@ -36,36 +36,54 @@
 </script>
 
 <Sidebar.MenuItem>
-	<Sidebar.MenuButton
-		{isActive}
-		tooltipContent={chat.name}
-		onclick={onSelect}
-		class="rounded-lg {indented
-			? 'pl-8 pr-3'
-			: 'px-3'} py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
-	>
-		<svg
-			width="16"
-			height="16"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.5"
-			stroke-linecap="round"
-			class="shrink-0"
+	{#if isEditing}
+		<div
+			class="ring-sidebar-ring gap-2 rounded-lg p-2 text-sm flex w-full items-center overflow-hidden text-left {indented
+				? 'pl-8 pr-3'
+				: 'px-3'} py-2"
 		>
-			<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-		</svg>
-		{#if isEditing}
+			<svg
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linecap="round"
+				class="shrink-0"
+			>
+				<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+			</svg>
 			<InlineRenameInput
 				bind:value={editingName}
 				onCommit={onCommitRename}
 				onCancel={onCancelRename}
 			/>
-		{:else}
+		</div>
+	{:else}
+		<Sidebar.MenuButton
+			{isActive}
+			tooltipContent={chat.name}
+			onclick={onSelect}
+			class="rounded-lg {indented
+				? 'pl-8 pr-3'
+				: 'px-3'} py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
+		>
+			<svg
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linecap="round"
+				class="shrink-0"
+			>
+				<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+			</svg>
 			<span class="sidebar-fade-text">{chat.name}</span>
-		{/if}
-	</Sidebar.MenuButton>
+		</Sidebar.MenuButton>
+	{/if}
 	<DropdownMenu.Root>
 		<DropdownMenu.Trigger
 			class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"

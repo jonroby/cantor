@@ -442,6 +442,55 @@ describe('io.svelte', () => {
 			expect(docState.folders[1]?.name).toBe('Uploaded Folder');
 		});
 
+		it('deduplicates the created folder name when the uploaded directory already exists', async () => {
+			docState.folders = [
+				{
+					id: 'folder-1',
+					name: 'Test Folder',
+					files: [{ id: 'doc-1', name: 'doc.md', content: '# Existing' }]
+				},
+				{ id: 'folder-2', name: 'MyFolder', files: [] }
+			] as typeof docState.folders;
+
+			uploadFolder();
+
+			const mdFile = new File(['# Doc'], 'doc.md');
+			Object.defineProperty(mdFile, 'webkitRelativePath', { value: 'MyFolder/doc.md' });
+			lastCreatedInput.files = [mdFile] as unknown as File[];
+
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(docState.folders.length).toBe(3);
+			});
+
+			expect(docState.folders[2]).toMatchObject({
+				name: 'MyFolder (1)'
+			});
+		});
+
+		it('deduplicates duplicate file names within the uploaded batch for the new folder', async () => {
+			uploadFolder();
+
+			const first = new File(['# One'], 'doc.md');
+			Object.defineProperty(first, 'webkitRelativePath', { value: 'Batch/doc.md' });
+			const second = new File(['# Two'], 'doc.md');
+			Object.defineProperty(second, 'webkitRelativePath', { value: 'Batch/doc.md' });
+			lastCreatedInput.files = [first, second] as unknown as File[];
+
+			lastCreatedInput.onchange!();
+
+			await vi.waitFor(() => {
+				expect(toast.success).toHaveBeenCalledWith('Uploaded 2 files');
+			});
+
+			expect(docState.folders[1]?.name).toBe('Batch');
+			expect(docState.folders[1]?.files?.map((file) => file.name)).toEqual([
+				'doc.md',
+				'doc (1).md'
+			]);
+		});
+
 		it('still shows a success summary for valid files when one file in the batch is invalid', async () => {
 			vi.mocked(validate).mockImplementation((markdown: string) =>
 				markdown.includes('bad') ? ['Invalid heading'] : []

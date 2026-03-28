@@ -28,6 +28,7 @@ function makeNodeData(overrides: Partial<ExchangeNodeData> = {}): ExchangeNodeDa
 		hasSideChildren: false,
 		sideChildrenCount: 0,
 		isSideRoot: false,
+		canCreateSideChat: false,
 		canPromote: false,
 		onMeasure: vi.fn(),
 		onSelect: vi.fn(),
@@ -83,13 +84,27 @@ describe('ChatMessage', () => {
 
 	it('side chat button visible for non-side-root exchanges', () => {
 		render(ChatMessage, {
-			props: { data: makeNodeData({ isSideRoot: false, hasSideChildren: false }) }
+			props: { data: makeNodeData({ isSideRoot: false }) }
 		});
 		expect(screen.getByRole('button', { name: 'Side chat' })).toBeInTheDocument();
 	});
 
+	it('side chat button disabled when canCreateSideChat is false', () => {
+		render(ChatMessage, {
+			props: { data: makeNodeData({ canCreateSideChat: false }) }
+		});
+		expect(screen.getByRole('button', { name: 'Side chat' })).toBeDisabled();
+	});
+
+	it('side chat button enabled when canCreateSideChat is true', () => {
+		render(ChatMessage, {
+			props: { data: makeNodeData({ canCreateSideChat: true }) }
+		});
+		expect(screen.getByRole('button', { name: 'Side chat' })).toBeEnabled();
+	});
+
 	it('side chat button fires onToggleSideChildren', async () => {
-		const data = makeNodeData({ isSideRoot: false, hasSideChildren: false });
+		const data = makeNodeData({ canCreateSideChat: true, hasSideChildren: false });
 		render(ChatMessage, { props: { data } });
 		await userEvent.click(screen.getByRole('button', { name: 'Side chat' }));
 		expect(data.onToggleSideChildren).toHaveBeenCalledOnce();
@@ -118,13 +133,19 @@ describe('ChatMessage', () => {
 
 	it('branch badge shows side children count', () => {
 		render(ChatMessage, {
-			props: { data: makeNodeData({ hasSideChildren: true, sideChildrenCount: 3 }) }
+			props: {
+				data: makeNodeData({ canCreateSideChat: true, hasSideChildren: true, sideChildrenCount: 3 })
+			}
 		});
 		expect(screen.getByText('3')).toBeInTheDocument();
 	});
 
 	it('branch badge fires onToggleSideChildren', async () => {
-		const data = makeNodeData({ hasSideChildren: true, sideChildrenCount: 2 });
+		const data = makeNodeData({
+			canCreateSideChat: true,
+			hasSideChildren: true,
+			sideChildrenCount: 2
+		});
 		render(ChatMessage, { props: { data } });
 		await userEvent.click(screen.getByText('2'));
 		expect(data.onToggleSideChildren).toHaveBeenCalledOnce();

@@ -24,6 +24,7 @@ import {
 	performPromote,
 	performCopy,
 	getDeleteMode,
+	performSubmitPrompt,
 	type ChatActionDeps
 } from './chat-actions';
 
@@ -100,10 +101,12 @@ function buildTreeWithSideChat(): {
 // ── getExchangeNodeData ──────────────────────────────────────────────────────
 
 describe('getExchangeNodeData', () => {
-	it('returns null for root exchange (parentId === null)', () => {
+	it('returns data for root exchange (parentId === null)', () => {
 		const { tree, rootId } = buildLinearTree();
 		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
-		expect(result).toBeNull();
+		expect(result).not.toBeNull();
+		expect(result!.prompt).toBe('root prompt');
+		expect(result!.response).toBe('root response');
 	});
 
 	it('returns null for nonexistent exchange', () => {
@@ -120,12 +123,19 @@ describe('getExchangeNodeData', () => {
 
 	it('correctly computes hasSideChildren and sideChildrenCount', () => {
 		const { tree, mainId } = buildTreeWithSideChat();
-		// rootId has 2 children (main + side), but root is filtered out (parentId === null)
 		// mainId has 0 children
 		const result = getExchangeNodeData(mainId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.hasSideChildren).toBe(false);
 		expect(result!.sideChildrenCount).toBe(0);
+	});
+
+	it('root exchange shows hasSideChildren when it has side children', () => {
+		const { tree, rootId } = buildTreeWithSideChat();
+		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result).not.toBeNull();
+		expect(result!.hasSideChildren).toBe(true);
+		expect(result!.sideChildrenCount).toBe(1);
 	});
 
 	it('hasSideChildren is true when a node has side children', () => {
@@ -153,6 +163,13 @@ describe('getExchangeNodeData', () => {
 		const result = getExchangeNodeData(sideId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.isSideRoot).toBe(true);
+	});
+
+	it('root exchange is not isSideRoot', () => {
+		const { tree, rootId } = buildLinearTree();
+		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result).not.toBeNull();
+		expect(result!.isSideRoot).toBe(false);
 	});
 
 	it('main child is not isSideRoot', () => {
@@ -253,6 +270,34 @@ describe('getExchangeNodeData', () => {
 		const result = getExchangeNodeData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.response).toBe('');
 	});
+
+	it('canCreateSideChat is false for a leaf exchange with no children', () => {
+		const { tree, leafId } = buildLinearTree();
+		const result = getExchangeNodeData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result!.canCreateSideChat).toBe(false);
+	});
+
+	it('canCreateSideChat is true for an exchange with at least one child', () => {
+		const { tree, childId } = buildLinearTree();
+		const result = getExchangeNodeData(childId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result!.canCreateSideChat).toBe(true);
+	});
+
+	it('canCreateSideChat is false for a side root (even with children)', () => {
+		let t = buildEmptyTree();
+		const root = addExchangeResult(t, 'ignored', 'root', MODEL, PROVIDER);
+		t = setResponse(root, root.id, 'resp');
+		const main = addExchangeResult(t, root.id, 'main', MODEL, PROVIDER);
+		t = main;
+		const side = addExchangeResult(t, root.id, 'side', MODEL, PROVIDER);
+		t = side;
+		t = setResponse(t, side.id, 'side resp');
+		const sideChild = addExchangeResult(t, side.id, 'side child', MODEL, PROVIDER);
+		t = sideChild;
+
+		const result = getExchangeNodeData(side.id, t.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result!.canCreateSideChat).toBe(false);
+	});
 });
 
 // ── performDelete ────────────────────────────────────────────────────────────
@@ -349,6 +394,26 @@ describe('performCopy', () => {
 		const deps = mockDeps();
 		performCopy('exchange-123', deps);
 		expect(deps.copyToNewChat).toHaveBeenCalledWith('exchange-123');
+	});
+});
+
+// ── performSubmitPrompt ──────────────────────────────────────────────────────
+
+describe('performSubmitPrompt', () => {
+	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
+
+	it('returns parentId so caller can expand the correct side chat parent', () => {
+		const { tree, childId } = buildLinearTree();
+		const deps = mockDeps();
+		const result = performSubmitPrompt('chat-1', tree, childId, 'new prompt', activeModel, deps);
+		expect(result.parentId).toBe(childId);
+	});
+
+	it('returns parentId as main chat tail when activeExchangeId is null', () => {
+		const { tree, leafId } = buildLinearTree();
+		const deps = mockDeps();
+		const result = performSubmitPrompt('chat-1', tree, null, 'new prompt', activeModel, deps);
+		expect(result.parentId).toBe(leafId);
 	});
 });
 

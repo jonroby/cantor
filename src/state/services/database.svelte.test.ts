@@ -120,6 +120,89 @@ describe('database', () => {
 		});
 	});
 
+	describe('saveToStorage rejects duplicate names', () => {
+		it('throws when two chats have the same name', () => {
+			store[STORAGE_KEY] = 'unchanged';
+			chatState.chats = [buildChat('Foo'), buildChat('Foo')];
+			expect(() => saveToStorage()).toThrow('Duplicate chat name');
+			expect(store[STORAGE_KEY]).toBe('unchanged');
+		});
+
+		it('throws when two folders have the same name', () => {
+			store[STORAGE_KEY] = 'unchanged';
+			docState.folders = [
+				{ id: 'f1', name: 'Docs' },
+				{ id: 'f2', name: 'Docs' }
+			];
+			expect(() => saveToStorage()).toThrow('Duplicate folder name');
+			expect(store[STORAGE_KEY]).toBe('unchanged');
+		});
+
+		it('throws when two files in the same folder have the same name', () => {
+			store[STORAGE_KEY] = 'unchanged';
+			docState.folders = [
+				{
+					id: 'f1',
+					name: 'Docs',
+					files: [
+						{ id: 'd1', name: 'readme.md', content: '' },
+						{ id: 'd2', name: 'readme.md', content: '' }
+					]
+				}
+			];
+			expect(() => saveToStorage()).toThrow('Duplicate file name');
+			expect(store[STORAGE_KEY]).toBe('unchanged');
+		});
+
+		it('allows the same file name in different folders', () => {
+			docState.folders = [
+				{ id: 'f1', name: 'A', files: [{ id: 'd1', name: 'readme.md', content: '' }] },
+				{ id: 'f2', name: 'B', files: [{ id: 'd2', name: 'readme.md', content: '' }] }
+			];
+			expect(() => saveToStorage()).not.toThrow();
+		});
+	});
+
+	describe('loadFromStorage throws on duplicate names', () => {
+		it('throws when stored chats have duplicate names', () => {
+			store[STORAGE_KEY] = JSON.stringify({
+				chats: [buildChat('Foo'), buildChat('Foo')],
+				activeChatIndex: 0
+			});
+			expect(() => loadFromStorage()).toThrow('Duplicate chat name');
+		});
+
+		it('throws when stored folders have duplicate names', () => {
+			store[STORAGE_KEY] = JSON.stringify({
+				chats: [buildChat('Chat 1')],
+				activeChatIndex: 0,
+				folders: [
+					{ id: 'f1', name: 'Docs' },
+					{ id: 'f2', name: 'Docs' }
+				]
+			});
+			expect(() => loadFromStorage()).toThrow('Duplicate folder name');
+		});
+
+		it('throws when stored files in a folder have duplicate names', () => {
+			store[STORAGE_KEY] = JSON.stringify({
+				chats: [buildChat('Chat 1')],
+				activeChatIndex: 0,
+				folders: [
+					{
+						id: 'f1',
+						name: 'Docs',
+						files: [
+							{ id: 'd1', name: 'readme.md', content: '' },
+							{ id: 'd2', name: 'readme.md', content: '' }
+						]
+					}
+				]
+			});
+			expect(() => loadFromStorage()).toThrow('Duplicate file name');
+		});
+	});
+
 	describe('getVaultStore', () => {
 		it('returns empty object when no vault exists', () => {
 			expect(getVaultStore()).toEqual({});
