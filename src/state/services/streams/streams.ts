@@ -45,10 +45,20 @@ export function startStream(
 		chatId: string;
 		model: ActiveModel;
 		tree: ChatTree;
+		liveDocContent?: string;
 	}
 ): void {
-	const { exchangeId, chatId, model, tree } = params;
+	const { exchangeId, chatId, model, tree, liveDocContent } = params;
 	const history = getHistory(tree, exchangeId);
+
+	if (liveDocContent !== undefined) {
+		const docMessage: Message = {
+			role: 'user',
+			content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocContent}`
+		};
+		const docResponse: Message = { role: 'assistant', content: 'Understood, I have the document.' };
+		history.splice(history.length - 1, 0, docMessage, docResponse);
+	}
 
 	const input: StreamMachineInput = {
 		exchangeId,

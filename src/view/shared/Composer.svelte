@@ -5,7 +5,7 @@
 	interface Props {
 		composerValue: string;
 		canvasMode: boolean;
-		instructMode: boolean;
+		commandMode: boolean;
 		submitDisabledReason: string | null;
 		streaming: boolean;
 		activeModelId: string | null;
@@ -20,7 +20,7 @@
 	let {
 		composerValue = $bindable(),
 		canvasMode = $bindable(),
-		instructMode,
+		commandMode,
 		submitDisabledReason,
 		streaming,
 		activeModelId,
@@ -52,11 +52,11 @@
 				bind:this={inputRef}
 				bind:value={composerValue}
 				class="composer-input"
-				placeholder={instructMode
-					? 'Instruct...'
+				placeholder={commandMode
+					? 'Command...'
 					: canvasMode
 						? 'Ask about the canvas...'
-						: (submitDisabledReason ?? 'Message...')}
+						: (submitDisabledReason ?? 'Chat...')}
 			/>
 			{#if streaming}
 				<Button
@@ -94,10 +94,10 @@
 			<Button class="model-chip" variant="outline" size="sm" onclick={onOpenPalette}>
 				{activeModelId ?? 'Connect a model'}
 			</Button>
-			{#if instructMode}
-				<div class="composer-divider"></div>
-				<span class="instruct-indicator">Instruct</span>
-			{/if}
+			<div class="composer-divider"></div>
+			<span class="mode-indicator" class:mode-active={commandMode}>
+				{commandMode ? 'Command' : 'Chat'}
+			</span>
 			{#if activeModelId}
 				<div class="composer-divider"></div>
 				<div class="context-meta">

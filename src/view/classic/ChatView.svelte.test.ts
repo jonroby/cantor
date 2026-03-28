@@ -450,18 +450,7 @@ describe('ChatView', () => {
 			expect(screen.getByText('notes.md')).toBeInTheDocument();
 		});
 
-		it('shows instruct indicator when doc panel is open', async () => {
-			resetState(buildVisibleTree(1));
-			setupDocPanel();
-			const { component } = render(ChatView);
-
-			component.showDocument('folder-1', 'file-1');
-			await tick();
-
-			expect(screen.getByText('Instruct')).toBeInTheDocument();
-		});
-
-		it('closes doc panel and hides instruct indicator', async () => {
+		it('closes doc panel via resetUIState', async () => {
 			resetState(buildVisibleTree(1));
 			setupDocPanel();
 			const { component } = render(ChatView);
@@ -475,7 +464,6 @@ describe('ChatView', () => {
 			await tick();
 
 			expect(screen.queryByText('notes.md')).not.toBeInTheDocument();
-			expect(screen.queryByText('Instruct')).not.toBeInTheDocument();
 		});
 	});
 });

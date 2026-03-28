@@ -32,19 +32,19 @@
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
 		onExpandSideChat: (exchangeId: string) => void;
-		instructMode?: boolean;
-		instructDocContent?: string;
-		instructStreaming?: boolean;
-		onInstructResponse?: (text: string) => void;
+		commandMode?: boolean;
+		commandStreaming?: boolean;
+		liveDocContent?: string;
+		onCommandResponse?: (text: string) => void;
 	}
 
 	let {
 		onScrollToNode,
 		onExpandSideChat,
-		instructMode = false,
-		instructDocContent = '',
-		instructStreaming = $bindable(false),
-		onInstructResponse
+		commandMode = false,
+		commandStreaming = $bindable(false),
+		liveDocContent,
+		onCommandResponse
 	}: Props = $props();
 
 	let composerValue = $state('');
@@ -52,19 +52,19 @@
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
-	let instructHistory: Message[] = $state([]);
-	let instructAbort: AbortController | null = $state(null);
+	let commandHistory: Message[] = $state([]);
+	let commandAbort: AbortController | null = $state(null);
 
 	export function focus() {
 		composerRef?.focus();
 	}
 
-	export function resetInstruct() {
-		instructHistory = [];
-		instructStreaming = false;
-		if (instructAbort) {
-			instructAbort.abort();
-			instructAbort = null;
+	export function resetCommand() {
+		commandHistory = [];
+		commandStreaming = false;
+		if (commandAbort) {
+			commandAbort.abort();
+			commandAbort = null;
 		}
 	}
 
@@ -101,8 +101,8 @@
 	});
 
 	async function submitPrompt() {
-		if (instructMode) {
-			await submitInstruct();
+		if (commandMode) {
+			await submitCommand();
 			return;
 		}
 
@@ -121,7 +121,8 @@
 				tree,
 				activeExchangeId,
 				prompt,
-				providerState.activeModel
+				providerState.activeModel,
+				liveDocContent
 			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
@@ -137,9 +138,9 @@
 		onScrollToNode(result.id);
 	}
 
-	function buildInstructMessages(prompt: string): Message[] {
-		const docSection = instructDocContent
-			? `\n\n<current_document>\n${instructDocContent}\n</current_document>`
+	function buildCommandMessages(prompt: string): Message[] {
+		const docSection = liveDocContent
+			? `\n\n<current_document>\n${liveDocContent}\n</current_document>`
 			: '\n\nThe document is currently empty.';
 
 		const systemPrompt = [
@@ -159,23 +160,23 @@
 			...chatHistory,
 			{ role: 'user', content: systemPrompt },
 			{ role: 'assistant', content: 'Understood.' },
-			...instructHistory,
+			...commandHistory,
 			{ role: 'user', content: prompt }
 		];
 	}
 
-	async function submitInstruct() {
+	async function submitCommand() {
 		const prompt = composerValue.trim();
 		if (!prompt || !providerState.activeModel) return;
 
 		operationError = null;
-		const messages = buildInstructMessages(prompt);
-		instructHistory = [...instructHistory, { role: 'user', content: prompt }];
+		const messages = buildCommandMessages(prompt);
+		commandHistory = [...commandHistory, { role: 'user', content: prompt }];
 		composerValue = '';
-		instructStreaming = true;
+		commandStreaming = true;
 
 		const abort = new AbortController();
-		instructAbort = abort;
+		commandAbort = abort;
 
 		let responseText = '';
 		try {
@@ -185,14 +186,14 @@
 					responseText += chunk.delta;
 				}
 			}
-			instructHistory = [...instructHistory, { role: 'assistant', content: responseText }];
-			onInstructResponse?.(responseText);
+			commandHistory = [...commandHistory, { role: 'assistant', content: responseText }];
+			onCommandResponse?.(responseText);
 		} catch (e) {
 			if (abort.signal.aborted) return;
-			operationError = e instanceof Error ? e.message : 'Instruct request failed.';
+			operationError = e instanceof Error ? e.message : 'Command failed.';
 		} finally {
-			instructStreaming = false;
-			instructAbort = null;
+			commandStreaming = false;
+			commandAbort = null;
 		}
 	}
 </script>
@@ -205,18 +206,18 @@
 	bind:this={composerRef}
 	bind:composerValue
 	bind:canvasMode
-	{instructMode}
+	{commandMode}
 	{submitDisabledReason}
-	streaming={instructStreaming || activeNodeStreaming}
+	streaming={commandStreaming || activeNodeStreaming}
 	activeModelId={providerState.activeModel?.modelId ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
 	onSubmit={submitPrompt}
 	onStop={() => {
-		if (instructStreaming && instructAbort) {
-			instructAbort.abort();
-			instructStreaming = false;
-			instructAbort = null;
+		if (commandStreaming && commandAbort) {
+			commandAbort.abort();
+			commandStreaming = false;
+			commandAbort = null;
 		} else if (activeExchangeId) {
 			cancelStream(activeExchangeId);
 		}

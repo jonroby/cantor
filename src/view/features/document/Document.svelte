@@ -4,12 +4,16 @@
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
 	import { validate as validateMd } from '@/domain/validate-md';
+	import { PROVIDER_LOGOS } from '@/domain/models/logos';
+	import type { Provider } from '@/domain/models';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
 
 	interface Props {
 		title?: string;
 		content: string;
-		isStreaming?: boolean;
+		commandStreaming?: boolean;
+		commandModel?: string;
+		commandProvider?: Provider | null;
 		onContentChange?: (content: string) => void;
 		onClose?: () => void;
 		onAddToChat?: () => void;
@@ -18,7 +22,9 @@
 	let {
 		title,
 		content,
-		isStreaming = false,
+		commandStreaming = false,
+		commandModel,
+		commandProvider,
 		onContentChange,
 		onClose,
 		onAddToChat
@@ -217,9 +223,7 @@
 			<path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke-linecap="round" />
 		</svg>
 		<span>{title || 'Document'}</span>
-		{#if isStreaming}
-			<div class="streaming-dot"></div>
-		{:else if dirty}
+		{#if dirty}
 			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 		{/if}
 		<div class="header-actions">
@@ -351,6 +355,24 @@
 			{@html renderedHtml}
 		</div>
 	{/if}
+	{#if commandStreaming}
+		<div class="docs-streaming">
+			<div class="chatmsg-response-header">
+				{#if commandProvider && PROVIDER_LOGOS[commandProvider]}
+					<img
+						src={PROVIDER_LOGOS[commandProvider]}
+						alt={commandProvider}
+						class="chatmsg-provider-logo"
+					/>
+				{/if}
+				{#if commandModel}
+					<span class="chatmsg-model">{commandModel}</span>
+				{/if}
+				<div class="streaming-dot"></div>
+			</div>
+			<div class="chatmsg-response-body chatmsg-response-plain">Waiting for response…</div>
+		</div>
+	{/if}
 	<ConfirmDeleteDialog
 		open={showCloseConfirm}
 		title="Unsaved changes"
@@ -437,6 +459,12 @@
 		color: hsl(0 72% 51%);
 		font-size: 12px;
 		border-bottom: 1px solid hsl(0 72% 51% / 0.2);
+		flex-shrink: 0;
+	}
+
+	.docs-streaming {
+		padding: 16px 20px;
+		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 		flex-shrink: 0;
 	}
 

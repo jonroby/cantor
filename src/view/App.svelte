@@ -39,12 +39,7 @@
 	} from '@/state/services/io.svelte';
 	import { init as initProviders, autoConnectOllama } from '@/app/providers';
 	import { cancelStreamsForChat } from '@/state/services/streams';
-	import {
-		performAddFolderDocumentToChat,
-		performCreateDocument,
-		performOpenDocument,
-		restoreOpenDocument
-	} from '@/app/documents';
+	import { performCreateDocument, performOpenDocument, restoreOpenDocument } from '@/app/documents';
 
 	function deduplicate(name: string, existing: string[]): string {
 		if (!existing.includes(name)) return name;
@@ -181,7 +176,12 @@
 	}
 
 	function addDocToChat(folderId: string, fileId: string) {
-		performAddFolderDocumentToChat(folderId, fileId);
+		const folder = docState.folders.find((f) => f.id === folderId);
+		const file = folder?.files?.find((f) => f.id === fileId);
+		if (!file) return;
+		performOpenDocument(folderId, fileId);
+		chatViewRef?.showDocument(folderId, fileId);
+		toast.success(`${file.name} is now live in this chat`);
 	}
 
 	function handleSearchSelect(result: SearchResult) {

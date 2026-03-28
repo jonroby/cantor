@@ -444,14 +444,30 @@ describe('performSubmitPrompt', () => {
 	it('returns parentId so caller can expand the correct side chat parent', () => {
 		const { tree, childId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = performSubmitPrompt('chat-1', tree, childId, 'new prompt', activeModel, deps);
+		const result = performSubmitPrompt(
+			'chat-1',
+			tree,
+			childId,
+			'new prompt',
+			activeModel,
+			undefined,
+			deps
+		);
 		expect(result.parentId).toBe(childId);
 	});
 
 	it('returns parentId as main chat tail when activeExchangeId is null', () => {
 		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = performSubmitPrompt('chat-1', tree, null, 'new prompt', activeModel, deps);
+		const result = performSubmitPrompt(
+			'chat-1',
+			tree,
+			null,
+			'new prompt',
+			activeModel,
+			undefined,
+			deps
+		);
 		expect(result.parentId).toBe(leafId);
 	});
 });

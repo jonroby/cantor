@@ -34,11 +34,7 @@
 		performQuickAsk,
 		getDeleteMode
 	} from '@/app/chat-actions';
-	import {
-		clearDocumentLayout,
-		performAddFolderDocumentToChat,
-		performCloseDocumentPanel
-	} from '@/app/documents';
+	import { clearDocumentLayout, performCloseDocumentPanel } from '@/app/documents';
 	import { providerState } from '@/state/providers.svelte';
 
 	// ── Panel state ─────────────────────────────────────────────────────────
@@ -64,10 +60,10 @@
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
-	let instructStreaming = $state(false);
 
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
+	let commandStreaming = $state(false);
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
 		mainChatPath.length > 0 ? mainChatPath[mainChatPath.length - 1]!.id : null
@@ -196,13 +192,13 @@
 
 	function closeSidePanel() {
 		sidePanel = null;
-		chatInputRef?.resetInstruct();
+		chatInputRef?.resetCommand();
 		focusPanel(mainPanel.id);
 	}
 
 	function addCurrentDocToChat() {
-		if (!docContent) return;
-		performAddFolderDocumentToChat(docContent.folderId, docContent.fileId);
+		if (!activeDocFile) return;
+		toast.success(`${activeDocFile.name} is now live in this chat`);
 	}
 
 	function prevBranch() {
@@ -438,7 +434,9 @@
 						<Document
 							title={activeDocFile.name}
 							content={activeDocFile.content}
-							isStreaming={instructStreaming}
+							{commandStreaming}
+							commandModel={providerState.activeModel?.modelId}
+							commandProvider={providerState.activeModel?.provider}
 							onContentChange={(content) => {
 								if (activeDocIndex >= 0) updateDocContent(activeDocIndex, content);
 							}}
@@ -598,10 +596,10 @@
 				bind:this={chatInputRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
-				instructMode={isDocPanel && focusedPane === 'side'}
-				instructDocContent={activeDocFile?.content ?? ''}
-				bind:instructStreaming
-				onInstructResponse={(text) => {
+				commandMode={isDocPanel && focusedPane === 'side'}
+				bind:commandStreaming
+				liveDocContent={activeDocFile?.content}
+				onCommandResponse={(text) => {
 					if (activeDocIndex >= 0) updateDocContent(activeDocIndex, text);
 				}}
 			/>

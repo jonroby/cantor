@@ -8,7 +8,7 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 	const props = {
 		composerValue: '',
 		canvasMode: false,
-		instructMode: false,
+		commandMode: false,
 		submitDisabledReason: null,
 		streaming: false,
 		activeModelId: 'claude-sonnet-4-5',
@@ -82,22 +82,5 @@ describe('Composer', () => {
 	it('shows token count', () => {
 		renderComposer({ usedTokens: 1500, contextLength: 128000 });
 		expect(screen.getByText(/1,500 \/ 128,000/)).toBeInTheDocument();
-	});
-
-	describe('instruct mode', () => {
-		it('no indicator when instructMode is false', () => {
-			renderComposer({ instructMode: false });
-			expect(screen.queryByText('Instruct')).not.toBeInTheDocument();
-		});
-
-		it('shows Instruct indicator when instructMode is true', () => {
-			renderComposer({ instructMode: true });
-			expect(screen.getByText('Instruct')).toBeInTheDocument();
-		});
-
-		it('shows Instruct placeholder when active', () => {
-			renderComposer({ instructMode: true });
-			expect(screen.getByPlaceholderText('Instruct...')).toBeInTheDocument();
-		});
 	});
 });

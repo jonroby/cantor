@@ -152,6 +152,7 @@ export function performSubmitPrompt(
 	activeExchangeId: string | null,
 	prompt: string,
 	model: ActiveModel,
+	liveDocContent?: string,
 	deps: ChatActionDeps = defaultDeps
 ): { id: string; parentId: string; hasSideChildren: boolean } {
 	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
@@ -167,7 +168,8 @@ export function performSubmitPrompt(
 		exchangeId: created.id,
 		chatId,
 		model,
-		tree: created
+		tree: created,
+		liveDocContent
 	});
 
 	return { id: created.id, parentId, hasSideChildren };
@@ -187,6 +189,7 @@ export function performQuickAsk(
 		exchangeId,
 		`Can you explain more:\n\n${sourceText}`,
 		model,
+		undefined,
 		deps
 	);
 }
