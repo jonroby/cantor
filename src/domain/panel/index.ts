@@ -12,7 +12,8 @@ export interface SideChatContent {
 
 export interface DocumentContent {
 	readonly type: 'document';
-	readonly docId: string;
+	readonly folderId: string;
+	readonly fileId: string;
 }
 
 export type PanelContentType = MainChatContent | SideChatContent | DocumentContent;
@@ -34,8 +35,8 @@ export function createSideChatPanel(parentExchangeId: string, branchIndex: numbe
 	return { id: crypto.randomUUID(), content: { type: 'side-chat', parentExchangeId, branchIndex } };
 }
 
-export function createDocumentPanel(docId: string): Panel {
-	return { id: crypto.randomUUID(), content: { type: 'document', docId } };
+export function createDocumentPanel(folderId: string, fileId: string): Panel {
+	return { id: crypto.randomUUID(), content: { type: 'document', folderId, fileId } };
 }
 
 // ── Type guards ─────────────────────────────────────────────────────────────

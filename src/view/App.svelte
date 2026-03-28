@@ -203,12 +203,18 @@
 			onRenameFolder={renameFolder}
 			onNewDoc={(folderId) => {
 				const fileId = newDocInFolder(folderId);
-				if (fileId) selectDoc(folderId, fileId);
+				if (fileId) {
+					selectDoc(folderId, fileId);
+					chatViewRef?.openDocPanel(folderId, fileId);
+				}
 			}}
 			onUploadDoc={uploadDocToFolder}
 			onUploadFolder={uploadFolderToFolder}
 			onUploadNewFolder={uploadFolder}
-			onSelectDoc={selectDoc}
+			onSelectDoc={(folderId, fileId) => {
+				selectDoc(folderId, fileId);
+				chatViewRef?.openDocPanel(folderId, fileId);
+			}}
 			onDeleteDoc={deleteDocFromFolder}
 			onRenameDoc={renameDocInFolder}
 			onMoveDoc={moveDocToFolder}

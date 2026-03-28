@@ -14,9 +14,13 @@
 		type Panel,
 		createMainChatPanel,
 		createSideChatPanel,
+		createDocumentPanel,
 		isSideChat,
+		isDocument,
 		withContent
 	} from '@/domain/panel';
+	import DocsPanel from '@/view/features/docs-panel/DocsPanel.svelte';
+	import { docState, updateDocContent, closeDoc } from '@/state/documents.svelte';
 	import {
 		getActiveChat,
 		getActiveExchanges,
@@ -77,6 +81,22 @@
 	let sidePanelParentExchange = $derived(
 		sidePanelParentId && activeExchanges ? activeExchanges[sidePanelParentId] : null
 	);
+	let docContent = $derived(
+		sidePanel !== null && sidePanel.content.type === 'document' ? sidePanel.content : null
+	);
+	let activeDocFile = $derived.by(() => {
+		if (!docContent) return null;
+		const folder = docState.folders.find((f) => f.id === docContent.folderId);
+		const file = folder?.files?.find((f) => f.id === docContent.fileId);
+		return file ?? null;
+	});
+	let activeDocIndex = $derived.by(() => {
+		if (!docContent) return -1;
+		return docState.openDocs.findIndex(
+			(d) => d.docKey?.folderId === docContent.folderId && d.docKey?.fileId === docContent.fileId
+		);
+	});
+	let isDocPanel = $derived(sidePanel !== null && sidePanel.content.type === 'document');
 
 	function getMainChatPath(): Exchange[] {
 		if (!activeExchanges) return [];
@@ -301,6 +321,11 @@
 		tick().then(() => chatInputRef?.focus());
 	}
 
+	export function openDocPanel(folderId: string, fileId: string) {
+		sidePanel = createDocumentPanel(folderId, fileId);
+		focusedPanelId = sidePanel.id;
+	}
+
 	export function resetUIState() {
 		closeSidePanel();
 	}
@@ -391,148 +416,164 @@
 			onclick={focusSide}
 		>
 			{#if sidePanelOpen}
-				{#if sideBranches.length > 0}
-					{@const isNewBranch = sideBranchIndex >= sideBranches.length}
-					<div class="chatview-side-header">
-						<Button
-							class="ghost-button"
-							variant="ghost"
-							size="sm"
-							disabled={sideBranchIndex <= 0}
-							onclick={prevBranch}
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
+				{#if isDocPanel && activeDocFile}
+					<div class="chatview-doc-wrap">
+						<DocsPanel
+							title={activeDocFile.name}
+							content={activeDocFile.content}
+							onContentChange={(content) => {
+								if (activeDocIndex >= 0) updateDocContent(activeDocIndex, content);
+							}}
+							onClose={() => {
+								if (activeDocIndex >= 0) closeDoc(activeDocIndex);
+								closeSidePanel();
+							}}
+						/>
+					</div>
+				{:else if !isDocPanel}
+					{#if sideBranches.length > 0}
+						{@const isNewBranch = sideBranchIndex >= sideBranches.length}
+						<div class="chatview-side-header">
+							<Button
+								class="ghost-button"
+								variant="ghost"
+								size="sm"
+								disabled={sideBranchIndex <= 0}
+								onclick={prevBranch}
 							>
-								<path d="M8.5 3L4.5 7l4 4" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
-						</Button>
-						<span class="chatview-side-counter">
-							{#if isNewBranch}
-								New
-							{:else}
-								{sideBranchIndex + 1} / {sideBranches.length}
+								<svg
+									width="14"
+									height="14"
+									viewBox="0 0 14 14"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+								>
+									<path d="M8.5 3L4.5 7l4 4" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							</Button>
+							<span class="chatview-side-counter">
+								{#if isNewBranch}
+									New
+								{:else}
+									{sideBranchIndex + 1} / {sideBranches.length}
+								{/if}
+							</span>
+							<Button
+								class="ghost-button"
+								variant="ghost"
+								size="sm"
+								disabled={sideBranchIndex >= sideBranches.length - 1}
+								onclick={nextBranch}
+							>
+								<svg
+									width="14"
+									height="14"
+									viewBox="0 0 14 14"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+								>
+									<path d="M5.5 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							</Button>
+							<Button
+								class="ghost-button"
+								variant="ghost"
+								size="sm"
+								disabled={isNewBranch}
+								onclick={newSideBranch}
+								ariaLabel="New side chat"
+							>
+								<svg
+									width="14"
+									height="14"
+									viewBox="0 0 14 14"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+								>
+									<path d="M7 2v10M2 7h10" stroke-linecap="round" />
+								</svg>
+							</Button>
+							<Button
+								class="ghost-button chatview-side-close"
+								variant="ghost"
+								size="sm"
+								onclick={closeSidePanel}
+								ariaLabel="Close side panel"
+							>
+								<svg
+									width="14"
+									height="14"
+									viewBox="0 0 14 14"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+								>
+									<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
+								</svg>
+							</Button>
+						</div>
+					{:else}
+						<div class="chatview-side-header">
+							<span class="chatview-side-counter">New side chat</span>
+							<Button
+								class="ghost-button chatview-side-close"
+								variant="ghost"
+								size="sm"
+								onclick={closeSidePanel}
+								ariaLabel="Close side panel"
+							>
+								<svg
+									width="14"
+									height="14"
+									viewBox="0 0 14 14"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+								>
+									<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
+								</svg>
+							</Button>
+						</div>
+					{/if}
+					{#if sidePanelParentExchange}
+						<div class="chatview-side-context">
+							<div class="chatview-side-context-label">Branching from</div>
+							<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt.text}</div>
+							{#if sidePanelParentExchange.response}
+								<div class="chatview-side-context-response">
+									{sidePanelParentExchange.response.text.slice(0, 150)}{sidePanelParentExchange
+										.response.text.length > 150
+										? '…'
+										: ''}
+								</div>
 							{/if}
-						</span>
-						<Button
-							class="ghost-button"
-							variant="ghost"
-							size="sm"
-							disabled={sideBranchIndex >= sideBranches.length - 1}
-							onclick={nextBranch}
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-							>
-								<path d="M5.5 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
-						</Button>
-						<Button
-							class="ghost-button"
-							variant="ghost"
-							size="sm"
-							disabled={isNewBranch}
-							onclick={newSideBranch}
-							ariaLabel="New side chat"
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-							>
-								<path d="M7 2v10M2 7h10" stroke-linecap="round" />
-							</svg>
-						</Button>
-						<Button
-							class="ghost-button chatview-side-close"
-							variant="ghost"
-							size="sm"
-							onclick={closeSidePanel}
-							ariaLabel="Close side panel"
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-							>
-								<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-							</svg>
-						</Button>
-					</div>
-				{:else}
-					<div class="chatview-side-header">
-						<span class="chatview-side-counter">New side chat</span>
-						<Button
-							class="ghost-button chatview-side-close"
-							variant="ghost"
-							size="sm"
-							onclick={closeSidePanel}
-							ariaLabel="Close side panel"
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-							>
-								<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-							</svg>
-						</Button>
-					</div>
-				{/if}
-				{#if sidePanelParentExchange}
-					<div class="chatview-side-context">
-						<div class="chatview-side-context-label">Branching from</div>
-						<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt.text}</div>
-						{#if sidePanelParentExchange.response}
-							<div class="chatview-side-context-response">
-								{sidePanelParentExchange.response.text.slice(0, 150)}{sidePanelParentExchange
-									.response.text.length > 150
-									? '…'
-									: ''}
-							</div>
+						</div>
+					{/if}
+					<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
+						{#if activeSideBranch}
+							{#each activeSideBranch as exchange (exchange.id)}
+								{@const nodeData = getNodeDataForExchange(exchange.id)}
+								{#if nodeData}
+									<div class="chatview-exchange-wrap" data-exchange-id={exchange.id}>
+										<ChatMessage data={nodeData} />
+									</div>
+								{/if}
+							{/each}
+						{:else}
+							<div class="chatview-empty">Type a message to start a side chat.</div>
 						{/if}
 					</div>
 				{/if}
-				<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
-					{#if activeSideBranch}
-						{#each activeSideBranch as exchange (exchange.id)}
-							{@const nodeData = getNodeDataForExchange(exchange.id)}
-							{#if nodeData}
-								<div class="chatview-exchange-wrap" data-exchange-id={exchange.id}>
-									<ChatMessage data={nodeData} />
-								</div>
-							{/if}
-						{/each}
-					{:else}
-						<div class="chatview-empty">Type a message to start a side chat.</div>
-					{/if}
-				</div>
 			{/if}
 		</div>
 
 		<div
 			class="chatview-input-anchor"
-			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
-			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
+			class:chatview-input-right={sidePanelOpen && !isDocPanel && focusedPane === 'side'}
+			class:chatview-input-left={sidePanelOpen && (!isDocPanel ? focusedPane === 'main' : true)}
 		>
 			<ChatInput
 				bind:this={chatInputRef}
@@ -593,3 +634,31 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	.chatview-doc-wrap {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		overflow: hidden;
+	}
+
+	.chatview-doc-wrap > :global(.docs-panel) {
+		width: 100%;
+		height: 100%;
+		border: none;
+		border-radius: 0;
+	}
+
+	.chatview-doc-wrap :global(.docs-header) {
+		height: 52px;
+		padding: 0 12px;
+		gap: 8px;
+		border-bottom: 1px solid hsl(var(--border));
+		background: hsl(var(--card) / 0.97);
+		font-size: 13px;
+		font-weight: 600;
+		color: hsl(var(--muted-foreground));
+		letter-spacing: 0.02em;
+	}
+</style>
