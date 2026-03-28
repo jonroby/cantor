@@ -94,8 +94,8 @@
 			return;
 		}
 
-		if (result.hasSideChildren && activeExchangeId) {
-			onExpandSideChat(activeExchangeId);
+		if (result.hasSideChildren) {
+			onExpandSideChat(result.parentId);
 		}
 
 		composerValue = '';

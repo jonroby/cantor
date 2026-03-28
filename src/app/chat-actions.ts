@@ -147,7 +147,7 @@ export function performSubmitPrompt(
 	prompt: string,
 	model: ActiveModel,
 	deps: ChatActionDeps = defaultDeps
-): { id: string; hasSideChildren: boolean } {
+): { id: string; parentId: string; hasSideChildren: boolean } {
 	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
 	const hasSideChildren =
 		activeExchangeId !== null && getChildExchanges(tree.exchanges, activeExchangeId).length > 0;
@@ -164,5 +164,5 @@ export function performSubmitPrompt(
 		tree: created
 	});
 
-	return { id: created.id, hasSideChildren };
+	return { id: created.id, parentId, hasSideChildren };
 }

@@ -24,6 +24,7 @@ import {
 	performPromote,
 	performCopy,
 	getDeleteMode,
+	performSubmitPrompt,
 	type ChatActionDeps
 } from './chat-actions';
 
@@ -393,6 +394,26 @@ describe('performCopy', () => {
 		const deps = mockDeps();
 		performCopy('exchange-123', deps);
 		expect(deps.copyToNewChat).toHaveBeenCalledWith('exchange-123');
+	});
+});
+
+// ── performSubmitPrompt ──────────────────────────────────────────────────────
+
+describe('performSubmitPrompt', () => {
+	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
+
+	it('returns parentId so caller can expand the correct side chat parent', () => {
+		const { tree, childId } = buildLinearTree();
+		const deps = mockDeps();
+		const result = performSubmitPrompt('chat-1', tree, childId, 'new prompt', activeModel, deps);
+		expect(result.parentId).toBe(childId);
+	});
+
+	it('returns parentId as main chat tail when activeExchangeId is null', () => {
+		const { tree, leafId } = buildLinearTree();
+		const deps = mockDeps();
+		const result = performSubmitPrompt('chat-1', tree, null, 'new prompt', activeModel, deps);
+		expect(result.parentId).toBe(leafId);
 	});
 });
 
