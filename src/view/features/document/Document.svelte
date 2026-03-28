@@ -370,16 +370,22 @@
 	{/if}
 	{#if pendingDiff}
 		<div class="docs-diff panel-body">
-			{#each pendingDiff as line}
+			{#each pendingDiff as line, i (i)}
 				<div
 					class="diff-line"
 					class:diff-added={line.type === 'added'}
 					class:diff-removed={line.type === 'removed'}
-				>{line.text || '\u00A0'}</div>
+				>
+					{line.text || '\u00A0'}
+				</div>
 			{/each}
 		</div>
 	{:else if editing}
-		<textarea class="docs-editor panel-body" bind:value={draft} onkeydown={handleKeydown} spellcheck="false"
+		<textarea
+			class="docs-editor panel-body"
+			bind:value={draft}
+			onkeydown={handleKeydown}
+			spellcheck="false"
 		></textarea>
 	{:else}
 		<div class="docs-content panel-body" bind:this={contentEl}>
