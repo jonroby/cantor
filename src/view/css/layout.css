@@ -1099,7 +1099,7 @@
 }
 
 .chatmsg-block-askable:hover,
-.chatmsg-block-active {
+.chatmsg-block-selected {
 	background: hsl(var(--foreground) / 0.04);
 	border-left-color: hsl(var(--primary) / 0.5);
 }

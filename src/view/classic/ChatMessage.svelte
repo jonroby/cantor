@@ -18,23 +18,58 @@
 			: []
 	);
 
-	let contextMenuBlock: { source: string; index: number; x: number; y: number } | null =
-		$state(null);
+	let selectionAnchor: number | null = $state(null);
+	let selectionHead: number | null = $state(null);
+	let contextMenu: { x: number; y: number } | null = $state(null);
 
-	function handleBlockContextMenu(event: MouseEvent, source: string, index: number) {
+	let selectionRange = $derived.by(() => {
+		if (selectionAnchor === null) return null;
+		const head = selectionHead ?? selectionAnchor;
+		return { start: Math.min(selectionAnchor, head), end: Math.max(selectionAnchor, head) };
+	});
+
+	function isBlockSelected(index: number): boolean {
+		if (!selectionRange) return false;
+		return index >= selectionRange.start && index <= selectionRange.end;
+	}
+
+	function handleBlockMouseDown(event: MouseEvent, index: number) {
+		if (!data.canQuickAsk) return;
+		event.stopPropagation(); // prevent parent closeContextMenu from clearing selection
+		if (event.shiftKey && selectionAnchor !== null) {
+			event.preventDefault(); // prevent browser text selection
+			selectionHead = index;
+		} else if (event.button === 0) {
+			selectionAnchor = index;
+			selectionHead = null;
+		}
+	}
+
+	function handleBlockContextMenu(event: MouseEvent, index: number) {
 		if (!data.canQuickAsk) return;
 		event.preventDefault();
-		contextMenuBlock = { source, index, x: event.clientX, y: event.clientY };
+		// If right-clicking outside current selection, select just this block
+		if (!isBlockSelected(index)) {
+			selectionAnchor = index;
+			selectionHead = null;
+		}
+		contextMenu = { x: event.clientX, y: event.clientY };
 	}
 
 	function handleQuickAsk() {
-		if (!contextMenuBlock) return;
-		data.onQuickAsk(contextMenuBlock.source);
-		contextMenuBlock = null;
+		if (!selectionRange) return;
+		const source = responseBlocks
+			.slice(selectionRange.start, selectionRange.end + 1)
+			.map((b) => b.source)
+			.join('\n\n');
+		data.onQuickAsk(source);
+		closeContextMenu();
 	}
 
 	function closeContextMenu() {
-		contextMenuBlock = null;
+		contextMenu = null;
+		selectionAnchor = null;
+		selectionHead = null;
 	}
 
 	let showSource = $state(false);
@@ -112,8 +147,9 @@
 						<div
 							class="chatmsg-block"
 							class:chatmsg-block-askable={data.canQuickAsk}
-							class:chatmsg-block-active={contextMenuBlock?.index === i}
-							oncontextmenu={(e) => handleBlockContextMenu(e, block.source, i)}
+							class:chatmsg-block-selected={isBlockSelected(i)}
+							onmousedown={(e) => handleBlockMouseDown(e, i)}
+							oncontextmenu={(e) => handleBlockContextMenu(e, i)}
 						>
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 							{@html block.html}
@@ -269,15 +305,10 @@
 	</div>
 </div>
 
-{#if contextMenuBlock}
+{#if contextMenu}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="chatmsg-context-scrim" onmousedown={closeContextMenu}></div>
-	<div
-		class="chatmsg-context-menu"
-		style="left: {contextMenuBlock.x}px; top: {contextMenuBlock.y}px;"
-	>
-		<button type="button" class="chatmsg-context-item" onclick={handleQuickAsk}>
-			Ask about this
-		</button>
+	<div class="chatmsg-context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
+		<button type="button" class="chatmsg-context-item" onclick={handleQuickAsk}> Quick Ask </button>
 	</div>
 {/if}
