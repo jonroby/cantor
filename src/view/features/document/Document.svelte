@@ -9,12 +9,20 @@
 	interface Props {
 		title?: string;
 		content: string;
+		isStreaming?: boolean;
 		onContentChange?: (content: string) => void;
 		onClose?: () => void;
 		onAddToChat?: () => void;
 	}
 
-	let { title, content, onContentChange, onClose, onAddToChat }: Props = $props();
+	let {
+		title,
+		content,
+		isStreaming = false,
+		onContentChange,
+		onClose,
+		onAddToChat
+	}: Props = $props();
 
 	let showCloseConfirm = $state(false);
 
@@ -209,7 +217,9 @@
 			<path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke-linecap="round" />
 		</svg>
 		<span>{title || 'Document'}</span>
-		{#if dirty}
+		{#if isStreaming}
+			<div class="streaming-dot"></div>
+		{:else if dirty}
 			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 		{/if}
 		<div class="header-actions">

@@ -30,7 +30,9 @@ vi.mock('@/view/components/shadcn/ui/sidebar/index.js', async () => ({
 
 vi.mock('@/state/services/database.svelte', () => ({
 	loadFromStorage: vi.fn(),
-	saveToStorage: vi.fn()
+	saveToStorage: vi.fn(),
+	getPersistedLayout: vi.fn(() => ({})),
+	setPersistedLayout: vi.fn()
 }));
 
 vi.mock('@/app/providers', () => ({

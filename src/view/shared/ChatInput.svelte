@@ -2,7 +2,12 @@
 	import { tick } from 'svelte';
 	import Composer from './Composer.svelte';
 	import { ModelPalette } from '@/view/features/model-palette';
-	import { canAcceptNewChat, getPathTokenTotal, type Message } from '@/domain/tree';
+	import {
+		canAcceptNewChat,
+		getMainChatHistory,
+		getPathTokenTotal,
+		type Message
+	} from '@/domain/tree';
 	import { getActiveChat, getActiveExchanges, getActiveExchangeId } from '@/state/chats.svelte';
 	import {
 		providerState,
@@ -27,17 +32,19 @@
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
 		onExpandSideChat: (exchangeId: string) => void;
-		ephemeralMode?: boolean;
-		ephemeralDocContent?: string;
-		onEphemeralResponse?: (text: string) => void;
+		instructMode?: boolean;
+		instructDocContent?: string;
+		instructStreaming?: boolean;
+		onInstructResponse?: (text: string) => void;
 	}
 
 	let {
 		onScrollToNode,
 		onExpandSideChat,
-		ephemeralMode = false,
-		ephemeralDocContent = '',
-		onEphemeralResponse
+		instructMode = false,
+		instructDocContent = '',
+		instructStreaming = $bindable(false),
+		onInstructResponse
 	}: Props = $props();
 
 	let composerValue = $state('');
@@ -45,20 +52,19 @@
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
-	let ephemeralHistory: Message[] = $state([]);
-	let ephemeralStreaming = $state(false);
-	let ephemeralAbort: AbortController | null = $state(null);
+	let instructHistory: Message[] = $state([]);
+	let instructAbort: AbortController | null = $state(null);
 
 	export function focus() {
 		composerRef?.focus();
 	}
 
-	export function resetEphemeral() {
-		ephemeralHistory = [];
-		ephemeralStreaming = false;
-		if (ephemeralAbort) {
-			ephemeralAbort.abort();
-			ephemeralAbort = null;
+	export function resetInstruct() {
+		instructHistory = [];
+		instructStreaming = false;
+		if (instructAbort) {
+			instructAbort.abort();
+			instructAbort = null;
 		}
 	}
 
@@ -95,8 +101,8 @@
 	});
 
 	async function submitPrompt() {
-		if (ephemeralMode) {
-			await submitEphemeral();
+		if (instructMode) {
+			await submitInstruct();
 			return;
 		}
 
@@ -131,38 +137,45 @@
 		onScrollToNode(result.id);
 	}
 
-	function buildEphemeralMessages(prompt: string): Message[] {
-		const docSection = ephemeralDocContent
-			? `\n\n<current_document>\n${ephemeralDocContent}\n</current_document>`
+	function buildInstructMessages(prompt: string): Message[] {
+		const docSection = instructDocContent
+			? `\n\n<current_document>\n${instructDocContent}\n</current_document>`
 			: '\n\nThe document is currently empty.';
 
 		const systemPrompt = [
 			'You are editing a markdown document. The user will give you instructions about what to change.',
+			'You have access to the chat history above for context.',
 			'Respond with the COMPLETE updated document content. Do NOT wrap it in code fences or backticks.',
 			'Do NOT add any preamble, explanation, or commentary — your entire response becomes the document.',
 			docSection
 		].join('\n');
 
+		const activeChat = getActiveChat();
+		const chatHistory = activeExchanges
+			? getMainChatHistory({ rootId: activeChat.rootId, exchanges: activeExchanges })
+			: [];
+
 		return [
+			...chatHistory,
 			{ role: 'user', content: systemPrompt },
 			{ role: 'assistant', content: 'Understood.' },
-			...ephemeralHistory,
+			...instructHistory,
 			{ role: 'user', content: prompt }
 		];
 	}
 
-	async function submitEphemeral() {
+	async function submitInstruct() {
 		const prompt = composerValue.trim();
 		if (!prompt || !providerState.activeModel) return;
 
 		operationError = null;
-		const messages = buildEphemeralMessages(prompt);
-		ephemeralHistory = [...ephemeralHistory, { role: 'user', content: prompt }];
+		const messages = buildInstructMessages(prompt);
+		instructHistory = [...instructHistory, { role: 'user', content: prompt }];
 		composerValue = '';
-		ephemeralStreaming = true;
+		instructStreaming = true;
 
 		const abort = new AbortController();
-		ephemeralAbort = abort;
+		instructAbort = abort;
 
 		let responseText = '';
 		try {
@@ -172,14 +185,14 @@
 					responseText += chunk.delta;
 				}
 			}
-			ephemeralHistory = [...ephemeralHistory, { role: 'assistant', content: responseText }];
-			onEphemeralResponse?.(responseText);
+			instructHistory = [...instructHistory, { role: 'assistant', content: responseText }];
+			onInstructResponse?.(responseText);
 		} catch (e) {
 			if (abort.signal.aborted) return;
-			operationError = e instanceof Error ? e.message : 'Ephemeral request failed.';
+			operationError = e instanceof Error ? e.message : 'Instruct request failed.';
 		} finally {
-			ephemeralStreaming = false;
-			ephemeralAbort = null;
+			instructStreaming = false;
+			instructAbort = null;
 		}
 	}
 </script>
@@ -192,18 +205,18 @@
 	bind:this={composerRef}
 	bind:composerValue
 	bind:canvasMode
-	{ephemeralMode}
+	{instructMode}
 	{submitDisabledReason}
-	streaming={ephemeralStreaming || activeNodeStreaming}
+	streaming={instructStreaming || activeNodeStreaming}
 	activeModelId={providerState.activeModel?.modelId ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
 	onSubmit={submitPrompt}
 	onStop={() => {
-		if (ephemeralStreaming && ephemeralAbort) {
-			ephemeralAbort.abort();
-			ephemeralStreaming = false;
-			ephemeralAbort = null;
+		if (instructStreaming && instructAbort) {
+			instructAbort.abort();
+			instructStreaming = false;
+			instructAbort = null;
 		} else if (activeExchangeId) {
 			cancelStream(activeExchangeId);
 		}

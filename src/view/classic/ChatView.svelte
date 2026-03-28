@@ -64,6 +64,7 @@
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
+	let instructStreaming = $state(false);
 
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
@@ -195,13 +196,8 @@
 
 	function closeSidePanel() {
 		sidePanel = null;
-		chatInputRef?.resetEphemeral();
+		chatInputRef?.resetInstruct();
 		focusPanel(mainPanel.id);
-	}
-
-	function handleEphemeralResponse(text: string) {
-		if (activeDocIndex < 0) return;
-		updateDocContent(activeDocIndex, text);
 	}
 
 	function addCurrentDocToChat() {
@@ -442,6 +438,7 @@
 						<Document
 							title={activeDocFile.name}
 							content={activeDocFile.content}
+							isStreaming={instructStreaming}
 							onContentChange={(content) => {
 								if (activeDocIndex >= 0) updateDocContent(activeDocIndex, content);
 							}}
@@ -601,9 +598,12 @@
 				bind:this={chatInputRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
-				ephemeralMode={isDocPanel && focusedPane === 'side'}
-				ephemeralDocContent={activeDocFile?.content ?? ''}
-				onEphemeralResponse={handleEphemeralResponse}
+				instructMode={isDocPanel && focusedPane === 'side'}
+				instructDocContent={activeDocFile?.content ?? ''}
+				bind:instructStreaming
+				onInstructResponse={(text) => {
+					if (activeDocIndex >= 0) updateDocContent(activeDocIndex, text);
+				}}
 			/>
 		</div>
 	</div>

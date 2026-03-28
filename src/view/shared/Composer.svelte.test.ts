@@ -8,7 +8,7 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 	const props = {
 		composerValue: '',
 		canvasMode: false,
-		ephemeralMode: false,
+		instructMode: false,
 		submitDisabledReason: null,
 		streaming: false,
 		activeModelId: 'claude-sonnet-4-5',
@@ -84,20 +84,20 @@ describe('Composer', () => {
 		expect(screen.getByText(/1,500 \/ 128,000/)).toBeInTheDocument();
 	});
 
-	describe('ephemeral mode', () => {
-		it('no indicator when ephemeralMode is false', () => {
-			renderComposer({ ephemeralMode: false });
-			expect(screen.queryByText('Ephemeral')).not.toBeInTheDocument();
+	describe('instruct mode', () => {
+		it('no indicator when instructMode is false', () => {
+			renderComposer({ instructMode: false });
+			expect(screen.queryByText('Instruct')).not.toBeInTheDocument();
 		});
 
-		it('shows Ephemeral indicator when ephemeralMode is true', () => {
-			renderComposer({ ephemeralMode: true });
-			expect(screen.getByText('Ephemeral')).toBeInTheDocument();
+		it('shows Instruct indicator when instructMode is true', () => {
+			renderComposer({ instructMode: true });
+			expect(screen.getByText('Instruct')).toBeInTheDocument();
 		});
 
-		it('shows Ephemeral placeholder when active', () => {
-			renderComposer({ ephemeralMode: true });
-			expect(screen.getByPlaceholderText('Ephemeral...')).toBeInTheDocument();
+		it('shows Instruct placeholder when active', () => {
+			renderComposer({ instructMode: true });
+			expect(screen.getByPlaceholderText('Instruct...')).toBeInTheDocument();
 		});
 	});
 });
