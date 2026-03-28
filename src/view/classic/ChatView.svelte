@@ -21,8 +21,10 @@
 		performDelete,
 		performPromote,
 		performCopy,
+		performSubmitPrompt,
 		getDeleteMode
 	} from '@/app/chat-actions';
+	import { providerState } from '@/state/providers.svelte';
 
 	type FocusedPane = 'main' | 'side';
 
@@ -202,6 +204,33 @@
 		openSidePanel(exchangeId);
 	}
 
+	function quickAsk(exchangeId: string, sourceText: string) {
+		if (!activeExchanges || !providerState.activeModel) return;
+
+		const activeChat = getActiveChat();
+		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
+		const prompt = `Can you explain more:\n\n${sourceText}`;
+
+		let result;
+		try {
+			result = performSubmitPrompt(
+				activeChat.id,
+				tree,
+				exchangeId,
+				prompt,
+				providerState.activeModel
+			);
+		} catch {
+			return;
+		}
+
+		if (result.hasSideChildren) {
+			expandSideChat(result.parentId);
+		}
+
+		tick().then(() => scrollToNode(result.id));
+	}
+
 	function getNodeDataForExchange(exchangeId: string) {
 		if (!activeExchanges) return null;
 		return getNodeData(exchangeId, activeExchanges, activeExchangeId, {
@@ -209,7 +238,8 @@
 			onCopy: copyChat,
 			onToggleSideChildren: toggleSideChildren,
 			onPromote: promoteExchange,
-			onDelete: openDeleteDialog
+			onDelete: openDeleteDialog,
+			onQuickAsk: quickAsk
 		});
 	}
 

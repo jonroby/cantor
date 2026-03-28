@@ -55,6 +55,7 @@ export function getExchangeNodeData(
 		onToggleSideChildren: (exchangeId: string) => void;
 		onPromote: (exchangeId: string) => void;
 		onDelete: (exchangeId: string) => void;
+		onQuickAsk?: (exchangeId: string, sourceText: string) => void;
 	},
 	deps: ChatActionDeps = defaultDeps
 ): ExchangeNodeData | null {
@@ -86,7 +87,8 @@ export function getExchangeNodeData(
 		onCopy: () => callbacks.onCopy(exchangeId),
 		onToggleSideChildren: () => callbacks.onToggleSideChildren(exchangeId),
 		onPromote: () => callbacks.onPromote(exchangeId),
-		onDelete: () => callbacks.onDelete(exchangeId)
+		onDelete: () => callbacks.onDelete(exchangeId),
+		onQuickAsk: (sourceText: string) => callbacks.onQuickAsk?.(exchangeId, sourceText)
 	};
 }
 

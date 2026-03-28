@@ -18,4 +18,5 @@ export interface ExchangeNodeData {
 	onToggleSideChildren: () => void;
 	onPromote: () => void;
 	onDelete: () => void;
+	onQuickAsk: (sourceText: string) => void;
 }

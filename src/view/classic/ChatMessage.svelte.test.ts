@@ -9,6 +9,12 @@ vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
 }));
 
+vi.mock('@/domain/document-map/index', () => ({
+	mapDocument: (text: string) =>
+		text ? [{ source: text, html: text }] : [],
+	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
+}));
+
 vi.mock('dompurify', () => ({
 	default: { sanitize: (html: string) => html }
 }));
@@ -36,6 +42,7 @@ function makeNodeData(overrides: Partial<ExchangeNodeData> = {}): ExchangeNodeDa
 		onToggleSideChildren: vi.fn(),
 		onPromote: vi.fn(),
 		onDelete: vi.fn(),
+		onQuickAsk: vi.fn(),
 		...overrides
 	};
 }

@@ -2,15 +2,38 @@
 	import DOMPurify from 'dompurify';
 	import Button from '@/view/components/custom/button.svelte';
 	import { renderRichText } from '@/view/shared/katex';
+	import { mapDocument } from '@/domain/document-map/index';
 	import { PROVIDER_LOGOS } from '@/domain/models/logos';
 	import type { ExchangeNodeData } from '@/app/types';
 
 	let { data }: { data: ExchangeNodeData } = $props();
 
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
-	let responseHtml = $derived(
-		!data.isStreaming ? DOMPurify.sanitize(renderRichText(data.response)) : ''
+	let responseBlocks = $derived(
+		!data.isStreaming
+			? mapDocument(data.response).map((block) => ({
+					source: block.source,
+					html: DOMPurify.sanitize(block.html)
+				}))
+			: []
 	);
+
+	let contextMenuBlock: { source: string; x: number; y: number } | null = $state(null);
+
+	function handleBlockContextMenu(event: MouseEvent, source: string) {
+		event.preventDefault();
+		contextMenuBlock = { source, x: event.clientX, y: event.clientY };
+	}
+
+	function handleQuickAsk() {
+		if (!contextMenuBlock) return;
+		data.onQuickAsk(contextMenuBlock.source);
+		contextMenuBlock = null;
+	}
+
+	function closeContextMenu() {
+		contextMenuBlock = null;
+	}
 </script>
 
 <div class="chatmsg">
@@ -37,9 +60,20 @@
 				<div class="streaming-dot"></div>
 			{/if}
 		</div>
-		{#if responseHtml}
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
-			<div class="chatmsg-response-body">{@html responseHtml}</div>
+		{#if responseBlocks.length > 0}
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="chatmsg-response-body" onmousedown={closeContextMenu}>
+				{#each responseBlocks as block}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="chatmsg-block"
+						oncontextmenu={(e) => handleBlockContextMenu(e, block.source)}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
+						{@html block.html}
+					</div>
+				{/each}
+			</div>
 		{:else}
 			<div class="chatmsg-response-body chatmsg-response-plain">
 				{data.response || (data.isStreaming ? 'Waiting for response…' : 'Cancelled')}
@@ -187,3 +221,16 @@
 		{/if}
 	</div>
 </div>
+
+{#if contextMenuBlock}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="chatmsg-context-scrim" onmousedown={closeContextMenu}></div>
+	<div
+		class="chatmsg-context-menu"
+		style="left: {contextMenuBlock.x}px; top: {contextMenuBlock.y}px;"
+	>
+		<button type="button" class="chatmsg-context-item" onclick={handleQuickAsk}>
+			Ask about this
+		</button>
+	</div>
+{/if}
