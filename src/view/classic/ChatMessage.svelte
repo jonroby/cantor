@@ -2,15 +2,77 @@
 	import DOMPurify from 'dompurify';
 	import Button from '@/view/components/custom/button.svelte';
 	import { renderRichText } from '@/view/shared/katex';
+	import { mapDocument } from '@/domain/document-map/index';
 	import { PROVIDER_LOGOS } from '@/domain/models/logos';
 	import type { ExchangeNodeData } from '@/app/types';
 
 	let { data }: { data: ExchangeNodeData } = $props();
 
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
-	let responseHtml = $derived(
-		!data.isStreaming ? DOMPurify.sanitize(renderRichText(data.response)) : ''
+	let responseBlocks = $derived(
+		!data.isStreaming
+			? mapDocument(data.response).map((block) => ({
+					source: block.source,
+					html: DOMPurify.sanitize(block.html)
+				}))
+			: []
 	);
+
+	let selectionAnchor: number | null = $state(null);
+	let selectionHead: number | null = $state(null);
+	let contextMenu: { x: number; y: number } | null = $state(null);
+
+	let selectionRange = $derived.by(() => {
+		if (selectionAnchor === null) return null;
+		const head = selectionHead ?? selectionAnchor;
+		return { start: Math.min(selectionAnchor, head), end: Math.max(selectionAnchor, head) };
+	});
+
+	function isBlockSelected(index: number): boolean {
+		if (!selectionRange) return false;
+		return index >= selectionRange.start && index <= selectionRange.end;
+	}
+
+	function handleBlockMouseDown(event: MouseEvent, index: number) {
+		if (!data.canQuickAsk) return;
+		event.stopPropagation(); // prevent parent closeContextMenu from clearing selection
+		if (event.shiftKey && selectionAnchor !== null) {
+			event.preventDefault(); // prevent browser text selection
+			selectionHead = index;
+		} else if (event.button === 0) {
+			selectionAnchor = index;
+			selectionHead = null;
+		}
+	}
+
+	function handleBlockContextMenu(event: MouseEvent, index: number) {
+		if (!data.canQuickAsk) return;
+		event.preventDefault();
+		// If right-clicking outside current selection, select just this block
+		if (!isBlockSelected(index)) {
+			selectionAnchor = index;
+			selectionHead = null;
+		}
+		contextMenu = { x: event.clientX, y: event.clientY };
+	}
+
+	function handleQuickAsk() {
+		if (!selectionRange) return;
+		const source = responseBlocks
+			.slice(selectionRange.start, selectionRange.end + 1)
+			.map((b) => b.source)
+			.join('\n\n');
+		data.onQuickAsk(source);
+		closeContextMenu();
+	}
+
+	function closeContextMenu() {
+		contextMenu = null;
+		selectionAnchor = null;
+		selectionHead = null;
+	}
+
+	let showSource = $state(false);
 </script>
 
 <div class="chatmsg">
@@ -36,10 +98,65 @@
 			{#if data.isStreaming}
 				<div class="streaming-dot"></div>
 			{/if}
+			{#if responseBlocks.length > 0}
+				<button
+					type="button"
+					class="chatmsg-source-toggle"
+					onclick={() => (showSource = !showSource)}
+					aria-label={showSource ? 'Show rendered' : 'Show source'}
+				>
+					{#if showSource}
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
+							<path d="M1.5 7c0-2.5 2.5-5 5.5-5s5.5 2.5 5.5 5-2.5 5-5.5 5-5.5-2.5-5.5-5z" />
+							<circle cx="7" cy="7" r="2" />
+						</svg>
+					{:else}
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
+							<path
+								d="M4.5 2.5l-2 3L4.5 8.5M9.5 2.5l2 3-2 3"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+					{/if}
+				</button>
+			{/if}
 		</div>
-		{#if responseHtml}
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
-			<div class="chatmsg-response-body">{@html responseHtml}</div>
+		{#if responseBlocks.length > 0}
+			{#if showSource}
+				<pre class="chatmsg-response-body chatmsg-response-source">{data.response}</pre>
+			{:else}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div class="chatmsg-response-body" onmousedown={closeContextMenu}>
+					{#each responseBlocks as block, i (i)}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="chatmsg-block"
+							class:chatmsg-block-askable={data.canQuickAsk}
+							class:chatmsg-block-selected={isBlockSelected(i)}
+							onmousedown={(e) => handleBlockMouseDown(e, i)}
+							oncontextmenu={(e) => handleBlockContextMenu(e, i)}
+						>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
+							{@html block.html}
+						</div>
+					{/each}
+				</div>
+			{/if}
 		{:else}
 			<div class="chatmsg-response-body chatmsg-response-plain">
 				{data.response || (data.isStreaming ? 'Waiting for response…' : 'Cancelled')}
@@ -187,3 +304,11 @@
 		{/if}
 	</div>
 </div>
+
+{#if contextMenu}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="chatmsg-context-scrim" onmousedown={closeContextMenu}></div>
+	<div class="chatmsg-context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
+		<button type="button" class="chatmsg-context-item" onclick={handleQuickAsk}> Quick Ask </button>
+	</div>
+{/if}

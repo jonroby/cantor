@@ -2,6 +2,7 @@ import { getProviderForModelId, type ActiveModel, type Provider } from '@/domain
 import type { ExchangeNodeData } from './types';
 import {
 	addExchangeResult,
+	canAcceptNewChat,
 	canCreateSideChats,
 	canPromoteSideChatToMainChat,
 	deleteExchangeWithModeResult,
@@ -55,6 +56,7 @@ export function getExchangeNodeData(
 		onToggleSideChildren: (exchangeId: string) => void;
 		onPromote: (exchangeId: string) => void;
 		onDelete: (exchangeId: string) => void;
+		onQuickAsk?: (exchangeId: string, sourceText: string) => void;
 	},
 	deps: ChatActionDeps = defaultDeps
 ): ExchangeNodeData | null {
@@ -81,12 +83,14 @@ export function getExchangeNodeData(
 			{ rootId: findRootId(activeExchanges), exchanges: activeExchanges },
 			exchangeId
 		),
+		canQuickAsk: canAcceptNewChat(activeExchanges, exchangeId),
 		onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
 		onSelect: () => callbacks.onSelect(exchangeId),
 		onCopy: () => callbacks.onCopy(exchangeId),
 		onToggleSideChildren: () => callbacks.onToggleSideChildren(exchangeId),
 		onPromote: () => callbacks.onPromote(exchangeId),
-		onDelete: () => callbacks.onDelete(exchangeId)
+		onDelete: () => callbacks.onDelete(exchangeId),
+		onQuickAsk: (sourceText: string) => callbacks.onQuickAsk?.(exchangeId, sourceText)
 	};
 }
 
@@ -165,4 +169,22 @@ export function performSubmitPrompt(
 	});
 
 	return { id: created.id, parentId, hasSideChildren };
+}
+
+export function performQuickAsk(
+	chatId: string,
+	tree: ChatTree,
+	exchangeId: string,
+	sourceText: string,
+	model: ActiveModel,
+	deps: ChatActionDeps = defaultDeps
+): { id: string; parentId: string; hasSideChildren: boolean } {
+	return performSubmitPrompt(
+		chatId,
+		tree,
+		exchangeId,
+		`Can you explain more:\n\n${sourceText}`,
+		model,
+		deps
+	);
 }

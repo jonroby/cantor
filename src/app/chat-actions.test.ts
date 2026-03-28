@@ -24,6 +24,7 @@ import {
 	performPromote,
 	performCopy,
 	getDeleteMode,
+	performQuickAsk,
 	performSubmitPrompt,
 	type ChatActionDeps
 } from './chat-actions';
@@ -64,7 +65,8 @@ function mockCallbacks() {
 		onCopy: vi.fn(),
 		onToggleSideChildren: vi.fn(),
 		onPromote: vi.fn(),
-		onDelete: vi.fn()
+		onDelete: vi.fn(),
+		onQuickAsk: vi.fn()
 	};
 }
 
@@ -96,6 +98,25 @@ function buildTreeWithSideChat(): {
 	tree = main;
 	const side = addExchangeResult(tree, root.id, 'side prompt', MODEL, PROVIDER);
 	return { tree: side, rootId: root.id, mainId: main.id, sideId: side.id };
+}
+
+/** root → main + side → side-child */
+function buildTreeWithSideDescendant(): {
+	tree: ChatTree;
+	rootId: string;
+	sideId: string;
+	sideChildId: string;
+} {
+	let tree = buildEmptyTree();
+	const root = addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
+	tree = root;
+	tree = setResponse(tree, root.id, 'root response');
+	const main = addExchangeResult(tree, root.id, 'main prompt', MODEL, PROVIDER);
+	tree = main;
+	const side = addExchangeResult(tree, root.id, 'side prompt', MODEL, PROVIDER);
+	tree = side;
+	const sideChild = addExchangeResult(tree, side.id, 'side child prompt', MODEL, PROVIDER);
+	return { tree: sideChild, rootId: root.id, sideId: side.id, sideChildId: sideChild.id };
 }
 
 // ── getExchangeNodeData ──────────────────────────────────────────────────────
@@ -198,6 +219,24 @@ describe('getExchangeNodeData', () => {
 			mockDeps()
 		);
 		expect(mainResult!.canPromote).toBe(false);
+	});
+
+	it('canQuickAsk is false for side exchanges that already have a child', () => {
+		const { tree, sideId } = buildTreeWithSideDescendant();
+		const result = getExchangeNodeData(sideId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result!.canQuickAsk).toBe(false);
+	});
+
+	it('canQuickAsk is true for a side-branch leaf', () => {
+		const { tree, sideChildId } = buildTreeWithSideDescendant();
+		const result = getExchangeNodeData(
+			sideChildId,
+			tree.exchanges,
+			null,
+			mockCallbacks(),
+			mockDeps()
+		);
+		expect(result!.canQuickAsk).toBe(true);
 	});
 
 	it('isStreaming reflects service state', () => {
@@ -414,6 +453,24 @@ describe('performSubmitPrompt', () => {
 		const deps = mockDeps();
 		const result = performSubmitPrompt('chat-1', tree, null, 'new prompt', activeModel, deps);
 		expect(result.parentId).toBe(leafId);
+	});
+});
+
+describe('performQuickAsk', () => {
+	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
+
+	it('wraps the source text in the quick ask prompt template', () => {
+		const { tree, childId } = buildLinearTree();
+		const deps = mockDeps();
+
+		performQuickAsk('chat-1', tree, childId, 'Selected paragraph', activeModel, deps);
+
+		expect(deps.replaceActiveTree).toHaveBeenCalledOnce();
+		const createdTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]![0];
+		const createdExchangeId = vi.mocked(deps.setActiveExchangeId).mock.calls[0]![0] as string;
+		expect(createdTree.exchanges[createdExchangeId]?.prompt.text).toBe(
+			'Can you explain more:\n\nSelected paragraph'
+		);
 	});
 });
 

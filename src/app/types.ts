@@ -12,10 +12,12 @@ export interface ExchangeNodeData {
 	isSideRoot: boolean;
 	canCreateSideChat: boolean;
 	canPromote: boolean;
+	canQuickAsk: boolean;
 	onMeasure: (height: number) => void;
 	onSelect: () => void;
 	onCopy: () => void;
 	onToggleSideChildren: () => void;
 	onPromote: () => void;
 	onDelete: () => void;
+	onQuickAsk: (sourceText: string) => void;
 }

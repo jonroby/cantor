@@ -1,12 +1,23 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import ChatMessage from './ChatMessage.svelte';
 import type { ExchangeNodeData } from '@/app/types';
 
 vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
+}));
+
+vi.mock('@/domain/document-map/index', () => ({
+	mapDocument: (text: string) =>
+		text
+			? text.split('\n\n').map((block) => ({
+					source: block,
+					html: `<p>${block}</p>`
+				}))
+			: [],
+	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
 }));
 
 vi.mock('dompurify', () => ({
@@ -30,12 +41,14 @@ function makeNodeData(overrides: Partial<ExchangeNodeData> = {}): ExchangeNodeDa
 		isSideRoot: false,
 		canCreateSideChat: false,
 		canPromote: false,
+		canQuickAsk: true,
 		onMeasure: vi.fn(),
 		onSelect: vi.fn(),
 		onCopy: vi.fn(),
 		onToggleSideChildren: vi.fn(),
 		onPromote: vi.fn(),
 		onDelete: vi.fn(),
+		onQuickAsk: vi.fn(),
 		...overrides
 	};
 }
@@ -149,5 +162,68 @@ describe('ChatMessage', () => {
 		render(ChatMessage, { props: { data } });
 		await userEvent.click(screen.getByText('2'));
 		expect(data.onToggleSideChildren).toHaveBeenCalledOnce();
+	});
+
+	it('quick ask can target a single response block', async () => {
+		const data = makeNodeData({
+			response: 'First block\n\nSecond block\n\nThird block'
+		});
+		render(ChatMessage, { props: { data } });
+
+		const secondBlock = screen.getByText('Second block');
+		await fireEvent.contextMenu(secondBlock);
+		await userEvent.click(screen.getByRole('button', { name: /quick ask/i }));
+
+		expect(data.onQuickAsk).toHaveBeenCalledOnce();
+		expect(data.onQuickAsk).toHaveBeenCalledWith('Second block');
+	});
+
+	it('quick ask can include a contiguous block range in document order', async () => {
+		const data = makeNodeData({
+			response: 'First block\n\nSecond block\n\nThird block'
+		});
+		render(ChatMessage, { props: { data } });
+
+		const firstBlock = screen.getByText('First block');
+		const thirdBlock = screen.getByText('Third block');
+
+		await fireEvent.mouseDown(firstBlock, { button: 0 });
+		await fireEvent.mouseDown(thirdBlock, { button: 0, shiftKey: true });
+		await fireEvent.contextMenu(thirdBlock);
+		await userEvent.click(screen.getByRole('button', { name: /quick ask/i }));
+
+		expect(data.onQuickAsk).toHaveBeenCalledOnce();
+		expect(data.onQuickAsk).toHaveBeenCalledWith('First block\n\nSecond block\n\nThird block');
+	});
+
+	it('quick ask preserves document order when the selection is made backwards', async () => {
+		const data = makeNodeData({
+			response: 'First block\n\nSecond block\n\nThird block'
+		});
+		render(ChatMessage, { props: { data } });
+
+		const firstBlock = screen.getByText('First block');
+		const thirdBlock = screen.getByText('Third block');
+
+		await fireEvent.mouseDown(thirdBlock, { button: 0 });
+		await fireEvent.mouseDown(firstBlock, { button: 0, shiftKey: true });
+		await fireEvent.contextMenu(firstBlock);
+		await userEvent.click(screen.getByRole('button', { name: /quick ask/i }));
+
+		expect(data.onQuickAsk).toHaveBeenCalledOnce();
+		expect(data.onQuickAsk).toHaveBeenCalledWith('First block\n\nSecond block\n\nThird block');
+	});
+
+	it('does not expose quick ask when the exchange cannot accept it', async () => {
+		const data = makeNodeData({
+			canQuickAsk: false,
+			response: 'First block\n\nSecond block'
+		});
+		render(ChatMessage, { props: { data } });
+
+		await fireEvent.contextMenu(screen.getByText('First block'));
+
+		expect(screen.queryByRole('button', { name: /quick ask/i })).not.toBeInTheDocument();
+		expect(data.onQuickAsk).not.toHaveBeenCalled();
 	});
 });

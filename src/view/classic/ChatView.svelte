@@ -21,8 +21,10 @@
 		performDelete,
 		performPromote,
 		performCopy,
+		performQuickAsk,
 		getDeleteMode
 	} from '@/app/chat-actions';
+	import { providerState } from '@/state/providers.svelte';
 
 	type FocusedPane = 'main' | 'side';
 
@@ -202,6 +204,35 @@
 		openSidePanel(exchangeId);
 	}
 
+	function quickAsk(exchangeId: string, sourceText: string) {
+		if (!activeExchanges || !providerState.activeModel) return;
+
+		const activeChat = getActiveChat();
+		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
+
+		let result;
+		try {
+			result = performQuickAsk(
+				activeChat.id,
+				tree,
+				exchangeId,
+				sourceText,
+				providerState.activeModel
+			);
+		} catch (error) {
+			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
+			return;
+		}
+
+		operationError = null;
+
+		if (result.hasSideChildren) {
+			expandSideChat(result.parentId);
+		}
+
+		tick().then(() => scrollToNode(result.id));
+	}
+
 	function getNodeDataForExchange(exchangeId: string) {
 		if (!activeExchanges) return null;
 		return getNodeData(exchangeId, activeExchanges, activeExchangeId, {
@@ -209,7 +240,8 @@
 			onCopy: copyChat,
 			onToggleSideChildren: toggleSideChildren,
 			onPromote: promoteExchange,
-			onDelete: openDeleteDialog
+			onDelete: openDeleteDialog,
+			onQuickAsk: quickAsk
 		});
 	}
 
