@@ -19,7 +19,12 @@
 		withContent
 	} from '@/domain/panel';
 	import DocsPanel from '@/view/features/docs-panel/DocsPanel.svelte';
-	import { docState, updateDocContent, closeDoc } from '@/state/documents.svelte';
+	import { docState, selectDoc, updateDocContent, closeDoc } from '@/state/documents.svelte';
+	import {
+		getPersistedLayout,
+		setPersistedLayout,
+		saveToStorage
+	} from '@/state/services/database.svelte';
 	import {
 		getActiveChat,
 		getActiveExchanges,
@@ -188,6 +193,8 @@
 	function closeSidePanel() {
 		sidePanel = null;
 		chatInputRef?.resetEphemeral();
+		setPersistedLayout({});
+		saveToStorage();
 		focusPanel(mainPanel.id);
 	}
 
@@ -329,6 +336,8 @@
 	export function openDocPanel(folderId: string, fileId: string) {
 		sidePanel = createDocumentPanel(folderId, fileId);
 		focusedPanelId = sidePanel.id;
+		setPersistedLayout({ openDocPanel: { folderId, fileId } });
+		saveToStorage();
 	}
 
 	export function resetUIState() {
@@ -375,6 +384,21 @@
 			setActiveExchangeId(sideBranchTailId);
 		}
 	});
+
+	export function restoreLayout() {
+		const layout = getPersistedLayout();
+		if (layout.openDocPanel) {
+			const { folderId, fileId } = layout.openDocPanel;
+			const folder = docState.folders.find((f) => f.id === folderId);
+			const file = folder?.files?.find((f) => f.id === fileId);
+			if (file) {
+				selectDoc(folderId, fileId);
+				openDocPanel(folderId, fileId);
+			} else {
+				setPersistedLayout({});
+			}
+		}
+	}
 </script>
 
 {#if operationError}

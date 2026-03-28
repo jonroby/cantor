@@ -139,6 +139,7 @@
 			fixDuplicateNames(chatState.chats, docState.folders);
 			toast.warning('Some items had duplicate names and were automatically renamed.');
 		}
+		chatViewRef?.restoreLayout();
 		initProviders();
 		autoConnectOllama();
 
