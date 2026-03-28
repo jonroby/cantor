@@ -458,6 +458,19 @@ export function addExchangeResult(
 	return added;
 }
 
+export function addDocumentExchangeResult(
+	tree: ChatTree,
+	parentId: string,
+	content: string,
+	label: string
+): AddExchangeResult {
+	const result = addExchangeResult(tree, parentId, content, '', 'ollama');
+	const exchange = result.exchanges[result.id];
+	exchange.response = { text: '', tokenCount: 0 };
+	exchange.label = label;
+	return result;
+}
+
 // ── Removing exchanges ──────────────────────────────────────────────────────
 
 export function removeExchange(tree: ChatTree, exchangeId: string): ChatTree {

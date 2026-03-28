@@ -1,6 +1,7 @@
 import { getProviderForModelId, type ActiveModel, type Provider } from '@/domain/models';
 import type { ExchangeNodeData } from './types';
 import {
+	addDocumentExchangeResult,
 	addExchangeResult,
 	canAcceptNewChat,
 	canCreateSideChats,
@@ -188,4 +189,18 @@ export function performQuickAsk(
 		model,
 		deps
 	);
+}
+
+export function performAddDocToChat(
+	tree: ChatTree,
+	activeExchangeId: string | null,
+	content: string,
+	fileName: string,
+	deps: ChatActionDeps = defaultDeps
+): string {
+	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
+	const result = addDocumentExchangeResult(tree, parentId, content, `Added ${fileName} to chat`);
+	deps.replaceActiveTree(result);
+	deps.setActiveExchangeId(result.id);
+	return result.id;
 }

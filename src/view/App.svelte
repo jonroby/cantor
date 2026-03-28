@@ -3,7 +3,7 @@
 	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
 	import { toast } from 'svelte-sonner';
 	import { getDefaultItems, searchChats, type SearchResult } from '@/domain/search';
-	import { addExchangeResult, getMainChatTail, type Chat, type ChatTree } from '@/domain/tree';
+	import type { Chat } from '@/domain/tree';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar, SearchDialog } from '@/view/shared';
 	import { routerState } from '@/view/routes/router.svelte';
@@ -16,8 +16,7 @@
 		selectChat as selectChatAction,
 		deleteChat as deleteChatAction,
 		renameChat,
-		setActiveExchangeId,
-		replaceActiveTree
+		setActiveExchangeId
 	} from '@/state/chats.svelte';
 	import {
 		docState,
@@ -42,6 +41,7 @@
 	} from '@/state/services/io.svelte';
 	import { init as initProviders, autoConnectOllama } from '@/app/providers';
 	import { cancelStreamsForChat } from '@/state/services/streams';
+	import { performAddDocToChat } from '@/app/chat-actions';
 
 	function deduplicate(name: string, existing: string[]): string {
 		if (!existing.includes(name)) return name;
@@ -180,16 +180,8 @@
 		if (!file) return;
 
 		const activeChat = chatState.chats[chatState.activeChatIndex];
-		const tree: ChatTree = { rootId: activeChat.rootId, exchanges: activeChat.exchanges };
-		const parentId = activeChat.activeExchangeId ?? getMainChatTail(tree) ?? '';
-
-		const result = addExchangeResult(tree, parentId, file.content, '', 'ollama');
-		const exchange = result.exchanges[result.id];
-		exchange.response = { text: '', tokenCount: 0 };
-		exchange.label = `Added ${file.name} to chat`;
-
-		replaceActiveTree(result);
-		setActiveExchangeId(result.id);
+		const tree = { rootId: activeChat.rootId, exchanges: activeChat.exchanges };
+		performAddDocToChat(tree, activeChat.activeExchangeId, file.content, file.name);
 	}
 
 	function handleSearchSelect(result: SearchResult) {
