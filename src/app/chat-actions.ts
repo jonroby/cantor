@@ -205,7 +205,12 @@ export function performAddDocToChat(
 	deps: ChatActionDeps = defaultDeps
 ): string {
 	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
-	const result = addDocumentExchangeResult(tree, parentId, content, `Added ${fileName} to chat`);
+	const result = addDocumentExchangeResult(
+		tree,
+		parentId,
+		content,
+		`${fileName} was added to chat`
+	);
 	deps.replaceActiveTree(result);
 	deps.setActiveExchangeId(result.id);
 	return result.id;

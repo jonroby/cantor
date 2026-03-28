@@ -34,7 +34,11 @@
 		performQuickAsk,
 		getDeleteMode
 	} from '@/app/chat-actions';
-	import { clearDocumentLayout, performCloseDocumentPanel } from '@/app/documents';
+	import {
+		clearDocumentLayout,
+		performAddFolderDocumentToChat,
+		performCloseDocumentPanel
+	} from '@/app/documents';
 	import { providerState } from '@/state/providers.svelte';
 
 	// ── Panel state ─────────────────────────────────────────────────────────
@@ -198,8 +202,8 @@
 	}
 
 	function addCurrentDocToChat() {
-		if (!activeDocFile) return;
-		toast.success(`${activeDocFile.name} is now live in this chat`);
+		if (!docContent) return;
+		performAddFolderDocumentToChat(docContent.folderId, docContent.fileId);
 	}
 
 	function prevBranch() {
