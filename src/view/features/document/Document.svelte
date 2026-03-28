@@ -188,7 +188,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="docs-panel"
+	class="document"
 	class:drag-over={draggingOver}
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
@@ -351,7 +351,7 @@
 </div>
 
 <style>
-	.docs-panel {
+	.document {
 		background: hsl(var(--card, 0 0% 100%));
 		border: 1px solid hsl(var(--border, 0 0% 85%));
 		border-radius: 12px;
@@ -361,7 +361,7 @@
 		width: 816px;
 		height: 1056px;
 	}
-	.docs-panel.drag-over {
+	.document.drag-over {
 		outline: 2px dashed hsl(var(--primary, 220 90% 56%));
 		outline-offset: -4px;
 		background: hsl(var(--primary, 220 90% 56%) / 0.04);

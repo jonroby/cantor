@@ -225,7 +225,7 @@
 				const fileId = newDocInFolder(folderId);
 				if (fileId) {
 					selectDoc(folderId, fileId);
-					chatViewRef?.openDocPanel(folderId, fileId);
+					chatViewRef?.openDocument(folderId, fileId);
 				}
 			}}
 			onUploadDoc={uploadDocToFolder}
@@ -233,7 +233,7 @@
 			onUploadNewFolder={uploadFolder}
 			onSelectDoc={(folderId, fileId) => {
 				selectDoc(folderId, fileId);
-				chatViewRef?.openDocPanel(folderId, fileId);
+				chatViewRef?.openDocument(folderId, fileId);
 			}}
 			onAddDocToChat={addDocToChat}
 			onDeleteDoc={deleteDocFromFolder}

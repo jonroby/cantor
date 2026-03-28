@@ -34,7 +34,7 @@ function assertNoDuplicateNames(chats: Chat[], folders: ChatFolder[]) {
 // --- Chat & folder storage ---
 
 export interface PersistedLayout {
-	openDocPanel?: { folderId: string; fileId: string };
+	openDocument?: { folderId: string; fileId: string };
 }
 
 let _layout: PersistedLayout = {};

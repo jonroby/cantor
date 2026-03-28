@@ -21,7 +21,7 @@
 		isSideChat,
 		withContent
 	} from '@/domain/panel';
-	import DocsPanel from '@/view/features/docs-panel/DocsPanel.svelte';
+	import Document from '@/view/features/document/Document.svelte';
 	import { docState, selectDoc, updateDocContent, closeDoc } from '@/state/documents.svelte';
 	import {
 		getPersistedLayout,
@@ -355,10 +355,10 @@
 		tick().then(() => chatInputRef?.focus());
 	}
 
-	export function openDocPanel(folderId: string, fileId: string) {
+	export function openDocument(folderId: string, fileId: string) {
 		sidePanel = createDocumentPanel(folderId, fileId);
 		focusedPanelId = sidePanel.id;
-		setPersistedLayout({ openDocPanel: { folderId, fileId } });
+		setPersistedLayout({ openDocument: { folderId, fileId } });
 		saveToStorage();
 	}
 
@@ -409,13 +409,13 @@
 
 	export function restoreLayout() {
 		const layout = getPersistedLayout();
-		if (layout.openDocPanel) {
-			const { folderId, fileId } = layout.openDocPanel;
+		if (layout.openDocument) {
+			const { folderId, fileId } = layout.openDocument;
 			const folder = docState.folders.find((f) => f.id === folderId);
 			const file = folder?.files?.find((f) => f.id === fileId);
 			if (file) {
 				selectDoc(folderId, fileId);
-				openDocPanel(folderId, fileId);
+				openDocument(folderId, fileId);
 			} else {
 				setPersistedLayout({});
 			}
@@ -469,7 +469,7 @@
 			{#if sidePanelOpen}
 				{#if isDocPanel && activeDocFile}
 					<div class="chatview-doc-wrap">
-						<DocsPanel
+						<Document
 							title={activeDocFile.name}
 							content={activeDocFile.content}
 							onContentChange={(content) => {
@@ -698,7 +698,7 @@
 		overflow: hidden;
 	}
 
-	.chatview-doc-wrap > :global(.docs-panel) {
+	.chatview-doc-wrap > :global(.document) {
 		width: 100%;
 		height: 100%;
 		border: none;

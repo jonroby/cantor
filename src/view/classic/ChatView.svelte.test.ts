@@ -436,7 +436,7 @@ describe('ChatView', () => {
 			setupDocPanel();
 			const { component } = render(ChatView);
 
-			component.openDocPanel('folder-1', 'file-1');
+			component.openDocument('folder-1', 'file-1');
 			await tick();
 
 			expect(screen.getByText('notes.md')).toBeInTheDocument();
@@ -447,7 +447,7 @@ describe('ChatView', () => {
 			setupDocPanel();
 			const { component } = render(ChatView);
 
-			component.openDocPanel('folder-1', 'file-1');
+			component.openDocument('folder-1', 'file-1');
 			await tick();
 
 			expect(screen.getByText('Ephemeral')).toBeInTheDocument();
@@ -458,7 +458,7 @@ describe('ChatView', () => {
 			setupDocPanel();
 			const { component } = render(ChatView);
 
-			component.openDocPanel('folder-1', 'file-1');
+			component.openDocument('folder-1', 'file-1');
 			await tick();
 
 			expect(screen.getByText('notes.md')).toBeInTheDocument();
