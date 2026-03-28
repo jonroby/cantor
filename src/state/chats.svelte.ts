@@ -120,6 +120,13 @@ export function renameChat(index: number, name: string) {
 	chatState.chats[index].name = name;
 }
 
+function nextCopyName(): string {
+	const names = new Set(chatState.chats.map((c) => c.name));
+	let i = 1;
+	while (names.has(`Copy Path ${i}`)) i++;
+	return `Copy Path ${i}`;
+}
+
 export function copyToNewChat(exchangeId: string) {
 	const activeChat = chatState.chats[chatState.activeChatIndex];
 	if (!activeChat) return;
@@ -130,9 +137,10 @@ export function copyToNewChat(exchangeId: string) {
 	);
 
 	const copiedTree: ChatTree = { rootId: result.rootId, exchanges: result.copiedExchanges };
+	const name = nextCopyName();
 	const copiedChat: Chat = {
 		id: crypto.randomUUID(),
-		name: `${activeChat.name} (copy ${chatState.chats.length + 1})`,
+		name,
 		rootId: result.rootId,
 		exchanges: result.copiedExchanges,
 		activeExchangeId: getMainChatTail(copiedTree)

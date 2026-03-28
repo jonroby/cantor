@@ -388,7 +388,7 @@ describe('chats state', () => {
 
 			expect(chatState.chats.length).toBe(2);
 			expect(chatState.activeChatIndex).toBe(1);
-			expect(chatState.chats[1].name).toContain('copy');
+			expect(chatState.chats[1].name).toBe('Copy Path 1');
 		});
 
 		it('copied chat has a valid tree', () => {
