@@ -299,20 +299,20 @@
 			onPromote: promoteExchange,
 			onDelete: openDeleteDialog,
 			onQuickAsk: quickAsk,
-			onQuickAdd: isDocPanel && activeDocIndex >= 0
-				? (sourceText) => {
-						const current = activeDocFile?.content ?? '';
-						const appended = current ? `${current}\n\n${sourceText}` : sourceText;
-						updateDocContent(activeDocIndex, appended);
-					}
-				: undefined
+			onQuickAdd:
+				isDocPanel && activeDocIndex >= 0
+					? (sourceText) => {
+							const current = activeDocFile?.content ?? '';
+							const appended = current ? `${current}\n\n${sourceText}` : sourceText;
+							updateDocContent(activeDocIndex, appended);
+						}
+					: undefined
 		});
 	}
 
 	async function scrollToNode(nodeId: string | null) {
 		if (!nodeId) return;
 		await tick();
-		// Try the focused pane first, then the other
 		const isSideFocused = sidePanel !== null && focusedPanelId === sidePanel.id;
 		const containers = isSideFocused
 			? [sideScrollContainer, mainScrollContainer]
@@ -321,7 +321,7 @@
 			if (!container) continue;
 			const el = container.querySelector(`[data-exchange-id="${nodeId}"]`);
 			if (el) {
-				el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				return;
 			}
 		}
