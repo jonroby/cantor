@@ -8,6 +8,8 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 	const props = {
 		composerValue: '',
 		canvasMode: false,
+		ephemeralMode: false,
+		ephemeralAvailable: false,
 		submitDisabledReason: null,
 		streaming: false,
 		activeModelId: 'claude-sonnet-4-5',
@@ -81,5 +83,27 @@ describe('Composer', () => {
 	it('shows token count', () => {
 		renderComposer({ usedTokens: 1500, contextLength: 128000 });
 		expect(screen.getByText(/1,500 \/ 128,000/)).toBeInTheDocument();
+	});
+
+	describe('ephemeral toggle', () => {
+		it('hidden when ephemeralAvailable is false', () => {
+			renderComposer({ ephemeralAvailable: false });
+			expect(screen.queryByText('Chat')).not.toBeInTheDocument();
+		});
+
+		it('shows Chat label when ephemeralAvailable is true', () => {
+			renderComposer({ ephemeralAvailable: true });
+			expect(screen.getByText('Chat')).toBeInTheDocument();
+		});
+
+		it('shows Ephemeral label when ephemeralMode is true', () => {
+			renderComposer({ ephemeralAvailable: true, ephemeralMode: true });
+			expect(screen.getByText('Ephemeral')).toBeInTheDocument();
+		});
+
+		it('shows Ephemeral placeholder when active', () => {
+			renderComposer({ ephemeralAvailable: true, ephemeralMode: true });
+			expect(screen.getByPlaceholderText('Ephemeral...')).toBeInTheDocument();
+		});
 	});
 });

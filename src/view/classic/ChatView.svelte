@@ -16,7 +16,6 @@
 		createSideChatPanel,
 		createDocumentPanel,
 		isSideChat,
-		isDocument,
 		withContent
 	} from '@/domain/panel';
 	import DocsPanel from '@/view/features/docs-panel/DocsPanel.svelte';
@@ -188,7 +187,13 @@
 
 	function closeSidePanel() {
 		sidePanel = null;
+		chatInputRef?.resetEphemeral();
 		focusPanel(mainPanel.id);
+	}
+
+	function handleEphemeralResponse(text: string) {
+		if (activeDocIndex < 0) return;
+		updateDocContent(activeDocIndex, text);
 	}
 
 	function prevBranch() {
@@ -579,6 +584,9 @@
 				bind:this={chatInputRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
+				ephemeralAvailable={isDocPanel}
+				ephemeralDocContent={activeDocFile?.content ?? ''}
+				onEphemeralResponse={handleEphemeralResponse}
 			/>
 		</div>
 	</div>
