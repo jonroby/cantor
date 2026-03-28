@@ -1,21 +1,21 @@
 import {
-	buildEmptyExchanges,
-	forkExchanges,
+	buildEmptyTree,
+	copyPath,
 	getMainChatTail,
-	hasExplicitExchangeOrder,
-	withExplicitExchangeOrder,
+	type ChatTree,
 	type Chat,
 	type ExchangeMap
 } from '@/domain/tree';
 import { buildInitialExchanges } from '@/state/initial-exchanges';
 
 function makeDefaultChat(): Chat {
-	const exchanges = withExplicitExchangeOrder(buildInitialExchanges());
+	const tree = buildInitialExchanges();
 	return {
 		id: crypto.randomUUID(),
 		name: 'Chat 1',
-		exchanges,
-		activeExchangeId: getMainChatTail(exchanges)
+		rootId: tree.rootId,
+		exchanges: tree.exchanges,
+		activeExchangeId: getMainChatTail(tree)
 	};
 }
 
@@ -32,6 +32,11 @@ export function getActiveExchanges(): ExchangeMap {
 	return getActiveChat().exchanges;
 }
 
+export function getActiveTree(): ChatTree {
+	const chat = getActiveChat();
+	return { rootId: chat.rootId, exchanges: chat.exchanges };
+}
+
 export function getActiveExchangeId(): string | null {
 	return getActiveChat().activeExchangeId;
 }
@@ -44,17 +49,36 @@ export function getExchangesByChatId(chatId: string): ExchangeMap | undefined {
 	return getChatById(chatId)?.exchanges;
 }
 
+export function getTreeByChatId(chatId: string): ChatTree | undefined {
+	const chat = getChatById(chatId);
+	if (!chat) return undefined;
+	return { rootId: chat.rootId, exchanges: chat.exchanges };
+}
+
 export function replaceExchangesByChatId(chatId: string, nextExchanges: ExchangeMap) {
 	const chat = chatState.chats.find((c) => c.id === chatId);
 	if (chat) chat.exchanges = nextExchanges;
 }
 
+export function replaceTreeByChatId(chatId: string, nextTree: ChatTree) {
+	const chat = chatState.chats.find((c) => c.id === chatId);
+	if (!chat) return;
+	chat.rootId = nextTree.rootId;
+	chat.exchanges = nextTree.exchanges;
+}
+
 function hasRenderableExchanges(exchanges: ExchangeMap) {
-	return Object.values(exchanges).some((exchange) => !exchange.isAnchor);
+	return Object.keys(exchanges).length > 0;
 }
 
 export function replaceActiveExchanges(nextExchanges: ExchangeMap) {
 	chatState.chats[chatState.activeChatIndex].exchanges = nextExchanges;
+}
+
+export function replaceActiveTree(nextTree: ChatTree) {
+	const chat = chatState.chats[chatState.activeChatIndex];
+	chat.rootId = nextTree.rootId;
+	chat.exchanges = nextTree.exchanges;
 }
 
 export function setActiveExchangeId(exchangeId: string | null) {
@@ -62,12 +86,13 @@ export function setActiveExchangeId(exchangeId: string | null) {
 }
 
 export function newChat(): number {
-	const exchanges = buildEmptyExchanges();
+	const tree = buildEmptyTree();
 	const chat: Chat = {
 		id: crypto.randomUUID(),
 		name: `Chat ${chatState.chats.length + 1}`,
-		exchanges,
-		activeExchangeId: getMainChatTail(exchanges)
+		rootId: tree.rootId,
+		exchanges: tree.exchanges,
+		activeExchangeId: getMainChatTail(tree)
 	};
 	chatState.chats = [...chatState.chats, chat];
 	chatState.activeChatIndex = chatState.chats.length - 1;
@@ -88,86 +113,37 @@ export function renameChat(index: number, name: string) {
 	chatState.chats[index].name = name;
 }
 
-export function forkChat(exchangeId: string) {
+export function copyToNewChat(exchangeId: string) {
 	const activeChat = chatState.chats[chatState.activeChatIndex];
 	if (!activeChat) return;
 
-	const result = forkExchanges(activeChat.exchanges, exchangeId);
-	if (!result) return;
+	const result = copyPath(
+		{ rootId: activeChat.rootId, exchanges: activeChat.exchanges },
+		exchangeId
+	);
 
-	const forkedChat: Chat = {
+	const copiedTree: ChatTree = { rootId: result.rootId, exchanges: result.copiedExchanges };
+	const copiedChat: Chat = {
 		id: crypto.randomUUID(),
-		name: `${activeChat.name} (fork ${chatState.chats.length + 1})`,
-		exchanges: result.forkedRoot,
-		activeExchangeId: result.firstCopiedId
+		name: `${activeChat.name} (copy ${chatState.chats.length + 1})`,
+		rootId: result.rootId,
+		exchanges: result.copiedExchanges,
+		activeExchangeId: getMainChatTail(copiedTree)
 	};
-	chatState.chats = [...chatState.chats, forkedChat];
+	chatState.chats = [...chatState.chats, copiedChat];
 	chatState.activeChatIndex = chatState.chats.length - 1;
 }
 
-export function hydrate(parsed: {
-	chats?: Chat[];
-	activeChatIndex?: number;
-	sessions?: Chat[];
-	activeSessionIndex?: number;
-	roots?: ExchangeMap[];
-	activeRootIndex?: number;
-}) {
-	const rawChats = parsed.chats ?? parsed.sessions;
-	const rawIndex = parsed.activeChatIndex ?? parsed.activeSessionIndex;
-
-	if (rawChats?.length) {
-		const hydratedChats: Chat[] = [];
-		for (const c of rawChats) {
-			if ('roots' in c && Array.isArray((c as Record<string, unknown>).roots)) {
-				const legacyRoots = (c as Record<string, unknown>).roots as ExchangeMap[];
-				const legacyActiveRootIndex =
-					((c as Record<string, unknown>).activeRootIndex as number) ?? 0;
-				for (let i = 0; i < legacyRoots.length; i++) {
-					const exchanges = hasExplicitExchangeOrder(legacyRoots[i])
-						? legacyRoots[i]
-						: withExplicitExchangeOrder(legacyRoots[i]);
-					hydratedChats.push({
-						id: crypto.randomUUID(),
-						name:
-							i === 0
-								? (c.name ?? `Chat ${hydratedChats.length + 1}`)
-								: `${c.name ?? 'Chat'} (fork ${i})`,
-						exchanges,
-						activeExchangeId:
-							i === legacyActiveRootIndex
-								? (c.activeExchangeId ?? getMainChatTail(exchanges))
-								: getMainChatTail(exchanges)
-					});
-				}
-			} else {
-				const exchanges =
-					c.exchanges && !hasExplicitExchangeOrder(c.exchanges)
-						? withExplicitExchangeOrder(c.exchanges)
-						: c.exchanges;
-				hydratedChats.push({
-					...c,
-					exchanges,
-					activeExchangeId: c.activeExchangeId ?? getMainChatTail(exchanges)
-				});
-			}
+export function hydrate(parsed: { chats?: Chat[]; activeChatIndex?: number }) {
+	if (parsed.chats?.length) {
+		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
+			chatState.chats = parsed.chats;
 		}
-		if (hydratedChats.some((c) => hasRenderableExchanges(c.exchanges))) {
-			chatState.chats = hydratedChats;
-		}
-		if (typeof rawIndex === 'number') {
-			chatState.activeChatIndex = Math.min(Math.max(rawIndex, 0), chatState.chats.length - 1);
-		}
-	} else if (parsed.roots?.length) {
-		const hydratedChats: Chat[] = parsed.roots.map((root, i) => ({
-			id: crypto.randomUUID(),
-			name: i === 0 ? 'Chat 1' : `Chat 1 (fork ${i})`,
-			exchanges: withExplicitExchangeOrder(root),
-			activeExchangeId: getMainChatTail(root)
-		}));
-		if (hydratedChats.some((c) => hasRenderableExchanges(c.exchanges))) {
-			chatState.chats = hydratedChats;
-			chatState.activeChatIndex = 0;
+		if (typeof parsed.activeChatIndex === 'number') {
+			chatState.activeChatIndex = Math.min(
+				Math.max(parsed.activeChatIndex, 0),
+				chatState.chats.length - 1
+			);
 		}
 	}
 }

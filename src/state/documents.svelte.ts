@@ -35,7 +35,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 ## Features
 
 - **Chats** — top-level chat conversations
-- **Forks** — copy conversation into a new chat
+- **Copies** — copy conversation into a new chat
 - **Side Chats** — sibling branches off existing nodes`;
 
 export const docState = $state({

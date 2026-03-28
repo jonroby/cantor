@@ -1,39 +1,16 @@
 import {
-	PROVIDER_CONFIG,
 	getModelContextLength,
 	isKeyBasedProvider,
 	type ActiveModel,
-	type OllamaStatus,
-	type Provider
-} from '@/lib/models';
+	type OllamaStatus
+} from '@/domain/models';
+import { DEFAULT_OLLAMA_URL } from '@/state/services/providers/ollama';
 import {
-	DEFAULT_OLLAMA_URL,
-	fetchAvailableModels,
-	fetchModelContextLength,
-	streamOllamaChat
-} from '@/services/providers/ollama';
-import {
-	getWebLLMModels,
-	loadWebLLMModel,
-	streamWebLLMChat,
-	deleteModelCache,
-	deleteAllModelCaches,
 	WEBLLM_CONTEXT_OPTIONS,
 	type WebLLMStatus,
 	type WebLLMModelEntry,
 	type WebLLMContextSize
-} from '@/services/providers/webllm';
-import { streamClaudeChat } from '@/services/providers/claude';
-import { streamGeminiChat } from '@/services/providers/gemini';
-import { streamOpenAICompatChat } from '@/services/providers/openai-compat';
-import {
-	clearProviderKey,
-	loadAllApiKeys,
-	migrateVault,
-	saveApiKey,
-	storedProviders as getStoredProviders
-} from '@/services/providers/vault';
-import type { Message } from '@/domain/tree';
+} from '@/state/services/providers/webllm';
 
 export { WEBLLM_CONTEXT_OPTIONS };
 export type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize, ActiveModel, OllamaStatus };
@@ -55,100 +32,6 @@ export const providerState = $state({
 	webllmContextSize: 4_096 as WebLLMContextSize
 });
 
-export function init() {
-	migrateVault();
-	providerState.vaultProviders = getStoredProviders();
-	providerState.webllmModels = getWebLLMModels();
-}
-
-export async function autoConnectOllama() {
-	try {
-		const models = await fetchAvailableModels(DEFAULT_OLLAMA_URL);
-		if (models.length > 0) {
-			providerState.ollamaUrl = DEFAULT_OLLAMA_URL;
-			providerState.ollamaModels = models;
-			providerState.ollamaStatus = 'connected';
-			providerState.activeModel = { provider: 'ollama', modelId: models[0] };
-		}
-	} catch {
-		// Ollama not running
-	}
-}
-
-export async function connectOllama(url: string) {
-	providerState.ollamaStatus = 'connecting';
-	try {
-		const models = await fetchAvailableModels(url);
-		providerState.ollamaUrl = url;
-		providerState.ollamaModels = models;
-		providerState.ollamaStatus = 'connected';
-	} catch (error) {
-		providerState.ollamaStatus = 'error';
-		providerState.ollamaModels = [];
-		providerState.operationError =
-			error instanceof Error ? error.message : 'Failed to connect to Ollama.';
-	}
-}
-
-export async function loadWebLLMModel_(modelId: string) {
-	providerState.webllmStatus = 'loading';
-	providerState.webllmProgress = 0;
-	providerState.webllmProgressText = '';
-	providerState.webllmError = null;
-	try {
-		await loadWebLLMModel(modelId, providerState.webllmContextSize, (report) => {
-			providerState.webllmProgress = report.progress;
-			providerState.webllmProgressText = report.text;
-		});
-		providerState.webllmStatus = 'ready';
-		providerState.activeModel = { provider: 'webllm', modelId };
-		providerState.contextLength = providerState.webllmContextSize;
-	} catch (error) {
-		providerState.webllmStatus = 'error';
-		providerState.webllmError = error instanceof Error ? error.message : 'Failed to load model.';
-	}
-}
-
-export async function deleteWebLLMCache(modelId: string) {
-	await deleteModelCache(modelId);
-	if (
-		providerState.activeModel?.provider === 'webllm' &&
-		providerState.activeModel.modelId === modelId
-	) {
-		providerState.activeModel = null;
-		providerState.webllmStatus = 'idle';
-	}
-}
-
-export async function deleteAllWebLLMCaches() {
-	await deleteAllModelCaches();
-	if (providerState.activeModel?.provider === 'webllm') {
-		providerState.activeModel = null;
-	}
-	providerState.webllmStatus = 'idle';
-}
-
-export async function unlockKeys(password: string) {
-	providerState.apiKeys = await loadAllApiKeys(password);
-}
-
-export async function saveKey(provider: string, apiKey: string, password: string) {
-	await saveApiKey(provider, apiKey, password);
-	providerState.apiKeys = { ...providerState.apiKeys, [provider]: apiKey };
-	providerState.vaultProviders = getStoredProviders();
-}
-
-export function forgetKey(provider: string) {
-	clearProviderKey(provider);
-	const { [provider]: _, ...rest } = providerState.apiKeys;
-	void _;
-	providerState.apiKeys = rest;
-	providerState.vaultProviders = getStoredProviders();
-	if (providerState.activeModel?.provider === provider) {
-		providerState.activeModel = null;
-	}
-}
-
 export function selectModel(model: ActiveModel) {
 	providerState.activeModel = model;
 }
@@ -159,41 +42,7 @@ export function updateContextLength() {
 			providerState.activeModel.provider,
 			providerState.activeModel.modelId
 		);
+	} else {
+		providerState.contextLength = null;
 	}
-}
-
-export async function fetchOllamaContextLength() {
-	if (providerState.activeModel?.provider === 'ollama') {
-		const modelId = providerState.activeModel.modelId;
-		const url = providerState.ollamaUrl;
-		try {
-			const length = await fetchModelContextLength(modelId, url);
-			if (
-				providerState.activeModel?.provider === 'ollama' &&
-				providerState.activeModel.modelId === modelId &&
-				providerState.ollamaUrl === url
-			) {
-				providerState.contextLength = length;
-			}
-		} catch {
-			if (
-				providerState.activeModel?.provider === 'ollama' &&
-				providerState.activeModel.modelId === modelId &&
-				providerState.ollamaUrl === url
-			) {
-				providerState.contextLength = null;
-			}
-		}
-	}
-}
-
-export function getProviderStream(model: ActiveModel, history: Message[], signal: AbortSignal) {
-	const key = providerState.apiKeys[model.provider] ?? '';
-	if (model.provider === 'webllm') return streamWebLLMChat(history, signal);
-	if (model.provider === 'ollama')
-		return streamOllamaChat(model.modelId, history, signal, providerState.ollamaUrl);
-	if (model.provider === 'claude') return streamClaudeChat(model.modelId, history, key, signal);
-	if (model.provider === 'gemini') return streamGeminiChat(model.modelId, history, key, signal);
-	const config = PROVIDER_CONFIG[model.provider as Exclude<Provider, 'ollama' | 'webllm'>];
-	return streamOpenAICompatChat(config.baseUrl, model.modelId, history, key, signal);
 }

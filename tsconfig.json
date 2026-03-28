@@ -21,5 +21,13 @@
 		},
 		"types": ["svelte", "vite/client"]
 	},
-	"include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte", "vite.config.ts"]
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.js",
+		"src/**/*.svelte",
+		"tests/**/*.ts",
+		"tests/**/*.js",
+		"tests/**/*.svelte",
+		"vite.config.ts"
+	]
 }
