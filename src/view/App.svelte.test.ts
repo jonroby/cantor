@@ -51,15 +51,18 @@ vi.mock('@/view/routes/router.svelte', () => ({
 	routerState: { route: 'chat' as 'chat' | 'canvas' | 'landing' }
 }));
 
+import { toast } from 'svelte-sonner';
 import App from './App.svelte';
 import { chatState } from '@/state/chats.svelte';
-import { loadFromStorage } from '@/state/services/database.svelte';
+import { docState } from '@/state/documents.svelte';
+import { loadFromStorage, saveToStorage } from '@/state/services/database.svelte';
 import { autoConnectOllama, init } from '@/app/providers';
 import { routerState } from '@/view/routes/router.svelte';
 
 describe('App', () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
+		vi.resetAllMocks();
+		vi.restoreAllMocks();
 		chatState.chats = [
 			{
 				id: 'chat-1',
@@ -70,6 +73,7 @@ describe('App', () => {
 			}
 		];
 		chatState.activeChatIndex = 0;
+		docState.folders = [];
 		routerState.route = 'chat';
 	});
 
@@ -96,5 +100,75 @@ describe('App', () => {
 		render(App);
 
 		expect(screen.getByTestId('landing-page-mock')).toBeInTheDocument();
+	});
+
+	describe('gracefully renames duplicates on load', () => {
+		it('renames duplicate chat names', () => {
+			vi.mocked(loadFromStorage).mockImplementation(() => {
+				chatState.chats = [
+					{ id: '1', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null },
+					{ id: '2', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null }
+				];
+				throw new Error('Duplicate chat name "Foo"');
+			});
+			const warningSpy = vi.spyOn(toast, 'warning');
+
+			render(App);
+
+			expect(chatState.chats[0].name).toBe('Foo');
+			expect(chatState.chats[1].name).toBe('Foo (2)');
+			expect(warningSpy).toHaveBeenCalled();
+			expect(saveToStorage).toHaveBeenCalledOnce();
+		});
+
+		it('renames duplicate folder names', () => {
+			vi.mocked(loadFromStorage).mockImplementation(() => {
+				docState.folders = [
+					{ id: 'f1', name: 'Docs' },
+					{ id: 'f2', name: 'Docs' }
+				];
+				throw new Error('Duplicate folder name "Docs"');
+			});
+			const warningSpy = vi.spyOn(toast, 'warning');
+
+			render(App);
+
+			expect(docState.folders[0].name).toBe('Docs');
+			expect(docState.folders[1].name).toBe('Docs (2)');
+			expect(warningSpy).toHaveBeenCalled();
+			expect(saveToStorage).toHaveBeenCalledOnce();
+		});
+
+		it('renames duplicate file names within a folder', () => {
+			vi.mocked(loadFromStorage).mockImplementation(() => {
+				docState.folders = [
+					{
+						id: 'f1',
+						name: 'Docs',
+						files: [
+							{ id: 'd1', name: 'readme.md', content: '' },
+							{ id: 'd2', name: 'readme.md', content: '' }
+						]
+					}
+				];
+				throw new Error('Duplicate file name "readme.md"');
+			});
+			const warningSpy = vi.spyOn(toast, 'warning');
+
+			render(App);
+
+			expect(docState.folders[0].files![0].name).toBe('readme.md');
+			expect(docState.folders[0].files![1].name).toBe('readme.md (2)');
+			expect(warningSpy).toHaveBeenCalled();
+			expect(saveToStorage).toHaveBeenCalledOnce();
+		});
+
+		it('does not show a toast when no duplicates exist', () => {
+			const warningSpy = vi.spyOn(toast, 'warning');
+
+			render(App);
+
+			expect(warningSpy).not.toHaveBeenCalled();
+		});
 	});
 });

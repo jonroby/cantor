@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { renameWithDedup } from '@/utils/rename';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu/index.js';
 	import type { ChatFolder } from '@/state/documents.svelte';
@@ -81,12 +82,9 @@
 	}
 
 	function commitRenameFolder(name: string) {
-		if (name.trim()) {
-			const ok = onRenameFolder(name.trim());
-			if (!ok) {
-				toast.error(`A folder named "${name.trim()}" already exists`);
-				return;
-			}
+		const result = renameWithDedup(name, onRenameFolder);
+		if (result && result !== name.trim()) {
+			toast.warning(`Renamed to "${result}" to avoid duplicate`);
 		}
 		isEditingFolder = false;
 		editingFolderName = '';

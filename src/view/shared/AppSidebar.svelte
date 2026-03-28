@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { renameWithDedup } from '@/utils/rename';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.svelte.js';
@@ -19,7 +20,7 @@
 		onSelectChat: (index: number) => void;
 		onNewChat: () => number;
 		onDeleteChat: (index: number) => void;
-		onRenameChat: (index: number, name: string) => void;
+		onRenameChat: (index: number, name: string) => boolean;
 		onDownloadChat: (index: number) => void;
 		onUploadChat: () => void;
 		folders: ChatFolder[];
@@ -79,8 +80,11 @@
 	}
 
 	function commitRenameChat(name: string) {
-		if (editingChatIndex !== null && name.trim()) {
-			onRenameChat(editingChatIndex, name.trim());
+		if (editingChatIndex !== null) {
+			const result = renameWithDedup(name, (c) => onRenameChat(editingChatIndex!, c));
+			if (result && result !== name.trim()) {
+				toast.warning(`Renamed to "${result}" to avoid duplicate`);
+			}
 		}
 		editingChatIndex = null;
 		editingChatName = '';
@@ -103,11 +107,12 @@
 	}
 
 	function commitRenameDoc(name: string) {
-		if (editingDocFolderId && editingDocFileId && name.trim()) {
-			const ok = onRenameDoc(editingDocFolderId, editingDocFileId, name.trim());
-			if (!ok) {
-				toast.error(`"${name.trim()}" already exists in this folder`);
-				return;
+		if (editingDocFolderId && editingDocFileId) {
+			const result = renameWithDedup(name, (c) =>
+				onRenameDoc(editingDocFolderId!, editingDocFileId!, c)
+			);
+			if (result && result !== name.trim()) {
+				toast.warning(`Renamed to "${result}" to avoid duplicate`);
 			}
 		}
 		editingDocFolderId = null;

@@ -1,27 +1,56 @@
 import { chatState, hydrate } from '@/state/chats.svelte';
 import { docState } from '@/state/documents.svelte';
+import type { Chat } from '@/domain/tree';
+import type { ChatFolder } from '@/state/documents.svelte';
 
 const STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
 const LEGACY_VAULT_KEY = 'byok_vault';
+
+// --- Invariant checks ---
+
+function assertNoDuplicateNames(chats: Chat[], folders: ChatFolder[]) {
+	const chatNames: string[] = [];
+	for (const chat of chats) {
+		if (chatNames.includes(chat.name)) throw new Error(`Duplicate chat name "${chat.name}"`);
+		chatNames.push(chat.name);
+	}
+
+	const folderNames: string[] = [];
+	for (const folder of folders) {
+		if (folderNames.includes(folder.name))
+			throw new Error(`Duplicate folder name "${folder.name}"`);
+		folderNames.push(folder.name);
+
+		const fileNames: string[] = [];
+		for (const file of folder.files ?? []) {
+			if (fileNames.includes(file.name))
+				throw new Error(`Duplicate file name "${file.name}" in folder "${folder.name}"`);
+			fileNames.push(file.name);
+		}
+	}
+}
 
 // --- Chat & folder storage ---
 
 export function loadFromStorage() {
 	const raw = localStorage.getItem(STORAGE_KEY);
 	if (!raw) return;
+	let parsed;
 	try {
-		const parsed = JSON.parse(raw);
-		hydrate(parsed);
-		if (parsed.folders?.length) {
-			docState.folders = parsed.folders;
-		}
+		parsed = JSON.parse(raw);
 	} catch {
-		// ignore invalid persisted state
+		return;
 	}
+	hydrate(parsed);
+	if (parsed.folders?.length) {
+		docState.folders = parsed.folders;
+	}
+	assertNoDuplicateNames(chatState.chats, docState.folders);
 }
 
 export function saveToStorage() {
+	assertNoDuplicateNames(chatState.chats, docState.folders);
 	localStorage.setItem(
 		STORAGE_KEY,
 		JSON.stringify({

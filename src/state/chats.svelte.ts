@@ -116,8 +116,11 @@ export function deleteChat(index: number) {
 	chatState.activeChatIndex = Math.min(chatState.activeChatIndex, chatState.chats.length - 1);
 }
 
-export function renameChat(index: number, name: string) {
+export function renameChat(index: number, name: string): boolean {
+	const conflict = chatState.chats.some((c, i) => i !== index && c.name === name);
+	if (conflict) return false;
 	chatState.chats[index].name = name;
+	return true;
 }
 
 function nextCopyName(): string {

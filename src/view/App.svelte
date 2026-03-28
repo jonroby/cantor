@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
+	import { toast } from 'svelte-sonner';
 	import { getDefaultItems, searchChats, type SearchResult } from '@/domain/search';
 	import type { Chat } from '@/domain/tree';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
@@ -28,6 +29,7 @@
 		moveDocToFolder
 	} from '@/state/documents.svelte';
 	import { loadFromStorage, saveToStorage } from '@/state/services/database.svelte';
+	import type { ChatFolder } from '@/state/documents.svelte';
 	import {
 		downloadChat,
 		uploadChat,
@@ -38,6 +40,36 @@
 	} from '@/state/services/io.svelte';
 	import { init as initProviders, autoConnectOllama } from '@/app/providers';
 	import { cancelStreamsForChat } from '@/state/services/streams';
+
+	function deduplicate(name: string, existing: string[]): string {
+		if (!existing.includes(name)) return name;
+		let i = 2;
+		while (existing.includes(`${name} (${i})`)) i++;
+		return `${name} (${i})`;
+	}
+
+	function fixDuplicateNames(chats: Chat[], folders: ChatFolder[]) {
+		const chatNames: string[] = [];
+		for (const chat of chats) {
+			const deduped = deduplicate(chat.name, chatNames);
+			if (deduped !== chat.name) chat.name = deduped;
+			chatNames.push(deduped);
+		}
+
+		const folderNames: string[] = [];
+		for (const folder of folders) {
+			const deduped = deduplicate(folder.name, folderNames);
+			if (deduped !== folder.name) folder.name = deduped;
+			folderNames.push(deduped);
+
+			const fileNames: string[] = [];
+			for (const file of folder.files ?? []) {
+				const dedupedFile = deduplicate(file.name, fileNames);
+				if (dedupedFile !== file.name) file.name = dedupedFile;
+				fileNames.push(dedupedFile);
+			}
+		}
+	}
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
@@ -100,7 +132,12 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		loadFromStorage();
+		try {
+			loadFromStorage();
+		} catch {
+			fixDuplicateNames(chatState.chats, docState.folders);
+			toast.warning('Some items had duplicate names and were automatically renamed.');
+		}
 		initProviders();
 		autoConnectOllama();
 
