@@ -21,6 +21,7 @@
 	import {
 		docState,
 		newFolder,
+		newDocInFolder,
 		deleteFolder,
 		renameFolder,
 		selectDoc,
@@ -200,6 +201,10 @@
 			onDeleteFolder={deleteFolder}
 			onDownloadFolder={downloadFolder}
 			onRenameFolder={renameFolder}
+			onNewDoc={(folderId) => {
+				const fileId = newDocInFolder(folderId);
+				if (fileId) selectDoc(folderId, fileId);
+			}}
 			onUploadDoc={uploadDocToFolder}
 			onUploadFolder={uploadFolderToFolder}
 			onUploadNewFolder={uploadFolder}

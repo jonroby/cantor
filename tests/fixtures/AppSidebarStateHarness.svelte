@@ -31,6 +31,7 @@
 		onDeleteFolder={deleteFolder}
 		onDownloadFolder={noop}
 		onRenameFolder={renameFolder}
+		onNewDoc={noop}
 		onUploadDoc={noop}
 		onUploadFolder={noop}
 		onUploadNewFolder={noop}

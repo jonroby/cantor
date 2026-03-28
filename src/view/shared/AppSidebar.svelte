@@ -28,6 +28,7 @@
 		onDeleteFolder: (folderId: string) => void;
 		onDownloadFolder: (folderId: string) => void;
 		onRenameFolder: (folderId: string, name: string) => boolean;
+		onNewDoc: (folderId: string) => void;
 		onUploadDoc: (folderId: string) => void;
 		onUploadFolder: (folderId: string) => void;
 		onUploadNewFolder: () => void;
@@ -51,6 +52,7 @@
 		onDeleteFolder,
 		onDownloadFolder,
 		onRenameFolder,
+		onNewDoc,
 		onUploadDoc,
 		onUploadFolder,
 		onUploadNewFolder,
@@ -382,6 +384,7 @@
 									bind:editingDocFileName
 									draggingDocFileId={draggingDoc?.fileId ?? null}
 									onToggle={() => toggleFolder(folder.id)}
+									onNewDoc={() => onNewDoc(folder.id)}
 									onUploadDoc={() => onUploadDoc(folder.id)}
 									onUploadFolder={() => onUploadFolder(folder.id)}
 									onRenameFolder={(name) => onRenameFolder(folder.id, name)}
