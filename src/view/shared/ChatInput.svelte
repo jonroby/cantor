@@ -58,8 +58,9 @@
 				: null
 	);
 
+	let activeChatId = $derived(getActiveChat().id);
 	$effect(() => {
-		void getActiveChat().id;
+		void activeChatId;
 		tick().then(() => composerRef?.focus());
 	});
 

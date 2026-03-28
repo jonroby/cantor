@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import Button from '@/view/components/custom/button.svelte';
 	import ChatMessage from './ChatMessage.svelte';
 	import { ChatInput } from '@/view/shared';
@@ -166,6 +167,7 @@
 
 	function copyChat(exchangeId: string) {
 		performCopy(exchangeId);
+		toast.success('Copied to new chat');
 	}
 
 	function openDeleteDialog(exchangeId: string) {

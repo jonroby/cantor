@@ -23,7 +23,6 @@ import {
 	cancelStreamsForExchanges,
 	startStream
 } from '@/state/services/streams';
-import { toast } from 'svelte-sonner';
 
 // ── Dependency interface for testability ─────────────────────────────────────
 
@@ -134,7 +133,6 @@ export function performPromote(
 
 export function performCopy(exchangeId: string, deps: ChatActionDeps = defaultDeps) {
 	deps.copyToNewChat(exchangeId);
-	toast.success('Copied to new chat');
 }
 
 export function getDeleteMode(activeExchanges: ExchangeMap, exchangeId: string): DeleteMode {

@@ -388,13 +388,9 @@ function exciseSubtree(
 
 // ── Tree construction & validation ──────────────────────────────────────────
 
-function validated<T extends ChatTree>(result: T): T {
-	validateTree(result);
-	return result;
-}
-
 export function validateChatTree(tree: ChatTree): ChatTree {
-	return validated(tree);
+	validateTree(tree);
+	return tree;
 }
 
 // ── Adding exchanges ────────────────────────────────────────────────────────
@@ -456,14 +452,18 @@ export function addExchangeResult(
 		next = attachChild(next, parentId, id);
 	}
 
-	return validated({ id, rootId: nextRootId, exchanges: next });
+	const added = { id, rootId: nextRootId, exchanges: next };
+	validateTree(added);
+	return added;
 }
 
 // ── Removing exchanges ──────────────────────────────────────────────────────
 
 export function removeExchange(tree: ChatTree, exchangeId: string): ChatTree {
 	validateTree(tree);
-	return validated(spliceExchange(tree, exchangeId));
+	const result = spliceExchange(tree, exchangeId);
+	validateTree(result);
+	return result;
 }
 
 export function removeExchangeSubtree(tree: ChatTree, exchangeId: string): ChatTree {
@@ -477,7 +477,8 @@ export function removeMainChatChild(tree: ChatTree, exchangeId: string): ChatTre
 	assert(mainChild !== undefined, `Exchange "${exchangeId}" has no main chat child to remove.`);
 
 	const result = exciseSubtree(tree, mainChild.id);
-	return validated(result.tree);
+	validateTree(result.tree);
+	return result.tree;
 }
 
 export function removeSideChatChildren(tree: ChatTree, exchangeId: string): ChatTree {
@@ -490,7 +491,8 @@ export function removeSideChatChildren(tree: ChatTree, exchangeId: string): Chat
 		const result = exciseSubtree(current, child.id);
 		current = result.tree;
 	}
-	return validated(current);
+	validateTree(current);
+	return current;
 }
 
 export function deleteExchangeWithMode(
@@ -525,7 +527,9 @@ export function deleteExchangeWithModeResult(
 function removeExchangeSubtreeResult(tree: ChatTree, exchangeId: string): DeleteResult {
 	validateTree(tree);
 	const result = exciseSubtree(tree, exchangeId);
-	return validated({ ...result.tree, removedExchangeIds: result.removedIds });
+	const removed = { ...result.tree, removedExchangeIds: result.removedIds };
+	validateTree(removed);
+	return removed;
 }
 
 function deleteExchangeAndMainChat(indexed: IndexedTree, exchangeId: string): DeleteResult {
@@ -541,7 +545,9 @@ function deleteExchangeAndMainChat(indexed: IndexedTree, exchangeId: string): De
 	}
 
 	const spliced = spliceExchange(current, exchangeId);
-	return validated({ ...spliced, removedExchangeIds: [exchangeId, ...removedIds] });
+	const deleted = { ...spliced, removedExchangeIds: [exchangeId, ...removedIds] };
+	validateTree(deleted);
+	return deleted;
 }
 
 function deleteExchangeAndSideChats(indexed: IndexedTree, exchangeId: string): DeleteResult {
@@ -557,7 +563,9 @@ function deleteExchangeAndSideChats(indexed: IndexedTree, exchangeId: string): D
 	}
 
 	const spliced = spliceExchange(current, exchangeId);
-	return validated({ ...spliced, removedExchangeIds: [exchangeId, ...removedIds] });
+	const deleted = { ...spliced, removedExchangeIds: [exchangeId, ...removedIds] };
+	validateTree(deleted);
+	return deleted;
 }
 
 // ── Queries ─────────────────────────────────────────────────────────────────
@@ -726,7 +734,9 @@ export function promoteSideChatToMainChat(tree: ChatTree, exchangeId: string): C
 		...indexed.exchanges,
 		[exchange.parentId]: { ...parent, childIds: reorderedSiblingIds }
 	};
-	return validated({ rootId: tree.rootId, exchanges: next });
+	const promoted = { rootId: tree.rootId, exchanges: next };
+	validateTree(promoted);
+	return promoted;
 }
 
 export function getDescendantExchanges(tree: ChatTree, exchangeId: string): string[] {

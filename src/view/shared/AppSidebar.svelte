@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { renameWithDedup } from '@/utils/rename';
+	import { renameWithDedup } from '@/domain/rename';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.svelte.js';
