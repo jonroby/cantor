@@ -11,6 +11,13 @@
 		type DeleteMode
 	} from '@/domain/tree';
 	import {
+		type Panel,
+		createMainChatPanel,
+		createSideChatPanel,
+		isSideChat,
+		withContent
+	} from '@/domain/panel';
+	import {
 		getActiveChat,
 		getActiveExchanges,
 		getActiveExchangeId,
@@ -26,13 +33,23 @@
 	} from '@/app/chat-actions';
 	import { providerState } from '@/state/providers.svelte';
 
-	type FocusedPane = 'main' | 'side';
+	// ── Panel state ─────────────────────────────────────────────────────────
+	let mainPanel: Panel = $state(createMainChatPanel());
+	let sidePanel = $state<Panel | null>(null);
+	let focusedPanelId: string = $state(mainPanel.id);
 
-	let sidePanelOpen = $state(false);
-	let sidePanelParentId: string | null = $state(null);
-	let sideBranchIndex = $state(0);
+	// ── Derived compatibility shims ─────────────────────────────────────────
+	let sidePanelOpen = $derived(sidePanel !== null);
+	let sideChatContent = $derived(
+		sidePanel !== null && sidePanel.content.type === 'side-chat' ? sidePanel.content : null
+	);
+	let sidePanelParentId = $derived(sideChatContent ? sideChatContent.parentExchangeId : null);
+	let sideBranchIndex = $derived(sideChatContent ? sideChatContent.branchIndex : 0);
+	let focusedPane = $derived<'main' | 'side'>(
+		sidePanel !== null && focusedPanelId === sidePanel.id ? 'side' : 'main'
+	);
+
 	let trackLatestBranch = $state(false);
-	let focusedPane: FocusedPane = $state('main');
 	let deleteTargetId: string | null = $state(null);
 	let deleteMode: DeleteMode = $state('exchange');
 	let operationError: string | null = $state(null);
@@ -96,11 +113,16 @@
 		return branches;
 	}
 
-	function focusPane(pane: FocusedPane) {
-		focusedPane = pane;
-		if (pane === 'main') {
+	function updateSideBranchIndex(newIndex: number) {
+		if (!sidePanel || !isSideChat(sidePanel)) return;
+		sidePanel = withContent(sidePanel, { ...sidePanel.content, branchIndex: newIndex });
+	}
+
+	function focusPanel(panelId: string) {
+		focusedPanelId = panelId;
+		if (panelId === mainPanel.id) {
 			setActiveExchangeId(mainChatTailId);
-		} else if (pane === 'side') {
+		} else if (sidePanel && panelId === sidePanel.id) {
 			if (sideBranchTailId) {
 				setActiveExchangeId(sideBranchTailId);
 			} else if (sidePanelParentId) {
@@ -110,19 +132,27 @@
 		tick().then(() => chatInputRef?.focus());
 	}
 
+	function focusMain() {
+		focusPanel(mainPanel.id);
+	}
+
+	function focusSide() {
+		if (sidePanel) focusPanel(sidePanel.id);
+	}
+
 	function openSidePanel(parentId: string) {
-		if (sidePanelOpen && sidePanelParentId === parentId) {
+		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === parentId) {
 			closeSidePanel();
 			return;
 		}
 
-		sidePanelParentId = parentId;
-		sidePanelOpen = true;
-		focusedPane = 'side';
-
 		const children = activeExchanges ? getChildExchanges(activeExchanges, parentId) : [];
+		const branchIdx = children.length > 1 ? children.length - 2 : 0;
+
+		sidePanel = createSideChatPanel(parentId, branchIdx);
+		focusedPanelId = sidePanel.id;
+
 		if (children.length > 1) {
-			sideBranchIndex = children.length - 2;
 			let current = children[children.length - 1];
 			while (current) {
 				const grandChildren = activeExchanges ? getChildExchanges(activeExchanges, current.id) : [];
@@ -131,38 +161,34 @@
 			}
 			if (current) setActiveExchangeId(current.id);
 		} else {
-			sideBranchIndex = 0;
 			setActiveExchangeId(parentId);
 		}
 		tick().then(() => chatInputRef?.focus());
 	}
 
 	function closeSidePanel() {
-		sidePanelOpen = false;
-		sidePanelParentId = null;
-		focusPane('main');
+		sidePanel = null;
+		focusPanel(mainPanel.id);
 	}
 
 	function prevBranch() {
 		if (sideBranchIndex > 0) {
-			sideBranchIndex--;
-			focusPane('side');
+			updateSideBranchIndex(sideBranchIndex - 1);
+			focusSide();
 		}
 	}
 
 	function nextBranch() {
 		if (sideBranchIndex < sideBranches.length - 1) {
-			sideBranchIndex++;
-			focusPane('side');
+			updateSideBranchIndex(sideBranchIndex + 1);
+			focusSide();
 		}
 	}
 
 	function newSideBranch() {
 		if (!sidePanelParentId) return;
-		// If current branch is already empty, do nothing
 		if (!activeSideBranch || activeSideBranch.length === 0) return;
-		// Jump past existing branches to show empty state
-		sideBranchIndex = sideBranches.length;
+		updateSideBranchIndex(sideBranches.length);
 		setActiveExchangeId(sidePanelParentId);
 		tick().then(() => chatInputRef?.focus());
 	}
@@ -249,10 +275,10 @@
 		if (!nodeId) return;
 		await tick();
 		// Try the focused pane first, then the other
-		const containers =
-			focusedPane === 'side'
-				? [sideScrollContainer, mainScrollContainer]
-				: [mainScrollContainer, sideScrollContainer];
+		const isSideFocused = sidePanel !== null && focusedPanelId === sidePanel.id;
+		const containers = isSideFocused
+			? [sideScrollContainer, mainScrollContainer]
+			: [mainScrollContainer, sideScrollContainer];
 		for (const container of containers) {
 			if (!container) continue;
 			const el = container.querySelector(`[data-exchange-id="${nodeId}"]`);
@@ -265,13 +291,13 @@
 
 	function expandSideChat(exchangeId: string) {
 		trackLatestBranch = true;
-		focusedPane = 'side';
-		if (sidePanelOpen && sidePanelParentId === exchangeId) {
+		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === exchangeId) {
+			focusedPanelId = sidePanel.id;
 			tick().then(() => chatInputRef?.focus());
 			return;
 		}
-		sidePanelParentId = exchangeId;
-		sidePanelOpen = true;
+		sidePanel = createSideChatPanel(exchangeId, 0);
+		focusedPanelId = sidePanel.id;
 		tick().then(() => chatInputRef?.focus());
 	}
 
@@ -282,7 +308,7 @@
 	// When side panel closes, snap focus to main
 	$effect(() => {
 		if (!sidePanelOpen && focusedPane === 'side') {
-			focusPane('main');
+			focusPanel(mainPanel.id);
 		}
 	});
 
@@ -301,7 +327,7 @@
 	// Follow the latest branch when a new side chat is created
 	$effect(() => {
 		if (trackLatestBranch && sideBranches.length > 0) {
-			sideBranchIndex = sideBranches.length - 1;
+			updateSideBranchIndex(sideBranches.length - 1);
 			trackLatestBranch = false;
 		}
 	});
@@ -309,13 +335,13 @@
 	// Clamp branch index (allow one past the end for "new branch" empty state)
 	$effect(() => {
 		if (sideBranchIndex > sideBranches.length && sideBranches.length > 0) {
-			sideBranchIndex = sideBranches.length - 1;
+			updateSideBranchIndex(sideBranches.length - 1);
 		}
 	});
 
 	// Keep activeExchangeId synced with focused pane's tail
 	$effect(() => {
-		if (focusedPane === 'side' && sideBranchTailId) {
+		if (sidePanel && focusedPanelId === sidePanel.id && sideBranchTailId) {
 			setActiveExchangeId(sideBranchTailId);
 		}
 	});
@@ -332,7 +358,7 @@
 		<div
 			class="chatview-pane"
 			class:chatview-pane-focused={focusedPane === 'main'}
-			onclick={() => focusPane('main')}
+			onclick={focusMain}
 		>
 			<div class="chatview-main-title">{getActiveChat().name}</div>
 			<div class="chatview-main" bind:this={mainScrollContainer}>
@@ -362,7 +388,7 @@
 			class="chatview-side"
 			class:chatview-side-open={sidePanelOpen}
 			class:chatview-pane-focused={focusedPane === 'side'}
-			onclick={() => focusPane('side')}
+			onclick={focusSide}
 		>
 			{#if sidePanelOpen}
 				{#if sideBranches.length > 0}
