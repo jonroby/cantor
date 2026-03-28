@@ -22,6 +22,7 @@
 		$state(null);
 
 	function handleBlockContextMenu(event: MouseEvent, source: string, index: number) {
+		if (data.isSideRoot) return;
 		event.preventDefault();
 		contextMenuBlock = { source, index, x: event.clientX, y: event.clientY };
 	}
@@ -70,13 +71,31 @@
 					aria-label={showSource ? 'Show rendered' : 'Show source'}
 				>
 					{#if showSource}
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
 							<path d="M1.5 7c0-2.5 2.5-5 5.5-5s5.5 2.5 5.5 5-2.5 5-5.5 5-5.5-2.5-5.5-5z" />
 							<circle cx="7" cy="7" r="2" />
 						</svg>
 					{:else}
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-							<path d="M4.5 2.5l-2 3L4.5 8.5M9.5 2.5l2 3-2 3" stroke-linecap="round" stroke-linejoin="round" />
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
+							<path
+								d="M4.5 2.5l-2 3L4.5 8.5M9.5 2.5l2 3-2 3"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
 						</svg>
 					{/if}
 				</button>
@@ -88,7 +107,7 @@
 			{:else}
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div class="chatmsg-response-body" onmousedown={closeContextMenu}>
-					{#each responseBlocks as block, i}
+					{#each responseBlocks as block, i (i)}
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="chatmsg-block"
