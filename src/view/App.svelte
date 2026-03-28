@@ -21,10 +21,8 @@
 	import {
 		docState,
 		newFolder,
-		newDocInFolder,
 		deleteFolder,
 		renameFolder,
-		selectDoc,
 		deleteDocFromFolder,
 		renameDocInFolder,
 		moveDocToFolder
@@ -41,7 +39,12 @@
 	} from '@/state/services/io.svelte';
 	import { init as initProviders, autoConnectOllama } from '@/app/providers';
 	import { cancelStreamsForChat } from '@/state/services/streams';
-	import { performAddDocToChat } from '@/app/chat-actions';
+	import {
+		performAddFolderDocumentToChat,
+		performCreateDocument,
+		performOpenDocument,
+		restoreOpenDocument
+	} from '@/app/documents';
 
 	function deduplicate(name: string, existing: string[]): string {
 		if (!existing.includes(name)) return name;
@@ -140,7 +143,10 @@
 			fixDuplicateNames(chatState.chats, docState.folders);
 			toast.warning('Some items had duplicate names and were automatically renamed.');
 		}
-		chatViewRef?.restoreLayout();
+		const restoredDocument = restoreOpenDocument();
+		if (restoredDocument) {
+			chatViewRef?.showDocument(restoredDocument.folderId, restoredDocument.fileId);
+		}
 		initProviders();
 		autoConnectOllama();
 
@@ -175,13 +181,7 @@
 	}
 
 	function addDocToChat(folderId: string, fileId: string) {
-		const folder = docState.folders.find((f) => f.id === folderId);
-		const file = folder?.files?.find((f) => f.id === fileId);
-		if (!file) return;
-
-		const activeChat = chatState.chats[chatState.activeChatIndex];
-		const tree = { rootId: activeChat.rootId, exchanges: activeChat.exchanges };
-		performAddDocToChat(tree, activeChat.activeExchangeId, file.content, file.name);
+		performAddFolderDocumentToChat(folderId, fileId);
 	}
 
 	function handleSearchSelect(result: SearchResult) {
@@ -214,18 +214,18 @@
 			onDownloadFolder={downloadFolder}
 			onRenameFolder={renameFolder}
 			onNewDoc={(folderId) => {
-				const fileId = newDocInFolder(folderId);
-				if (fileId) {
-					selectDoc(folderId, fileId);
-					chatViewRef?.openDocument(folderId, fileId);
+				const document = performCreateDocument(folderId);
+				if (document) {
+					chatViewRef?.showDocument(document.folderId, document.fileId);
 				}
 			}}
 			onUploadDoc={uploadDocToFolder}
 			onUploadFolder={uploadFolderToFolder}
 			onUploadNewFolder={uploadFolder}
 			onSelectDoc={(folderId, fileId) => {
-				selectDoc(folderId, fileId);
-				chatViewRef?.openDocument(folderId, fileId);
+				if (performOpenDocument(folderId, fileId)) {
+					chatViewRef?.showDocument(folderId, fileId);
+				}
 			}}
 			onAddDocToChat={addDocToChat}
 			onDeleteDoc={deleteDocFromFolder}

@@ -163,6 +163,14 @@ function resetState(tree?: ChatTree) {
 describe('ChatView', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		Object.defineProperty(globalThis, 'localStorage', {
+			value: {
+				getItem: vi.fn(() => null),
+				setItem: vi.fn(),
+				removeItem: vi.fn()
+			},
+			configurable: true
+		});
 		resetState();
 		docState.folders = [];
 		docState.openDocs = [];
@@ -436,7 +444,7 @@ describe('ChatView', () => {
 			setupDocPanel();
 			const { component } = render(ChatView);
 
-			component.openDocument('folder-1', 'file-1');
+			component.showDocument('folder-1', 'file-1');
 			await tick();
 
 			expect(screen.getByText('notes.md')).toBeInTheDocument();
@@ -447,7 +455,7 @@ describe('ChatView', () => {
 			setupDocPanel();
 			const { component } = render(ChatView);
 
-			component.openDocument('folder-1', 'file-1');
+			component.showDocument('folder-1', 'file-1');
 			await tick();
 
 			expect(screen.getByText('Ephemeral')).toBeInTheDocument();
@@ -458,7 +466,7 @@ describe('ChatView', () => {
 			setupDocPanel();
 			const { component } = render(ChatView);
 
-			component.openDocument('folder-1', 'file-1');
+			component.showDocument('folder-1', 'file-1');
 			await tick();
 
 			expect(screen.getByText('notes.md')).toBeInTheDocument();

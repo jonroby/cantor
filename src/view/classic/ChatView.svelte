@@ -11,20 +11,15 @@
 		type DeleteMode
 	} from '@/domain/tree';
 	import {
-		type Panel,
 		createMainChatPanel,
 		createSideChatPanel,
 		createDocumentPanel,
 		isSideChat,
 		withContent
-	} from '@/domain/panel';
+	} from './panel';
+	import type { Panel } from './panel';
 	import Document from '@/view/features/document/Document.svelte';
-	import { docState, selectDoc, updateDocContent, closeDoc } from '@/state/documents.svelte';
-	import {
-		getPersistedLayout,
-		setPersistedLayout,
-		saveToStorage
-	} from '@/state/services/database.svelte';
+	import { docState, updateDocContent } from '@/state/documents.svelte';
 	import {
 		getActiveChat,
 		getActiveExchanges,
@@ -37,9 +32,13 @@
 		performPromote,
 		performCopy,
 		performQuickAsk,
-		performAddDocToChat,
 		getDeleteMode
 	} from '@/app/chat-actions';
+	import {
+		clearDocumentLayout,
+		performAddFolderDocumentToChat,
+		performCloseDocumentPanel
+	} from '@/app/documents';
 	import { providerState } from '@/state/providers.svelte';
 
 	// ── Panel state ─────────────────────────────────────────────────────────
@@ -197,8 +196,6 @@
 	function closeSidePanel() {
 		sidePanel = null;
 		chatInputRef?.resetEphemeral();
-		setPersistedLayout({});
-		saveToStorage();
 		focusPanel(mainPanel.id);
 	}
 
@@ -208,12 +205,8 @@
 	}
 
 	function addCurrentDocToChat() {
-		if (!activeDocFile) return;
-		const chat = getActiveChat();
-		const exchanges = getActiveExchanges();
-		if (!exchanges) return;
-		const tree = { rootId: chat.rootId, exchanges };
-		performAddDocToChat(tree, chat.activeExchangeId, activeDocFile.content, activeDocFile.name);
+		if (!docContent) return;
+		performAddFolderDocumentToChat(docContent.folderId, docContent.fileId);
 	}
 
 	function prevBranch() {
@@ -346,14 +339,15 @@
 		tick().then(() => chatInputRef?.focus());
 	}
 
-	export function openDocument(folderId: string, fileId: string) {
+	export function showDocument(folderId: string, fileId: string) {
 		sidePanel = createDocumentPanel(folderId, fileId);
 		focusedPanelId = sidePanel.id;
-		setPersistedLayout({ openDocument: { folderId, fileId } });
-		saveToStorage();
 	}
 
 	export function resetUIState() {
+		if (sidePanel !== null) {
+			clearDocumentLayout();
+		}
 		closeSidePanel();
 	}
 
@@ -397,21 +391,6 @@
 			setActiveExchangeId(sideBranchTailId);
 		}
 	});
-
-	export function restoreLayout() {
-		const layout = getPersistedLayout();
-		if (layout.openDocument) {
-			const { folderId, fileId } = layout.openDocument;
-			const folder = docState.folders.find((f) => f.id === folderId);
-			const file = folder?.files?.find((f) => f.id === fileId);
-			if (file) {
-				selectDoc(folderId, fileId);
-				openDocument(folderId, fileId);
-			} else {
-				setPersistedLayout({});
-			}
-		}
-	}
 </script>
 
 {#if operationError}
@@ -467,7 +446,7 @@
 								if (activeDocIndex >= 0) updateDocContent(activeDocIndex, content);
 							}}
 							onClose={() => {
-								if (activeDocIndex >= 0) closeDoc(activeDocIndex);
+								performCloseDocumentPanel(activeDocIndex);
 								closeSidePanel();
 							}}
 							onAddToChat={addCurrentDocToChat}
