@@ -56,13 +56,23 @@
 		contextMenu = { x: event.clientX, y: event.clientY };
 	}
 
-	function handleQuickAsk() {
-		if (!selectionRange) return;
-		const source = responseBlocks
+	function getSelectedSource(): string {
+		if (!selectionRange) return '';
+		return responseBlocks
 			.slice(selectionRange.start, selectionRange.end + 1)
 			.map((b) => b.source)
 			.join('\n\n');
-		data.onQuickAsk(source);
+	}
+
+	function handleQuickAsk() {
+		const source = getSelectedSource();
+		if (source) data.onQuickAsk(source);
+		closeContextMenu();
+	}
+
+	function handleQuickAdd() {
+		const source = getSelectedSource();
+		if (source) data.onQuickAdd(source);
 		closeContextMenu();
 	}
 
@@ -75,94 +85,112 @@
 	let showSource = $state(false);
 </script>
 
-<div class="chatmsg">
-	<div class="chatmsg-prompt-row">
-		<div class="chatmsg-prompt">
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
-			{@html promptHtml}
+<div class="chatmsg" class:chatmsg-doc-upload={data.label}>
+	{#if data.label}
+		<div class="chatmsg-doc-label">
+			<svg
+				width="16"
+				height="16"
+				viewBox="0 0 16 16"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.5"
+				class="shrink-0"
+			>
+				<path d="M3 2h7l3 3v9H3V2z" />
+				<path d="M10 2v3h3" />
+			</svg>
+			<span>{data.label}</span>
 		</div>
-	</div>
+	{:else}
+		<div class="chatmsg-prompt-row">
+			<div class="chatmsg-prompt">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
+				{@html promptHtml}
+			</div>
+		</div>
 
-	<div class="chatmsg-response">
-		<div class="chatmsg-response-header">
-			{#if data.provider && PROVIDER_LOGOS[data.provider]}
-				<img
-					src={PROVIDER_LOGOS[data.provider]}
-					alt={data.provider}
-					class="chatmsg-provider-logo"
-				/>
-			{/if}
-			{#if data.model}
-				<span class="chatmsg-model">{data.model}</span>
-			{/if}
-			{#if data.isStreaming}
-				<div class="streaming-dot"></div>
-			{/if}
+		<div class="chatmsg-response">
+			<div class="chatmsg-response-header">
+				{#if data.provider && PROVIDER_LOGOS[data.provider]}
+					<img
+						src={PROVIDER_LOGOS[data.provider]}
+						alt={data.provider}
+						class="chatmsg-provider-logo"
+					/>
+				{/if}
+				{#if data.model}
+					<span class="chatmsg-model">{data.model}</span>
+				{/if}
+				{#if data.isStreaming}
+					<div class="streaming-dot"></div>
+				{/if}
+				{#if responseBlocks.length > 0}
+					<button
+						type="button"
+						class="chatmsg-source-toggle"
+						onclick={() => (showSource = !showSource)}
+						aria-label={showSource ? 'Show rendered' : 'Show source'}
+					>
+						{#if showSource}
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path d="M1.5 7c0-2.5 2.5-5 5.5-5s5.5 2.5 5.5 5-2.5 5-5.5 5-5.5-2.5-5.5-5z" />
+								<circle cx="7" cy="7" r="2" />
+							</svg>
+						{:else}
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path
+									d="M4.5 2.5l-2 3L4.5 8.5M9.5 2.5l2 3-2 3"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+						{/if}
+					</button>
+				{/if}
+			</div>
 			{#if responseBlocks.length > 0}
-				<button
-					type="button"
-					class="chatmsg-source-toggle"
-					onclick={() => (showSource = !showSource)}
-					aria-label={showSource ? 'Show rendered' : 'Show source'}
-				>
-					{#if showSource}
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<path d="M1.5 7c0-2.5 2.5-5 5.5-5s5.5 2.5 5.5 5-2.5 5-5.5 5-5.5-2.5-5.5-5z" />
-							<circle cx="7" cy="7" r="2" />
-						</svg>
-					{:else}
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<path
-								d="M4.5 2.5l-2 3L4.5 8.5M9.5 2.5l2 3-2 3"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
-					{/if}
-				</button>
-			{/if}
-		</div>
-		{#if responseBlocks.length > 0}
-			{#if showSource}
-				<pre class="chatmsg-response-body chatmsg-response-source">{data.response}</pre>
+				{#if showSource}
+					<pre class="chatmsg-response-body chatmsg-response-source">{data.response}</pre>
+				{:else}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div class="chatmsg-response-body" onmousedown={closeContextMenu}>
+						{#each responseBlocks as block, i (i)}
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div
+								class="chatmsg-block"
+								class:chatmsg-block-askable={data.canQuickAsk}
+								class:chatmsg-block-selected={isBlockSelected(i)}
+								onmousedown={(e) => handleBlockMouseDown(e, i)}
+								oncontextmenu={(e) => handleBlockContextMenu(e, i)}
+							>
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
+								{@html block.html}
+							</div>
+						{/each}
+					</div>
+				{/if}
 			{:else}
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="chatmsg-response-body" onmousedown={closeContextMenu}>
-					{#each responseBlocks as block, i (i)}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="chatmsg-block"
-							class:chatmsg-block-askable={data.canQuickAsk}
-							class:chatmsg-block-selected={isBlockSelected(i)}
-							onmousedown={(e) => handleBlockMouseDown(e, i)}
-							oncontextmenu={(e) => handleBlockContextMenu(e, i)}
-						>
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
-							{@html block.html}
-						</div>
-					{/each}
+				<div class="chatmsg-response-body chatmsg-response-plain">
+					{data.response || (data.isStreaming ? 'Waiting for response…' : 'Cancelled')}
 				</div>
 			{/if}
-		{:else}
-			<div class="chatmsg-response-body chatmsg-response-plain">
-				{data.response || (data.isStreaming ? 'Waiting for response…' : 'Cancelled')}
-			</div>
-		{/if}
-	</div>
+		</div>
+	{/if}
 
 	<div class="chatmsg-toolbar">
 		<div class="chatmsg-actions">
@@ -310,5 +338,10 @@
 	<div class="chatmsg-context-scrim" onmousedown={closeContextMenu}></div>
 	<div class="chatmsg-context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
 		<button type="button" class="chatmsg-context-item" onclick={handleQuickAsk}> Quick Ask </button>
+		{#if data.canQuickAdd}
+			<button type="button" class="chatmsg-context-item" onclick={handleQuickAdd}>
+				Quick Add
+			</button>
+		{/if}
 	</div>
 {/if}

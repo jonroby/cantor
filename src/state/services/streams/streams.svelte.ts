@@ -40,6 +40,7 @@ export function startStream(params: {
 	chatId: string;
 	model: ActiveModel;
 	tree: ChatTree;
+	liveDocContent?: string;
 }): void {
 	_startStream(store, deps, params);
 }

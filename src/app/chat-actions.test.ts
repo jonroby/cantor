@@ -26,6 +26,7 @@ import {
 	getDeleteMode,
 	performQuickAsk,
 	performSubmitPrompt,
+	performAddDocToChat,
 	type ChatActionDeps
 } from './chat-actions';
 
@@ -118,6 +119,22 @@ function buildTreeWithSideDescendant(): {
 	const sideChild = addExchangeResult(tree, side.id, 'side child prompt', MODEL, PROVIDER);
 	return { tree: sideChild, rootId: root.id, sideId: side.id, sideChildId: sideChild.id };
 }
+
+describe('performAddDocToChat', () => {
+	it('adds a labeled document exchange and activates it', () => {
+		const { tree, leafId } = buildLinearTree();
+		const deps = mockDeps();
+
+		const addedId = performAddDocToChat(tree, leafId, '# Notes', 'notes.md', deps);
+		const nextTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]?.[0];
+
+		expect(addedId).toBeTruthy();
+		expect(deps.replaceActiveTree).toHaveBeenCalledOnce();
+		expect(deps.setActiveExchangeId).toHaveBeenCalledWith(addedId);
+		expect(nextTree?.exchanges[addedId]?.prompt.text).toBe('# Notes');
+		expect(nextTree?.exchanges[addedId]?.label).toBe('notes.md was added to chat');
+	});
+});
 
 // ── getExchangeNodeData ──────────────────────────────────────────────────────
 
@@ -444,14 +461,30 @@ describe('performSubmitPrompt', () => {
 	it('returns parentId so caller can expand the correct side chat parent', () => {
 		const { tree, childId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = performSubmitPrompt('chat-1', tree, childId, 'new prompt', activeModel, deps);
+		const result = performSubmitPrompt(
+			'chat-1',
+			tree,
+			childId,
+			'new prompt',
+			activeModel,
+			undefined,
+			deps
+		);
 		expect(result.parentId).toBe(childId);
 	});
 
 	it('returns parentId as main chat tail when activeExchangeId is null', () => {
 		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = performSubmitPrompt('chat-1', tree, null, 'new prompt', activeModel, deps);
+		const result = performSubmitPrompt(
+			'chat-1',
+			tree,
+			null,
+			'new prompt',
+			activeModel,
+			undefined,
+			deps
+		);
 		expect(result.parentId).toBe(leafId);
 	});
 });

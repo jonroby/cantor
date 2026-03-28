@@ -94,7 +94,7 @@
 			target.closest('.exchange-card') ||
 			target.closest('.code-editor-card') ||
 			target.closest('.drawing-board') ||
-			target.closest('.docs-panel')
+			target.closest('.document')
 		)
 			return;
 		isPanning = true;

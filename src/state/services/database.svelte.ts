@@ -33,6 +33,20 @@ function assertNoDuplicateNames(chats: Chat[], folders: ChatFolder[]) {
 
 // --- Chat & folder storage ---
 
+export interface PersistedLayout {
+	openDocument?: { folderId: string; fileId: string };
+}
+
+let _layout: PersistedLayout = {};
+
+export function getPersistedLayout(): PersistedLayout {
+	return _layout;
+}
+
+export function setPersistedLayout(layout: PersistedLayout) {
+	_layout = layout;
+}
+
 export function loadFromStorage() {
 	const raw = localStorage.getItem(STORAGE_KEY);
 	if (!raw) return;
@@ -46,6 +60,9 @@ export function loadFromStorage() {
 	if (parsed.folders?.length) {
 		docState.folders = parsed.folders;
 	}
+	if (parsed.layout) {
+		_layout = parsed.layout;
+	}
 	assertNoDuplicateNames(chatState.chats, docState.folders);
 }
 
@@ -56,7 +73,8 @@ export function saveToStorage() {
 		JSON.stringify({
 			chats: chatState.chats,
 			activeChatIndex: chatState.activeChatIndex,
-			folders: docState.folders
+			folders: docState.folders,
+			layout: _layout
 		})
 	);
 }

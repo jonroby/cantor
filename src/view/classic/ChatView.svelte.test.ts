@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ChatView from './ChatView.svelte';
 import { chatState, getActiveExchanges } from '@/state/chats.svelte';
+import { docState } from '@/state/documents.svelte';
 import { providerState } from '@/state/providers.svelte';
 import {
 	buildEmptyTree,
@@ -57,6 +58,26 @@ vi.mock('@/app/providers', () => ({
 	fetchOllamaContextLength: vi.fn(),
 	getProviderStream: vi.fn(),
 	init: vi.fn()
+}));
+
+vi.mock('katex', () => ({
+	default: { renderToString: (tex: string) => tex }
+}));
+
+vi.mock('marked', () => ({
+	Marked: class {
+		parse(md: string) {
+			return md;
+		}
+	}
+}));
+
+vi.mock('@/state/services/providers/stream', () => ({
+	getProviderStream: vi.fn()
+}));
+
+vi.mock('@/domain/validate-md', () => ({
+	validate: () => []
 }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -142,7 +163,17 @@ function resetState(tree?: ChatTree) {
 describe('ChatView', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		Object.defineProperty(globalThis, 'localStorage', {
+			value: {
+				getItem: vi.fn(() => null),
+				setItem: vi.fn(),
+				removeItem: vi.fn()
+			},
+			configurable: true
+		});
 		resetState();
+		docState.folders = [];
+		docState.openDocs = [];
 	});
 
 	describe('empty chat', () => {
@@ -387,6 +418,52 @@ describe('ChatView', () => {
 			render(ChatView);
 			const copyButtons = screen.getAllByRole('button', { name: 'Copy' });
 			expect(copyButtons.length).toBeGreaterThan(0);
+		});
+	});
+
+	describe('document panel', () => {
+		function setupDocPanel() {
+			docState.folders = [
+				{
+					id: 'folder-1',
+					name: 'Docs',
+					files: [{ id: 'file-1', name: 'notes.md', content: '# My Notes' }]
+				}
+			];
+			docState.openDocs = [
+				{
+					id: 'doc-1',
+					content: '# My Notes',
+					docKey: { folderId: 'folder-1', fileId: 'file-1' }
+				}
+			];
+		}
+
+		it('opens a document panel via exported method', async () => {
+			resetState(buildVisibleTree(1));
+			setupDocPanel();
+			const { component } = render(ChatView);
+
+			component.showDocument('folder-1', 'file-1');
+			await tick();
+
+			expect(screen.getByText('notes.md')).toBeInTheDocument();
+		});
+
+		it('closes doc panel via resetUIState', async () => {
+			resetState(buildVisibleTree(1));
+			setupDocPanel();
+			const { component } = render(ChatView);
+
+			component.showDocument('folder-1', 'file-1');
+			await tick();
+
+			expect(screen.getByText('notes.md')).toBeInTheDocument();
+
+			component.resetUIState();
+			await tick();
+
+			expect(screen.queryByText('notes.md')).not.toBeInTheDocument();
 		});
 	});
 });

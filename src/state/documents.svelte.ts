@@ -56,6 +56,21 @@ export function newFolder(): string {
 	return folder.id;
 }
 
+export function newDocInFolder(folderId: string): string | null {
+	const folder = docState.folders.find((f) => f.id === folderId);
+	if (!folder) return null;
+	const existingNames = (folder.files ?? []).map((f) => f.name);
+	let name = 'Untitled.md';
+	let i = 2;
+	while (existingNames.includes(name)) {
+		name = `Untitled ${i}.md`;
+		i++;
+	}
+	const docFile: DocFile = { id: crypto.randomUUID(), name, content: '' };
+	folder.files = [...(folder.files ?? []), docFile];
+	return docFile.id;
+}
+
 export function deleteFolder(folderId: string) {
 	docState.folders = docState.folders.filter((f) => f.id !== folderId);
 }

@@ -5,6 +5,8 @@
 	interface Props {
 		composerValue: string;
 		canvasMode: boolean;
+		commandMode: boolean;
+		inputMessage: string | null;
 		submitDisabledReason: string | null;
 		streaming: boolean;
 		activeModelId: string | null;
@@ -19,6 +21,8 @@
 	let {
 		composerValue = $bindable(),
 		canvasMode = $bindable(),
+		commandMode,
+		inputMessage,
 		submitDisabledReason,
 		streaming,
 		activeModelId,
@@ -46,14 +50,20 @@
 >
 	<div class="composer-shell" class:canvas-mode={canvasMode}>
 		<div class="composer-row">
-			<Input
-				bind:this={inputRef}
-				bind:value={composerValue}
-				class="composer-input"
-				placeholder={canvasMode
-					? 'Ask about the canvas...'
-					: (submitDisabledReason ?? 'Message...')}
-			/>
+			{#if inputMessage}
+				<span class="composer-message">{inputMessage}</span>
+			{:else}
+				<Input
+					bind:this={inputRef}
+					bind:value={composerValue}
+					class="composer-input"
+					placeholder={commandMode
+						? 'Command...'
+						: canvasMode
+							? 'Ask about the canvas...'
+							: (submitDisabledReason ?? 'Chat...')}
+				/>
+			{/if}
 			{#if streaming}
 				<Button
 					class="composer-send composer-stop"
@@ -90,6 +100,10 @@
 			<Button class="model-chip" variant="outline" size="sm" onclick={onOpenPalette}>
 				{activeModelId ?? 'Connect a model'}
 			</Button>
+			<div class="composer-divider"></div>
+			<span class="mode-indicator" class:mode-active={commandMode}>
+				{commandMode ? 'Command' : 'Chat'}
+			</span>
 			{#if activeModelId}
 				<div class="composer-divider"></div>
 				<div class="context-meta">
@@ -109,7 +123,7 @@
 					>
 				</div>
 			{/if}
-			{#if submitDisabledReason}
+			{#if submitDisabledReason && !inputMessage}
 				<span class="composer-hint">{submitDisabledReason}</span>
 			{/if}
 		</div>

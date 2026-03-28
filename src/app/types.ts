@@ -5,6 +5,7 @@ export interface ExchangeNodeData {
 	response: string;
 	model?: string;
 	provider?: Provider | null;
+	label?: string;
 	isActive: boolean;
 	isStreaming: boolean;
 	hasSideChildren: boolean;
@@ -13,6 +14,7 @@ export interface ExchangeNodeData {
 	canCreateSideChat: boolean;
 	canPromote: boolean;
 	canQuickAsk: boolean;
+	canQuickAdd: boolean;
 	onMeasure: (height: number) => void;
 	onSelect: () => void;
 	onCopy: () => void;
@@ -20,4 +22,5 @@ export interface ExchangeNodeData {
 	onPromote: () => void;
 	onDelete: () => void;
 	onQuickAsk: (sourceText: string) => void;
+	onQuickAdd: (sourceText: string) => void;
 }

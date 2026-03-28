@@ -9,6 +9,7 @@
 		editingName: string;
 		isDragging: boolean;
 		onOpen: () => void;
+		onAddToChat: () => void;
 		onStartRename: () => void;
 		onCommitRename: (name: string) => void;
 		onCancelRename: () => void;
@@ -24,6 +25,7 @@
 		editingName = $bindable(),
 		isDragging,
 		onOpen,
+		onAddToChat,
 		onStartRename,
 		onCommitRename,
 		onCancelRename,
@@ -110,6 +112,24 @@
 						<polyline points="14 2 14 8 20 8" />
 					</svg>
 					Open
+				</DropdownMenu.Item>
+				<DropdownMenu.Item
+					class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+					onclick={onAddToChat}
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+					</svg>
+					Add to chat
 				</DropdownMenu.Item>
 				<DropdownMenu.Item
 					class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"

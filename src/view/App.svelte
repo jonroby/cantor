@@ -23,7 +23,6 @@
 		newFolder,
 		deleteFolder,
 		renameFolder,
-		selectDoc,
 		deleteDocFromFolder,
 		renameDocInFolder,
 		moveDocToFolder
@@ -40,6 +39,12 @@
 	} from '@/state/services/io.svelte';
 	import { init as initProviders, autoConnectOllama } from '@/app/providers';
 	import { cancelStreamsForChat } from '@/state/services/streams';
+	import {
+		performAddFolderDocumentToChat,
+		performCreateDocument,
+		performOpenDocument,
+		restoreOpenDocument
+	} from '@/app/documents';
 
 	function deduplicate(name: string, existing: string[]): string {
 		if (!existing.includes(name)) return name;
@@ -138,6 +143,10 @@
 			fixDuplicateNames(chatState.chats, docState.folders);
 			toast.warning('Some items had duplicate names and were automatically renamed.');
 		}
+		const restoredDocument = restoreOpenDocument();
+		if (restoredDocument) {
+			chatViewRef?.showDocument(restoredDocument.folderId, restoredDocument.fileId);
+		}
 		initProviders();
 		autoConnectOllama();
 
@@ -171,6 +180,13 @@
 		resetUIState();
 	}
 
+	function addDocToChat(folderId: string, fileId: string) {
+		const folder = docState.folders.find((f) => f.id === folderId);
+		const file = folder?.files?.find((f) => f.id === fileId);
+		if (!file) return;
+		performAddFolderDocumentToChat(folderId, fileId);
+	}
+
 	function handleSearchSelect(result: SearchResult) {
 		selectChatAction(result.chatIndex);
 		setActiveExchangeId(result.exchangeId);
@@ -200,10 +216,21 @@
 			onDeleteFolder={deleteFolder}
 			onDownloadFolder={downloadFolder}
 			onRenameFolder={renameFolder}
+			onNewDoc={(folderId) => {
+				const document = performCreateDocument(folderId);
+				if (document) {
+					chatViewRef?.showDocument(document.folderId, document.fileId);
+				}
+			}}
 			onUploadDoc={uploadDocToFolder}
 			onUploadFolder={uploadFolderToFolder}
 			onUploadNewFolder={uploadFolder}
-			onSelectDoc={selectDoc}
+			onSelectDoc={(folderId, fileId) => {
+				if (performOpenDocument(folderId, fileId)) {
+					chatViewRef?.showDocument(folderId, fileId);
+				}
+			}}
+			onAddDocToChat={addDocToChat}
 			onDeleteDoc={deleteDocFromFolder}
 			onRenameDoc={renameDocInFolder}
 			onMoveDoc={moveDocToFolder}

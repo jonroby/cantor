@@ -1,19 +1,41 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { Marked } from 'marked';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
 	import { validate as validateMd } from '@/domain/validate-md';
+	import { diffLines } from '@/domain/diff';
+	import { PROVIDER_LOGOS } from '@/domain/models/logos';
+	import type { Provider } from '@/domain/models';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
 
 	interface Props {
 		title?: string;
 		content: string;
+		commandStreaming?: boolean;
+		commandModel?: string;
+		commandProvider?: Provider | null;
+		pendingContent?: string | null;
 		onContentChange?: (content: string) => void;
+		onAcceptPending?: () => void;
+		onRejectPending?: () => void;
 		onClose?: () => void;
+		onAddToChat?: () => void;
 	}
 
-	let { title, content, onContentChange, onClose }: Props = $props();
+	let {
+		title,
+		content,
+		commandStreaming = false,
+		commandModel,
+		commandProvider,
+		pendingContent = null,
+		onContentChange,
+		onAcceptPending,
+		onRejectPending,
+		onClose,
+		onAddToChat
+	}: Props = $props();
 
 	let showCloseConfirm = $state(false);
 
@@ -33,6 +55,17 @@
 	function cancelClose() {
 		showCloseConfirm = false;
 	}
+
+	let pendingDiff = $derived(pendingContent !== null ? diffLines(content, pendingContent) : null);
+	let contentEl: HTMLDivElement | null = $state(null);
+
+	$effect(() => {
+		if (commandStreaming && contentEl) {
+			tick().then(() => {
+				contentEl?.scrollTo({ top: contentEl.scrollHeight, behavior: 'smooth' });
+			});
+		}
+	});
 
 	const marked = new Marked({
 		breaks: true,
@@ -187,7 +220,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="docs-panel"
+	class="document"
 	class:drag-over={draggingOver}
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
@@ -212,6 +245,10 @@
 			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 		{/if}
 		<div class="header-actions">
+			{#if pendingDiff}
+				<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+				<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+			{/if}
 			{#if onClose}
 				<button class="header-btn" onclick={requestClose} title="Close">
 					<svg
@@ -224,6 +261,22 @@
 						stroke-linecap="round"
 					>
 						<path d="M18 6L6 18M6 6l12 12" />
+					</svg>
+				</button>
+			{/if}
+			{#if onAddToChat}
+				<button class="header-btn" onclick={onAddToChat} title="Add to chat">
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 					</svg>
 				</button>
 			{/if}
@@ -315,13 +368,47 @@
 	{#if error}
 		<div class="error-bar">{error}</div>
 	{/if}
-	{#if editing}
-		<textarea class="docs-editor" bind:value={draft} onkeydown={handleKeydown} spellcheck="false"
+	{#if pendingDiff}
+		<div class="docs-diff panel-body">
+			{#each pendingDiff as line, i (i)}
+				<div
+					class="diff-line"
+					class:diff-added={line.type === 'added'}
+					class:diff-removed={line.type === 'removed'}
+				>
+					{line.text || '\u00A0'}
+				</div>
+			{/each}
+		</div>
+	{:else if editing}
+		<textarea
+			class="docs-editor panel-body"
+			bind:value={draft}
+			onkeydown={handleKeydown}
+			spellcheck="false"
 		></textarea>
 	{:else}
-		<div class="docs-content">
+		<div class="docs-content panel-body" bind:this={contentEl}>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 			{@html renderedHtml}
+			{#if commandStreaming}
+				<div class="docs-streaming">
+					<div class="chatmsg-response-header">
+						{#if commandProvider && PROVIDER_LOGOS[commandProvider]}
+							<img
+								src={PROVIDER_LOGOS[commandProvider]}
+								alt={commandProvider}
+								class="chatmsg-provider-logo"
+							/>
+						{/if}
+						{#if commandModel}
+							<span class="chatmsg-model">{commandModel}</span>
+						{/if}
+						<div class="streaming-dot"></div>
+					</div>
+					<div class="chatmsg-response-body chatmsg-response-plain">Waiting for response…</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 	<ConfirmDeleteDialog
@@ -334,7 +421,7 @@
 </div>
 
 <style>
-	.docs-panel {
+	.document {
 		background: hsl(var(--card, 0 0% 100%));
 		border: 1px solid hsl(var(--border, 0 0% 85%));
 		border-radius: 12px;
@@ -344,7 +431,7 @@
 		width: 816px;
 		height: 1056px;
 	}
-	.docs-panel.drag-over {
+	.document.drag-over {
 		outline: 2px dashed hsl(var(--primary, 220 90% 56%));
 		outline-offset: -4px;
 		background: hsl(var(--primary, 220 90% 56%) / 0.04);
@@ -411,6 +498,76 @@
 		font-size: 12px;
 		border-bottom: 1px solid hsl(0 72% 51% / 0.2);
 		flex-shrink: 0;
+	}
+
+	.docs-diff {
+		flex: 1;
+		overflow-y: auto;
+		padding: 16px 20px;
+		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+		font-size: 13px;
+		line-height: 1.6;
+	}
+
+	.diff-line {
+		white-space: pre-wrap;
+		padding: 0 4px;
+		border-radius: 2px;
+	}
+
+	.diff-added {
+		background: hsl(142 71% 45% / 0.15);
+		color: hsl(142 71% 30%);
+	}
+
+	:global(.dark) .diff-added {
+		background: hsl(142 71% 45% / 0.12);
+		color: hsl(142 71% 65%);
+	}
+
+	.diff-removed {
+		background: hsl(0 72% 51% / 0.12);
+		color: hsl(0 72% 40%);
+		text-decoration: line-through;
+	}
+
+	:global(.dark) .diff-removed {
+		background: hsl(0 72% 51% / 0.1);
+		color: hsl(0 72% 65%);
+	}
+
+	.diff-btn {
+		padding: 3px 10px;
+		border-radius: 5px;
+		border: none;
+		font-size: 12px;
+		font-weight: 500;
+		cursor: pointer;
+		transition:
+			background 120ms ease,
+			color 120ms ease;
+	}
+
+	.diff-accept {
+		background: hsl(142 71% 45%);
+		color: white;
+	}
+	.diff-accept:hover {
+		background: hsl(142 71% 38%);
+	}
+
+	.diff-reject {
+		background: hsl(var(--muted, 0 0% 96%));
+		color: hsl(var(--foreground, 0 0% 9%));
+	}
+	.diff-reject:hover {
+		background: hsl(var(--foreground) / 0.1);
+	}
+
+	.docs-streaming {
+		margin-top: 16px;
+		padding-top: 16px;
+		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 	}
 
 	.docs-editor {

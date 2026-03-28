@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import {
 	docState,
 	newFolder,
+	newDocInFolder,
 	deleteFolder,
 	renameFolder,
 	selectDoc,
@@ -54,6 +55,46 @@ describe('documents state', () => {
 			newFolder();
 			newFolder();
 			expect(docState.folders[2].name).toBe('New Folder 3');
+		});
+	});
+
+	describe('newDocInFolder', () => {
+		it('creates a doc with default name', () => {
+			const folderId = newFolder();
+			newDocInFolder(folderId);
+			expect(docState.folders[0].files!.length).toBe(1);
+			expect(docState.folders[0].files![0].name).toBe('Untitled.md');
+		});
+
+		it('returns the file id', () => {
+			const folderId = newFolder();
+			const fileId = newDocInFolder(folderId);
+			expect(docState.folders[0].files![0].id).toBe(fileId);
+		});
+
+		it('creates a doc with empty content', () => {
+			const folderId = newFolder();
+			newDocInFolder(folderId);
+			expect(docState.folders[0].files![0].content).toBe('');
+		});
+
+		it('auto-increments name on conflict', () => {
+			const folderId = newFolder();
+			newDocInFolder(folderId);
+			newDocInFolder(folderId);
+			expect(docState.folders[0].files![1].name).toBe('Untitled 2.md');
+		});
+
+		it('finds the next available name', () => {
+			const folderId = newFolder();
+			newDocInFolder(folderId);
+			newDocInFolder(folderId);
+			newDocInFolder(folderId);
+			expect(docState.folders[0].files![2].name).toBe('Untitled 3.md');
+		});
+
+		it('returns null for nonexistent folder', () => {
+			expect(newDocInFolder('nonexistent')).toBeNull();
 		});
 	});
 

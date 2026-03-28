@@ -21,6 +21,7 @@ export interface Exchange {
 	model: string;
 	provider: Provider;
 	createdAt: number;
+	label?: string;
 }
 
 export type ExchangeMap = Record<string, Exchange>;
@@ -457,6 +458,19 @@ export function addExchangeResult(
 	return added;
 }
 
+export function addDocumentExchangeResult(
+	tree: ChatTree,
+	parentId: string,
+	content: string,
+	label: string
+): AddExchangeResult {
+	const result = addExchangeResult(tree, parentId, content, '', 'ollama');
+	const exchange = result.exchanges[result.id];
+	exchange.response = { text: '', tokenCount: 0 };
+	exchange.label = label;
+	return result;
+}
+
 // ── Removing exchanges ──────────────────────────────────────────────────────
 
 export function removeExchange(tree: ChatTree, exchangeId: string): ChatTree {
@@ -680,6 +694,25 @@ export function updateExchangeResponse(
 }
 
 // ── Promote & Copy ──────────────────────────────────────────────────────────
+
+export function getMainChatHistory(tree: ChatTree): Message[] {
+	const root = getRootExchange(tree);
+	if (!root) return [];
+
+	const indexed = indexTree(tree);
+	const messages: Message[] = [];
+	let current: Exchange = root;
+	while (true) {
+		messages.push({ role: 'user', content: current.prompt.text });
+		if (current.response) {
+			messages.push({ role: 'assistant', content: current.response.text });
+		}
+		const children = getChildrenFromTree(indexed, current.id);
+		if (children.length === 0) break;
+		current = children[0]!;
+	}
+	return messages;
+}
 
 export function getMainChatTail(tree: ChatTree): string | null {
 	const root = getRootExchange(tree);

@@ -1,6 +1,7 @@
 import { getProviderForModelId, type ActiveModel, type Provider } from '@/domain/models';
 import type { ExchangeNodeData } from './types';
 import {
+	addDocumentExchangeResult,
 	addExchangeResult,
 	canAcceptNewChat,
 	canCreateSideChats,
@@ -57,6 +58,7 @@ export function getExchangeNodeData(
 		onPromote: (exchangeId: string) => void;
 		onDelete: (exchangeId: string) => void;
 		onQuickAsk?: (exchangeId: string, sourceText: string) => void;
+		onQuickAdd?: (sourceText: string) => void;
 	},
 	deps: ChatActionDeps = defaultDeps
 ): ExchangeNodeData | null {
@@ -73,6 +75,7 @@ export function getExchangeNodeData(
 		response: exchange.response?.text ?? '',
 		model: exchange.model,
 		provider: (exchange.provider as Provider) || getProviderForModelId(exchange.model) || null,
+		label: exchange.label,
 		isActive: activeExchangeId === exchangeId,
 		isStreaming: deps.isStreaming(exchangeId),
 		hasSideChildren,
@@ -84,13 +87,15 @@ export function getExchangeNodeData(
 			exchangeId
 		),
 		canQuickAsk: canAcceptNewChat(activeExchanges, exchangeId),
+		canQuickAdd: !!callbacks.onQuickAdd,
 		onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
 		onSelect: () => callbacks.onSelect(exchangeId),
 		onCopy: () => callbacks.onCopy(exchangeId),
 		onToggleSideChildren: () => callbacks.onToggleSideChildren(exchangeId),
 		onPromote: () => callbacks.onPromote(exchangeId),
 		onDelete: () => callbacks.onDelete(exchangeId),
-		onQuickAsk: (sourceText: string) => callbacks.onQuickAsk?.(exchangeId, sourceText)
+		onQuickAsk: (sourceText: string) => callbacks.onQuickAsk?.(exchangeId, sourceText),
+		onQuickAdd: (sourceText: string) => callbacks.onQuickAdd?.(sourceText)
 	};
 }
 
@@ -150,6 +155,7 @@ export function performSubmitPrompt(
 	activeExchangeId: string | null,
 	prompt: string,
 	model: ActiveModel,
+	liveDocContent?: string,
 	deps: ChatActionDeps = defaultDeps
 ): { id: string; parentId: string; hasSideChildren: boolean } {
 	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
@@ -165,7 +171,8 @@ export function performSubmitPrompt(
 		exchangeId: created.id,
 		chatId,
 		model,
-		tree: created
+		tree: created,
+		liveDocContent
 	});
 
 	return { id: created.id, parentId, hasSideChildren };
@@ -185,6 +192,26 @@ export function performQuickAsk(
 		exchangeId,
 		`Can you explain more:\n\n${sourceText}`,
 		model,
+		undefined,
 		deps
 	);
+}
+
+export function performAddDocToChat(
+	tree: ChatTree,
+	activeExchangeId: string | null,
+	content: string,
+	fileName: string,
+	deps: ChatActionDeps = defaultDeps
+): string {
+	const parentId = activeExchangeId ?? getMainChatTail(tree) ?? '';
+	const result = addDocumentExchangeResult(
+		tree,
+		parentId,
+		content,
+		`${fileName} was added to chat`
+	);
+	deps.replaceActiveTree(result);
+	deps.setActiveExchangeId(result.id);
+	return result.id;
 }

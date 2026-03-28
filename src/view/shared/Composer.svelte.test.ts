@@ -8,6 +8,8 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 	const props = {
 		composerValue: '',
 		canvasMode: false,
+		commandMode: false,
+		inputMessage: null,
 		submitDisabledReason: null,
 		streaming: false,
 		activeModelId: 'claude-sonnet-4-5',

@@ -2,7 +2,12 @@
 	import { tick } from 'svelte';
 	import Composer from './Composer.svelte';
 	import { ModelPalette } from '@/view/features/model-palette';
-	import { canAcceptNewChat, getPathTokenTotal } from '@/domain/tree';
+	import {
+		canAcceptNewChat,
+		getMainChatHistory,
+		getPathTokenTotal,
+		type Message
+	} from '@/domain/tree';
 	import { getActiveChat, getActiveExchanges, getActiveExchangeId } from '@/state/chats.svelte';
 	import {
 		providerState,
@@ -22,22 +27,47 @@
 	} from '@/app/providers';
 	import { performSubmitPrompt } from '@/app/chat-actions';
 	import { isStreaming, cancelStream } from '@/state/services/streams';
+	import { getProviderStream } from '@/state/services/providers/stream';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
 		onExpandSideChat: (exchangeId: string) => void;
+		commandMode?: boolean;
+		commandStreaming?: boolean;
+		commandPending?: boolean;
+		liveDocContent?: string;
+		onCommandResponse?: (text: string) => void;
 	}
 
-	let { onScrollToNode, onExpandSideChat }: Props = $props();
+	let {
+		onScrollToNode,
+		onExpandSideChat,
+		commandMode = false,
+		commandStreaming = $bindable(false),
+		commandPending = false,
+		liveDocContent,
+		onCommandResponse
+	}: Props = $props();
 
 	let composerValue = $state('');
 	let canvasMode = $state(false);
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
+	let commandHistory: Message[] = $state([]);
+	let commandAbort: AbortController | null = $state(null);
 
 	export function focus() {
 		composerRef?.focus();
+	}
+
+	export function resetCommand() {
+		commandHistory = [];
+		commandStreaming = false;
+		if (commandAbort) {
+			commandAbort.abort();
+			commandAbort = null;
+		}
 	}
 
 	let activeExchanges = $derived(getActiveExchanges());
@@ -73,6 +103,11 @@
 	});
 
 	async function submitPrompt() {
+		if (commandMode) {
+			await submitCommand();
+			return;
+		}
+
 		const prompt = composerValue.trim();
 		if (!prompt || !activeExchanges || submitDisabledReason || !providerState.activeModel) return;
 
@@ -88,7 +123,8 @@
 				tree,
 				activeExchangeId,
 				prompt,
-				providerState.activeModel
+				providerState.activeModel,
+				liveDocContent
 			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
@@ -103,6 +139,65 @@
 		await tick();
 		onScrollToNode(result.id);
 	}
+
+	function buildCommandMessages(prompt: string): Message[] {
+		const docSection = liveDocContent
+			? `\n\n<current_document>\n${liveDocContent}\n</current_document>`
+			: '\n\nThe document is currently empty.';
+
+		const systemPrompt = [
+			'You are editing a markdown document. The user will give you instructions about what to change.',
+			'You have access to the chat history above for context.',
+			'Respond with the COMPLETE updated document content. Do NOT wrap it in code fences or backticks.',
+			'Do NOT add any preamble, explanation, or commentary — your entire response becomes the document.',
+			docSection
+		].join('\n');
+
+		const activeChat = getActiveChat();
+		const chatHistory = activeExchanges
+			? getMainChatHistory({ rootId: activeChat.rootId, exchanges: activeExchanges })
+			: [];
+
+		return [
+			...chatHistory,
+			{ role: 'user', content: systemPrompt },
+			{ role: 'assistant', content: 'Understood.' },
+			...commandHistory,
+			{ role: 'user', content: prompt }
+		];
+	}
+
+	async function submitCommand() {
+		const prompt = composerValue.trim();
+		if (!prompt || !providerState.activeModel) return;
+
+		operationError = null;
+		const messages = buildCommandMessages(prompt);
+		commandHistory = [...commandHistory, { role: 'user', content: prompt }];
+		composerValue = '';
+		commandStreaming = true;
+
+		const abort = new AbortController();
+		commandAbort = abort;
+
+		let responseText = '';
+		try {
+			const stream = getProviderStream(providerState.activeModel, messages, abort.signal);
+			for await (const chunk of stream) {
+				if (chunk.type === 'delta') {
+					responseText += chunk.delta;
+				}
+			}
+			commandHistory = [...commandHistory, { role: 'assistant', content: responseText }];
+			onCommandResponse?.(responseText);
+		} catch (e) {
+			if (abort.signal.aborted) return;
+			operationError = e instanceof Error ? e.message : 'Command failed.';
+		} finally {
+			commandStreaming = false;
+			commandAbort = null;
+		}
+	}
 </script>
 
 {#if operationError}
@@ -113,14 +208,22 @@
 	bind:this={composerRef}
 	bind:composerValue
 	bind:canvasMode
+	{commandMode}
+	inputMessage={commandPending ? 'Accept or reject pending changes first.' : null}
 	{submitDisabledReason}
-	streaming={activeNodeStreaming}
+	streaming={commandStreaming || activeNodeStreaming}
 	activeModelId={providerState.activeModel?.modelId ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
 	onSubmit={submitPrompt}
 	onStop={() => {
-		if (activeExchangeId) cancelStream(activeExchangeId);
+		if (commandStreaming && commandAbort) {
+			commandAbort.abort();
+			commandStreaming = false;
+			commandAbort = null;
+		} else if (activeExchangeId) {
+			cancelStream(activeExchangeId);
+		}
 	}}
 	onToggleCanvasMode={() => (canvasMode = !canvasMode)}
 	onOpenPalette={() => (paletteOpen = true)}

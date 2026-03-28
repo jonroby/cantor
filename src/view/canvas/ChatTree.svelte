@@ -8,7 +8,7 @@
 	import PythonEditor from '@/view/features/python-editor/PythonEditor.svelte';
 	import Canvas from './Canvas.svelte';
 	import DrawingBoard from '@/view/features/drawing-board/DrawingBoard.svelte';
-	import DocsPanel from '@/view/features/docs-panel/DocsPanel.svelte';
+	import Document from '@/view/features/document/Document.svelte';
 	import type { Shape } from '@/view/features/drawing-board/drawing-types';
 	import {
 		getChildExchanges,
@@ -244,7 +244,7 @@
 							.find((f) => f.id === doc.docKey!.folderId)
 							?.files?.find((f) => f.id === doc.docKey!.fileId)
 					: null}
-				<DocsPanel
+				<Document
 					title={docFile?.name}
 					content={doc.content}
 					onContentChange={(c) => updateDocContent(index, c)}
