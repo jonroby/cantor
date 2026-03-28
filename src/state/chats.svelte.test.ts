@@ -267,7 +267,6 @@ describe('chats state', () => {
 			const index = newChat();
 			expect(chatState.chats.length).toBe(2);
 			expect(chatState.activeChatIndex).toBe(index);
-			expect(chatState.chats[index].name).toBe('Chat 2');
 		});
 
 		it('new chat has null rootId (empty tree)', () => {
@@ -280,10 +279,29 @@ describe('chats state', () => {
 			expect(chatState.activeChatIndex).toBe(1);
 		});
 
-		it('increments name based on chat count', () => {
-			newChat();
-			newChat();
-			expect(chatState.chats[2].name).toBe('Chat 3');
+		it('generates unique names that never collide', () => {
+			const i1 = newChat();
+			const i2 = newChat();
+			const names = chatState.chats.map((c) => c.name);
+			expect(new Set(names).size).toBe(names.length);
+			expect(chatState.chats[i1].name).not.toBe(chatState.chats[i2].name);
+		});
+
+		it('reuses freed name after deleting a chat', () => {
+			const i1 = newChat();
+			expect(chatState.chats[i1].name).toBe('Chat 2');
+			deleteChat(i1);
+			const i2 = newChat();
+			expect(chatState.chats[i2].name).toBe('Chat 2');
+		});
+
+		it('skips names that are already taken', () => {
+			newChat(); // Chat 2
+			newChat(); // Chat 3
+			expect(chatState.chats.map((c) => c.name)).toEqual(['Chat 1', 'Chat 2', 'Chat 3']);
+			deleteChat(1); // remove Chat 2
+			const i = newChat();
+			expect(chatState.chats[i].name).toBe('Chat 2');
 		});
 	});
 

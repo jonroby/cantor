@@ -10,6 +10,7 @@ export interface ExchangeNodeData {
 	hasSideChildren: boolean;
 	sideChildrenCount: number;
 	isSideRoot: boolean;
+	canCreateSideChat: boolean;
 	canPromote: boolean;
 	onMeasure: (height: number) => void;
 	onSelect: () => void;

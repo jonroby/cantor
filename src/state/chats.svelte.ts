@@ -85,11 +85,18 @@ export function setActiveExchangeId(exchangeId: string | null) {
 	chatState.chats[chatState.activeChatIndex].activeExchangeId = exchangeId;
 }
 
+function nextChatName(): string {
+	const names = new Set(chatState.chats.map((c) => c.name));
+	let i = 1;
+	while (names.has(`Chat ${i}`)) i++;
+	return `Chat ${i}`;
+}
+
 export function newChat(): number {
 	const tree = buildEmptyTree();
 	const chat: Chat = {
 		id: crypto.randomUUID(),
-		name: `Chat ${chatState.chats.length + 1}`,
+		name: nextChatName(),
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
 		activeExchangeId: getMainChatTail(tree)

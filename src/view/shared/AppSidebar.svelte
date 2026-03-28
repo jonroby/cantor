@@ -204,12 +204,7 @@
 						<Sidebar.MenuButton
 							size="default"
 							tooltipContent="New chat"
-							onclick={async () => {
-								const index = onNewChat();
-								const name = chats[index]?.name ?? '';
-								await tick();
-								startRenameChat(index, name);
-							}}
+							onclick={() => onNewChat()}
 							class="rounded-lg px-3 py-2"
 						>
 							<svg

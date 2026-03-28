@@ -269,6 +269,34 @@ describe('getExchangeNodeData', () => {
 		const result = getExchangeNodeData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.response).toBe('');
 	});
+
+	it('canCreateSideChat is false for a leaf exchange with no children', () => {
+		const { tree, leafId } = buildLinearTree();
+		const result = getExchangeNodeData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result!.canCreateSideChat).toBe(false);
+	});
+
+	it('canCreateSideChat is true for an exchange with at least one child', () => {
+		const { tree, childId } = buildLinearTree();
+		const result = getExchangeNodeData(childId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result!.canCreateSideChat).toBe(true);
+	});
+
+	it('canCreateSideChat is false for a side root (even with children)', () => {
+		let t = buildEmptyTree();
+		const root = addExchangeResult(t, 'ignored', 'root', MODEL, PROVIDER);
+		t = setResponse(root, root.id, 'resp');
+		const main = addExchangeResult(t, root.id, 'main', MODEL, PROVIDER);
+		t = main;
+		const side = addExchangeResult(t, root.id, 'side', MODEL, PROVIDER);
+		t = side;
+		t = setResponse(t, side.id, 'side resp');
+		const sideChild = addExchangeResult(t, side.id, 'side child', MODEL, PROVIDER);
+		t = sideChild;
+
+		const result = getExchangeNodeData(side.id, t.exchanges, null, mockCallbacks(), mockDeps());
+		expect(result!.canCreateSideChat).toBe(false);
+	});
 });
 
 // ── performDelete ────────────────────────────────────────────────────────────

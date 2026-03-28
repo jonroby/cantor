@@ -66,7 +66,6 @@ export function getExchangeNodeData(
 	const isSideRoot = exchange.parentId
 		? (getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !== exchangeId
 		: false;
-
 	return {
 		prompt: exchange.prompt.text,
 		response: exchange.response?.text ?? '',
@@ -77,6 +76,7 @@ export function getExchangeNodeData(
 		hasSideChildren,
 		sideChildrenCount,
 		isSideRoot,
+		canCreateSideChat: canCreateSideChats(activeExchanges, exchangeId),
 		canPromote: canPromoteSideChatToMainChat(
 			{ rootId: findRootId(activeExchanges), exchanges: activeExchanges },
 			exchangeId

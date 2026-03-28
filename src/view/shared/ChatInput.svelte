@@ -59,6 +59,11 @@
 	);
 
 	$effect(() => {
+		void getActiveChat().id;
+		tick().then(() => composerRef?.focus());
+	});
+
+	$effect(() => {
 		updateContextLength();
 	});
 

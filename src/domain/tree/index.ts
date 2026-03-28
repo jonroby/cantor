@@ -579,7 +579,9 @@ export function getChildExchanges(exchanges: ExchangeMap, exchangeId: string): E
 export function canCreateSideChats(exchanges: ExchangeMap, exchangeId: string): boolean {
 	const rootId = findRootId(exchanges);
 	const indexed = indexTree({ rootId, exchanges });
-	return !isSideExchange(indexed, exchangeId);
+	if (isSideExchange(indexed, exchangeId)) return false;
+	const exchange = exchanges[exchangeId]!;
+	return exchange.childIds.length > 0;
 }
 
 export function canAcceptNewChat(exchanges: ExchangeMap, exchangeId: string): boolean {
