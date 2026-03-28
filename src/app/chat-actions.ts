@@ -73,6 +73,7 @@ export function getExchangeNodeData(
 		response: exchange.response?.text ?? '',
 		model: exchange.model,
 		provider: (exchange.provider as Provider) || getProviderForModelId(exchange.model) || null,
+		label: exchange.label,
 		isActive: activeExchangeId === exchangeId,
 		isStreaming: deps.isStreaming(exchangeId),
 		hasSideChildren,

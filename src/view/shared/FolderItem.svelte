@@ -24,6 +24,7 @@
 		onDownloadFolder: () => void;
 		onDeleteFolder: () => void;
 		onSelectDoc: (fileId: string) => void;
+		onAddDocToChat: (fileId: string) => void;
 		onStartRenameDoc: (fileId: string, fileName: string) => void;
 		onCommitRenameDoc: (name: string) => void;
 		onCancelRenameDoc: () => void;
@@ -51,6 +52,7 @@
 		onDownloadFolder,
 		onDeleteFolder,
 		onSelectDoc,
+		onAddDocToChat,
 		onStartRenameDoc,
 		onCommitRenameDoc,
 		onCancelRenameDoc,
@@ -306,6 +308,7 @@
 				bind:editingName={editingDocFileName}
 				isDragging={draggingDocFileId === file.id}
 				onOpen={() => onSelectDoc(file.id)}
+				onAddToChat={() => onAddDocToChat(file.id)}
 				onStartRename={() => onStartRenameDoc(file.id, file.name)}
 				onCommitRename={onCommitRenameDoc}
 				onCancelRename={onCancelRenameDoc}

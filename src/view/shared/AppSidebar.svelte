@@ -33,6 +33,7 @@
 		onUploadFolder: (folderId: string) => void;
 		onUploadNewFolder: () => void;
 		onSelectDoc: (folderId: string, fileId: string) => void;
+		onAddDocToChat: (folderId: string, fileId: string) => void;
 		onDeleteDoc: (folderId: string, fileId: string) => void;
 		onRenameDoc: (folderId: string, fileId: string, name: string) => boolean;
 		onMoveDoc: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
@@ -57,6 +58,7 @@
 		onUploadFolder,
 		onUploadNewFolder,
 		onSelectDoc,
+		onAddDocToChat,
 		onDeleteDoc,
 		onRenameDoc,
 		onMoveDoc
@@ -391,6 +393,7 @@
 									onDownloadFolder={() => onDownloadFolder(folder.id)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
 									onSelectDoc={(fileId) => onSelectDoc(folder.id, fileId)}
+									onAddDocToChat={(fileId) => onAddDocToChat(folder.id, fileId)}
 									onStartRenameDoc={(fileId, fileName) =>
 										startRenameDoc(folder.id, fileId, fileName)}
 									onCommitRenameDoc={commitRenameDoc}

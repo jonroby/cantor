@@ -21,6 +21,7 @@ export interface Exchange {
 	model: string;
 	provider: Provider;
 	createdAt: number;
+	label?: string;
 }
 
 export type ExchangeMap = Record<string, Exchange>;

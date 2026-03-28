@@ -36,6 +36,7 @@
 		onUploadFolder={noop}
 		onUploadNewFolder={noop}
 		onSelectDoc={selectDoc}
+		onAddDocToChat={noop}
 		onDeleteDoc={deleteDocFromFolder}
 		onRenameDoc={renameDocInFolder}
 		onMoveDoc={moveDocToFolder}

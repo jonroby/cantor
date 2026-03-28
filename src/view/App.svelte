@@ -3,7 +3,7 @@
 	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
 	import { toast } from 'svelte-sonner';
 	import { getDefaultItems, searchChats, type SearchResult } from '@/domain/search';
-	import type { Chat } from '@/domain/tree';
+	import { addExchangeResult, getMainChatTail, type Chat, type ChatTree } from '@/domain/tree';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar, SearchDialog } from '@/view/shared';
 	import { routerState } from '@/view/routes/router.svelte';
@@ -16,7 +16,8 @@
 		selectChat as selectChatAction,
 		deleteChat as deleteChatAction,
 		renameChat,
-		setActiveExchangeId
+		setActiveExchangeId,
+		replaceActiveTree
 	} from '@/state/chats.svelte';
 	import {
 		docState,
@@ -173,6 +174,24 @@
 		resetUIState();
 	}
 
+	function addDocToChat(folderId: string, fileId: string) {
+		const folder = docState.folders.find((f) => f.id === folderId);
+		const file = folder?.files?.find((f) => f.id === fileId);
+		if (!file) return;
+
+		const activeChat = chatState.chats[chatState.activeChatIndex];
+		const tree: ChatTree = { rootId: activeChat.rootId, exchanges: activeChat.exchanges };
+		const parentId = activeChat.activeExchangeId ?? getMainChatTail(tree) ?? '';
+
+		const result = addExchangeResult(tree, parentId, file.content, '', 'ollama');
+		const exchange = result.exchanges[result.id];
+		exchange.response = { text: '', tokenCount: 0 };
+		exchange.label = `Added ${file.name} to chat`;
+
+		replaceActiveTree(result);
+		setActiveExchangeId(result.id);
+	}
+
 	function handleSearchSelect(result: SearchResult) {
 		selectChatAction(result.chatIndex);
 		setActiveExchangeId(result.exchangeId);
@@ -216,6 +235,7 @@
 				selectDoc(folderId, fileId);
 				chatViewRef?.openDocPanel(folderId, fileId);
 			}}
+			onAddDocToChat={addDocToChat}
 			onDeleteDoc={deleteDocFromFolder}
 			onRenameDoc={renameDocInFolder}
 			onMoveDoc={moveDocToFolder}

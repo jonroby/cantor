@@ -5,6 +5,7 @@ export interface ExchangeNodeData {
 	response: string;
 	model?: string;
 	provider?: Provider | null;
+	label?: string;
 	isActive: boolean;
 	isStreaming: boolean;
 	hasSideChildren: boolean;
