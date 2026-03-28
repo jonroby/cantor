@@ -5,8 +5,11 @@
 	import ChatMessage from './ChatMessage.svelte';
 	import { ChatInput } from '@/view/shared';
 	import {
+		addExchangeResult,
 		getChildExchanges,
+		getMainChatTail,
 		getRootExchange,
+		type ChatTree,
 		type Exchange,
 		type DeleteMode
 	} from '@/domain/tree';
@@ -29,7 +32,8 @@
 		getActiveChat,
 		getActiveExchanges,
 		getActiveExchangeId,
-		setActiveExchangeId
+		setActiveExchangeId,
+		replaceActiveTree
 	} from '@/state/chats.svelte';
 	import {
 		getExchangeNodeData as getNodeData,
@@ -204,6 +208,21 @@
 	function handleEphemeralResponse(text: string) {
 		if (activeDocIndex < 0) return;
 		updateDocContent(activeDocIndex, text);
+	}
+
+	function addCurrentDocToChat() {
+		if (!activeDocFile || !docContent) return;
+		const chat = getActiveChat();
+		const exchanges = getActiveExchanges();
+		if (!exchanges) return;
+		const tree: ChatTree = { rootId: chat.rootId, exchanges };
+		const parentId = chat.activeExchangeId ?? getMainChatTail(tree) ?? '';
+		const result = addExchangeResult(tree, parentId, activeDocFile.content, '', 'ollama');
+		const exchange = result.exchanges[result.id];
+		exchange.response = { text: '', tokenCount: 0 };
+		exchange.label = `Added ${activeDocFile.name} to chat`;
+		replaceActiveTree(result);
+		setActiveExchangeId(result.id);
 	}
 
 	function prevBranch() {
@@ -460,6 +479,7 @@
 								if (activeDocIndex >= 0) closeDoc(activeDocIndex);
 								closeSidePanel();
 							}}
+							onAddToChat={addCurrentDocToChat}
 						/>
 					</div>
 				{:else if !isDocPanel}

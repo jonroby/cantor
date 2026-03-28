@@ -11,9 +11,10 @@
 		content: string;
 		onContentChange?: (content: string) => void;
 		onClose?: () => void;
+		onAddToChat?: () => void;
 	}
 
-	let { title, content, onContentChange, onClose }: Props = $props();
+	let { title, content, onContentChange, onClose, onAddToChat }: Props = $props();
 
 	let showCloseConfirm = $state(false);
 
@@ -224,6 +225,22 @@
 						stroke-linecap="round"
 					>
 						<path d="M18 6L6 18M6 6l12 12" />
+					</svg>
+				</button>
+			{/if}
+			{#if onAddToChat}
+				<button class="header-btn" onclick={onAddToChat} title="Add to chat">
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 					</svg>
 				</button>
 			{/if}
