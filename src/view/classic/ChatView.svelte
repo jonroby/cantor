@@ -64,6 +64,7 @@
 	let activeExchanges = $derived(getActiveExchanges());
 	let activeExchangeId = $derived(getActiveExchangeId());
 	let commandStreaming = $state(false);
+	let pendingDocContent: string | null = $state(null);
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
 		mainChatPath.length > 0 ? mainChatPath[mainChatPath.length - 1]!.id : null
@@ -297,7 +298,14 @@
 			onToggleSideChildren: toggleSideChildren,
 			onPromote: promoteExchange,
 			onDelete: openDeleteDialog,
-			onQuickAsk: quickAsk
+			onQuickAsk: quickAsk,
+			onQuickAdd: isDocPanel && activeDocIndex >= 0
+				? (sourceText) => {
+						const current = activeDocFile?.content ?? '';
+						const appended = current ? `${current}\n\n${sourceText}` : sourceText;
+						updateDocContent(activeDocIndex, appended);
+					}
+				: undefined
 		});
 	}
 
@@ -437,10 +445,21 @@
 							{commandStreaming}
 							commandModel={providerState.activeModel?.modelId}
 							commandProvider={providerState.activeModel?.provider}
-							onContentChange={(content) => {
-								if (activeDocIndex >= 0) updateDocContent(activeDocIndex, content);
+							pendingContent={pendingDocContent}
+							onContentChange={(c) => {
+								if (activeDocIndex >= 0) updateDocContent(activeDocIndex, c);
+							}}
+							onAcceptPending={() => {
+								if (pendingDocContent !== null && activeDocIndex >= 0) {
+									updateDocContent(activeDocIndex, pendingDocContent);
+								}
+								pendingDocContent = null;
+							}}
+							onRejectPending={() => {
+								pendingDocContent = null;
 							}}
 							onClose={() => {
+								pendingDocContent = null;
 								performCloseDocumentPanel(activeDocIndex);
 								closeSidePanel();
 							}}
@@ -598,9 +617,10 @@
 				onExpandSideChat={expandSideChat}
 				commandMode={isDocPanel && focusedPane === 'side'}
 				bind:commandStreaming
+				commandPending={pendingDocContent !== null}
 				liveDocContent={activeDocFile?.content}
 				onCommandResponse={(text) => {
-					if (activeDocIndex >= 0) updateDocContent(activeDocIndex, text);
+					pendingDocContent = text;
 				}}
 			/>
 		</div>
@@ -685,8 +705,7 @@
 		letter-spacing: 0.02em;
 	}
 
-	.chatview-doc-wrap :global(.docs-content),
-	.chatview-doc-wrap :global(.docs-editor) {
+	.chatview-doc-wrap :global(.panel-body) {
 		padding-bottom: 12rem;
 	}
 </style>

@@ -34,6 +34,7 @@
 		onExpandSideChat: (exchangeId: string) => void;
 		commandMode?: boolean;
 		commandStreaming?: boolean;
+		commandPending?: boolean;
 		liveDocContent?: string;
 		onCommandResponse?: (text: string) => void;
 	}
@@ -43,6 +44,7 @@
 		onExpandSideChat,
 		commandMode = false,
 		commandStreaming = $bindable(false),
+		commandPending = false,
 		liveDocContent,
 		onCommandResponse
 	}: Props = $props();
@@ -207,6 +209,7 @@
 	bind:composerValue
 	bind:canvasMode
 	{commandMode}
+	inputMessage={commandPending ? 'Accept or reject pending changes first.' : null}
 	{submitDisabledReason}
 	streaming={commandStreaming || activeNodeStreaming}
 	activeModelId={providerState.activeModel?.modelId ?? null}

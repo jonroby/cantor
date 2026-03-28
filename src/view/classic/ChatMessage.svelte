@@ -56,13 +56,23 @@
 		contextMenu = { x: event.clientX, y: event.clientY };
 	}
 
-	function handleQuickAsk() {
-		if (!selectionRange) return;
-		const source = responseBlocks
+	function getSelectedSource(): string {
+		if (!selectionRange) return '';
+		return responseBlocks
 			.slice(selectionRange.start, selectionRange.end + 1)
 			.map((b) => b.source)
 			.join('\n\n');
-		data.onQuickAsk(source);
+	}
+
+	function handleQuickAsk() {
+		const source = getSelectedSource();
+		if (source) data.onQuickAsk(source);
+		closeContextMenu();
+	}
+
+	function handleQuickAdd() {
+		const source = getSelectedSource();
+		if (source) data.onQuickAdd(source);
 		closeContextMenu();
 	}
 
@@ -328,5 +338,8 @@
 	<div class="chatmsg-context-scrim" onmousedown={closeContextMenu}></div>
 	<div class="chatmsg-context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
 		<button type="button" class="chatmsg-context-item" onclick={handleQuickAsk}> Quick Ask </button>
+		{#if data.canQuickAdd}
+			<button type="button" class="chatmsg-context-item" onclick={handleQuickAdd}> Quick Add </button>
+		{/if}
 	</div>
 {/if}
