@@ -27,7 +27,7 @@
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
 		onExpandSideChat: (exchangeId: string) => void;
-		ephemeralAvailable?: boolean;
+		ephemeralMode?: boolean;
 		ephemeralDocContent?: string;
 		onEphemeralResponse?: (text: string) => void;
 	}
@@ -35,14 +35,13 @@
 	let {
 		onScrollToNode,
 		onExpandSideChat,
-		ephemeralAvailable = false,
+		ephemeralMode = false,
 		ephemeralDocContent = '',
 		onEphemeralResponse
 	}: Props = $props();
 
 	let composerValue = $state('');
 	let canvasMode = $state(false);
-	let ephemeralMode = $state(false);
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
@@ -56,7 +55,6 @@
 
 	export function resetEphemeral() {
 		ephemeralHistory = [];
-		ephemeralMode = false;
 		ephemeralStreaming = false;
 		if (ephemeralAbort) {
 			ephemeralAbort.abort();
@@ -194,8 +192,7 @@
 	bind:this={composerRef}
 	bind:composerValue
 	bind:canvasMode
-	bind:ephemeralMode
-	{ephemeralAvailable}
+	{ephemeralMode}
 	{submitDisabledReason}
 	streaming={ephemeralStreaming || activeNodeStreaming}
 	activeModelId={providerState.activeModel?.modelId ?? null}

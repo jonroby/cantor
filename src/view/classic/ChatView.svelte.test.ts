@@ -442,7 +442,7 @@ describe('ChatView', () => {
 			expect(screen.getByText('notes.md')).toBeInTheDocument();
 		});
 
-		it('shows ephemeral toggle when doc panel is open', async () => {
+		it('shows ephemeral indicator when doc panel is open', async () => {
 			resetState(buildVisibleTree(1));
 			setupDocPanel();
 			const { component } = render(ChatView);
@@ -450,10 +450,10 @@ describe('ChatView', () => {
 			component.openDocPanel('folder-1', 'file-1');
 			await tick();
 
-			expect(screen.getByText('Chat')).toBeInTheDocument();
+			expect(screen.getByText('Ephemeral')).toBeInTheDocument();
 		});
 
-		it('closes doc panel and hides ephemeral toggle', async () => {
+		it('closes doc panel and hides ephemeral indicator', async () => {
 			resetState(buildVisibleTree(1));
 			setupDocPanel();
 			const { component } = render(ChatView);
@@ -467,7 +467,7 @@ describe('ChatView', () => {
 			await tick();
 
 			expect(screen.queryByText('notes.md')).not.toBeInTheDocument();
-			expect(screen.queryByText('Chat')).not.toBeInTheDocument();
+			expect(screen.queryByText('Ephemeral')).not.toBeInTheDocument();
 		});
 	});
 });

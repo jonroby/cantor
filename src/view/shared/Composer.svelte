@@ -6,7 +6,6 @@
 		composerValue: string;
 		canvasMode: boolean;
 		ephemeralMode: boolean;
-		ephemeralAvailable: boolean;
 		submitDisabledReason: string | null;
 		streaming: boolean;
 		activeModelId: string | null;
@@ -21,8 +20,7 @@
 	let {
 		composerValue = $bindable(),
 		canvasMode = $bindable(),
-		ephemeralMode = $bindable(),
-		ephemeralAvailable,
+		ephemeralMode,
 		submitDisabledReason,
 		streaming,
 		activeModelId,
@@ -96,33 +94,9 @@
 			<Button class="model-chip" variant="outline" size="sm" onclick={onOpenPalette}>
 				{activeModelId ?? 'Connect a model'}
 			</Button>
-			{#if ephemeralAvailable}
+			{#if ephemeralMode}
 				<div class="composer-divider"></div>
-				<button
-					class="ephemeral-toggle"
-					class:ephemeral-active={ephemeralMode}
-					type="button"
-					onclick={() => (ephemeralMode = !ephemeralMode)}
-					title={ephemeralMode ? 'Switch to Chat mode' : 'Switch to Ephemeral mode'}
-				>
-					<svg
-						width="12"
-						height="12"
-						viewBox="0 0 12 12"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.2"
-						stroke-linecap="round"
-					>
-						<circle cx="6" cy="6" r="4.5" />
-						{#if ephemeralMode}
-							<path d="M4 6h4" />
-						{:else}
-							<path d="M6 4v4M4 6h4" />
-						{/if}
-					</svg>
-					<span>{ephemeralMode ? 'Ephemeral' : 'Chat'}</span>
-				</button>
+				<span class="ephemeral-indicator">Ephemeral</span>
 			{/if}
 			{#if activeModelId}
 				<div class="composer-divider"></div>

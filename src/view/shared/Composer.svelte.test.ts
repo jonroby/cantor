@@ -9,7 +9,6 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 		composerValue: '',
 		canvasMode: false,
 		ephemeralMode: false,
-		ephemeralAvailable: false,
 		submitDisabledReason: null,
 		streaming: false,
 		activeModelId: 'claude-sonnet-4-5',
@@ -85,24 +84,19 @@ describe('Composer', () => {
 		expect(screen.getByText(/1,500 \/ 128,000/)).toBeInTheDocument();
 	});
 
-	describe('ephemeral toggle', () => {
-		it('hidden when ephemeralAvailable is false', () => {
-			renderComposer({ ephemeralAvailable: false });
-			expect(screen.queryByText('Chat')).not.toBeInTheDocument();
+	describe('ephemeral mode', () => {
+		it('no indicator when ephemeralMode is false', () => {
+			renderComposer({ ephemeralMode: false });
+			expect(screen.queryByText('Ephemeral')).not.toBeInTheDocument();
 		});
 
-		it('shows Chat label when ephemeralAvailable is true', () => {
-			renderComposer({ ephemeralAvailable: true });
-			expect(screen.getByText('Chat')).toBeInTheDocument();
-		});
-
-		it('shows Ephemeral label when ephemeralMode is true', () => {
-			renderComposer({ ephemeralAvailable: true, ephemeralMode: true });
+		it('shows Ephemeral indicator when ephemeralMode is true', () => {
+			renderComposer({ ephemeralMode: true });
 			expect(screen.getByText('Ephemeral')).toBeInTheDocument();
 		});
 
 		it('shows Ephemeral placeholder when active', () => {
-			renderComposer({ ephemeralAvailable: true, ephemeralMode: true });
+			renderComposer({ ephemeralMode: true });
 			expect(screen.getByPlaceholderText('Ephemeral...')).toBeInTheDocument();
 		});
 	});

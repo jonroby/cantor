@@ -577,14 +577,14 @@
 
 		<div
 			class="chatview-input-anchor"
-			class:chatview-input-right={sidePanelOpen && !isDocPanel && focusedPane === 'side'}
-			class:chatview-input-left={sidePanelOpen && (!isDocPanel ? focusedPane === 'main' : true)}
+			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
+			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
 		>
 			<ChatInput
 				bind:this={chatInputRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
-				ephemeralAvailable={isDocPanel}
+				ephemeralMode={isDocPanel && focusedPane === 'side'}
 				ephemeralDocContent={activeDocFile?.content ?? ''}
 				onEphemeralResponse={handleEphemeralResponse}
 			/>
@@ -668,5 +668,10 @@
 		font-weight: 600;
 		color: hsl(var(--muted-foreground));
 		letter-spacing: 0.02em;
+	}
+
+	.chatview-doc-wrap :global(.docs-content),
+	.chatview-doc-wrap :global(.docs-editor) {
+		padding-bottom: 12rem;
 	}
 </style>

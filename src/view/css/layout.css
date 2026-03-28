@@ -447,32 +447,12 @@
 	background: hsl(var(--border));
 }
 
-.ephemeral-toggle {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	padding: 2px 8px;
-	border: 1px solid hsl(var(--border));
-	border-radius: 999px;
-	background: transparent;
-	color: hsl(var(--muted-foreground));
+.ephemeral-indicator {
 	font-size: 12px;
-	cursor: pointer;
-	transition:
-		background 0.15s,
-		color 0.15s,
-		border-color 0.15s;
-}
-
-.ephemeral-toggle:hover {
-	background: hsl(var(--muted));
-	color: hsl(var(--foreground));
-}
-
-.ephemeral-toggle.ephemeral-active {
-	background: hsl(var(--primary) / 0.1);
 	color: hsl(var(--primary));
-	border-color: hsl(var(--primary) / 0.3);
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: hsl(var(--primary) / 0.1);
 }
 
 .context-meta {
