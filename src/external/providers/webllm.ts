@@ -79,6 +79,7 @@ export async function loadWebLLMModel(
 		engine = null;
 		engineWorker = null;
 		currentModelId = null;
+		currentContextWindowSize = null;
 	}
 
 	const worker = new Worker(new URL('./webllm-worker.ts', import.meta.url), { type: 'module' });

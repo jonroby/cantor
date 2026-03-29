@@ -2,14 +2,9 @@ import {
 	getVaultStore,
 	setVaultStore,
 	migrateVaultStorage,
-	clearVaultStorage
+	clearVaultStorage,
+	type VaultRecord
 } from '@/external/persistence/database';
-
-interface VaultRecord {
-	cipherText: string;
-	salt: string;
-	iv: string;
-}
 
 function base64ToBytes(b64: string): Uint8Array {
 	return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));

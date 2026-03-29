@@ -69,6 +69,8 @@
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
+			window.removeEventListener('dragover', handleWindowDragOver);
+			window.removeEventListener('drop', handleWindowDrop);
 		};
 	});
 

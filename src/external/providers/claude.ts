@@ -68,7 +68,7 @@ export async function* streamClaudeChat(
 				}
 
 				if (parsed.type === 'message_start' && parsed.message?.usage) {
-					promptTokens = parsed.message.usage.input_tokens ?? 0;
+					promptTokens = parsed.message.usage.input_tokens ?? promptTokens;
 				}
 
 				if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
@@ -76,7 +76,7 @@ export async function* streamClaudeChat(
 				}
 
 				if (parsed.type === 'message_delta' && parsed.usage) {
-					responseTokens = parsed.usage.output_tokens ?? 0;
+					responseTokens = parsed.usage.output_tokens ?? responseTokens;
 				}
 			}
 		}
@@ -93,7 +93,7 @@ export async function* streamClaudeChat(
 					yield { type: 'delta', delta: parsed.delta.text };
 				}
 				if (parsed.type === 'message_delta' && parsed.usage) {
-					responseTokens = parsed.usage.output_tokens ?? 0;
+					responseTokens = parsed.usage.output_tokens ?? responseTokens;
 				}
 			} catch {
 				/* unparseable trailing data */

@@ -120,8 +120,8 @@ async function saveKey(provider: string, apiKey: string, password: string) {
 
 function forgetKey(provider: string) {
 	external.providers.vault.clearProviderKey(provider);
-	const { [provider]: _, ...rest } = state.providers.providerState.apiKeys;
-	void _;
+	const { [provider]: _removed, ...rest } = state.providers.providerState.apiKeys;
+	void _removed;
 	state.providers.providerState.apiKeys = rest;
 	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 	if (state.providers.providerState.activeModel?.provider === provider) {

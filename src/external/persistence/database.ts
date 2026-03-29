@@ -121,7 +121,7 @@ export function saveToStorage(snapshot: PersistedSnapshot) {
 
 // --- Vault (API key) storage ---
 
-interface VaultRecord {
+export interface VaultRecord {
 	cipherText: string;
 	salt: string;
 	iv: string;

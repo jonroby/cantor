@@ -113,12 +113,12 @@ export function hydrate(parsed: { chats?: ChatRecord[]; activeChatIndex?: number
 	if (parsed.chats?.length) {
 		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
 			chatState.chats = parsed.chats;
-		}
-		if (typeof parsed.activeChatIndex === 'number') {
-			chatState.activeChatIndex = Math.min(
-				Math.max(parsed.activeChatIndex, 0),
-				chatState.chats.length - 1
-			);
+			if (typeof parsed.activeChatIndex === 'number') {
+				chatState.activeChatIndex = Math.min(
+					Math.max(parsed.activeChatIndex, 0),
+					chatState.chats.length - 1
+				);
+			}
 		}
 	}
 }

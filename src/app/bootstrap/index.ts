@@ -64,7 +64,7 @@ function restoreOpenDocument(): RestoredDocument | null {
 		(candidate) => candidate.id === openDocument.folderId
 	);
 	const file = folder?.files?.find((candidate) => candidate.id === openDocument.fileId);
-	if (!file) {
+	if (!folder || !file) {
 		external.persistence.setPersistedLayout({});
 		return null;
 	}

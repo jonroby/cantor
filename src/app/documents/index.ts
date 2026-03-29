@@ -152,7 +152,7 @@ export async function exportFolder(
 	external.files.downloadBlob(blob, `${folder.name}.zip`);
 }
 
-function importDocumentsIntoFolder(
+async function importDocumentsIntoFolder(
 	folderId: string,
 	mdFiles: File[],
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
@@ -166,36 +166,33 @@ function importDocumentsIntoFolder(
 	}
 
 	let imported = 0;
-	let processed = 0;
 	const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
 
 	for (const file of mdFiles) {
-		void file.text().then((content) => {
-			const errors = lib.validateMd.validate(content);
-			if (errors.length > 0) {
-				feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
-			} else {
-				const name = deduplicateImportedName(file.name, existingNames);
-				existingNames.push(name);
-				const documentFile: state.documents.DocumentFile = {
-					id: crypto.randomUUID(),
-					name,
-					content
-				};
-				state.documents.documentState.folders = state.documents.documentState.folders.map(
-					(candidate) =>
-						candidate.id === folderId
-							? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
-							: candidate
-				);
-				imported++;
-			}
+		const content = await file.text();
+		const errors = lib.validateMd.validate(content);
+		if (errors.length > 0) {
+			feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
+			continue;
+		}
+		const name = deduplicateImportedName(file.name, existingNames);
+		existingNames.push(name);
+		const documentFile: state.documents.DocumentFile = {
+			id: crypto.randomUUID(),
+			name,
+			content
+		};
+		state.documents.documentState.folders = state.documents.documentState.folders.map(
+			(candidate) =>
+				candidate.id === folderId
+					? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
+					: candidate
+		);
+		imported++;
+	}
 
-			processed++;
-			if (processed === mdFiles.length && imported > 0) {
-				feedback.success?.(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
-			}
-		});
+	if (imported > 0) {
+		feedback.success?.(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
 	}
 }
 
