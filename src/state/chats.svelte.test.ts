@@ -27,8 +27,8 @@ import {
 	validateChatTree,
 	type Chat,
 	type ChatTree
-} from '@/domain/tree';
-import type { Provider } from '@/domain/models';
+} from '@/domain';
+import type { Provider } from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

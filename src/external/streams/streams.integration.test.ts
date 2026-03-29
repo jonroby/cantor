@@ -10,13 +10,13 @@ import {
 	type StreamDeps
 } from './streams';
 
-import type { ChatTree } from '@/domain/tree';
+import type { ChatTree } from '@/domain';
 import {
 	buildEmptyTree,
 	addExchangeResult,
 	updateExchangeResponse,
 	validateChatTree
-} from '@/domain/tree';
+} from '@/domain';
 import type { StreamChunk } from '@/external/providers/stream';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

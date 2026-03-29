@@ -1,7 +1,7 @@
 import { setup, assign, fromCallback } from 'xstate';
 import type { StreamChunk } from '@/external/providers/stream';
-import type { ActiveModel } from '@/domain/models';
-import type { Message } from '@/domain/tree';
+import type { ActiveModel } from '@/domain';
+import type { Message } from '@/domain';
 
 type StreamFactory = (
 	model: ActiveModel,

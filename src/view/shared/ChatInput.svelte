@@ -2,12 +2,7 @@
 	import { tick } from 'svelte';
 	import Composer from './Composer.svelte';
 	import { ModelPalette } from '@/view/features/model-palette';
-	import {
-		canAcceptNewChat,
-		getMainChatHistory,
-		getPathTokenTotal,
-		type Message
-	} from '@/domain/tree';
+	import { canAcceptNewChat, getMainChatHistory, getPathTokenTotal, type Message } from '@/domain';
 	import { getActiveChat, getActiveExchanges, getActiveExchangeId } from '@/state';
 	import { providerState, WEBLLM_CONTEXT_OPTIONS, selectModel, updateContextLength } from '@/state';
 	import {
@@ -19,10 +14,10 @@
 		saveKey,
 		forgetKey,
 		fetchOllamaContextLength
-	} from '@/app/providers';
-	import { submitPrompt as performSubmitPrompt } from '@/app/chat';
-	import { isStreaming, cancelStream } from '@/external/streams';
-	import { getProviderStream } from '@/external/providers/stream';
+	} from '@/app';
+	import { submitPrompt as performSubmitPrompt } from '@/app';
+	import { isStreaming, cancelStream } from '@/external';
+	import { getProviderStream } from '@/external';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;

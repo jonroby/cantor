@@ -1,4 +1,4 @@
-import { getProviderForModelId, type Provider } from '@/domain/models';
+import { getProviderForModelId, type Provider } from '@/domain';
 import {
 	canAcceptNewChat,
 	canCreateSideChats,
@@ -7,8 +7,8 @@ import {
 	getChildExchanges,
 	type ExchangeMap,
 	type DeleteMode
-} from '@/domain/tree';
-import { isStreaming as isExchangeStreaming } from '@/external/streams';
+} from '@/domain';
+import { isStreaming as isExchangeStreaming } from '@/external';
 import type { ExchangeNodeData } from './types';
 
 export interface ChatQueryDeps {

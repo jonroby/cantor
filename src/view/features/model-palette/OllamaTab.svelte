@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ActiveModel, OllamaStatus } from '@/domain/models';
+	import type { ActiveModel, OllamaStatus } from '@/domain';
 	import Button from '@/view/components/custom/button.svelte';
 	import Input from '@/view/components/custom/input.svelte';
 

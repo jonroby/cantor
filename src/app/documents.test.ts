@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/external', () => ({
+	getPersistedLayout: vi.fn(() => ({})),
+	saveToStorage: vi.fn(),
+	setPersistedLayout: vi.fn()
+}));
+
 vi.mock('./chat-actions', () => ({
 	performAddDocToChat: vi.fn()
 }));

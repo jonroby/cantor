@@ -4,7 +4,7 @@
 	import ChatTree from './ChatTree.svelte';
 	import { ChatInput } from '@/view/shared';
 	import { getActiveChat, getActiveExchangeId } from '@/state/chats.svelte';
-	import { downloadToFile } from '@/state/services/io.svelte';
+	import { downloadToFile } from '@/app/files';
 
 	interface Props {
 		onSearchOpen: () => void;

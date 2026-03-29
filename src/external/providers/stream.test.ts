@@ -31,7 +31,7 @@ vi.mock('@/state', () => ({
 	}
 }));
 
-import type { Message } from '@/domain/tree';
+import type { Message } from '@/domain';
 import { getProviderStream } from './stream';
 import { streamOllamaChat } from './ollama';
 import { streamWebLLMChat } from './webllm';

@@ -16,13 +16,31 @@ const declaredPackages = new Set([
 const SOURCE_EXTENSIONS = new Set(['.ts', '.js', '.svelte']);
 const TEST_FILE_RE = /\.(test|spec)\.(ts|js)$/;
 
+const AREA_ORDER = ['domain', 'lib', 'state', 'external', 'app', 'view'];
+
+const GENERAL_RULES = {
+	requirePublicBarrelsAcrossAreas: true
+};
+
 const AREA_RULES = {
-	domain: ['@/domain/'],
-	lib: ['@/lib/'],
-	state: ['@/state', '@/domain/', '@/lib/'],
-	external: ['@/external/', '@/domain/', '@/lib/', '@/state'],
-	app: ['@/app/', '@/state', '@/external/', '@/domain/', '@/lib/'],
-	view: ['@/view/', '@/app/', '@/lib/', '@/state', '@/external/', '@/domain/']
+	domain: {
+		allowedCrossAreaImports: new Set()
+	},
+	lib: {
+		allowedCrossAreaImports: new Set()
+	},
+	state: {
+		allowedCrossAreaImports: new Set(['domain', 'lib'])
+	},
+	external: {
+		allowedCrossAreaImports: new Set(['domain', 'lib'])
+	},
+	app: {
+		allowedCrossAreaImports: new Set(['domain', 'lib', 'state', 'external'])
+	},
+	view: {
+		allowedCrossAreaImports: new Set(['app'])
+	}
 };
 
 function walk(dir) {
@@ -44,7 +62,7 @@ function walk(dir) {
 
 function areaFor(relPath) {
 	const normalized = relPath.replaceAll('\\', '/');
-	for (const area of ['domain', 'lib', 'state', 'external', 'app', 'view']) {
+	for (const area of AREA_ORDER) {
 		if (normalized.startsWith(`src/${area}/`)) return area;
 	}
 	return null;
@@ -73,8 +91,13 @@ function isDeclaredPackage(spec) {
 	return declaredPackages.has(packageName);
 }
 
-function isAllowedInternal(area, spec) {
-	return AREA_RULES[area]?.some((prefix) => spec === prefix || spec.startsWith(prefix)) ?? false;
+function parseInternalSpec(spec) {
+	const match = spec.match(/^@\/(domain|lib|state|external|app|view)(?:\/(.*))?$/);
+	if (!match) return null;
+	return {
+		area: match[1],
+		isRoot: match[2] == null
+	};
 }
 
 const violations = [];
@@ -88,17 +111,29 @@ for (const file of walk(SRC_DIR)) {
 	for (const spec of importSpecs(code)) {
 		if (spec.startsWith('.')) continue;
 
-		if (spec === '@/state' || spec.startsWith('@/state/')) {
-			if (!relPath.startsWith('src/state/') && spec !== '@/state') {
-				violations.push(`${relPath}: use "@/state" instead of deep state import "${spec}"`);
-				continue;
-			}
-		}
-
 		if (spec.startsWith('@/')) {
 			if (spec.startsWith('@/assets/')) continue;
-			if (!isAllowedInternal(area, spec)) {
-				violations.push(`${relPath}: ${area} is not allowed to import "${spec}"`);
+			const target = parseInternalSpec(spec);
+			if (!target) {
+				violations.push(`${relPath}: unknown internal import "${spec}"`);
+				continue;
+			}
+			if (target.area === area) {
+				continue;
+			}
+			if (GENERAL_RULES.requirePublicBarrelsAcrossAreas && !target.isRoot) {
+				violations.push(
+					`${relPath}: cross-area import "${spec}" must use the public barrel "@/` +
+						`${target.area}"`
+				);
+				continue;
+			}
+			if (!AREA_RULES[area]?.allowedCrossAreaImports.has(target.area)) {
+				violations.push(
+					`${relPath}: ${area} may not import ${target.area}; allowed cross-area imports: ` +
+						`${[...AREA_RULES[area].allowedCrossAreaImports].map((name) => `"${name}"`).join(', ') || '(none)'}`
+				);
+				continue;
 			}
 			continue;
 		}

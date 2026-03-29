@@ -1,8 +1,8 @@
 import JSZip from 'jszip';
 import { toast } from 'svelte-sonner';
 import { chatState, docState, type ChatFolder, type DocFile } from '@/state';
-import { validate } from '@/lib/validate-md';
-import { validateChatUpload, deduplicateName } from '@/external/files/io';
+import { validate } from '@/lib';
+import { validateChatUpload, deduplicateName } from '@/external';
 
 export function downloadToFile() {
 	const payload = JSON.stringify(

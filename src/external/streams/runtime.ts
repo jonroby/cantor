@@ -1,6 +1,6 @@
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-import type { ActiveModel } from '@/domain/models';
-import type { ChatTree } from '@/domain/tree';
+import type { ActiveModel } from '@/domain';
+import type { ChatTree } from '@/domain';
 import { getTreeByChatId, replaceTreeByChatId } from '@/state';
 import { getProviderStream } from '@/external/providers/stream';
 import {

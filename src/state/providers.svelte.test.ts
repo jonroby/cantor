@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-vi.mock('@/external/providers/ollama', () => ({
+vi.mock('@/external', () => ({
 	DEFAULT_OLLAMA_URL: 'http://localhost:11434'
 }));
 
-vi.mock('@/external/providers/webllm', () => ({
+vi.mock('@/external', () => ({
 	WEBLLM_CONTEXT_OPTIONS: [4_096, 8_192],
 	type: {}
 }));

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { PROVIDER_CONFIG } from '@/domain/models';
-	import type { ActiveModel, Provider } from '@/domain/models';
+	import { PROVIDER_CONFIG } from '@/domain';
+	import type { ActiveModel, Provider } from '@/domain';
 	import Button from '@/view/components/custom/button.svelte';
 	import Input from '@/view/components/custom/input.svelte';
 

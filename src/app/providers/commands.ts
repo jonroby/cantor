@@ -1,19 +1,11 @@
-import {
-	DEFAULT_OLLAMA_URL,
-	fetchAvailableModels,
-	fetchModelContextLength
-} from '@/external/providers/ollama';
-import {
-	loadWebLLMModel,
-	deleteModelCache,
-	deleteAllModelCaches
-} from '@/external/providers/webllm';
+import { DEFAULT_OLLAMA_URL, fetchAvailableModels, fetchModelContextLength } from '@/external';
+import { loadWebLLMModel, deleteModelCache, deleteAllModelCaches } from '@/external';
 import {
 	clearProviderKey,
 	loadAllApiKeys,
 	saveApiKey,
 	storedProviders as getStoredProviders
-} from '@/external/providers/vault';
+} from '@/external';
 import { providerState } from '@/state';
 
 export function autoConnectOllama() {

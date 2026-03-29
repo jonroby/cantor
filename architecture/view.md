@@ -41,8 +41,8 @@ If something only exists because the UI exists, it belongs here.
 
 ## Relationship To Other Areas
 
-- `view` may import `app`, `lib`, and `view`
-- `view` must not import `domain`, `state`, or `external`
+- `view` may import `app` and `view`
+- `view` must not import `domain`, `lib`, `state`, or `external`
 
 That restriction is intentional. It removes placement ambiguity and forces workflows through `app`.
 
@@ -52,7 +52,6 @@ That restriction is intentional. It removes placement ambiguity and forces workf
 
 - actions from `app`
 - view-facing data from `app`
-- pure support helpers from `lib`
 
 This keeps the UI layer focused on rendering and interaction, not architecture decisions.
 

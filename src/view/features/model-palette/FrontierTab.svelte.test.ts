@@ -3,9 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import FrontierTab from './FrontierTab.svelte';
-import type { ActiveModel } from '@/domain/models';
+import type { ActiveModel } from '@/domain';
 
-vi.mock('@/domain/models/logos', () => ({
+vi.mock('@/domain', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/domain')>()),
 	PROVIDER_LOGOS: {}
 }));
 

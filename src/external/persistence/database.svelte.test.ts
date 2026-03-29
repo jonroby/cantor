@@ -9,12 +9,7 @@ import {
 } from './database.svelte';
 import { chatState } from '@/state';
 import { docState } from '@/state';
-import {
-	addExchangeResult,
-	buildEmptyTree,
-	updateExchangeResponse,
-	type Chat
-} from '@/domain/tree';
+import { addExchangeResult, buildEmptyTree, updateExchangeResponse, type Chat } from '@/domain';
 
 // ── localStorage mock ────────────────────────────────────────────────────────
 

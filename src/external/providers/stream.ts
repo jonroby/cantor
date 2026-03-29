@@ -1,5 +1,5 @@
-import { PROVIDER_CONFIG, type ActiveModel, type Provider } from '@/domain/models';
-import type { Message } from '@/domain/tree';
+import { PROVIDER_CONFIG, type ActiveModel, type Provider } from '@/domain';
+import type { Message } from '@/domain';
 import { streamOllamaChat } from './ollama';
 import { streamWebLLMChat } from './webllm';
 import { streamClaudeChat } from './claude';

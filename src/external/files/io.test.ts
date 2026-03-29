@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { findRootId, deduplicateName, validateChatUpload } from './io';
-import { addExchangeResult, buildEmptyTree, updateExchangeResponse } from '@/domain/tree';
-import type { ExchangeMap } from '@/domain/tree';
+import { addExchangeResult, buildEmptyTree, updateExchangeResponse } from '@/domain';
+import type { ExchangeMap } from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

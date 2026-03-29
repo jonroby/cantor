@@ -3,13 +3,9 @@ import {
 	isKeyBasedProvider,
 	type ActiveModel,
 	type OllamaStatus
-} from '@/domain/models';
-import {
-	DEFAULT_OLLAMA_URL,
-	WEBLLM_CONTEXT_OPTIONS,
-	type WebLLMContextSize
-} from '@/lib/provider-defaults';
-import type { WebLLMStatus, WebLLMModelEntry } from '@/lib/provider-types';
+} from '@/domain';
+import { DEFAULT_OLLAMA_URL, WEBLLM_CONTEXT_OPTIONS, type WebLLMContextSize } from '@/lib';
+import type { WebLLMStatus, WebLLMModelEntry } from '@/lib';
 
 export { WEBLLM_CONTEXT_OPTIONS };
 export type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize, ActiveModel, OllamaStatus };

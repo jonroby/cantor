@@ -3,10 +3,10 @@
 	import { Marked } from 'marked';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
-	import { validate as validateMd } from '@/lib/validate-md';
-	import { diffLines } from '@/lib/diff';
-	import { PROVIDER_LOGOS } from '@/domain/models/logos';
-	import type { Provider } from '@/domain/models';
+	import { validate as validateMd } from '@/lib';
+	import { diffLines } from '@/lib';
+	import { PROVIDER_LOGOS } from '@/domain';
+	import type { Provider } from '@/domain';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
 
 	interface Props {

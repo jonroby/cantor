@@ -14,39 +14,59 @@ import {
 	getChildExchanges,
 	type ChatTree,
 	type Chat
-} from '@/domain/tree';
-import type { Provider } from '@/domain/models';
+} from '@/domain';
+import type { Provider } from '@/domain';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@/external/streams', () => ({
+vi.mock('@/external', () => ({
 	startStream: vi.fn(),
 	cancelStream: vi.fn(),
 	cancelAllStreams: vi.fn(),
 	cancelStreamsForExchanges: vi.fn(),
 	cancelStreamsForChat: vi.fn(),
 	isStreaming: vi.fn(() => false),
-	isAnyStreaming: vi.fn(() => false)
+	isAnyStreaming: vi.fn(() => false),
+	getProviderStream: vi.fn(),
+	DEFAULT_OLLAMA_URL: 'http://localhost:11434',
+	fetchAvailableModels: vi.fn(),
+	fetchModelContextLength: vi.fn(),
+	getWebLLMModels: vi.fn(() => []),
+	loadWebLLMModel: vi.fn(),
+	deleteModelCache: vi.fn(),
+	deleteAllModelCaches: vi.fn(),
+	clearProviderKey: vi.fn(),
+	loadAllApiKeys: vi.fn(),
+	migrateVault: vi.fn(),
+	saveApiKey: vi.fn(),
+	storedProviders: vi.fn(() => []),
+	getPersistedLayout: vi.fn(() => ({})),
+	saveToStorage: vi.fn(),
+	setPersistedLayout: vi.fn()
 }));
 
 vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
 }));
 
-vi.mock('@/lib/document-map/index', () => ({
+vi.mock('@/lib', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/lib')>()),
 	mapDocument: (text: string) => (text ? [{ source: text, html: text }] : []),
-	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
+	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t },
+	validate: () => []
 }));
 
 vi.mock('dompurify', () => ({
 	default: { sanitize: (html: string) => html }
 }));
 
-vi.mock('@/domain/models/logos', () => ({
+vi.mock('@/domain', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/domain')>()),
 	PROVIDER_LOGOS: {}
 }));
 
-vi.mock('@/app/providers', () => ({
+vi.mock('@/app', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/app')>()),
 	connectOllama: vi.fn(),
 	autoConnectOllama: vi.fn(),
 	loadWebLLMModel_: vi.fn(),
@@ -56,7 +76,6 @@ vi.mock('@/app/providers', () => ({
 	saveKey: vi.fn(),
 	forgetKey: vi.fn(),
 	fetchOllamaContextLength: vi.fn(),
-	getProviderStream: vi.fn(),
 	init: vi.fn()
 }));
 
@@ -70,14 +89,6 @@ vi.mock('marked', () => ({
 			return md;
 		}
 	}
-}));
-
-vi.mock('@/external/providers/stream', () => ({
-	getProviderStream: vi.fn()
-}));
-
-vi.mock('@/lib/validate-md', () => ({
-	validate: () => []
 }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -232,7 +243,7 @@ describe('ChatView', () => {
 		});
 
 		it('calls startStream after submit', async () => {
-			const { startStream } = await import('@/external/streams');
+			const { startStream } = await import('@/external');
 			resetState(buildVisibleTree(1));
 			render(ChatView);
 

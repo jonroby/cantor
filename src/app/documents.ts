@@ -1,10 +1,6 @@
 import { getActiveChat } from '@/state';
 import { docState, newDocInFolder, selectDoc, closeDoc, type ChatFolder } from '@/state';
-import {
-	getPersistedLayout,
-	saveToStorage,
-	setPersistedLayout
-} from '@/external/persistence/database';
+import { getPersistedLayout, saveToStorage, setPersistedLayout } from '@/external';
 import { performAddDocToChat } from './chat-actions';
 export { getFolderFile } from '@/app/documents/queries';
 

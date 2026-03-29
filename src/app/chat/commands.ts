@@ -1,4 +1,4 @@
-import type { ActiveModel } from '@/domain/models';
+import type { ActiveModel } from '@/domain';
 import {
 	addDocumentExchangeResult,
 	addExchangeResult,
@@ -10,13 +10,13 @@ import {
 	type ChatTree,
 	type DeleteMode,
 	type ExchangeMap
-} from '@/domain/tree';
+} from '@/domain';
 import {
 	replaceActiveTree,
 	setActiveExchangeId,
 	copyToNewChat as copyToNewChatAction
 } from '@/state';
-import { cancelStreamsForExchanges, startStream } from '@/external/streams';
+import { cancelStreamsForExchanges, startStream } from '@/external';
 
 export interface ChatCommandDeps {
 	replaceActiveTree: (tree: ChatTree) => void;

@@ -1,4 +1,4 @@
-import type { Message } from '@/domain/tree';
+import type { Message } from '@/domain';
 import type { StreamChunk } from './stream';
 
 export async function* streamClaudeChat(

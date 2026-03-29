@@ -1,5 +1,5 @@
-import type { Message } from '@/domain/tree';
-import { DEFAULT_OLLAMA_URL } from '@/lib/provider-defaults';
+import type { Message } from '@/domain';
+import { DEFAULT_OLLAMA_URL } from '@/lib';
 import type { StreamChunk } from './stream';
 
 export { DEFAULT_OLLAMA_URL };

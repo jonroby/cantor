@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import OllamaTab from './OllamaTab.svelte';
-import type { ActiveModel, OllamaStatus } from '@/domain/models';
+import type { ActiveModel, OllamaStatus } from '@/domain';
 
 function renderTab(overrides: Partial<Parameters<typeof OllamaTab>[1]> = {}) {
 	const props = {

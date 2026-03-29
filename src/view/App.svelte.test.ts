@@ -28,25 +28,27 @@ vi.mock('@/view/components/shadcn/ui/sidebar/index.js', async () => ({
 	Inset: (await import('../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
 
-vi.mock('@/external/persistence/database', () => ({
+vi.mock('@/external', () => ({
 	loadFromStorage: vi.fn(),
 	saveToStorage: vi.fn(),
 	getPersistedLayout: vi.fn(() => ({})),
-	setPersistedLayout: vi.fn()
+	setPersistedLayout: vi.fn(),
+	cancelStreamsForChat: vi.fn()
 }));
 
-vi.mock('@/app/providers', () => ({
+vi.mock('@/app', () => ({
 	init: vi.fn(),
-	autoConnectOllama: vi.fn()
-}));
-
-vi.mock('@/app/files', () => ({
+	autoConnectOllama: vi.fn(),
 	downloadChat: vi.fn(),
 	uploadChat: vi.fn(),
 	downloadFolder: vi.fn(),
 	uploadDocToFolder: vi.fn(),
 	uploadFolder: vi.fn(),
-	uploadFolderToFolder: vi.fn()
+	uploadFolderToFolder: vi.fn(),
+	performAddFolderDocumentToChat: vi.fn(),
+	performCreateDocument: vi.fn(() => null),
+	performOpenDocument: vi.fn(() => false),
+	restoreOpenDocument: vi.fn(() => null)
 }));
 
 vi.mock('@/view/routes/router.svelte', () => ({
@@ -57,8 +59,8 @@ import { toast } from 'svelte-sonner';
 import App from './App.svelte';
 import { chatState } from '@/state';
 import { docState } from '@/state';
-import { loadFromStorage, saveToStorage } from '@/external/persistence/database';
-import { autoConnectOllama, init } from '@/app/providers';
+import { loadFromStorage, saveToStorage } from '@/external';
+import { autoConnectOllama, init } from '@/app';
 import { routerState } from '@/view/routes/router.svelte';
 
 describe('App', () => {

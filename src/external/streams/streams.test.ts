@@ -12,8 +12,8 @@ import {
 	type StreamDeps
 } from './streams';
 
-import type { ChatTree } from '@/domain/tree';
-import { buildEmptyTree, addExchangeResult, updateExchangeResponse } from '@/domain/tree';
+import type { ChatTree } from '@/domain';
+import { buildEmptyTree, addExchangeResult, updateExchangeResponse } from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

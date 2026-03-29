@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ApiKeyFlow from './ApiKeyFlow.svelte';
-import type { ActiveModel } from '@/domain/models';
+import type { ActiveModel } from '@/domain';
 
 function renderFlow(overrides: Partial<Parameters<typeof ApiKeyFlow>[1]> = {}) {
 	const props = {

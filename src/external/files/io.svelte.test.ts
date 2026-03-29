@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
-import { addExchangeResult, buildEmptyTree, updateExchangeResponse } from '@/domain/tree';
+import { addExchangeResult, buildEmptyTree, updateExchangeResponse } from '@/domain';
 
 // Mock external dependencies
 vi.mock('svelte-sonner', () => ({
@@ -22,13 +22,15 @@ vi.mock('jszip', () => {
 });
 
 vi.mock('@/state', async () => {
+	const actual = await vi.importActual<typeof import('@/state')>('@/state');
 	const { buildEmptyTree, addExchangeResult, updateExchangeResponse, getMainChatTail } =
-		await vi.importActual<typeof import('@/domain/tree')>('@/domain/tree');
+		await vi.importActual<typeof import('@/domain')>('@/domain');
 	const empty = buildEmptyTree();
 	const result = addExchangeResult(empty, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
 	const exchanges = updateExchangeResponse(result.exchanges, result.id, 'world');
 	const tree = { rootId: result.rootId, exchanges };
 	return {
+		...actual,
 		chatState: {
 			chats: [
 				{
@@ -53,14 +55,50 @@ vi.mock('@/state', async () => {
 	};
 });
 
-vi.mock('@/lib/validate-md', () => ({
+vi.mock('@/lib', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/lib')>()),
 	validate: vi.fn().mockReturnValue([])
+}));
+
+vi.mock('@/external', () => ({
+	validateChatUpload: vi.fn((data) => data),
+	deduplicateName: vi.fn((name: string, existingNames: string[]) => {
+		if (!existingNames.includes(name)) return name;
+		const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
+		const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
+		let i = 1;
+		while (existingNames.includes(`${base} (${i})${ext}`)) i++;
+		return `${base} (${i})${ext}`;
+	}),
+	DEFAULT_OLLAMA_URL: 'http://localhost:11434',
+	fetchAvailableModels: vi.fn(),
+	fetchModelContextLength: vi.fn(),
+	getWebLLMModels: vi.fn(() => []),
+	loadWebLLMModel: vi.fn(),
+	deleteModelCache: vi.fn(),
+	deleteAllModelCaches: vi.fn(),
+	clearProviderKey: vi.fn(),
+	loadAllApiKeys: vi.fn(),
+	migrateVault: vi.fn(),
+	saveApiKey: vi.fn(),
+	storedProviders: vi.fn(() => []),
+	getPersistedLayout: vi.fn(() => ({})),
+	saveToStorage: vi.fn(),
+	setPersistedLayout: vi.fn(),
+	startStream: vi.fn(),
+	cancelStream: vi.fn(),
+	cancelAllStreams: vi.fn(),
+	cancelStreamsForExchanges: vi.fn(),
+	cancelStreamsForChat: vi.fn(),
+	isStreaming: vi.fn(() => false),
+	isAnyStreaming: vi.fn(() => false),
+	getProviderStream: vi.fn()
 }));
 
 import { toast } from 'svelte-sonner';
 import { chatState } from '@/state';
 import { docState } from '@/state';
-import { validate } from '@/lib/validate-md';
+import { validate } from '@/lib';
 import {
 	downloadToFile,
 	downloadChat,
@@ -69,7 +107,7 @@ import {
 	downloadFolder,
 	uploadFolder,
 	uploadFolderToFolder
-} from './io.svelte';
+} from '@/app';
 
 // ── DOM mocking helpers ─────────────────────────────────────────────────────
 
@@ -169,7 +207,7 @@ beforeEach(() => {
 	] as typeof docState.folders;
 });
 
-describe('io.svelte', () => {
+describe('app/files', () => {
 	describe('downloadToFile', () => {
 		it('creates a JSON blob and triggers download', () => {
 			downloadToFile();

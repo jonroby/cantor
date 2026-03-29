@@ -1,10 +1,6 @@
 <script lang="ts">
-	import type { ActiveModel } from '@/domain/models';
-	import type {
-		WebLLMStatus,
-		WebLLMModelEntry,
-		WebLLMContextSize
-	} from '@/external/providers/webllm';
+	import type { ActiveModel } from '@/domain';
+	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '@/external';
 	import Input from '@/view/components/custom/input.svelte';
 
 	interface Props {

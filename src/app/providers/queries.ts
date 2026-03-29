@@ -1,5 +1,5 @@
-import { getWebLLMModels } from '@/external/providers/webllm';
-import { migrateVault, storedProviders as getStoredProviders } from '@/external/providers/vault';
+import { getWebLLMModels } from '@/external';
+import { migrateVault, storedProviders as getStoredProviders } from '@/external';
 import { providerState } from '@/state';
 
 export function initProviders() {

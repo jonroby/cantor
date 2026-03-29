@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import WebLLMTab from './WebLLMTab.svelte';
-import type { ActiveModel } from '@/domain/models';
-import type { WebLLMModelEntry, WebLLMContextSize } from '@/external/providers/webllm';
+import type { ActiveModel } from '@/domain';
+import type { WebLLMModelEntry, WebLLMContextSize } from '@/external';
 
 const CONTEXT_OPTIONS: ReadonlyArray<{ label: string; value: WebLLMContextSize }> = [
 	{ label: '4K', value: 4_096 },

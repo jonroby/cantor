@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
 	import { toast } from 'svelte-sonner';
-	import { getDefaultItems, searchChats, type SearchResult } from '@/domain/search';
-	import type { Chat } from '@/domain/tree';
+	import { getDefaultItems, searchChats, type SearchResult } from '@/domain';
+	import type { Chat } from '@/domain';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar, SearchDialog } from '@/view/shared';
 	import { routerState } from '@/view/routes/router.svelte';
@@ -27,7 +27,7 @@
 		renameDocInFolder,
 		moveDocToFolder
 	} from '@/state';
-	import { loadFromStorage, saveToStorage } from '@/external/persistence/database';
+	import { loadFromStorage, saveToStorage } from '@/external';
 	import type { ChatFolder } from '@/state';
 	import {
 		downloadChat,
@@ -36,15 +36,15 @@
 		uploadDocToFolder,
 		uploadFolder,
 		uploadFolderToFolder
-	} from '@/app/files';
-	import { init as initProviders, autoConnectOllama } from '@/app/providers';
-	import { cancelStreamsForChat } from '@/external/streams';
+	} from '@/app';
+	import { init as initProviders, autoConnectOllama } from '@/app';
+	import { cancelStreamsForChat } from '@/external';
 	import {
 		performAddFolderDocumentToChat,
 		performCreateDocument,
 		performOpenDocument,
 		restoreOpenDocument
-	} from '@/app/documents';
+	} from '@/app';
 
 	function deduplicate(name: string, existing: string[]): string {
 		if (!existing.includes(name)) return name;

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { PROVIDER_MODELS, PROVIDER_CONFIG, KEY_BASED_PROVIDERS } from '@/domain/models';
-	import type { ActiveModel, Provider } from '@/domain/models';
-	import { PROVIDER_LOGOS } from '@/domain/models/logos';
+	import { PROVIDER_MODELS, PROVIDER_CONFIG, KEY_BASED_PROVIDERS } from '@/domain';
+	import type { ActiveModel, Provider } from '@/domain';
+	import { PROVIDER_LOGOS } from '@/domain';
 
 	interface Props {
 		activeModel: ActiveModel | null;

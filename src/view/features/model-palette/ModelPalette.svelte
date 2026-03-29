@@ -1,18 +1,14 @@
 <script lang="ts">
 	import './palette.css';
-	import { PROVIDER_MODELS } from '@/domain/models';
-	import type { ActiveModel, Provider } from '@/domain/models';
-	import type {
-		WebLLMStatus,
-		WebLLMModelEntry,
-		WebLLMContextSize
-	} from '@/external/providers/webllm';
-	import { PROVIDER_LOGOS } from '@/domain/models/logos';
+	import { PROVIDER_MODELS } from '@/domain';
+	import type { ActiveModel, Provider } from '@/domain';
+	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '@/external';
+	import { PROVIDER_LOGOS } from '@/domain';
 	import OllamaTab from './OllamaTab.svelte';
 	import FrontierTab from './FrontierTab.svelte';
 	import WebLLMTab from './WebLLMTab.svelte';
 	import ApiKeyFlow from './ApiKeyFlow.svelte';
-	import type { OllamaStatus } from '@/domain/models';
+	import type { OllamaStatus } from '@/domain';
 
 	interface Props {
 		open: boolean;

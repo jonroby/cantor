@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import ChatMessage from './ChatMessage.svelte';
-import type { ExchangeNodeData } from '@/app/chat/types';
+import type { ExchangeNodeData } from '@/app';
 
 vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
 }));
 
-vi.mock('@/lib/document-map/index', () => ({
+vi.mock('@/lib', () => ({
 	mapDocument: (text: string) =>
 		text
 			? text.split('\n\n').map((block) => ({
@@ -24,7 +24,7 @@ vi.mock('dompurify', () => ({
 	default: { sanitize: (html: string) => html }
 }));
 
-vi.mock('@/domain/models/logos', () => ({
+vi.mock('@/domain', () => ({
 	PROVIDER_LOGOS: {}
 }));
 

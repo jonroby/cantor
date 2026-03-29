@@ -4,12 +4,7 @@
 	import Button from '@/view/components/custom/button.svelte';
 	import ChatMessage from './ChatMessage.svelte';
 	import { ChatInput } from '@/view/shared';
-	import {
-		getChildExchanges,
-		getRootExchange,
-		type Exchange,
-		type DeleteMode
-	} from '@/domain/tree';
+	import { getChildExchanges, getRootExchange, type Exchange, type DeleteMode } from '@/domain';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -33,12 +28,12 @@
 		performCopy,
 		performQuickAsk,
 		getDeleteMode
-	} from '@/app/chat';
+	} from '@/app';
 	import {
 		clearDocumentLayout,
 		performAddFolderDocumentToChat,
 		performCloseDocumentPanel
-	} from '@/app/documents';
+	} from '@/app';
 	import { providerState } from '@/state';
 
 	// ── Panel state ─────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import SearchDialog from './SearchDialog.svelte';
-import type { SearchResult } from '@/domain/search';
+import type { SearchResult } from '@/domain';
 
 const ITEMS: SearchResult[] = [
 	{

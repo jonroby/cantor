@@ -42,7 +42,7 @@ Allowed imports:
 - `state` may import `domain` and `lib`
 - `external` may import `domain` and `lib`
 - `app` may import `domain`, `lib`, `state`, and `external`
-- `view` may import `app`, `lib`, and other `view` modules
+- `view` may import `app` and other `view` modules
 
 Forbidden imports:
 
@@ -51,7 +51,7 @@ Forbidden imports:
 - `state` must not import `external`, `app`, or `view`
 - `external` must not import `state`, `app`, or `view`
 - `app` must not import `view`
-- `view` must not import `domain`, `state`, or `external`
+- `view` must not import `domain`, `lib`, `state`, or `external`
 
 This means:
 

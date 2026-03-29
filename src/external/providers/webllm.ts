@@ -6,9 +6,9 @@ import {
 	type WebWorkerMLCEngine,
 	type InitProgressReport
 } from '@mlc-ai/web-llm';
-import type { Message } from '@/domain/tree';
-import { WEBLLM_CONTEXT_OPTIONS, type WebLLMContextSize } from '@/lib/provider-defaults';
-import type { WebLLMModelEntry, WebLLMStatus } from '@/lib/provider-types';
+import type { Message } from '@/domain';
+import { WEBLLM_CONTEXT_OPTIONS, type WebLLMContextSize } from '@/lib';
+import type { WebLLMModelEntry, WebLLMStatus } from '@/lib';
 import type { StreamChunk } from './stream';
 
 export { WEBLLM_CONTEXT_OPTIONS };

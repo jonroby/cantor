@@ -5,7 +5,7 @@ import {
 	type ChatTree,
 	type Chat,
 	type ExchangeMap
-} from '@/domain/tree';
+} from '@/domain';
 import { buildInitialExchanges } from '@/state/initial-exchanges';
 
 function makeDefaultChat(): Chat {

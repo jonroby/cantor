@@ -8,7 +8,7 @@ vi.mock('@/state', () => ({
 	replaceTreeByChatId: vi.fn()
 }));
 
-vi.mock('@/external/streams', () => ({
+vi.mock('@/external', () => ({
 	isStreaming: vi.fn(() => false),
 	cancelStreamsForExchanges: vi.fn(),
 	startStream: vi.fn(),
@@ -30,18 +30,13 @@ import {
 	type ChatActionDeps
 } from './chat-actions';
 
-import {
-	addExchangeResult,
-	buildEmptyTree,
-	updateExchangeResponse,
-	type ChatTree
-} from '@/domain/tree';
+import { addExchangeResult, buildEmptyTree, updateExchangeResponse, type ChatTree } from '@/domain';
 
 /** Convenience: update response on a ChatTree, returning a new ChatTree */
 function setResponse(tree: ChatTree, exchangeId: string, text: string): ChatTree {
 	return { ...tree, exchanges: updateExchangeResponse(tree.exchanges, exchangeId, text) };
 }
-import type { Provider } from '@/domain/models';
+import type { Provider } from '@/domain';
 
 // ── Constants & helpers ──────────────────────────────────────────────────────
 

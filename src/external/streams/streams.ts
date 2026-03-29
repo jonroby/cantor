@@ -1,8 +1,8 @@
 import { createActor, type Actor, type SnapshotFrom } from 'xstate';
 import { streamMachine, type StreamMachineInput } from './stream.machine';
-import type { ActiveModel } from '@/domain/models';
-import type { ChatTree, Message } from '@/domain/tree';
-import { getHistory, updateExchangeResponse, updateExchangeTokens } from '@/domain/tree';
+import type { ActiveModel } from '@/domain';
+import type { ChatTree, Message } from '@/domain';
+import { getHistory, updateExchangeResponse, updateExchangeTokens } from '@/domain';
 import type { StreamChunk } from '@/external/providers/stream';
 
 type StreamActor = Actor<typeof streamMachine>;

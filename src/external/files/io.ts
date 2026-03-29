@@ -4,7 +4,7 @@ import {
 	findRootId,
 	type Chat,
 	type ExchangeMap
-} from '@/domain/tree';
+} from '@/domain';
 
 export { findRootId };
 

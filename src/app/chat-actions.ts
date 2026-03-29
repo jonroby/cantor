@@ -1,5 +1,5 @@
-import type { ActiveModel } from '@/domain/models';
-import type { ChatTree, DeleteMode, ExchangeMap } from '@/domain/tree';
+import type { ActiveModel } from '@/domain';
+import type { ChatTree, DeleteMode, ExchangeMap } from '@/domain';
 import {
 	addDocToChat,
 	copyChat,

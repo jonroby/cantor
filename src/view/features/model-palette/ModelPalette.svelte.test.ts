@@ -4,10 +4,11 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ModelPalette from './ModelPalette.svelte';
-import type { ActiveModel } from '@/domain/models';
-import type { WebLLMContextSize } from '@/external/providers/webllm';
+import type { ActiveModel } from '@/domain';
+import type { WebLLMContextSize } from '@/external';
 
-vi.mock('@/domain/models/logos', () => ({
+vi.mock('@/domain', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/domain')>()),
 	PROVIDER_LOGOS: {}
 }));
 

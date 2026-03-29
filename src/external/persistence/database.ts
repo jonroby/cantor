@@ -1,6 +1,6 @@
 import { chatState, hydrate } from '@/state';
 import { docState } from '@/state';
-import type { Chat } from '@/domain/tree';
+import type { Chat } from '@/domain';
 import type { ChatFolder } from '@/state';
 
 const STORAGE_KEY = 'chat-tree-store-svelte';
