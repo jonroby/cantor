@@ -5,9 +5,10 @@ vi.mock('@/state', async () => {
 	const { createStateMock } = await import('@/tests/mocks/state');
 	return createStateMock({
 		chats: {
+			addChat: vi.fn(),
+			getActiveChat: vi.fn(),
 			replaceActiveTree: vi.fn(),
 			setActiveExchangeId: vi.fn(),
-			copyToNewChat: vi.fn(),
 			getTreeByChatId: vi.fn(),
 			replaceTreeByChatId: vi.fn()
 		}
@@ -60,9 +61,16 @@ const MODEL = 'claude-sonnet-4-6';
 
 function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
 	return {
+		addChat: vi.fn(() => 0),
+		getActiveChat: vi.fn(() => ({
+			id: 'chat-1',
+			name: 'Chat 1',
+			rootId: null,
+			exchanges: {},
+			activeExchangeId: null
+		})),
 		replaceActiveTree: vi.fn(),
 		setActiveExchangeId: vi.fn(),
-		copyToNewChat: vi.fn(),
 		isStreaming: vi.fn(() => false),
 		cancelStreamsForExchanges: vi.fn(),
 		...overrides
@@ -235,10 +243,25 @@ describe('promoteExchange', () => {
 // ── copyChat ────────────────────────────────────────────────────────────────
 
 describe('copyChat', () => {
-	it('delegates to deps.copyToNewChat', () => {
+	it('creates a copied chat from the selected path', () => {
+		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
-		copyChat('exchange-123', deps);
-		expect(deps.copyToNewChat).toHaveBeenCalledWith('exchange-123');
+		vi.mocked(deps.getActiveChat).mockReturnValue({
+			id: 'chat-1',
+			name: 'Source',
+			rootId: tree.rootId,
+			exchanges: tree.exchanges,
+			activeExchangeId: leafId
+		});
+
+		copyChat(leafId, deps);
+
+		expect(deps.addChat).toHaveBeenCalledOnce();
+		const added = vi.mocked(deps.addChat).mock.calls[0]![0];
+		expect(added.name).toBe('Copy Path (1)');
+		expect(() =>
+			domain.tree.validateChatTree({ rootId: added.rootId, exchanges: added.exchanges })
+		).not.toThrow();
 	});
 });
 

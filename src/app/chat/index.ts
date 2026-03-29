@@ -19,7 +19,8 @@ function deduplicateImportedName(name: string, existingNames: string[]): string 
 export interface ChatActionDeps {
 	replaceActiveTree: (tree: domain.tree.ChatTree) => void;
 	setActiveExchangeId: (id: string | null) => void;
-	copyToNewChat: (exchangeId: string) => void;
+	getActiveChat: () => state.chats.ChatRecord;
+	addChat: (chat: state.chats.ChatRecord) => number;
 	cancelStreamsForExchanges: (ids: string[]) => void;
 	isStreaming: (exchangeId: string) => boolean;
 }
@@ -29,7 +30,8 @@ export type DeleteMode = 'exchange' | 'exchangeAndMainChat' | 'exchangeAndSideCh
 const defaultDeps: ChatActionDeps = {
 	replaceActiveTree: state.chats.replaceActiveTree,
 	setActiveExchangeId: state.chats.setActiveExchangeId,
-	copyToNewChat: state.chats.copyToNewChat,
+	getActiveChat: state.chats.getActiveChat,
+	addChat: state.chats.addChat,
 	cancelStreamsForExchanges: external.streams.cancelStreamsForExchanges,
 	isStreaming: external.streams.isStreaming
 };
@@ -201,9 +203,66 @@ export function promoteExchange(
 
 export function copyChat(
 	exchangeId: string,
-	deps: Pick<ChatActionDeps, 'copyToNewChat'> = defaultDeps
+	deps: Pick<ChatActionDeps, 'getActiveChat' | 'addChat'> = defaultDeps
 ) {
-	deps.copyToNewChat(exchangeId);
+	const activeChat = deps.getActiveChat();
+	if (!activeChat) return;
+
+	const path = domain.tree.getPath(
+		{ rootId: activeChat.rootId, exchanges: activeChat.exchanges },
+		exchangeId
+	);
+
+	const idMap = new Map<string, string>();
+	for (const exchange of path) {
+		idMap.set(exchange.id, crypto.randomUUID());
+	}
+
+	const copiedExchanges: domain.tree.ExchangeMap = {};
+	let copiedRootId: string | null = null;
+	for (const exchange of path) {
+		const copiedId = idMap.get(exchange.id)!;
+		const copiedParentId =
+			exchange.parentId === null ? null : (idMap.get(exchange.parentId) ?? null);
+
+		copiedExchanges[copiedId] = {
+			id: copiedId,
+			parentId: copiedParentId,
+			childIds: [],
+			prompt: { ...exchange.prompt },
+			response: exchange.response ? { ...exchange.response } : null,
+			model: exchange.model,
+			provider: exchange.provider,
+			createdAt: Date.now(),
+			label: exchange.label
+		};
+
+		if (copiedParentId === null) {
+			copiedRootId = copiedId;
+		} else {
+			copiedExchanges[copiedParentId] = {
+				...copiedExchanges[copiedParentId]!,
+				childIds: [...copiedExchanges[copiedParentId]!.childIds, copiedId]
+			};
+		}
+	}
+
+	const existingNames = getChats().map((chat) => chat.name);
+	let i = 1;
+	let name = `Copy Path (${i})`;
+	while (existingNames.includes(name)) {
+		i++;
+		name = `Copy Path (${i})`;
+	}
+
+	const copiedTree: domain.tree.ChatTree = { rootId: copiedRootId, exchanges: copiedExchanges };
+	deps.addChat({
+		id: crypto.randomUUID(),
+		name,
+		rootId: copiedTree.rootId,
+		exchanges: copiedTree.exchanges,
+		activeExchangeId: domain.tree.getMainChatTail(copiedTree)
+	});
 }
 
 export function submitPrompt(

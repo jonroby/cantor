@@ -72,7 +72,6 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		},
 		getActiveChat: vi.fn(),
 		getActiveExchangeId: vi.fn(),
-		getActiveExchanges: vi.fn(() => ({})),
 		isStreaming: vi.fn(() => false),
 		loadFromStorage: vi.fn(),
 		moveDocToFolder: vi.fn(),

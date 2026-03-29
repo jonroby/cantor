@@ -1,21 +1,17 @@
 {
 	"chats": {
+		"addChat": true,
 		"chatState": true,
-		"copyToNewChat": true,
 		"deleteChat": true,
 		"getActiveChat": true,
 		"getActiveExchangeId": true,
-		"getActiveExchanges": true,
 		"getActiveTree": true,
 		"getChatById": true,
-		"getExchangesByChatId": true,
 		"getTreeByChatId": true,
 		"hydrate": true,
 		"newChat": true,
 		"renameChat": true,
-		"replaceActiveExchanges": true,
 		"replaceActiveTree": true,
-		"replaceExchangesByChatId": true,
 		"replaceTreeByChatId": true,
 		"selectChat": true,
 		"setActiveExchangeId": true
@@ -35,8 +31,6 @@
 	},
 	"providers": {
 		"providerState": true,
-		"selectModel": true,
-		"updateContextLength": true,
-		"WEBLLM_CONTEXT_OPTIONS": true
+		"selectModel": true
 	}
 }

@@ -1,23 +1,19 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
+	addChat,
 	chatState,
 	getActiveChat,
-	getActiveExchanges,
 	getActiveTree,
 	getActiveExchangeId,
 	getChatById,
-	getExchangesByChatId,
 	getTreeByChatId,
-	replaceExchangesByChatId,
 	replaceTreeByChatId,
-	replaceActiveExchanges,
 	replaceActiveTree,
 	setActiveExchangeId,
 	newChat,
 	selectChat,
 	deleteChat,
 	renameChat,
-	copyToNewChat,
 	hydrate
 } from './chats.svelte';
 import * as domain from '@/domain';
@@ -80,13 +76,6 @@ describe('chats state', () => {
 		});
 	});
 
-	describe('getActiveExchanges', () => {
-		it('returns the exchanges of the active chat', () => {
-			const exchanges = getActiveExchanges();
-			expect(Object.keys(exchanges).length).toBeGreaterThan(0);
-		});
-	});
-
 	describe('getActiveTree', () => {
 		it('tracks the currently selected chat', () => {
 			const firstTree = buildTreeWithExchanges(2);
@@ -122,18 +111,6 @@ describe('chats state', () => {
 		});
 	});
 
-	describe('getExchangesByChatId', () => {
-		it('returns exchanges for existing chat', () => {
-			const exchanges = getExchangesByChatId('test-chat-1');
-			expect(exchanges).toBeDefined();
-			expect(Object.keys(exchanges!).length).toBeGreaterThan(0);
-		});
-
-		it('returns undefined for nonexistent chat', () => {
-			expect(getExchangesByChatId('nope')).toBeUndefined();
-		});
-	});
-
 	describe('getTreeByChatId', () => {
 		it('returns ChatTree for existing chat', () => {
 			const tree = getTreeByChatId('test-chat-1');
@@ -143,34 +120,6 @@ describe('chats state', () => {
 
 		it('returns undefined for nonexistent chat', () => {
 			expect(getTreeByChatId('nope')).toBeUndefined();
-		});
-	});
-
-	describe('replaceExchangesByChatId', () => {
-		it('replaces exchanges on the matching chat', () => {
-			const newTree = buildTreeWithExchanges(3);
-			replaceExchangesByChatId('test-chat-1', newTree.exchanges);
-			expect(Object.keys(chatState.chats[0].exchanges).length).toBe(
-				Object.keys(newTree.exchanges).length
-			);
-		});
-
-		it('does nothing for nonexistent chat id', () => {
-			const before = { ...chatState.chats[0].exchanges };
-			replaceExchangesByChatId('nope', {});
-			expect(Object.keys(chatState.chats[0].exchanges).length).toBe(Object.keys(before).length);
-		});
-
-		it('does not modify other chats', () => {
-			const first = makeChat('A', buildTreeWithExchanges(1));
-			const second = makeChat('B', buildTreeWithExchanges(2));
-			const replacement = buildTreeWithExchanges(4);
-			chatState.chats = [first, second];
-
-			replaceExchangesByChatId(second.id, replacement.exchanges);
-
-			expect(Object.keys(chatState.chats[0].exchanges)).toHaveLength(1);
-			expect(Object.keys(chatState.chats[1].exchanges)).toHaveLength(4);
 		});
 	});
 
@@ -198,22 +147,6 @@ describe('chats state', () => {
 
 			expect(chatState.chats[0].rootId).toBe(first.rootId);
 			expect(chatState.chats[1].rootId).toBe(replacement.rootId);
-		});
-	});
-
-	describe('replaceActiveExchanges', () => {
-		it('replaces exchanges on the selected active chat only', () => {
-			chatState.chats = [
-				makeChat('A', buildTreeWithExchanges(1)),
-				makeChat('B', buildTreeWithExchanges(2))
-			];
-			selectChat(1);
-			const newTree = buildTreeWithExchanges(3);
-
-			replaceActiveExchanges(newTree.exchanges);
-
-			expect(Object.keys(chatState.chats[0].exchanges)).toHaveLength(1);
-			expect(chatState.chats[1].exchanges).toBe(newTree.exchanges);
 		});
 	});
 
@@ -251,6 +184,17 @@ describe('chats state', () => {
 		it('can set to null', () => {
 			setActiveExchangeId(null);
 			expect(chatState.chats[0].activeExchangeId).toBeNull();
+		});
+	});
+
+	describe('addChat', () => {
+		it('appends a chat and selects it', () => {
+			const chat = makeChat('Added', buildTreeWithExchanges(2));
+			const index = addChat(chat);
+
+			expect(index).toBe(1);
+			expect(chatState.chats[1]).toBe(chat);
+			expect(chatState.activeChatIndex).toBe(1);
 		});
 	});
 
@@ -379,79 +323,6 @@ describe('chats state', () => {
 			chatState.chats = [makeChat('A'), makeChat('B')];
 			expect(renameChat(0, 'A')).toBe(true);
 			const names = chatState.chats.map((c) => c.name);
-			expect(new Set(names).size).toBe(names.length);
-		});
-	});
-
-	describe('copyToNewChat', () => {
-		it('creates a new chat from copied path', () => {
-			const tree = buildTreeWithExchanges(3);
-			chatState.chats = [
-				{
-					id: 'src',
-					name: 'Source',
-					rootId: tree.rootId,
-					exchanges: tree.exchanges,
-					activeExchangeId: domain.tree.getMainChatTail(tree)
-				}
-			];
-			chatState.activeChatIndex = 0;
-
-			const tail = domain.tree.getMainChatTail(tree)!;
-			copyToNewChat(tail);
-
-			expect(chatState.chats.length).toBe(2);
-			expect(chatState.activeChatIndex).toBe(1);
-			expect(chatState.chats[1].name).toBe('Copy Path (1)');
-		});
-
-		it('copied chat has a valid tree', () => {
-			const tree = buildTreeWithExchanges(3);
-			chatState.chats = [
-				{
-					id: 'src',
-					name: 'Source',
-					rootId: tree.rootId,
-					exchanges: tree.exchanges,
-					activeExchangeId: domain.tree.getMainChatTail(tree)
-				}
-			];
-			chatState.activeChatIndex = 0;
-
-			const tail = domain.tree.getMainChatTail(tree)!;
-			copyToNewChat(tail);
-
-			const copiedTree = getTreeByChatId(chatState.chats[1].id);
-			expect(copiedTree).toBeDefined();
-			expect(() => domain.tree.validateChatTree(copiedTree!)).not.toThrow();
-		});
-
-		it('does nothing if no active chat', () => {
-			chatState.chats = [];
-			chatState.activeChatIndex = 0;
-			copyToNewChat('some-id');
-			expect(chatState.chats.length).toBe(0);
-		});
-
-		it('skips copy names that are already taken', () => {
-			const tree = buildTreeWithExchanges(3);
-			chatState.chats = [
-				{
-					id: 'src',
-					name: 'Source',
-					rootId: tree.rootId,
-					exchanges: tree.exchanges,
-					activeExchangeId: domain.tree.getMainChatTail(tree)
-				},
-				makeChat('Copy Path (1)'),
-				makeChat('Copy Path (2)')
-			];
-			chatState.activeChatIndex = 0;
-
-			copyToNewChat(domain.tree.getMainChatTail(tree)!);
-
-			expect(chatState.chats.at(-1)?.name).toBe('Copy Path (3)');
-			const names = chatState.chats.map((chat) => chat.name);
 			expect(new Set(names).size).toBe(names.length);
 		});
 	});

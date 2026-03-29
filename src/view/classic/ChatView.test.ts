@@ -279,7 +279,7 @@ describe('ChatView', () => {
 			await userEvent.click(screen.getByRole('button', { name: 'Send message' }));
 			await tick();
 
-			const exchanges = state.chats.getActiveExchanges();
+			const exchanges = state.chats.getActiveTree().exchanges;
 			const sideChatChildren = domain.tree.getChildren(
 				{ rootId: state.chats.getActiveChat().rootId, exchanges },
 				sideChatParentId
@@ -351,7 +351,7 @@ describe('ChatView', () => {
 			resetState(buildVisibleTree(2));
 			render(ChatView);
 
-			const beforeCount = Object.keys(state.chats.getActiveExchanges()).length;
+			const beforeCount = Object.keys(state.chats.getActiveTree().exchanges).length;
 
 			const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
 			await userEvent.click(deleteButtons[0]);
@@ -360,7 +360,7 @@ describe('ChatView', () => {
 			await userEvent.click(screen.getByText('Confirm delete'));
 			await tick();
 
-			const afterCount = Object.keys(state.chats.getActiveExchanges()).length;
+			const afterCount = Object.keys(state.chats.getActiveTree().exchanges).length;
 			expect(afterCount).toBeLessThan(beforeCount);
 		});
 
@@ -368,7 +368,7 @@ describe('ChatView', () => {
 			resetState(buildVisibleTree(2));
 			render(ChatView);
 
-			const beforeCount = Object.keys(state.chats.getActiveExchanges()).length;
+			const beforeCount = Object.keys(state.chats.getActiveTree().exchanges).length;
 
 			const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
 			await userEvent.click(deleteButtons[0]);
@@ -378,7 +378,7 @@ describe('ChatView', () => {
 			await tick();
 
 			expect(screen.queryByText('Delete exchange')).not.toBeInTheDocument();
-			expect(Object.keys(state.chats.getActiveExchanges()).length).toBe(beforeCount);
+			expect(Object.keys(state.chats.getActiveTree().exchanges).length).toBe(beforeCount);
 		});
 	});
 

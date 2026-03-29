@@ -8,7 +8,7 @@ vi.mock('@mlc-ai/web-llm', () => ({
 	hasModelInCache: vi.fn()
 }));
 
-import { providerState, selectModel, updateContextLength } from './providers.svelte';
+import { providerState, selectModel } from './providers.svelte';
 
 describe('providers state', () => {
 	beforeEach(() => {
@@ -42,50 +42,6 @@ describe('providers state', () => {
 			selectModel({ provider: 'claude' as const, modelId: 'claude-sonnet-4-6' });
 			selectModel({ provider: 'ollama' as const, modelId: 'llama3' });
 			expect(providerState.activeModel).toEqual({ provider: 'ollama', modelId: 'llama3' });
-		});
-	});
-
-	describe('updateContextLength', () => {
-		it('sets the documented context length for a known Claude model', () => {
-			selectModel({ provider: 'claude' as const, modelId: 'claude-sonnet-4-6' });
-			updateContextLength();
-			expect(providerState.contextLength).toBe(1_000_000);
-		});
-
-		it('recomputes when switching between different key-based providers', () => {
-			selectModel({ provider: 'claude' as const, modelId: 'claude-haiku-4-5' });
-			updateContextLength();
-			expect(providerState.contextLength).toBe(200_000);
-
-			selectModel({ provider: 'openai' as const, modelId: 'gpt-4o' });
-			updateContextLength();
-			expect(providerState.contextLength).toBe(128_000);
-		});
-
-		it('clears contextLength when activeModel is null', () => {
-			providerState.contextLength = 999;
-			updateContextLength();
-			expect(providerState.contextLength).toBe(null);
-		});
-
-		it('clears stale contextLength for non-key-based provider (ollama)', () => {
-			selectModel({ provider: 'ollama' as const, modelId: 'llama3' });
-			providerState.contextLength = 999;
-			updateContextLength();
-			expect(providerState.contextLength).toBe(null);
-		});
-
-		it('clears stale contextLength for non-key-based provider (webllm)', () => {
-			selectModel({ provider: 'webllm' as const, modelId: 'some-model' });
-			providerState.contextLength = 999;
-			updateContextLength();
-			expect(providerState.contextLength).toBe(null);
-		});
-
-		it('sets null for unknown model on key-based provider', () => {
-			selectModel({ provider: 'claude' as const, modelId: 'nonexistent-model' });
-			updateContextLength();
-			expect(providerState.contextLength).toBe(null);
 		});
 	});
 });
