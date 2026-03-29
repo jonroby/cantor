@@ -262,8 +262,12 @@ describe('canCreateSideChats and canAcceptNewChat', () => {
 
 	it('throws for a missing exchange in an empty map', () => {
 		const empty = buildEmptyTree();
-		expect(() => constraints.canCreateSideChats(empty, 'missing')).toThrow('not found in tree');
-		expect(() => constraints.canAcceptNewChat(empty, 'missing')).toThrow('not found in tree');
+		expect(() => constraints.canCreateSideChats(empty, 'missing')).toThrow(
+			'Cannot get path for missing exchange'
+		);
+		expect(() => constraints.canAcceptNewChat(empty, 'missing')).toThrow(
+			'Cannot get path for missing exchange'
+		);
 	});
 
 	it('returns false for a root-only tree (no children)', () => {

@@ -3,9 +3,11 @@ import * as lib from '@/lib';
 
 describe('@/lib public API', () => {
 	it('exposes its public namespaces', () => {
-		expect(lib.rename).toBeDefined();
-		expect(lib.providerDefaults).toBeDefined();
-		expect(lib.providerTypes).toBeDefined();
-		expect(lib.validateMd).toBeDefined();
+		expect(Object.keys(lib).sort()).toEqual([
+			'providerDefaults',
+			'providerTypes',
+			'rename',
+			'validateMd'
+		]);
 	});
 });

@@ -151,7 +151,7 @@
 		focusPanel(mainPanel.id);
 	}
 
-	function addCurrentDocToChat() {
+	function addCurrentDocumentToChat() {
 		if (!documentContent) return;
 		app.documents.addDocumentToChat(documentContent.folderId, documentContent.fileId);
 	}
@@ -499,7 +499,7 @@
 								app.bootstrap.clearOpenDocument();
 								closeSidePanel();
 							}}
-							onAddToChat={addCurrentDocToChat}
+							onAddToChat={addCurrentDocumentToChat}
 						/>
 					</div>
 				{:else if !isDocumentPanel}

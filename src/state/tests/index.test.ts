@@ -3,8 +3,6 @@ import * as state from '@/state';
 
 describe('@/state public API', () => {
 	it('exposes its public namespaces', () => {
-		expect(state.chats).toBeDefined();
-		expect(state.documents).toBeDefined();
-		expect(state.providers).toBeDefined();
+		expect(Object.keys(state).sort()).toEqual(['chats', 'documents', 'providers']);
 	});
 });

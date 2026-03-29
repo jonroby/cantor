@@ -1,17 +1,11 @@
 import * as providers from '../providers/index';
 import * as external from '@/external';
 import * as state from '@/state';
+import * as lib from '@/lib';
 
 interface RestoredDocument {
 	folderId: string;
 	fileId: string;
-}
-
-function nextUniqueName(name: string, existing: string[]): string {
-	if (!existing.includes(name)) return name;
-	let i = 2;
-	while (existing.includes(`${name} (${i})`)) i++;
-	return `${name} (${i})`;
 }
 
 function repairDuplicateNames() {
@@ -19,31 +13,43 @@ function repairDuplicateNames() {
 
 	const chatNames: string[] = [];
 	for (const chat of state.chats.chatState.chats) {
-		const uniqueName = nextUniqueName(chat.name, chatNames);
+		const uniqueName = lib.rename.renameWithDedup(chat.name, (candidate) => {
+			if (chatNames.includes(candidate)) return false;
+			chatNames.push(candidate);
+			return true;
+		});
+		if (!uniqueName) continue;
 		if (uniqueName !== chat.name) {
 			chat.name = uniqueName;
 			changed = true;
 		}
-		chatNames.push(uniqueName);
 	}
 
 	const folderNames: string[] = [];
 	for (const folder of state.documents.documentState.folders) {
-		const uniqueName = nextUniqueName(folder.name, folderNames);
+		const uniqueName = lib.rename.renameWithDedup(folder.name, (candidate) => {
+			if (folderNames.includes(candidate)) return false;
+			folderNames.push(candidate);
+			return true;
+		});
+		if (!uniqueName) continue;
 		if (uniqueName !== folder.name) {
 			folder.name = uniqueName;
 			changed = true;
 		}
-		folderNames.push(uniqueName);
 
 		const fileNames: string[] = [];
 		for (const file of folder.files ?? []) {
-			const uniqueFileName = nextUniqueName(file.name, fileNames);
+			const uniqueFileName = lib.rename.renameWithDedup(file.name, (candidate) => {
+				if (fileNames.includes(candidate)) return false;
+				fileNames.push(candidate);
+				return true;
+			});
+			if (!uniqueFileName) continue;
 			if (uniqueFileName !== file.name) {
 				file.name = uniqueFileName;
 				changed = true;
 			}
-			fileNames.push(uniqueFileName);
 		}
 	}
 
@@ -71,8 +77,22 @@ export function initialize() {
 	let hadDuplicateRenames = false;
 
 	try {
-		external.persistence.loadFromStorage();
-	} catch {
+		const snapshot = external.persistence.loadFromStorage();
+		if (snapshot) {
+			state.chats.hydrate(snapshot);
+			state.documents.documentState.folders = snapshot.folders;
+		}
+	} catch (error) {
+		const snapshot =
+			error && typeof error === 'object' && 'snapshot' in error ? error.snapshot : null;
+		if (snapshot && typeof snapshot === 'object') {
+			state.chats.hydrate(
+				snapshot as { chats: typeof state.chats.chatState.chats; activeChatIndex: number }
+			);
+			state.documents.documentState.folders = (
+				snapshot as { folders: typeof state.documents.documentState.folders }
+			).folders;
+		}
 		hadDuplicateRenames = repairDuplicateNames();
 	}
 
@@ -84,14 +104,18 @@ export function initialize() {
 
 export function rememberOpenDocument(folderId: string, fileId: string) {
 	external.persistence.setPersistedLayout({ openDocument: { folderId, fileId } });
-	external.persistence.saveToStorage();
+	save();
 }
 
 export function clearOpenDocument() {
 	external.persistence.setPersistedLayout({});
-	external.persistence.saveToStorage();
+	save();
 }
 
 export function save() {
-	external.persistence.saveToStorage();
+	external.persistence.saveToStorage({
+		chats: state.chats.chatState.chats,
+		activeChatIndex: state.chats.chatState.activeChatIndex,
+		folders: state.documents.documentState.folders
+	});
 }

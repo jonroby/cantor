@@ -28,16 +28,7 @@ const declaredPackages = new Set([
 const AREA_ORDER = ['domain', 'lib', 'state', 'external', 'app', 'view'];
 
 const APPROVED_PUBLIC_NAMESPACES = {
-	app: new Set([
-		'bootstrap',
-		'chat',
-		'search',
-		'content',
-		'documents',
-		'providers',
-		'files',
-		'types'
-	]),
+	app: new Set(['bootstrap', 'chat', 'documents', 'providers']),
 	external: new Set(['persistence', 'files', 'providers', 'streams']),
 	state: new Set(['chats', 'documents', 'providers'])
 };
@@ -46,7 +37,7 @@ const AREA_RULES = {
 	domain: { allowedCrossAreaImports: new Set(), allowedPackages: null },
 	lib: { allowedCrossAreaImports: new Set(), allowedPackages: null },
 	state: { allowedCrossAreaImports: new Set(['domain', 'lib']), allowedPackages: null },
-	external: { allowedCrossAreaImports: new Set(['domain', 'lib', 'state']), allowedPackages: null },
+	external: { allowedCrossAreaImports: new Set(['domain', 'lib']), allowedPackages: null },
 	app: {
 		allowedCrossAreaImports: new Set(['domain', 'lib', 'state', 'external']),
 		allowedPackages: null

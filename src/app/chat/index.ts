@@ -1,6 +1,7 @@
 import * as domain from '@/domain';
 import * as state from '@/state';
 import * as external from '@/external';
+import * as lib from '@/lib';
 
 export interface ChatTransferFeedback {
 	success?: (message: string) => void;
@@ -8,13 +9,6 @@ export interface ChatTransferFeedback {
 }
 
 const NOOP_FEEDBACK: ChatTransferFeedback = {};
-
-function deduplicateImportedName(name: string, existingNames: string[]): string {
-	if (!existingNames.includes(name)) return name;
-	let i = 1;
-	while (existingNames.includes(`${name} (${i})`)) i++;
-	return `${name} (${i})`;
-}
 
 export interface ChatActionDeps {
 	replaceActiveTree: (tree: domain.tree.ChatTree) => void;
@@ -46,16 +40,7 @@ export const selectChat = state.chats.selectChat;
 export const removeChat = state.chats.deleteChat;
 
 export function renameChat(index: number, name: string): string | null {
-	const trimmed = name.trim();
-	if (!trimmed) return null;
-
-	let candidate = trimmed;
-	let i = 1;
-	while (!state.chats.renameChat(index, candidate)) {
-		candidate = `${trimmed} (${i})`;
-		i++;
-	}
-	return candidate;
+	return lib.rename.renameWithDedup(name, (candidate) => state.chats.renameChat(index, candidate));
 }
 
 export const selectExchange = state.chats.setActiveExchangeId;
@@ -248,12 +233,11 @@ export function copyChat(
 	}
 
 	const existingNames = getChats().map((chat) => chat.name);
-	let i = 1;
-	let name = `Copy Path (${i})`;
-	while (existingNames.includes(name)) {
-		i++;
-		name = `Copy Path (${i})`;
-	}
+	const name =
+		lib.rename.renameWithDedup(
+			'Copy Path (1)',
+			(candidate) => !existingNames.includes(candidate)
+		) ?? 'Copy Path (1)';
 
 	const copiedTree: domain.tree.ChatTree = { rootId: copiedRootId, exchanges: copiedExchanges };
 	deps.addChat({
@@ -301,12 +285,23 @@ export function submitPrompt(
 	deps.replaceActiveTree(created.tree);
 	deps.setActiveExchangeId(created.id);
 
-	external.streams.startStream({
-		exchangeId: created.id,
-		chatId,
-		model,
-		history
-	});
+	external.streams.startStream(
+		{
+			exchangeId: created.id,
+			chatId,
+			model,
+			history
+		},
+		{
+			getTreeByChatId: state.chats.getTreeByChatId,
+			replaceTreeByChatId: state.chats.replaceTreeByChatId,
+			getProviderStream: (activeModel, streamHistory, signal) =>
+				external.providers.stream.getProviderStream(activeModel, streamHistory, signal, {
+					apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
+					ollamaUrl: state.providers.providerState.ollamaUrl
+				})
+		}
+	);
 
 	return { id: created.id, parentId, hasSideChildren };
 }
@@ -366,44 +361,30 @@ export function exportState() {
 		2
 	);
 	const blob = new Blob([payload], { type: 'application/json' });
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement('a');
-	link.href = url;
-	link.download = `chat-tree-${Date.now()}.json`;
-	link.click();
-	URL.revokeObjectURL(url);
+	external.files.downloadBlob(blob, `chat-tree-${Date.now()}.json`);
 }
 
 export function exportChat(index: number) {
 	const chat = state.chats.chatState.chats[index];
 	const payload = JSON.stringify(chat, null, 2);
 	const blob = new Blob([payload], { type: 'application/json' });
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement('a');
-	link.href = url;
-	link.download = `${chat.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`;
-	link.click();
-	URL.revokeObjectURL(url);
+	external.files.downloadBlob(blob, `${chat.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`);
 }
 
 export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.accept = '.json';
-	input.onchange = async () => {
-		const file = input.files?.[0];
+	void external.files.pickFile('.json').then(async (file) => {
 		if (!file) return;
 		try {
 			const text = await file.text();
 			const data = JSON.parse(text);
 			const upload = external.files.validateChatUpload(data);
 			const baseName = file.name.replace(/\.json$/i, '');
+			const existingNames = state.chats.chatState.chats.map((chat) => chat.name);
 			const chat: state.chats.ChatRecord = {
 				id: crypto.randomUUID(),
-				name: deduplicateImportedName(
+				name:
+					lib.rename.renameWithDedup(baseName, (candidate) => !existingNames.includes(candidate)) ??
 					baseName,
-					state.chats.chatState.chats.map((c) => c.name)
-				),
 				rootId: upload.tree.rootId,
 				exchanges: upload.tree.exchanges,
 				activeExchangeId: upload.activeExchangeId
@@ -414,8 +395,7 @@ export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void
 		} catch (e) {
 			feedback.error?.(e instanceof Error ? e.message : 'Invalid chat file');
 		}
-	};
-	input.click();
+	});
 }
 
 export type Chat = state.chats.ChatRecord;

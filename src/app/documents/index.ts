@@ -1,5 +1,6 @@
 import * as state from '@/state';
 import * as lib from '@/lib';
+import * as external from '@/external';
 import JSZip from 'jszip';
 import { addDocumentToChat as appendDocumentToChat } from '@/app/chat';
 
@@ -24,12 +25,14 @@ export interface DocumentTransferFeedback {
 const NOOP_FEEDBACK: DocumentTransferFeedback = {};
 
 function deduplicateImportedName(name: string, existingNames: string[]): string {
-	if (!existingNames.includes(name)) return name;
 	const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
 	const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-	let i = 1;
-	while (existingNames.includes(`${base} (${i})${ext}`)) i++;
-	return `${base} (${i})${ext}`;
+	const deduplicatedBase =
+		lib.rename.renameWithDedup(
+			base,
+			(candidate) => !existingNames.includes(`${candidate}${ext}`)
+		) ?? base;
+	return `${deduplicatedBase}${ext}`;
 }
 
 const defaultDeps: DocumentCommandDeps = {
@@ -80,29 +83,15 @@ export function addDocumentToChat(
 }
 
 export function renameFolder(folderId: string, name: string): string | null {
-	const trimmed = name.trim();
-	if (!trimmed) return null;
-
-	let candidate = trimmed;
-	let i = 1;
-	while (!state.documents.renameFolder(folderId, candidate)) {
-		candidate = `${trimmed} (${i})`;
-		i++;
-	}
-	return candidate;
+	return lib.rename.renameWithDedup(name, (candidate) =>
+		state.documents.renameFolder(folderId, candidate)
+	);
 }
 export const deleteDocument = state.documents.deleteDocumentFromFolder;
 export function renameDocument(folderId: string, fileId: string, name: string): string | null {
-	const trimmed = name.trim();
-	if (!trimmed) return null;
-
-	let candidate = trimmed;
-	let i = 1;
-	while (!state.documents.renameDocumentInFolder(folderId, fileId, candidate)) {
-		candidate = `${trimmed} (${i})`;
-		i++;
-	}
-	return candidate;
+	return lib.rename.renameWithDedup(name, (candidate) =>
+		state.documents.renameDocumentInFolder(folderId, fileId, candidate)
+	);
 }
 export const moveDocument = state.documents.moveDocumentToFolder;
 export const updateDocumentContent = state.documents.updateDocumentContent;
@@ -112,11 +101,7 @@ export function importDocument(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.accept = '.md';
-	input.onchange = () => {
-		const file = input.files?.[0];
+	void external.files.pickFile('.md').then(async (file) => {
 		if (!file) return;
 		const folder = state.documents.documentState.folders.find(
 			(candidate) => candidate.id === folderId
@@ -125,32 +110,27 @@ export function importDocument(
 			feedback.error?.('Folder not found');
 			return;
 		}
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result !== 'string') return;
-			const errors = lib.validateMd.validate(reader.result);
-			if (errors.length > 0) {
-				feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
-				return;
-			}
-			const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
-			const name = deduplicateImportedName(file.name, existingNames);
-			const documentFile: state.documents.DocumentFile = {
-				id: crypto.randomUUID(),
-				name,
-				content: reader.result
-			};
-			state.documents.documentState.folders = state.documents.documentState.folders.map(
-				(candidate) =>
-					candidate.id === folderId
-						? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
-						: candidate
-			);
-			feedback.success?.(`Uploaded ${file.name}`);
+		const content = await file.text();
+		const errors = lib.validateMd.validate(content);
+		if (errors.length > 0) {
+			feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
+			return;
+		}
+		const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
+		const name = deduplicateImportedName(file.name, existingNames);
+		const documentFile: state.documents.DocumentFile = {
+			id: crypto.randomUUID(),
+			name,
+			content
 		};
-		reader.readAsText(file);
-	};
-	input.click();
+		state.documents.documentState.folders = state.documents.documentState.folders.map(
+			(candidate) =>
+				candidate.id === folderId
+					? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
+					: candidate
+		);
+		feedback.success?.(`Uploaded ${file.name}`);
+	});
 }
 
 export async function exportFolder(
@@ -169,14 +149,7 @@ export async function exportFolder(
 		zip.file(file.name, file.content);
 	}
 	const blob = await zip.generateAsync({ type: 'blob' });
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement('a');
-	link.href = url;
-	link.download = `${folder.name}.zip`;
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
-	setTimeout(() => URL.revokeObjectURL(url), 100);
+	external.files.downloadBlob(blob, `${folder.name}.zip`);
 }
 
 function importDocumentsIntoFolder(
@@ -197,10 +170,8 @@ function importDocumentsIntoFolder(
 	const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
 
 	for (const file of mdFiles) {
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result !== 'string') return;
-			const errors = lib.validateMd.validate(reader.result);
+		void file.text().then((content) => {
+			const errors = lib.validateMd.validate(content);
 			if (errors.length > 0) {
 				feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
 			} else {
@@ -209,7 +180,7 @@ function importDocumentsIntoFolder(
 				const documentFile: state.documents.DocumentFile = {
 					id: crypto.randomUUID(),
 					name,
-					content: reader.result
+					content
 				};
 				state.documents.documentState.folders = state.documents.documentState.folders.map(
 					(candidate) =>
@@ -224,20 +195,14 @@ function importDocumentsIntoFolder(
 			if (processed === mdFiles.length && imported > 0) {
 				feedback.success?.(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
 			}
-		};
-		reader.readAsText(file);
+		});
 	}
 }
 
 export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK) {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.webkitdirectory = true;
-	input.onchange = () => {
-		const files = input.files;
-		if (!files || files.length === 0) return;
-
-		const mdFiles = Array.from(files).filter((file) => file.name.endsWith('.md'));
+	void external.files.pickDirectory().then((files) => {
+		if (files.length === 0) return;
+		const mdFiles = files.filter((file) => file.name.endsWith('.md'));
 		if (mdFiles.length === 0) {
 			feedback.error?.('No .md files found in the selected folder');
 			return;
@@ -254,30 +219,23 @@ export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK)
 		state.documents.documentState.folders = [...state.documents.documentState.folders, folder];
 
 		importDocumentsIntoFolder(folderId, mdFiles, feedback);
-	};
-	input.click();
+	});
 }
 
 export function importFolderIntoFolder(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	const input = document.createElement('input');
-	input.type = 'file';
-	input.webkitdirectory = true;
-	input.onchange = () => {
-		const files = input.files;
-		if (!files || files.length === 0) return;
-
-		const mdFiles = Array.from(files).filter((file) => file.name.endsWith('.md'));
+	void external.files.pickDirectory().then((files) => {
+		if (files.length === 0) return;
+		const mdFiles = files.filter((file) => file.name.endsWith('.md'));
 		if (mdFiles.length === 0) {
 			feedback.error?.('No .md files found in the selected folder');
 			return;
 		}
 
 		importDocumentsIntoFolder(folderId, mdFiles, feedback);
-	};
-	input.click();
+	});
 }
 
 export function getDocument(

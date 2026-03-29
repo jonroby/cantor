@@ -1,5 +1,4 @@
 import * as domain from '@/domain';
-import * as state from '@/state';
 
 const STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
@@ -7,7 +6,33 @@ const LEGACY_VAULT_KEY = 'byok_vault';
 
 // --- Invariant checks ---
 
-function assertValidNames(chats: state.chats.ChatRecord[], folders: state.documents.ChatFolder[]) {
+interface PersistedChat {
+	id: string;
+	name: string;
+	rootId: string | null;
+	exchanges: domain.tree.ExchangeMap;
+	activeExchangeId: string | null;
+}
+
+interface PersistedDocumentFile {
+	id: string;
+	name: string;
+	content: string;
+}
+
+interface PersistedFolder {
+	id: string;
+	name: string;
+	files?: PersistedDocumentFile[];
+}
+
+interface PersistedSnapshot {
+	chats: PersistedChat[];
+	activeChatIndex: number;
+	folders: PersistedFolder[];
+}
+
+function assertValidNames(chats: PersistedChat[], folders: PersistedFolder[]) {
 	if (!domain.constraints.hasDuplicateNames(chats, folders)) return;
 
 	const chatNames: string[] = [];
@@ -47,33 +72,48 @@ export function setPersistedLayout(layout: PersistedLayout) {
 	_layout = layout;
 }
 
-export function loadFromStorage() {
+export function loadFromStorage(): PersistedSnapshot | null {
 	const raw = localStorage.getItem(STORAGE_KEY);
-	if (!raw) return;
+	if (!raw) return null;
 	let parsed;
 	try {
 		parsed = JSON.parse(raw);
 	} catch {
-		return;
-	}
-	state.chats.hydrate(parsed);
-	if (parsed.folders?.length) {
-		state.documents.documentState.folders = parsed.folders;
+		return null;
 	}
 	if (parsed.layout) {
 		_layout = parsed.layout;
+	} else {
+		_layout = {};
 	}
-	assertValidNames(state.chats.chatState.chats, state.documents.documentState.folders);
+
+	const snapshot = {
+		chats: Array.isArray(parsed.chats) ? (parsed.chats as PersistedChat[]) : [],
+		activeChatIndex: typeof parsed.activeChatIndex === 'number' ? parsed.activeChatIndex : 0,
+		folders: Array.isArray(parsed.folders) ? (parsed.folders as PersistedFolder[]) : []
+	};
+
+	try {
+		assertValidNames(snapshot.chats, snapshot.folders);
+	} catch (error) {
+		const persistenceError =
+			error instanceof Error
+				? error
+				: new Error(typeof error === 'string' ? error : 'Invalid storage');
+		Object.assign(persistenceError, { snapshot });
+		throw persistenceError;
+	}
+	return snapshot;
 }
 
-export function saveToStorage() {
-	assertValidNames(state.chats.chatState.chats, state.documents.documentState.folders);
+export function saveToStorage(snapshot: PersistedSnapshot) {
+	assertValidNames(snapshot.chats, snapshot.folders);
 	localStorage.setItem(
 		STORAGE_KEY,
 		JSON.stringify({
-			chats: state.chats.chatState.chats,
-			activeChatIndex: state.chats.chatState.activeChatIndex,
-			folders: state.documents.documentState.folders,
+			chats: snapshot.chats,
+			activeChatIndex: snapshot.activeChatIndex,
+			folders: snapshot.folders,
 			layout: _layout
 		})
 	);

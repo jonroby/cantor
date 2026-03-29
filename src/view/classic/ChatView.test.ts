@@ -392,7 +392,7 @@ describe('ChatView', () => {
 	});
 
 	describe('document panel', () => {
-		function setupDocPanel() {
+		function setupDocumentPanel() {
 			state.documents.documentState.folders = [
 				{
 					id: 'folder-1',
@@ -411,7 +411,7 @@ describe('ChatView', () => {
 
 		it('opens a document panel via exported method', async () => {
 			resetState(buildVisibleTree(1));
-			setupDocPanel();
+			setupDocumentPanel();
 			const { component } = render(ChatView);
 
 			component.showDocument('folder-1', 'file-1');
@@ -422,7 +422,7 @@ describe('ChatView', () => {
 
 		it('closes doc panel via resetUIState', async () => {
 			resetState(buildVisibleTree(1));
-			setupDocPanel();
+			setupDocumentPanel();
 			const { component } = render(ChatView);
 
 			component.showDocument('folder-1', 'file-1');

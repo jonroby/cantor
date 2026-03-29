@@ -97,18 +97,18 @@
 		editingChatName = '';
 	}
 
-	// Doc rename state
+	// Document rename state
 	let editingDocumentFileId: string | null = $state(null);
 	let editingDocumentFileName = $state('');
 	let editingDocumentFolderId: string | null = $state(null);
 
-	function startRenameDoc(folderId: string, fileId: string, fileName: string) {
+	function startRenameDocument(folderId: string, fileId: string, fileName: string) {
 		editingDocumentFolderId = folderId;
 		editingDocumentFileId = fileId;
 		editingDocumentFileName = fileName;
 	}
 
-	function commitRenameDoc(name: string) {
+	function commitRenameDocument(name: string) {
 		if (editingDocumentFolderId && editingDocumentFileId) {
 			const result = onRenameDocument(editingDocumentFolderId!, editingDocumentFileId!, name);
 			if (result && result !== name.trim()) {
@@ -120,14 +120,14 @@
 		editingDocumentFileName = '';
 	}
 
-	function cancelRenameDoc() {
+	function cancelRenameDocument() {
 		editingDocumentFolderId = null;
 		editingDocumentFileId = null;
 		editingDocumentFileName = '';
 	}
 
 	// Drag-and-drop
-	let draggingDoc: { folderId: string; fileId: string } | null = $state(null);
+	let draggingDocument: { folderId: string; fileId: string } | null = $state(null);
 	let dragOverFolderId: string | null = $state(null);
 
 	// Delete targets
@@ -381,7 +381,7 @@
 									startEditing={newlyCreatedFolderId === folder.id}
 									{editingDocumentFileId}
 									bind:editingDocumentFileName
-									draggingDocumentFileId={draggingDoc?.fileId ?? null}
+									draggingDocumentFileId={draggingDocument?.fileId ?? null}
 									onToggle={() => toggleFolder(folder.id)}
 									onNewDocument={() => onNewDocument(folder.id)}
 									onUploadDocument={() => onUploadDocument(folder.id)}
@@ -391,10 +391,10 @@
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
 									onSelectDocument={(fileId) => onSelectDocument(folder.id, fileId)}
 									onAddDocumentToChat={(fileId) => onAddDocumentToChat(folder.id, fileId)}
-									onStartRenameDoc={(fileId, fileName) =>
-										startRenameDoc(folder.id, fileId, fileName)}
-									onCommitRenameDoc={commitRenameDoc}
-									onCancelRenameDoc={cancelRenameDoc}
+									onStartRenameFile={(fileId, fileName) =>
+										startRenameDocument(folder.id, fileId, fileName)}
+									onCommitRenameFile={commitRenameDocument}
+									onCancelRenameFile={cancelRenameDocument}
 									onDeleteDocument={(fileId, fileName) =>
 										(deleteDocumentTarget = {
 											folderId: folder.id,
@@ -402,20 +402,20 @@
 											fileName
 										})}
 									onDragStart={(fileId, e) => {
-										draggingDoc = { folderId: folder.id, fileId };
+										draggingDocument = { folderId: folder.id, fileId };
 										e.dataTransfer?.setData('text/plain', fileId);
 										if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
 									}}
 									onDragEnd={() => {
-										draggingDoc = null;
+										draggingDocument = null;
 										dragOverFolderId = null;
 									}}
 									onDrop={(e) => {
 										e.preventDefault();
-										if (draggingDoc && draggingDoc.folderId !== folder.id) {
+										if (draggingDocument && draggingDocument.folderId !== folder.id) {
 											const ok = onMoveDocument(
-												draggingDoc.folderId,
-												draggingDoc.fileId,
+												draggingDocument.folderId,
+												draggingDocument.fileId,
 												folder.id
 											);
 											if (ok) {
@@ -428,11 +428,11 @@
 												toast.error('A file with that name already exists in the target folder');
 											}
 										}
-										draggingDoc = null;
+										draggingDocument = null;
 										dragOverFolderId = null;
 									}}
 									onDragOver={(e) => {
-										if (!draggingDoc || draggingDoc.folderId === folder.id) return;
+										if (!draggingDocument || draggingDocument.folderId === folder.id) return;
 										e.preventDefault();
 										if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 										dragOverFolderId = folder.id;

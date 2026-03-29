@@ -60,6 +60,14 @@ function resetState() {
 	state.documents.documentState.openDocuments = [];
 }
 
+function currentSnapshot() {
+	return {
+		chats: state.chats.chatState.chats,
+		activeChatIndex: state.chats.chatState.activeChatIndex,
+		folders: state.documents.documentState.folders
+	};
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('database', () => {
@@ -70,49 +78,49 @@ describe('database', () => {
 	describe('saveToStorage / loadFromStorage round-trip', () => {
 		it('persists and restores chats', () => {
 			const originalName = state.chats.chatState.chats[0].name;
-			saveToStorage();
+			saveToStorage(currentSnapshot());
 
 			// Corrupt state
 			state.chats.chatState.chats[0].name = 'Corrupted';
 			expect(state.chats.chatState.chats[0].name).toBe('Corrupted');
 
-			loadFromStorage();
-			expect(state.chats.chatState.chats[0].name).toBe(originalName);
+			const loaded = loadFromStorage();
+			expect(loaded?.chats[0]?.name).toBe(originalName);
 		});
 
 		it('persists and restores activeChatIndex', () => {
 			state.chats.chatState.chats = [buildChat('A'), buildChat('B')];
 			state.chats.chatState.activeChatIndex = 1;
-			saveToStorage();
+			saveToStorage(currentSnapshot());
 
-			state.chats.chatState.activeChatIndex = 0;
-			loadFromStorage();
-			expect(state.chats.chatState.activeChatIndex).toBe(1);
+			const loaded = loadFromStorage();
+			expect(loaded?.activeChatIndex).toBe(1);
 		});
 
 		it('persists and restores folders', () => {
 			state.documents.documentState.folders = [
 				{ id: 'f1', name: 'Docs', files: [{ id: 'd1', name: 'test.md', content: '# Hi' }] }
 			];
-			saveToStorage();
+			saveToStorage(currentSnapshot());
 
-			state.documents.documentState.folders = [];
-			loadFromStorage();
-			expect(state.documents.documentState.folders.length).toBe(1);
-			expect(state.documents.documentState.folders[0].name).toBe('Docs');
-			expect(state.documents.documentState.folders[0].files![0].content).toBe('# Hi');
+			const loaded = loadFromStorage();
+			expect(loaded?.folders.length).toBe(1);
+			expect(loaded?.folders[0]?.name).toBe('Docs');
+			expect(loaded?.folders[0]?.files?.[0]?.content).toBe('# Hi');
 		});
 
 		it('does nothing when storage is empty', () => {
 			const before = state.chats.chatState.chats[0].name;
-			loadFromStorage();
+			const loaded = loadFromStorage();
+			expect(loaded).toBeNull();
 			expect(state.chats.chatState.chats[0].name).toBe(before);
 		});
 
 		it('ignores invalid JSON in storage', () => {
 			store[STORAGE_KEY] = 'not json {{{';
 			const before = state.chats.chatState.chats[0].name;
-			loadFromStorage();
+			const loaded = loadFromStorage();
+			expect(loaded).toBeNull();
 			expect(state.chats.chatState.chats[0].name).toBe(before);
 		});
 	});
@@ -121,7 +129,7 @@ describe('database', () => {
 		it('throws when two chats have the same name', () => {
 			store[STORAGE_KEY] = 'unchanged';
 			state.chats.chatState.chats = [buildChat('Foo'), buildChat('Foo')];
-			expect(() => saveToStorage()).toThrow('Duplicate chat name');
+			expect(() => saveToStorage(currentSnapshot())).toThrow('Duplicate chat name');
 			expect(store[STORAGE_KEY]).toBe('unchanged');
 		});
 
@@ -131,7 +139,7 @@ describe('database', () => {
 				{ id: 'f1', name: 'Docs' },
 				{ id: 'f2', name: 'Docs' }
 			];
-			expect(() => saveToStorage()).toThrow('Duplicate folder name');
+			expect(() => saveToStorage(currentSnapshot())).toThrow('Duplicate folder name');
 			expect(store[STORAGE_KEY]).toBe('unchanged');
 		});
 
@@ -147,7 +155,7 @@ describe('database', () => {
 					]
 				}
 			];
-			expect(() => saveToStorage()).toThrow('Duplicate file name');
+			expect(() => saveToStorage(currentSnapshot())).toThrow('Duplicate file name');
 			expect(store[STORAGE_KEY]).toBe('unchanged');
 		});
 
@@ -156,7 +164,7 @@ describe('database', () => {
 				{ id: 'f1', name: 'A', files: [{ id: 'd1', name: 'readme.md', content: '' }] },
 				{ id: 'f2', name: 'B', files: [{ id: 'd2', name: 'readme.md', content: '' }] }
 			];
-			expect(() => saveToStorage()).not.toThrow();
+			expect(() => saveToStorage(currentSnapshot())).not.toThrow();
 		});
 	});
 

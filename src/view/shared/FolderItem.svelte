@@ -5,7 +5,7 @@
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu/index.js';
 	import InlineRenameInput from './InlineRenameInput.svelte';
-	import DocumentItem from './DocItem.svelte';
+	import DocumentItem from './DocumentItem.svelte';
 
 	interface Props {
 		folder: app.documents.ChatFolder;
@@ -24,9 +24,9 @@
 		onDeleteFolder: () => void;
 		onSelectDocument: (fileId: string) => void;
 		onAddDocumentToChat: (fileId: string) => void;
-		onStartRenameDoc: (fileId: string, fileName: string) => void;
-		onCommitRenameDoc: (name: string) => void;
-		onCancelRenameDoc: () => void;
+		onStartRenameFile: (fileId: string, fileName: string) => void;
+		onCommitRenameFile: (name: string) => void;
+		onCancelRenameFile: () => void;
 		onDeleteDocument: (fileId: string, fileName: string) => void;
 		onDragStart: (fileId: string, e: DragEvent) => void;
 		onDragEnd: () => void;
@@ -52,9 +52,9 @@
 		onDeleteFolder,
 		onSelectDocument,
 		onAddDocumentToChat,
-		onStartRenameDoc,
-		onCommitRenameDoc,
-		onCancelRenameDoc,
+		onStartRenameFile,
+		onCommitRenameFile,
+		onCancelRenameFile,
 		onDeleteDocument,
 		onDragStart,
 		onDragEnd,
@@ -93,7 +93,7 @@
 		editingFolderName = '';
 	}
 
-	function downloadDoc(file: { name: string; content: string }) {
+	function downloadDocument(file: { name: string; content: string }) {
 		const blob = new Blob([file.content], { type: 'text/markdown;charset=utf-8' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
@@ -308,10 +308,10 @@
 				isDragging={draggingDocumentFileId === file.id}
 				onOpen={() => onSelectDocument(file.id)}
 				onAddToChat={() => onAddDocumentToChat(file.id)}
-				onStartRename={() => onStartRenameDoc(file.id, file.name)}
-				onCommitRename={onCommitRenameDoc}
-				onCancelRename={onCancelRenameDoc}
-				onDownload={() => downloadDoc(file)}
+				onStartRename={() => onStartRenameFile(file.id, file.name)}
+				onCommitRename={onCommitRenameFile}
+				onCancelRename={onCancelRenameFile}
+				onDownload={() => downloadDocument(file)}
 				onDelete={() => onDeleteDocument(file.id, file.name)}
 				onDragStart={(e) => onDragStart(file.id, e)}
 				{onDragEnd}

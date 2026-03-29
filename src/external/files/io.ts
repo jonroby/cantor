@@ -7,6 +7,37 @@ export interface ValidatedChatUpload {
 	activeExchangeId: string | null;
 }
 
+export function pickFile(accept: string): Promise<File | null> {
+	return new Promise((resolve) => {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = accept;
+		input.onchange = () => resolve(input.files?.[0] ?? null);
+		input.click();
+	});
+}
+
+export function pickDirectory(): Promise<File[]> {
+	return new Promise((resolve) => {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.webkitdirectory = true;
+		input.onchange = () => resolve(input.files ? Array.from(input.files) : []);
+		input.click();
+	});
+}
+
+export function downloadBlob(blob: Blob, filename: string): void {
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = filename;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
 function deriveRootId(exchanges: domain.tree.ExchangeMap): string | null {
 	for (const exchange of Object.values(exchanges)) {
 		if (exchange.parentId === null) return exchange.id;

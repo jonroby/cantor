@@ -1,5 +1,8 @@
 {
 	"files": {
+		"downloadBlob": true,
+		"pickDirectory": true,
+		"pickFile": true,
 		"validateChatUpload": true
 	},
 	"persistence": {
