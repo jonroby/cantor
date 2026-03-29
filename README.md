@@ -47,6 +47,54 @@ bun install
 bun run dev
 ```
 
+## Tests And Checks
+
+Run the main validation suite with:
+
+```bash
+bun run check:imports
+bun run check:contracts
+bun run typecheck
+bun run lint
+bun run test
+```
+
+What each command does:
+
+- `bun run check:imports`
+  - Enforces the architecture import rules.
+  - Catches cross-layer imports that bypass the approved dependency direction.
+  - Catches deep imports that should go through a public barrel instead.
+  - Example: importing `@/state/chats.svelte` from another area when only `@/state` is allowed.
+- `bun run check:contracts`
+  - Verifies the frozen public API contract files are present and consistent with the matching mock structure.
+  - This protects the contract metadata itself from drifting out of sync with the repo's test scaffolding.
+  - It does not compare the contract to the live runtime module exports.
+- `bun run typecheck`
+  - Runs Svelte and TypeScript static checks.
+- `bun run lint`
+  - Runs Prettier and ESLint.
+- `bun run test`
+  - Runs the Vitest suite.
+
+### Public API Freezing
+
+Public APIs are frozen in two parts:
+
+- Contract files in [`src/tests/contracts/`](./src/tests/contracts/)
+  - These JSON files declare the exact public export shape for each root module.
+- Public API tests in [`src/*/tests/index.test.ts`](./src/app/tests/index.test.ts)
+  - These import the real module and compare it to the matching contract.
+  - They fail if an expected export is missing.
+  - They also fail if any extra export appears.
+
+So:
+
+- contract files define the expected public API
+- public API tests enforce that the real module matches it exactly
+
+If you add `export { test }` to a public module and do not update its contract, the failure should come from the module's public API test.
+
 ## Migration
 
 To run the Svelte 5 migration tool:

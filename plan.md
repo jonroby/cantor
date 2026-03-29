@@ -172,7 +172,6 @@ These checks have been deliberately tripped and confirmed to fail when violated:
 
 - [x] `check:imports`
 - [x] `check:contracts`
-- [x] `check:public-tests`
 
 Current confidence:
 
@@ -416,7 +415,6 @@ Always rerun:
 
 - `bun run check:imports`
 - `bun run check:contracts`
-- `bun run check:public-tests`
 - `bun run typecheck`
 - `bun run test`
 

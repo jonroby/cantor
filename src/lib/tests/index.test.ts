@@ -1,13 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it } from 'vitest';
 import * as lib from '@/lib';
+import libContract from '@/tests/contracts/lib.json';
+import { expectPublicApiContract } from '@/tests/public-api/assert-contract';
 
 describe('@/lib public API', () => {
-	it('exposes its public namespaces', () => {
-		expect(Object.keys(lib).sort()).toEqual([
-			'providerDefaults',
-			'providerTypes',
-			'rename',
-			'validateMd'
-		]);
+	// Freezes the shared utility surface so lib does not quietly become a dumping ground again.
+	it('matches the frozen public API contract exactly', () => {
+		expectPublicApiContract(lib, libContract, '@/lib');
 	});
 });
