@@ -1,4 +1,4 @@
 bun run check:imports
 bun run check:contracts
-bun run check
+bun run typecheck
 bunx lint-staged
