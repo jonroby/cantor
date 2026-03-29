@@ -5,7 +5,7 @@
 	import * as app from '@/app';
 	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
 
-	let { data }: { data: app.chat.ExchangeNodeData } = $props();
+	let { data }: { data: app.chat.ExchangeCardData } = $props();
 
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
 	let responseBlocks = $derived(
@@ -276,7 +276,7 @@
 		{#if !data.isSideRoot}
 			{#if data.hasSideChildren}
 				<button
-					class="chatmsg-branch-badge"
+					class="chatmsg-side-chat-badge"
 					type="button"
 					onclick={(event: MouseEvent) => {
 						event.stopPropagation();
@@ -299,7 +299,7 @@
 					<span>{data.sideChildrenCount}</span>
 				</button>
 			{:else}
-				<span class="action-tip-wrap chatmsg-branch-action">
+				<span class="action-tip-wrap chatmsg-side-chat-action">
 					<Button
 						class="icon-chip"
 						variant="ghost"

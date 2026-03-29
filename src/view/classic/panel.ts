@@ -5,7 +5,7 @@ export interface MainChatContent {
 export interface SideChatContent {
 	readonly type: 'side-chat';
 	readonly parentExchangeId: string;
-	readonly branchIndex: number;
+	readonly sideChatIndex: number;
 }
 
 export interface DocumentContent {
@@ -25,8 +25,11 @@ export function createMainChatPanel(): Panel {
 	return { id: crypto.randomUUID(), content: { type: 'main-chat' } };
 }
 
-export function createSideChatPanel(parentExchangeId: string, branchIndex: number): Panel {
-	return { id: crypto.randomUUID(), content: { type: 'side-chat', parentExchangeId, branchIndex } };
+export function createSideChatPanel(parentExchangeId: string, sideChatIndex: number): Panel {
+	return {
+		id: crypto.randomUUID(),
+		content: { type: 'side-chat', parentExchangeId, sideChatIndex }
+	};
 }
 
 export function createDocumentPanel(folderId: string, fileId: string): Panel {

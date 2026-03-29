@@ -286,7 +286,7 @@ function collectSubtreeIds(tree: IndexedTree, exchangeId: string): string[] {
 	return ids;
 }
 
-function hasBranchingDescendant(tree: IndexedTree, exchangeId: string): boolean {
+function hasSplitDescendant(tree: IndexedTree, exchangeId: string): boolean {
 	const queue = [exchangeId];
 
 	while (queue.length > 0) {
@@ -738,7 +738,7 @@ export function canPromoteSideChatToMainChat(tree: ChatTree, exchangeId: string)
 	if (index <= 0) return false;
 
 	const mainChildId = parent.childIds[0]!;
-	return !hasBranchingDescendant(indexTree(tree), mainChildId);
+	return !hasSplitDescendant(indexTree(tree), mainChildId);
 }
 
 export function promoteSideChatToMainChat(tree: ChatTree, exchangeId: string): ChatTree {

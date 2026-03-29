@@ -30,7 +30,7 @@ vi.mock('@/external', async () => {
 });
 
 import {
-	getExchangeNodeData,
+	getExchangeCardData,
 	deleteExchange,
 	promoteExchange,
 	copyChat,
@@ -38,8 +38,7 @@ import {
 	quickAsk,
 	submitPrompt,
 	addDocumentToChat,
-	type ChatCommandDeps,
-	type ChatQueryDeps
+	type ChatActionDeps
 } from './index';
 
 import * as domain from '@/domain';
@@ -60,8 +59,6 @@ function setResponse(
 
 const PROVIDER: domain.models.Provider = 'claude';
 const MODEL = 'claude-sonnet-4-6';
-
-type ChatActionDeps = ChatCommandDeps & ChatQueryDeps;
 
 function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
 	return {
@@ -104,7 +101,7 @@ function buildLinearTree(): {
 	return { tree: leaf, rootId: root.id, childId: child.id, leafId: leaf.id };
 }
 
-/** root → main + side (side branch off root) */
+/** root → main + side chat */
 function buildTreeWithSideChat(): {
 	tree: domain.tree.ChatTree;
 	rootId: string;
@@ -166,19 +163,22 @@ describe('public API', () => {
 	it('exposes the expected public API', () => {
 		expect(Object.keys(chat).sort()).toEqual([
 			'addDocumentToChat',
-			'canAcceptNewChat',
+			'canSubmitPrompt',
 			'copyChat',
 			'createChat',
 			'deleteExchange',
 			'exportChat',
 			'exportState',
-			'getChildExchanges',
+			'getActiveChatIndex',
+			'getActiveExchangeId',
+			'getChat',
+			'getChats',
 			'getDeleteMode',
-			'getExchangeNodeData',
-			'getMainChatHistory',
-			'getPathTokenTotal',
-			'getRootExchange',
-			'getState',
+			'getExchangeCardData',
+			'getMainChat',
+			'getSideChats',
+			'getUsedTokens',
+			'hasSideChats',
 			'importChat',
 			'isStreaming',
 			'promoteExchange',
@@ -194,12 +194,12 @@ describe('public API', () => {
 	});
 });
 
-// ── getExchangeNodeData ──────────────────────────────────────────────────────
+// ── getExchangeCardData ──────────────────────────────────────────────────────
 
-describe('getExchangeNodeData', () => {
+describe('getExchangeCardData', () => {
 	it('returns data for root exchange (parentId === null)', () => {
 		const { tree, rootId } = buildLinearTree();
-		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.prompt).toBe('root prompt');
 		expect(result!.response).toBe('root response');
@@ -207,7 +207,7 @@ describe('getExchangeNodeData', () => {
 
 	it('returns null for nonexistent exchange', () => {
 		const { tree } = buildLinearTree();
-		const result = getExchangeNodeData(
+		const result = getExchangeCardData(
 			'nonexistent',
 			tree.exchanges,
 			null,
@@ -220,7 +220,7 @@ describe('getExchangeNodeData', () => {
 	it('correctly computes hasSideChildren and sideChildrenCount', () => {
 		const { tree, mainId } = buildTreeWithSideChat();
 		// mainId has 0 children
-		const result = getExchangeNodeData(mainId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(mainId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.hasSideChildren).toBe(false);
 		expect(result!.sideChildrenCount).toBe(0);
@@ -228,7 +228,7 @@ describe('getExchangeNodeData', () => {
 
 	it('root exchange shows hasSideChildren when it has side children', () => {
 		const { tree, rootId } = buildTreeWithSideChat();
-		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.hasSideChildren).toBe(true);
 		expect(result!.sideChildrenCount).toBe(1);
@@ -248,7 +248,7 @@ describe('getExchangeNodeData', () => {
 		const gc2 = domain.tree.addExchangeResult(tree, child.id, 'gc2 prompt', MODEL, PROVIDER);
 		tree = gc2;
 
-		const result = getExchangeNodeData(child.id, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(child.id, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.hasSideChildren).toBe(true);
 		expect(result!.sideChildrenCount).toBe(1);
@@ -256,28 +256,28 @@ describe('getExchangeNodeData', () => {
 
 	it('correctly identifies isSideRoot', () => {
 		const { tree, sideId } = buildTreeWithSideChat();
-		const result = getExchangeNodeData(sideId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(sideId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.isSideRoot).toBe(true);
 	});
 
 	it('root exchange is not isSideRoot', () => {
 		const { tree, rootId } = buildLinearTree();
-		const result = getExchangeNodeData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(rootId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.isSideRoot).toBe(false);
 	});
 
 	it('main child is not isSideRoot', () => {
 		const { tree, mainId } = buildTreeWithSideChat();
-		const result = getExchangeNodeData(mainId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(mainId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result).not.toBeNull();
 		expect(result!.isSideRoot).toBe(false);
 	});
 
 	it('canPromote reflects domain logic', () => {
 		const { tree, sideId, mainId } = buildTreeWithSideChat();
-		const sideResult = getExchangeNodeData(
+		const sideResult = getExchangeCardData(
 			sideId,
 			tree.exchanges,
 			null,
@@ -286,7 +286,7 @@ describe('getExchangeNodeData', () => {
 		);
 		expect(sideResult!.canPromote).toBe(true);
 
-		const mainResult = getExchangeNodeData(
+		const mainResult = getExchangeCardData(
 			mainId,
 			tree.exchanges,
 			null,
@@ -298,13 +298,13 @@ describe('getExchangeNodeData', () => {
 
 	it('canQuickAsk is false for side exchanges that already have a child', () => {
 		const { tree, sideId } = buildTreeWithSideDescendant();
-		const result = getExchangeNodeData(sideId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(sideId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.canQuickAsk).toBe(false);
 	});
 
-	it('canQuickAsk is true for a side-branch leaf', () => {
+	it('canQuickAsk is true for a side-chat leaf', () => {
 		const { tree, sideChildId } = buildTreeWithSideDescendant();
-		const result = getExchangeNodeData(
+		const result = getExchangeCardData(
 			sideChildId,
 			tree.exchanges,
 			null,
@@ -317,14 +317,14 @@ describe('getExchangeNodeData', () => {
 	it('isStreaming reflects service state', () => {
 		const { tree, childId } = buildLinearTree();
 		const deps = mockDeps({ isStreaming: vi.fn(() => true) });
-		const result = getExchangeNodeData(childId, tree.exchanges, null, mockCallbacks(), deps);
+		const result = getExchangeCardData(childId, tree.exchanges, null, mockCallbacks(), deps);
 		expect(result!.isStreaming).toBe(true);
 		expect(deps.isStreaming).toHaveBeenCalledWith(childId);
 	});
 
 	it('isActive is true when exchangeId matches activeExchangeId', () => {
 		const { tree, childId } = buildLinearTree();
-		const result = getExchangeNodeData(
+		const result = getExchangeCardData(
 			childId,
 			tree.exchanges,
 			childId,
@@ -336,7 +336,7 @@ describe('getExchangeNodeData', () => {
 
 	it('isActive is false when exchangeId does not match activeExchangeId', () => {
 		const { tree, childId } = buildLinearTree();
-		const result = getExchangeNodeData(
+		const result = getExchangeCardData(
 			childId,
 			tree.exchanges,
 			'other-id',
@@ -349,7 +349,7 @@ describe('getExchangeNodeData', () => {
 	it('callbacks are wired correctly', () => {
 		const { tree, childId } = buildLinearTree();
 		const cbs = mockCallbacks();
-		const result = getExchangeNodeData(childId, tree.exchanges, null, cbs, mockDeps());
+		const result = getExchangeCardData(childId, tree.exchanges, null, cbs, mockDeps());
 		expect(result).not.toBeNull();
 
 		result!.onSelect();
@@ -373,7 +373,7 @@ describe('getExchangeNodeData', () => {
 
 	it('returns prompt and response text', () => {
 		const { tree, childId } = buildLinearTree();
-		const result = getExchangeNodeData(childId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(childId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.prompt).toBe('child prompt');
 		expect(result!.response).toBe('child response');
 	});
@@ -381,19 +381,19 @@ describe('getExchangeNodeData', () => {
 	it('returns empty string when response is null', () => {
 		const { tree, leafId } = buildLinearTree();
 		// leaf has no response set
-		const result = getExchangeNodeData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.response).toBe('');
 	});
 
 	it('canCreateSideChat is false for a leaf exchange with no children', () => {
 		const { tree, leafId } = buildLinearTree();
-		const result = getExchangeNodeData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(leafId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.canCreateSideChat).toBe(false);
 	});
 
 	it('canCreateSideChat is true for an exchange with at least one child', () => {
 		const { tree, childId } = buildLinearTree();
-		const result = getExchangeNodeData(childId, tree.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(childId, tree.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.canCreateSideChat).toBe(true);
 	});
 
@@ -409,7 +409,7 @@ describe('getExchangeNodeData', () => {
 		const sideChild = domain.tree.addExchangeResult(t, side.id, 'side child', MODEL, PROVIDER);
 		t = sideChild;
 
-		const result = getExchangeNodeData(side.id, t.exchanges, null, mockCallbacks(), mockDeps());
+		const result = getExchangeCardData(side.id, t.exchanges, null, mockCallbacks(), mockDeps());
 		expect(result!.canCreateSideChat).toBe(false);
 	});
 });

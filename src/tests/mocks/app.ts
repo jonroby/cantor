@@ -102,28 +102,29 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		},
 		chat: {
 			addDocumentToChat: mockFn<typeof app.chat.addDocumentToChat>(),
-			canAcceptNewChat: mockFn<typeof app.chat.canAcceptNewChat>(() => false),
+			canSubmitPrompt: mockFn<typeof app.chat.canSubmitPrompt>(() => false),
 			copyChat: mockFn<typeof app.chat.copyChat>(),
 			createChat: mockFn<typeof app.chat.createChat>(),
 			deleteExchange: mockFn<typeof app.chat.deleteExchange>(),
 			exportChat: mockFn<typeof app.chat.exportChat>(),
 			exportState: mockFn<typeof app.chat.exportState>(),
-			getChildExchanges: mockFn<typeof app.chat.getChildExchanges>(() => []),
-			getDeleteMode: mockFn<typeof app.chat.getDeleteMode>(),
-			getExchangeNodeData: mockFn<typeof app.chat.getExchangeNodeData>(),
-			getMainChatHistory: mockFn<typeof app.chat.getMainChatHistory>(() => []),
-			getPathTokenTotal: mockFn<typeof app.chat.getPathTokenTotal>(() => 0),
-			getRootExchange: mockFn<typeof app.chat.getRootExchange>(),
-			getState: mockFn<typeof app.chat.getState>(() => {
-				const activeChat = appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]!;
-				return {
-					chats: appStateBacking.chatState.chats,
-					activeChatIndex: appStateBacking.chatState.activeChatIndex,
-					activeChat,
-					activeExchanges: activeChat?.exchanges ?? {},
-					activeExchangeId: activeChat?.activeExchangeId ?? null
-				};
+			getActiveChatIndex: mockFn<typeof app.chat.getActiveChatIndex>(
+				() => appStateBacking.chatState.activeChatIndex
+			),
+			getActiveExchangeId: mockFn<typeof app.chat.getActiveExchangeId>(() => {
+				const activeChat = appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex];
+				return activeChat?.activeExchangeId ?? null;
 			}),
+			getChat: mockFn<typeof app.chat.getChat>(() => {
+				return appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]!;
+			}),
+			getChats: mockFn<typeof app.chat.getChats>(() => appStateBacking.chatState.chats),
+			getDeleteMode: mockFn<typeof app.chat.getDeleteMode>(),
+			getExchangeCardData: mockFn<typeof app.chat.getExchangeCardData>(),
+			getMainChat: mockFn<typeof app.chat.getMainChat>(() => []),
+			getSideChats: mockFn<typeof app.chat.getSideChats>(() => []),
+			getUsedTokens: mockFn<typeof app.chat.getUsedTokens>(() => 0),
+			hasSideChats: mockFn<typeof app.chat.hasSideChats>(() => false),
 			importChat: mockFn<typeof app.chat.importChat>(),
 			isStreaming: mockFn<typeof app.chat.isStreaming>(() => false),
 			promoteExchange: mockFn<typeof app.chat.promoteExchange>(),
@@ -168,10 +169,6 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			setContextSize: mockFn<typeof app.providers.setContextSize>(),
 			streamText: mockFn<typeof app.providers.streamText>(),
 			unlockCredentials: mockFn<typeof app.providers.unlockCredentials>()
-		},
-		search: {
-			getDefaultItems: mockFn<typeof app.search.getDefaultItems>(() => []),
-			searchChats: mockFn<typeof app.search.searchChats>(() => [])
 		}
 	} satisfies AppMock;
 

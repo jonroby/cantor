@@ -1,6 +1,6 @@
 import type * as domain from '@/domain';
 
-export interface ExchangeNodeData {
+export interface ExchangeCardData {
 	prompt: string;
 	response: string;
 	model?: string;

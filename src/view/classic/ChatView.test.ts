@@ -84,11 +84,11 @@ function buildVisibleTree(n: number): domain.tree.ChatTree {
 }
 
 /**
- * Builds a tree with a side branch off a visible exchange.
+ * Builds a tree with a side chat off a visible exchange.
  * Structure: root (visible) → e1 (visible) → e2 (visible, main)
- *                                           → side1 (visible, side branch)
+ *                                           → side1 (visible, side chat)
  */
-function buildTreeWithBranch(): { tree: domain.tree.ChatTree; branchParentId: string } {
+function buildTreeWithSideChat(): { tree: domain.tree.ChatTree; sideChatParentId: string } {
 	let tree = domain.tree.buildEmptyTree();
 	// Root (hidden)
 	const root = domain.tree.addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
@@ -98,17 +98,17 @@ function buildTreeWithBranch(): { tree: domain.tree.ChatTree; branchParentId: st
 		response: { text: 'Root response', tokenCount: 10 }
 	};
 
-	// First visible exchange (branch parent)
+	// First visible exchange (side-chat parent)
 	tree = addExchange(tree, root.id, 'Main prompt 1', 'Main response 1');
 	const e1Id = domain.tree.getMainChatTail(tree)!;
 
 	// Main path child
 	tree = addExchange(tree, e1Id, 'Main prompt 2', 'Main response 2');
 
-	// Side branch off e1
+	// Side chat off e1
 	tree = addExchange(tree, e1Id, 'Side prompt 1', 'Side response 1');
 
-	return { tree, branchParentId: e1Id };
+	return { tree, sideChatParentId: e1Id };
 }
 
 function resetState(tree?: domain.tree.ChatTree) {
@@ -214,22 +214,21 @@ describe('ChatView', () => {
 	});
 
 	describe('side chat', () => {
-		it('clicking branch badge opens side panel', async () => {
-			const { tree } = buildTreeWithBranch();
+		it('clicking side chat badge opens side panel', async () => {
+			const { tree } = buildTreeWithSideChat();
 			resetState(tree);
 			render(ChatView);
 
-			// e1 has 2 children (main + side), so branch badge shows "1" (sideChildrenCount)
-			// The badge button contains the count
+			// e1 has 2 children (main + side), so the side chat badge shows "1".
 			const badge = screen.getByText('1');
 			await userEvent.click(badge);
 			await tick();
 
-			expect(screen.getByText('Branching from')).toBeInTheDocument();
+			expect(screen.getByText('From this message')).toBeInTheDocument();
 		});
 
 		it('side panel shows parent exchange context', async () => {
-			const { tree } = buildTreeWithBranch();
+			const { tree } = buildTreeWithSideChat();
 			resetState(tree);
 			render(ChatView);
 
@@ -241,8 +240,8 @@ describe('ChatView', () => {
 			expect(matches.length).toBeGreaterThanOrEqual(2);
 		});
 
-		it('side panel shows branch exchanges', async () => {
-			const { tree } = buildTreeWithBranch();
+		it('side panel shows side chat exchanges', async () => {
+			const { tree } = buildTreeWithSideChat();
 			resetState(tree);
 			render(ChatView);
 
@@ -254,7 +253,7 @@ describe('ChatView', () => {
 		});
 
 		it('close button closes side panel', async () => {
-			const { tree } = buildTreeWithBranch();
+			const { tree } = buildTreeWithSideChat();
 			resetState(tree);
 			render(ChatView);
 
@@ -264,11 +263,11 @@ describe('ChatView', () => {
 			await userEvent.click(screen.getByRole('button', { name: 'Close side panel' }));
 			await tick();
 
-			expect(screen.queryByText('Branching from')).not.toBeInTheDocument();
+			expect(screen.queryByText('From this message')).not.toBeInTheDocument();
 		});
 
-		it('submitting in side panel adds exchange to side branch', async () => {
-			const { tree, branchParentId } = buildTreeWithBranch();
+		it('submitting in side panel adds exchange to the side chat', async () => {
+			const { tree, sideChatParentId } = buildTreeWithSideChat();
 			resetState(tree);
 			render(ChatView);
 
@@ -281,12 +280,12 @@ describe('ChatView', () => {
 			await tick();
 
 			const exchanges = state.chats.getActiveExchanges();
-			const branchChildren = domain.tree.getChildExchanges(exchanges, branchParentId);
-			expect(branchChildren.length).toBe(2);
+			const sideChatChildren = domain.tree.getChildExchanges(exchanges, sideChatParentId);
+			expect(sideChatChildren.length).toBe(2);
 		});
 
-		it('new side chat button creates empty branch state', async () => {
-			const { tree } = buildTreeWithBranch();
+		it('new side chat button creates an empty side-chat state', async () => {
+			const { tree } = buildTreeWithSideChat();
 			resetState(tree);
 			render(ChatView);
 
@@ -300,8 +299,8 @@ describe('ChatView', () => {
 		});
 	});
 
-	describe('branch navigation', () => {
-		it('shows branch counter in side panel', async () => {
+	describe('side chat navigation', () => {
+		it('shows the side chat counter in the side panel', async () => {
 			let tree = domain.tree.buildEmptyTree();
 			const root = domain.tree.addExchangeResult(tree, 'unused', 'Root', MODEL, PROVIDER);
 			tree = root;
@@ -317,7 +316,7 @@ describe('ChatView', () => {
 			// Main path continuation
 			tree = addExchange(tree, e1Id, 'Main 2', 'Main resp 2');
 
-			// Two side branches
+			// Two side chats
 			tree = addExchange(tree, e1Id, 'Side A', 'Side resp A');
 			tree = addExchange(tree, e1Id, 'Side B', 'Side resp B');
 

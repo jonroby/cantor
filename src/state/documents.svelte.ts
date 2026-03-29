@@ -22,7 +22,7 @@ Welcome to the documentation.
 
 ## Getting Started
 
-This is a visual canvas for exploring branching chat conversations.
+This is a visual canvas for exploring side-chat conversations.
 
 ## Math Support
 
@@ -36,7 +36,7 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 - **Chats** — top-level chat conversations
 - **Copies** — copy conversation into a new chat
-- **Side Chats** — sibling branches off existing nodes`;
+- **Side Chats** — sibling chats off existing nodes`;
 
 export const docState = $state({
 	folders: [] as ChatFolder[],

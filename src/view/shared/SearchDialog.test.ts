@@ -3,14 +3,27 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import SearchDialog from './SearchDialog.svelte';
-import type * as domain from '@/domain';
+import type * as app from '@/app';
 
-const ITEMS: domain.search.SearchResult[] = [
+const CHATS: app.chat.Chat[] = [
 	{
-		exchangeId: 'exchange-1',
-		chatIndex: 0,
-		prompt: 'Find this exchange',
-		snippets: [{ text: 'matching snippet', matchStart: 0, matchEnd: 8 }]
+		id: 'chat-1',
+		name: 'Chat 1',
+		rootId: 'exchange-1',
+		activeExchangeId: 'exchange-1',
+		exchanges: {
+			'exchange-1': {
+				id: 'exchange-1',
+				parentId: '',
+				childIds: [],
+				createdAt: 0,
+				model: 'claude-sonnet-4-6',
+				provider: 'claude',
+				label: undefined,
+				prompt: { text: 'Find this exchange', tokenCount: 0 },
+				response: { text: 'matching snippet here', tokenCount: 0 }
+			}
+		}
 	}
 ];
 
@@ -20,7 +33,8 @@ describe('SearchDialog', () => {
 			props: {
 				searchQuery: 'missing',
 				searchAllChats: true,
-				searchItems: [],
+				chats: [],
+				activeChatIndex: 0,
 				onClose: vi.fn(),
 				onSelect: vi.fn()
 			}
@@ -37,15 +51,21 @@ describe('SearchDialog', () => {
 			props: {
 				searchQuery: 'find',
 				searchAllChats: true,
-				searchItems: ITEMS,
+				chats: CHATS,
+				activeChatIndex: 0,
 				onClose,
 				onSelect
 			}
 		});
 
-		await userEvent.click(screen.getByText('Find this exchange'));
+		await userEvent.click(screen.getByRole('button', { name: /find this exchange/i }));
 
-		expect(onSelect).toHaveBeenCalledWith(ITEMS[0]);
+		expect(onSelect).toHaveBeenCalledWith({
+			exchangeId: 'exchange-1',
+			chatIndex: 0,
+			prompt: 'Find this exchange',
+			snippets: [{ text: 'Find this exchange', matchStart: 0, matchEnd: 4 }]
+		});
 		expect(onClose).toHaveBeenCalledOnce();
 	});
 });

@@ -376,7 +376,7 @@ describe('getDescendantExchanges', () => {
 });
 
 describe('findSideChatParent', () => {
-	it('finds the outermost side chat parent for a side branch exchange', () => {
+	it('finds the outermost side chat parent for a nested side chat exchange', () => {
 		const { tree: baseTree, sideId, rootId } = buildRootWithSideChat();
 		const tree = addExchange(baseTree, sideId, 'nested side child', MODEL, PROVIDER);
 		const nestedId = getMainChatTail({ rootId: sideId, exchanges: tree.exchanges })!;
@@ -416,15 +416,15 @@ describe('getMainChatTail', () => {
 });
 
 describe('canPromoteSideChatToMainChat', () => {
-	it('can promote a side chat only when the main branch does not branch', () => {
+	it('can promote a side chat only when the main path does not split', () => {
 		const simple = buildRootWithSideChat();
 		expect(canPromoteSideChatToMainChat(simple.tree, simple.sideId)).toBe(true);
 
 		const complex = buildRootWithSideChat();
-		complex.tree = addExchange(complex.tree, complex.mainId, 'branch base', MODEL, PROVIDER);
-		const branchBaseId = getMainChatTail(complex.tree)!;
-		complex.tree = addExchange(complex.tree, branchBaseId, 'branch main', MODEL, PROVIDER);
-		complex.tree = addExchange(complex.tree, branchBaseId, 'branch side', MODEL, PROVIDER);
+		complex.tree = addExchange(complex.tree, complex.mainId, 'split base', MODEL, PROVIDER);
+		const splitBaseId = getMainChatTail(complex.tree)!;
+		complex.tree = addExchange(complex.tree, splitBaseId, 'split main', MODEL, PROVIDER);
+		complex.tree = addExchange(complex.tree, splitBaseId, 'split side', MODEL, PROVIDER);
 
 		expect(canPromoteSideChatToMainChat(complex.tree, complex.sideId)).toBe(false);
 	});

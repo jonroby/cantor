@@ -140,12 +140,12 @@
 	</nav>
 
 	<main class="hero">
-		<div class="hero-badge">Branching Chat Interface</div>
+		<div class="hero-badge">Side Chat Interface</div>
 		<h1 class="hero-title">
 			<span class="gradient-text">CANTOR</span>
 		</h1>
 		<p class="hero-subtitle">
-			Copy conversations. Explore side branches. Visualize your thinking on a canvas. One interface
+			Copy conversations. Explore side chats. Visualize your thinking on a canvas. One interface
 			for Claude, Gemini, Ollama, OpenAI, and WebLLM.
 		</p>
 		<div class="hero-actions">
@@ -187,7 +187,7 @@
 						<path d="M18 9a9 9 0 0 1-9 9" />
 					</svg>
 				</div>
-				<h3>Branching Conversations</h3>
+				<h3>Side Chat Conversations</h3>
 				<p>Copy any message to explore alternative directions without losing context.</p>
 			</div>
 			<div class="feature-card">

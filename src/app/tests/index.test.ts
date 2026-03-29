@@ -7,8 +7,7 @@ describe('@/app public API', () => {
 			'bootstrap',
 			'chat',
 			'documents',
-			'providers',
-			'search'
+			'providers'
 		]);
 	});
 });

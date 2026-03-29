@@ -16,7 +16,7 @@ describe('classic panel', () => {
 		expect(createSideChatPanel('ex-1', 2).content).toEqual({
 			type: 'side-chat',
 			parentExchangeId: 'ex-1',
-			branchIndex: 2
+			sideChatIndex: 2
 		});
 	});
 

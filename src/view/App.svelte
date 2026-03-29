@@ -16,22 +16,6 @@
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 
-	let searchItems = $derived(
-		searchQuery.trim()
-			? app.search.searchChats(
-					app.chat.getState().chats,
-					searchQuery.trim(),
-					searchAllChats
-						? app.chat.getState().chats.map((_: app.chat.Chat, index: number) => index)
-						: [app.chat.getState().activeChatIndex]
-				)
-			: app.search.getDefaultItems(
-					app.chat.getState().chats,
-					app.chat.getState().activeChatIndex,
-					searchAllChats
-				)
-	);
-
 	$effect(() => {
 		if (hasHydrated) {
 			app.bootstrap.save();
@@ -104,7 +88,7 @@
 	}
 
 	function doDeleteChat(index: number) {
-		const chat = app.chat.getState().chats[index];
+		const chat = app.chat.getChats()[index];
 		if (chat) app.chat.stopChatStreams(chat.id);
 		app.chat.removeChat(index);
 		resetUIState();
@@ -117,7 +101,7 @@
 		app.documents.addDocumentToChat(folderId, fileId);
 	}
 
-	function handleSearchSelect(result: app.search.SearchResult) {
+	function handleSearchSelect(result: { chatIndex: number; exchangeId: string }) {
 		app.chat.selectChat(result.chatIndex);
 		app.chat.selectExchange(result.exchangeId);
 	}
@@ -137,8 +121,8 @@
 {:else}
 	<SidebarPrimitive.Provider>
 		<AppSidebar
-			chats={app.chat.getState().chats}
-			activeChatIndex={app.chat.getState().activeChatIndex}
+			chats={app.chat.getChats()}
+			activeChatIndex={app.chat.getActiveChatIndex()}
 			onSelectChat={selectChat}
 			onNewChat={newChat}
 			onDeleteChat={doDeleteChat}
@@ -178,7 +162,8 @@
 				<SearchDialog
 					bind:searchQuery
 					bind:searchAllChats
-					{searchItems}
+					chats={app.chat.getChats()}
+					activeChatIndex={app.chat.getActiveChatIndex()}
 					onClose={() => (searchOpen = false)}
 					onSelect={handleSearchSelect}
 				/>

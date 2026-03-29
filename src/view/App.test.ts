@@ -47,13 +47,8 @@ vi.mock('@/app', async () => {
 		chat: {
 			createChat: vi.fn(),
 			exportChat: vi.fn(),
-			getState: vi.fn(() => ({
-				chats: chatState.chats,
-				activeChatIndex: chatState.activeChatIndex,
-				activeChat: chatState.chats[chatState.activeChatIndex]!,
-				activeExchanges: chatState.chats[chatState.activeChatIndex]?.exchanges ?? {},
-				activeExchangeId: chatState.chats[chatState.activeChatIndex]?.activeExchangeId ?? null
-			})),
+			getChats: vi.fn(() => chatState.chats),
+			getActiveChatIndex: vi.fn(() => chatState.activeChatIndex),
 			importChat: vi.fn(),
 			removeChat: vi.fn(),
 			selectExchange: vi.fn(),
@@ -92,7 +87,7 @@ describe('App', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		vi.restoreAllMocks();
-		const chats = app.chat.getState().chats;
+		const chats = app.chat.getChats();
 		chats.length = 0;
 		chats.push({
 			id: 'chat-1',
@@ -132,7 +127,7 @@ describe('App', () => {
 	describe('gracefully renames duplicates on load', () => {
 		it('renames duplicate chat names', () => {
 			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
-				const chats = app.chat.getState().chats;
+				const chats = app.chat.getChats();
 				chats.length = 0;
 				chats.push(
 					{ id: '1', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null },
@@ -144,8 +139,8 @@ describe('App', () => {
 
 			render(App);
 
-			expect(app.chat.getState().chats[0].name).toBe('Foo');
-			expect(app.chat.getState().chats[1].name).toBe('Foo (2)');
+			expect(app.chat.getChats()[0].name).toBe('Foo');
+			expect(app.chat.getChats()[1].name).toBe('Foo (2)');
 			expect(warningSpy).toHaveBeenCalled();
 			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});

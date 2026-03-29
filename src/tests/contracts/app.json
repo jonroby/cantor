@@ -7,19 +7,22 @@
 	},
 	"chat": {
 		"addDocumentToChat": true,
-		"canAcceptNewChat": true,
+		"canSubmitPrompt": true,
 		"copyChat": true,
 		"createChat": true,
 		"deleteExchange": true,
 		"exportChat": true,
 		"exportState": true,
-		"getChildExchanges": true,
+		"getActiveChatIndex": true,
+		"getActiveExchangeId": true,
+		"getChat": true,
+		"getChats": true,
 		"getDeleteMode": true,
-		"getExchangeNodeData": true,
-		"getMainChatHistory": true,
-		"getPathTokenTotal": true,
-		"getRootExchange": true,
-		"getState": true,
+		"getExchangeCardData": true,
+		"getMainChat": true,
+		"getSideChats": true,
+		"getUsedTokens": true,
+		"hasSideChats": true,
 		"importChat": true,
 		"isStreaming": true,
 		"promoteExchange": true,
@@ -64,9 +67,5 @@
 		"setContextSize": true,
 		"streamText": true,
 		"unlockCredentials": true
-	},
-	"search": {
-		"getDefaultItems": true,
-		"searchChats": true
 	}
 }

@@ -31,8 +31,8 @@ vi.mock('@/app', async () => {
 });
 
 function makeNodeData(
-	overrides: Partial<app.chat.ExchangeNodeData> = {}
-): app.chat.ExchangeNodeData {
+	overrides: Partial<app.chat.ExchangeCardData> = {}
+): app.chat.ExchangeCardData {
 	return {
 		prompt: 'Hello world',
 		response: 'Hi there',
@@ -150,7 +150,7 @@ describe('ChatMessage', () => {
 		expect(screen.getByRole('button', { name: 'Promote' })).toBeDisabled();
 	});
 
-	it('branch badge shows side children count', () => {
+	it('side chat badge shows side children count', () => {
 		render(ChatMessage, {
 			props: {
 				data: makeNodeData({ canCreateSideChat: true, hasSideChildren: true, sideChildrenCount: 3 })
@@ -159,7 +159,7 @@ describe('ChatMessage', () => {
 		expect(screen.getByText('3')).toBeInTheDocument();
 	});
 
-	it('branch badge fires onToggleSideChildren', async () => {
+	it('side chat badge fires onToggleSideChildren', async () => {
 		const data = makeNodeData({
 			canCreateSideChat: true,
 			hasSideChildren: true,

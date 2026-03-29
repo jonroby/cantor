@@ -9,11 +9,6 @@
 		"enforceUniqueName": true,
 		"enforceUniqueNames": true
 	},
-	"search": {
-		"getDefaultItems": true,
-		"groupResults": true,
-		"searchChats": true
-	},
 	"tree": {
 		"addDocumentExchangeResult": true,
 		"addExchange": true,

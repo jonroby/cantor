@@ -24,7 +24,7 @@ describe('buildInitialExchanges', () => {
 		expect(tail).not.toBe(tree.rootId);
 	});
 
-	it('root has side chat branches (multiple children)', () => {
+	it('root has side chats (multiple children)', () => {
 		const tree = buildInitialExchanges();
 		const children = domain.tree.getChildExchanges(tree.exchanges, tree.rootId!);
 		expect(children.length).toBeGreaterThan(1);

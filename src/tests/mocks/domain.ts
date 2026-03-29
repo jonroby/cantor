@@ -41,11 +41,6 @@ export function createDomainMock(overrides?: DeepPartial<DomainMock>): DomainMoc
 				)
 			)
 		},
-		search: {
-			getDefaultItems: mockFn<typeof domain.search.getDefaultItems>(() => []),
-			groupResults: mockFn<typeof domain.search.groupResults>(() => []),
-			searchChats: mockFn<typeof domain.search.searchChats>(() => [])
-		},
 		tree: {
 			ChatTreeOperationError: domain.tree.ChatTreeOperationError,
 			addDocumentExchangeResult: mockFn<typeof domain.tree.addDocumentExchangeResult>(),

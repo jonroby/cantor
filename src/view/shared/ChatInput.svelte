@@ -31,7 +31,7 @@
 	let commandHistory: app.chat.Message[] = $state([]);
 	let commandAbort: AbortController | null = $state(null);
 	let providerState = $derived(app.providers.getState());
-	let chatState = $derived(app.chat.getState());
+	let activeChat = $derived(app.chat.getChat());
 
 	export function focus() {
 		composerRef?.focus();
@@ -46,11 +46,11 @@
 		}
 	}
 
-	let activeExchanges = $derived(chatState.activeExchanges);
-	let activeExchangeId = $derived(chatState.activeExchangeId);
+	let activeExchanges = $derived(activeChat.exchanges);
+	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
 	let usedTokens = $derived(
 		activeExchanges && activeExchangeId
-			? app.chat.getPathTokenTotal(activeExchanges, activeExchangeId)
+			? app.chat.getUsedTokens(activeExchanges, activeExchangeId)
 			: 0
 	);
 	let activeNodeStreaming = $derived.by(() => {
@@ -63,12 +63,12 @@
 			? 'Select a model first.'
 			: activeExchangeId &&
 				  activeExchanges &&
-				  !app.chat.canAcceptNewChat(activeExchanges, activeExchangeId)
-				? 'Choose a branch tip or main-chain node to continue.'
+				  !app.chat.canSubmitPrompt(activeExchanges, activeExchangeId)
+				? 'Choose a side-chat tip or main-chain node to continue.'
 				: null
 	);
 
-	let activeChatId = $derived(chatState.activeChat.id);
+	let activeChatId = $derived(activeChat.id);
 	$effect(() => {
 		void activeChatId;
 		tick().then(() => composerRef?.focus());
@@ -85,7 +85,6 @@
 
 		operationError = null;
 
-		const activeChat = chatState.activeChat;
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 
 		let result;
@@ -125,10 +124,12 @@
 			docSection
 		].join('\n');
 
-		const activeChat = chatState.activeChat;
-		const chatHistory = activeExchanges
-			? app.chat.getMainChatHistory({ rootId: activeChat.rootId, exchanges: activeExchanges })
-			: [];
+		const chatHistory = app.chat.getMainChat(activeChat).flatMap((exchange) => [
+			{ role: 'user', content: exchange.prompt.text } as app.chat.Message,
+			...(exchange.response?.text
+				? ([{ role: 'assistant', content: exchange.response.text }] as app.chat.Message[])
+				: [])
+		]);
 
 		return [
 			...chatHistory,

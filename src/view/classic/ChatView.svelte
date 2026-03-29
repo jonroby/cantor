@@ -26,12 +26,12 @@
 		sidePanel !== null && sidePanel.content.type === 'side-chat' ? sidePanel.content : null
 	);
 	let sidePanelParentId = $derived(sideChatContent ? sideChatContent.parentExchangeId : null);
-	let sideBranchIndex = $derived(sideChatContent ? sideChatContent.branchIndex : 0);
+	let sideChatIndex = $derived(sideChatContent ? sideChatContent.sideChatIndex : 0);
 	let focusedPane = $derived<'main' | 'side'>(
 		sidePanel !== null && focusedPanelId === sidePanel.id ? 'side' : 'main'
 	);
 
-	let trackLatestBranch = $state(false);
+	let trackLatestSideChat = $state(false);
 	let deleteTargetId: string | null = $state(null);
 	let deleteMode: app.chat.DeleteMode = $state('exchange');
 	let operationError: string | null = $state(null);
@@ -39,25 +39,25 @@
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
 	let providerState = $derived(app.providers.getState());
-	let chatState = $derived(app.chat.getState());
+	let activeChat = $derived(app.chat.getChat());
 
-	let activeExchanges = $derived(chatState.activeExchanges);
-	let activeExchangeId = $derived(chatState.activeExchangeId);
+	let activeExchanges = $derived(activeChat.exchanges);
+	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
 	let commandStreaming = $state(false);
 	let pendingDocContent: string | null = $state(null);
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
 		mainChatPath.length > 0 ? mainChatPath[mainChatPath.length - 1]!.id : null
 	);
-	let sideBranches = $derived(getSideBranches());
-	let activeSideBranch = $derived(
-		sideBranches.length > 0 && sideBranchIndex < sideBranches.length
-			? sideBranches[sideBranchIndex]
+	let sideChats = $derived(getSideChats());
+	let activeSideChat = $derived(
+		sideChats.length > 0 && sideChatIndex < sideChats.length
+			? sideChats[sideChatIndex]
 			: null
 	);
-	let sideBranchTailId = $derived(
-		activeSideBranch && activeSideBranch.length > 0
-			? activeSideBranch[activeSideBranch.length - 1]!.id
+	let sideChatTailId = $derived(
+		activeSideChat && activeSideChat.length > 0
+			? activeSideChat[activeSideChat.length - 1]!.id
 			: null
 	);
 	let sidePanelParentExchange = $derived(
@@ -84,46 +84,17 @@
 	let isDocPanel = $derived(sidePanel !== null && sidePanel.content.type === 'document');
 
 	function getMainChatPath(): app.chat.Exchange[] {
-		if (!activeExchanges) return [];
-		const root = app.chat.getRootExchange({
-			rootId: chatState.activeChat.rootId,
-			exchanges: activeExchanges
-		});
-		if (!root) return [];
-		const path: app.chat.Exchange[] = [root];
-		let currentId: string | null = root.id;
-		while (currentId) {
-			const children = app.chat.getChildExchanges(activeExchanges, currentId);
-			if (children.length === 0) break;
-			const mainChild = children[0]!;
-			path.push(mainChild);
-			currentId = mainChild.id;
-		}
-		return path;
+		return app.chat.getMainChat(activeChat);
 	}
 
-	function getSideBranches(): app.chat.Exchange[][] {
+	function getSideChats(): app.chat.Exchange[][] {
 		if (!activeExchanges || !sidePanelParentId) return [];
-		const children = app.chat.getChildExchanges(activeExchanges, sidePanelParentId);
-		if (children.length <= 1) return [];
-
-		const branches: app.chat.Exchange[][] = [];
-		for (let i = 1; i < children.length; i++) {
-			const branch: app.chat.Exchange[] = [];
-			let current: app.chat.Exchange | undefined = children[i];
-			while (current) {
-				branch.push(current);
-				const grandChildren = app.chat.getChildExchanges(activeExchanges, current.id);
-				current = grandChildren[0];
-			}
-			branches.push(branch);
-		}
-		return branches;
+		return app.chat.getSideChats(activeExchanges, sidePanelParentId);
 	}
 
-	function updateSideBranchIndex(newIndex: number) {
+	function updateSideChatIndex(newIndex: number) {
 		if (!sidePanel || !isSideChat(sidePanel)) return;
-		sidePanel = withContent(sidePanel, { ...sidePanel.content, branchIndex: newIndex });
+		sidePanel = withContent(sidePanel, { ...sidePanel.content, sideChatIndex: newIndex });
 	}
 
 	function focusPanel(panelId: string) {
@@ -132,8 +103,8 @@
 		if (panelId === mainPanel.id) {
 			app.chat.selectExchange(mainChatTailId);
 		} else if (sidePanel && panelId === sidePanel.id) {
-			if (sideBranchTailId) {
-				app.chat.selectExchange(sideBranchTailId);
+			if (sideChatTailId) {
+				app.chat.selectExchange(sideChatTailId);
 			} else if (sidePanelParentId) {
 				app.chat.selectExchange(sidePanelParentId);
 			}
@@ -157,22 +128,16 @@
 			return;
 		}
 
-		const children = activeExchanges ? app.chat.getChildExchanges(activeExchanges, parentId) : [];
-		const branchIdx = children.length > 1 ? children.length - 2 : 0;
+		const sideChats = activeExchanges ? app.chat.getSideChats(activeExchanges, parentId) : [];
+		const sideChatIdx = sideChats.length > 0 ? sideChats.length - 1 : 0;
 
-		sidePanel = createSideChatPanel(parentId, branchIdx);
+		sidePanel = createSideChatPanel(parentId, sideChatIdx);
 		focusedPanelId = sidePanel.id;
 
-		if (children.length > 1) {
-			let current = children[children.length - 1];
-			while (current) {
-				const grandChildren = activeExchanges
-					? app.chat.getChildExchanges(activeExchanges, current.id)
-					: [];
-				if (grandChildren.length === 0) break;
-				current = grandChildren[0];
-			}
-			if (current) app.chat.selectExchange(current.id);
+		if (sideChats.length > 0) {
+			const latestSideChat = sideChats[sideChats.length - 1];
+			const tail = latestSideChat?.[latestSideChat.length - 1];
+			if (tail) app.chat.selectExchange(tail.id);
 		} else {
 			app.chat.selectExchange(parentId);
 		}
@@ -190,24 +155,24 @@
 		app.documents.addDocumentToChat(docContent.folderId, docContent.fileId);
 	}
 
-	function prevBranch() {
-		if (sideBranchIndex > 0) {
-			updateSideBranchIndex(sideBranchIndex - 1);
+	function prevSideChat() {
+		if (sideChatIndex > 0) {
+			updateSideChatIndex(sideChatIndex - 1);
 			focusSide();
 		}
 	}
 
-	function nextBranch() {
-		if (sideBranchIndex < sideBranches.length - 1) {
-			updateSideBranchIndex(sideBranchIndex + 1);
+	function nextSideChat() {
+		if (sideChatIndex < sideChats.length - 1) {
+			updateSideChatIndex(sideChatIndex + 1);
 			focusSide();
 		}
 	}
 
-	function newSideBranch() {
+	function newSideChat() {
 		if (!sidePanelParentId) return;
-		if (!activeSideBranch || activeSideBranch.length === 0) return;
-		updateSideBranchIndex(sideBranches.length);
+		if (!activeSideChat || activeSideChat.length === 0) return;
+		updateSideChatIndex(sideChats.length);
 		app.chat.selectExchange(sidePanelParentId);
 		tick().then(() => chatInputRef?.focus());
 	}
@@ -257,7 +222,6 @@
 	function quickAsk(exchangeId: string, sourceText: string) {
 		if (!activeExchanges || !providerState.activeModel) return;
 
-		const activeChat = chatState.activeChat;
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 
 		let result;
@@ -285,7 +249,7 @@
 
 	function getNodeDataForExchange(exchangeId: string) {
 		if (!activeExchanges) return null;
-		return app.chat.getExchangeNodeData(exchangeId, activeExchanges, activeExchangeId, {
+		return app.chat.getExchangeCardData(exchangeId, activeExchanges, activeExchangeId, {
 			onSelect: (id) => app.chat.selectExchange(id),
 			onCopy: copyChat,
 			onToggleSideChildren: toggleSideChildren,
@@ -321,7 +285,7 @@
 	}
 
 	function expandSideChat(exchangeId: string) {
-		trackLatestBranch = true;
+		trackLatestSideChat = true;
 		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === exchangeId) {
 			focusedPanelId = sidePanel.id;
 			tick().then(() => chatInputRef?.focus());
@@ -363,25 +327,25 @@
 		}
 	});
 
-	// Follow the latest branch when a new side chat is created
+	// Follow the latest side chat when a new side chat is created
 	$effect(() => {
-		if (trackLatestBranch && sideBranches.length > 0) {
-			updateSideBranchIndex(sideBranches.length - 1);
-			trackLatestBranch = false;
+		if (trackLatestSideChat && sideChats.length > 0) {
+			updateSideChatIndex(sideChats.length - 1);
+			trackLatestSideChat = false;
 		}
 	});
 
-	// Clamp branch index (allow one past the end for "new branch" empty state)
+	// Clamp side-chat index (allow one past the end for "new side chat" empty state)
 	$effect(() => {
-		if (sideBranchIndex > sideBranches.length && sideBranches.length > 0) {
-			updateSideBranchIndex(sideBranches.length - 1);
+		if (sideChatIndex > sideChats.length && sideChats.length > 0) {
+			updateSideChatIndex(sideChats.length - 1);
 		}
 	});
 
 	// Keep activeExchangeId synced with focused pane's tail
 	$effect(() => {
-		if (sidePanel && focusedPanelId === sidePanel.id && sideBranchTailId) {
-			app.chat.selectExchange(sideBranchTailId);
+		if (sidePanel && focusedPanelId === sidePanel.id && sideChatTailId) {
+			app.chat.selectExchange(sideChatTailId);
 		}
 	});
 </script>
@@ -399,7 +363,7 @@
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
-			<div class="chatview-main-title">{chatState.activeChat.name}</div>
+			<div class="chatview-main-title">{activeChat.name}</div>
 			<div class="chatview-main" bind:this={mainScrollContainer}>
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
@@ -407,7 +371,7 @@
 						{#if nodeData}
 							<div
 								class="chatview-exchange-wrap"
-								class:chatview-branch-source={sidePanelOpen && sidePanelParentId === exchange.id}
+								class:chatview-side-chat-source={sidePanelOpen && sidePanelParentId === exchange.id}
 								data-exchange-id={exchange.id}
 							>
 								<ChatMessage data={nodeData} />
@@ -463,15 +427,15 @@
 						/>
 					</div>
 				{:else if !isDocPanel}
-					{#if sideBranches.length > 0}
-						{@const isNewBranch = sideBranchIndex >= sideBranches.length}
+					{#if sideChats.length > 0}
+						{@const isNewSideChat = sideChatIndex >= sideChats.length}
 						<div class="chatview-side-header">
 							<Button
 								class="ghost-button"
 								variant="ghost"
 								size="sm"
-								disabled={sideBranchIndex <= 0}
-								onclick={prevBranch}
+								disabled={sideChatIndex <= 0}
+								onclick={prevSideChat}
 							>
 								<svg
 									width="14"
@@ -485,18 +449,18 @@
 								</svg>
 							</Button>
 							<span class="chatview-side-counter">
-								{#if isNewBranch}
+								{#if isNewSideChat}
 									New
 								{:else}
-									{sideBranchIndex + 1} / {sideBranches.length}
+									{sideChatIndex + 1} / {sideChats.length}
 								{/if}
 							</span>
 							<Button
 								class="ghost-button"
 								variant="ghost"
 								size="sm"
-								disabled={sideBranchIndex >= sideBranches.length - 1}
-								onclick={nextBranch}
+								disabled={sideChatIndex >= sideChats.length - 1}
+								onclick={nextSideChat}
 							>
 								<svg
 									width="14"
@@ -513,8 +477,8 @@
 								class="ghost-button"
 								variant="ghost"
 								size="sm"
-								disabled={isNewBranch}
-								onclick={newSideBranch}
+								disabled={isNewSideChat}
+								onclick={newSideChat}
 								ariaLabel="New side chat"
 							>
 								<svg
@@ -572,7 +536,7 @@
 					{/if}
 					{#if sidePanelParentExchange}
 						<div class="chatview-side-context">
-							<div class="chatview-side-context-label">Branching from</div>
+							<div class="chatview-side-context-label">From this message</div>
 							<div class="chatview-side-context-prompt">{sidePanelParentExchange.prompt.text}</div>
 							{#if sidePanelParentExchange.response}
 								<div class="chatview-side-context-response">
@@ -585,8 +549,8 @@
 						</div>
 					{/if}
 					<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
-						{#if activeSideBranch}
-							{#each activeSideBranch as exchange (exchange.id)}
+						{#if activeSideChat}
+							{#each activeSideChat as exchange (exchange.id)}
 								{@const nodeData = getNodeDataForExchange(exchange.id)}
 								{#if nodeData}
 									<div class="chatview-exchange-wrap" data-exchange-id={exchange.id}>
@@ -624,9 +588,9 @@
 </div>
 
 {#if deleteTargetId}
-	{@const children = activeExchanges
-		? app.chat.getChildExchanges(activeExchanges, deleteTargetId)
-		: []}
+	{@const hasSideChats = activeExchanges
+		? app.chat.hasSideChats(activeExchanges, deleteTargetId)
+		: false}
 	<button
 		class="modal-scrim"
 		type="button"
@@ -647,7 +611,7 @@
 					type="radio"
 					bind:group={deleteMode}
 					value="exchange"
-					disabled={children.length > 1}
+					disabled={hasSideChats}
 				/>
 				<span>Delete this exchange only</span>
 			</label>
@@ -655,7 +619,7 @@
 				<input type="radio" bind:group={deleteMode} value="exchangeAndMainChat" />
 				<span>Delete this exchange and main chat</span>
 			</label>
-			{#if children.length > 1}
+			{#if hasSideChats}
 				<label class="delete-option">
 					<input type="radio" bind:group={deleteMode} value="exchangeAndSideChats" />
 					<span>Delete this exchange and side chats</span>

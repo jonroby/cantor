@@ -329,8 +329,13 @@ If context is wiped, assume these are true unless the repo proves otherwise:
 - root public barrels are intentional and namespaced
 - `view -> app only` is intentional and should not be weakened
 - Canvas has been deleted and should not be reintroduced accidentally
-- `app.search` is a real namespace and should stay separate from `app.chat`
-- the current problem is semantic cleanup, not structural folder churn
+- `app` has already been reduced to four real namespaces:
+  - `app.bootstrap`
+  - `app.chat`
+  - `app.documents`
+  - `app.providers`
+- `app.search`, `app.files`, and `app.content` are gone on purpose
+- the current problem is no longer top-level `app` churn; the next pass should move backward into `domain`
 
 When restarting:
 
@@ -339,29 +344,39 @@ When restarting:
 3. Do not add new compatibility barrels or flat root exports.
 4. Treat old pass-through exports as suspicious by default.
 5. Prefer deleting duplicate aliases over preserving them.
-6. Keep public APIs small, but do not remove distinct concerns just because they are small.
-7. Search is distinct. Content may or may not be; decide carefully.
-8. Do not touch `scripts/`, `src/tests/contracts/`, or `src/tests/mocks/` unless a change genuinely requires it.
-9. If those files do change, rerun all guardrails immediately.
+6. Keep public APIs small, but do not split namespaces just to preserve old folder structure.
+7. `app.chat` now uses narrower read queries:
+   - `getChats`
+   - `getChat`
+   - `getActiveChatIndex`
+   - `getActiveExchangeId`
+   - `getMainChat`
+8. `app.documents` and `app.providers` have already been flattened; do not reintroduce `commands.ts` / `queries.ts`.
+9. Keep injected `deps` objects narrow and boring.
+10. Prefer one real data request plus many pure projection functions over many baggy `getState()`-style reads.
+11. For chat/tree work, the target shape is:
+   - get the chat/tree once
+   - run pure helpers like `getMainChat(tree)` or similar projections on top of it
+   - avoid reintroducing broad mutable state snapshots just for convenience
+12. Do not touch `scripts/`, `src/tests/contracts/`, or `src/tests/mocks/` unless a change genuinely requires it.
+13. If those files do change, rerun all guardrails immediately.
 
 What to preserve:
 
-- `app.search` remains separate
 - `app.bootstrap` remains the app-facing startup/save boundary
 - root-level fake `src/app/*.ts` compatibility files should stay gone
 - duplicate `perform*` aliases should stay gone
 - duplicate provider `init` alias should stay gone
+- `app.search`, `app.files`, and `app.content` should stay gone
+- `app.chat.getState()` should stay gone
+- `app.chat.getCommandHistory()` should stay gone
+- `branch` terminology should stay gone from active non-canvas code
 
-How to work:
+Current `app` status:
 
-1. Pick one `app` namespace.
-2. List its public exports.
-3. Mark each export:
-   - app-shaped
-   - thin-but-acceptable
-   - bad forwarding
-4. Remove only the bad forwarding that is clearly unnecessary.
-5. Keep checks green after each small cut.
+- `app` is in a good stopping state for now
+- remaining `app` work is naming/read-model polish, not structural cleanup
+- the next substantial pass should move into `domain`
 
 Always rerun:
 
@@ -373,61 +388,36 @@ Always rerun:
 
 Current likely targets:
 
-- `src/app/chat/index.ts`
-- `src/app/documents/index.ts`
-- `src/app/providers/index.ts`
-- `src/app/files/index.ts`
-- `src/app/content/index.ts`
+- `src/domain/tree/index.ts`
+- `src/domain/models/index.ts`
+- domain public-surface naming and ownership
+- any remaining pure constraints/read-model logic that still feels under-modeled
 
 Current likely non-targets:
 
-- `src/app/search/index.ts`
-- root barrel structure
-- test naming rules
+- top-level `src/app/index.ts` namespace shape
+- restoring deleted `app.search` / `app.files` / `app.content`
+- reintroducing `commands.ts` / `queries.ts` splits under `app`
 - AST import checker design
 
-### Step 2. Remove `app.runtime` as a lower-layer facade
+### App Completion Note
 
-Replace broad `app.runtime.*` forwarding with feature-oriented exports in:
+`app` has already been cleaned up enough for the current pass.
 
-- `app.chat`
-- `app.documents`
-- `app.providers`
-- `app.persistence` if needed
-- `app.files`
+Done:
 
-The goal is to eliminate exports like:
+- `app.runtime` is gone
+- `app.files` is gone
+- `app.content` is gone
+- `app.search` is gone
+- `app.documents` and `app.providers` no longer use `commands.ts` / `queries.ts`
+- `app.chat` no longer exposes `getState()` or `getCommandHistory()`
 
-- `app.runtime.docState`
-- `app.runtime.chatState`
-- `app.runtime.providerState`
+Remaining `app` work should be deferred unless the `domain` pass forces it.
 
-Status:
+### Next Direction
 
-- [ ] not done
-
-### Step 3. Move view call sites off `app.runtime.*`
-
-Update `src/view/**` to use feature APIs instead of `app.runtime`.
-
-Examples of the intended direction:
-
-- `app.chat.getActiveChat()`
-- `app.chat.getActiveExchanges()`
-- `app.chat.selectActiveExchange()`
-- `app.documents.getFolders()`
-- `app.documents.updateOpenDocumentContent()`
-- `app.providers.getState()`
-- `app.providers.selectModel()`
-
-Exact names can be decided during refactor, but they should be app-shaped and grouped by feature.
-
-Status:
-
-- [ ] not done
-
-### Step 4. Remove flat compatibility exports from `src/app/index.ts`
-
+Move bottom-up into `domain`.
 Once view and tests stop relying on them:
 
 - remove root-level flat exports
