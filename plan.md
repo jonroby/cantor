@@ -312,14 +312,42 @@ Note on comments:
 - blanket "comment every function" is still questionable
 - comments on non-obvious functions/logic may be a better target than comments on every function mechanically
 
-## Next Session Start Here
+## Current Stopping Point
 
-If restarting fresh, start here:
+This pass has now gone all the way backward through:
 
-1. audit `src/app/**` namespace by namespace
-2. classify exports as app-shaped vs thin-but-acceptable vs bad forwarding
-3. clean the worst `app` namespace first while keeping checks green
-4. once `app` is tighter, move bottom-up into `domain.tree` public-surface cleanup
+- `app`
+- `domain`
+- `external`
+- `state`
+- `lib`
+
+Current architectural status:
+
+- `app` is in a good stopping state
+- `domain.tree` has been heavily reduced and split from tree constraints
+- `domain.constraints` is checks-only, not fixer logic
+- `external.streams` now takes prebuilt history instead of building app semantics itself
+- `external.files` no longer returns a state type
+- `state.chats` no longer exposes raw `ExchangeMap` bag accessors/mutators
+- `state.providers` is just runtime provider state plus small mutations
+- `lib` has been reduced to genuinely shared utilities
+
+Important current truths:
+
+- `app.search`, `app.files`, and `app.content` are gone on purpose
+- `app.chat.getState()` is gone
+- `app.chat.getCommandHistory()` is gone
+- `branch` terminology is gone from active non-canvas code
+- `commands.ts` / `queries.ts` should not be reintroduced
+- `document-map` and `diff` are no longer in `lib`
+
+Provider-support note:
+
+- `provider-defaults` and `provider-types` currently remain in `lib`
+- this is not because they are ideal `lib` material
+- it is because `state` may import only `domain` and `lib`
+- with the current import rules, shared provider support cannot live only in `external`
 
 ## Fresh-Start Instructions
 
@@ -335,7 +363,8 @@ If context is wiped, assume these are true unless the repo proves otherwise:
   - `app.documents`
   - `app.providers`
 - `app.search`, `app.files`, and `app.content` are gone on purpose
-- the current problem is no longer top-level `app` churn; the next pass should move backward into `domain`
+- the large top-level cleanup pass through `app`, `domain`, `external`, `state`, and `lib` has already happened
+- the current problem is no longer layer churn; the next pass should be a smaller semantic polish pass, not another rearchitecture
 
 When restarting:
 
@@ -355,11 +384,18 @@ When restarting:
 9. Keep injected `deps` objects narrow and boring.
 10. Prefer one real data request plus many pure projection functions over many baggy `getState()`-style reads.
 11. For chat/tree work, the target shape is:
-   - get the chat/tree once
-   - run pure helpers like `getMainChat(tree)` or similar projections on top of it
-   - avoid reintroducing broad mutable state snapshots just for convenience
-12. Do not touch `scripts/`, `src/tests/contracts/`, or `src/tests/mocks/` unless a change genuinely requires it.
-13. If those files do change, rerun all guardrails immediately.
+
+- get the chat/tree once
+- run pure helpers like `getMainChat(tree)` or similar projections on top of it
+- avoid reintroducing broad mutable state snapshots just for convenience
+
+12. `state.chats` should stay tree/chat-shaped:
+
+- prefer `getActiveChat()` / `getActiveTree()` / `getTreeByChatId()`
+- do not reintroduce raw `ExchangeMap` bag accessors like `getActiveExchanges()`
+
+13. Do not touch `scripts/`, `src/tests/contracts/`, or `src/tests/mocks/` unless a change genuinely requires it.
+14. If those files do change, rerun all guardrails immediately.
 
 What to preserve:
 
@@ -371,12 +407,10 @@ What to preserve:
 - `app.chat.getState()` should stay gone
 - `app.chat.getCommandHistory()` should stay gone
 - `branch` terminology should stay gone from active non-canvas code
-
-Current `app` status:
-
-- `app` is in a good stopping state for now
-- remaining `app` work is naming/read-model polish, not structural cleanup
-- the next substantial pass should move into `domain`
+- `domain.constraints` should stay checks-only
+- `external.streams` should stay boundary-only
+- `state` should stay runtime-state-only
+- `lib` should stay small; do not move frontend rendering helpers back into it
 
 Always rerun:
 
@@ -388,23 +422,22 @@ Always rerun:
 
 Current likely targets:
 
-- `src/domain/tree/index.ts`
-- `src/domain/models/index.ts`
-- domain public-surface naming and ownership
-- any remaining pure constraints/read-model logic that still feels under-modeled
+- semantic polish inside already-cleaned layers
+- naming cleanup where old terms still linger
+- public-surface reduction only when a module still clearly leaks the wrong shape
+- guardrail tightening only after the current shapes are stable
 
 Current likely non-targets:
 
-- top-level `src/app/index.ts` namespace shape
-- restoring deleted `app.search` / `app.files` / `app.content`
-- reintroducing `commands.ts` / `queries.ts` splits under `app`
-- AST import checker design
+- top-level namespace surgery
+- restoring deleted namespaces
+- reintroducing `commands.ts` / `queries.ts`
+- broad file-moving for its own sake
+- another large architecture pass without a concrete smell
 
-### App Completion Note
+### Completion Note
 
-`app` has already been cleaned up enough for the current pass.
-
-Done:
+Done in this pass:
 
 - `app.runtime` is gone
 - `app.files` is gone
@@ -412,65 +445,32 @@ Done:
 - `app.search` is gone
 - `app.documents` and `app.providers` no longer use `commands.ts` / `queries.ts`
 - `app.chat` no longer exposes `getState()` or `getCommandHistory()`
-
-Remaining `app` work should be deferred unless the `domain` pass forces it.
-
-### Next Direction
-
-Move bottom-up into `domain`.
-Once view and tests stop relying on them:
-
-- remove root-level flat exports
-- keep root-level namespaces only
-
-Status:
-
-- [ ] partially done structurally
-- [ ] not done semantically
-
-### Step 5. Tighten the checker for `app`
-
-Status:
-
-- [ ] not done
+- `domain.tree` was reduced and split from tree constraints
+- `domain.constraints` now checks only
+- `external.streams` no longer assembles app history/context
+- `external.files` no longer returns a state type
+- `state.chats` no longer exposes raw exchange-map accessors/mutators
+- `state.providers` no longer carries duplicated provider context metadata
+- `lib` no longer contains frontend rendering helpers like `document-map` or `diff`
 
 ## Next Session Start Here
 
-When resuming, start fresh with an `app`-only semantic audit.
-
-Do not start by moving files blindly.
+When resuming, do not restart from `app`.
 
 Start with:
 
-1. Audit the current public `app` surface.
-2. List every export in:
-   - `src/app/index.ts`
-   - `src/app/runtime/index.ts`
-   - `src/app/chat/index.ts`
-   - `src/app/documents/index.ts`
-   - `src/app/providers/index.ts`
-   - `src/app/files/index.ts`
-3. Classify each export as:
-   - app-shaped
-   - thin-but-acceptable
-   - bad lower-layer forwarding
-4. Identify all current `app.runtime.*` usages in `src/view/**` and tests.
-5. Replace the worst `app.runtime` pass-throughs first:
-   - `chatState`
-   - `docState`
-   - `providerState`
-   - `loadFromStorage`
-   - `saveToStorage`
-6. Move those usages onto feature-oriented `app.*` APIs.
-7. Only after that, remove or shrink `app.runtime`.
+1. Read the current public surface in the area you want to polish.
+2. Look for one concrete semantic smell, not a hypothetical redesign.
+3. Make the smallest change that removes that smell while preserving the current layer boundaries.
+4. Update contracts/mocks only if the public surface actually changed.
+5. Rerun the guardrails.
 
-The immediate target is not “finish all of app.”
+Good next kinds of work:
 
-The immediate target is:
-
-- make `app.runtime` visibly smaller
-- reduce direct exposure of `state` and `external` through `app`
-- keep the repo green after each small step
+- naming cleanup where old terminology still leaks through
+- shrinking a public surface that is still obviously too wide
+- tightening a checker once the underlying shape is already stable
+- removing dead compatibility/test baggage left behind by the big cleanup pass
 
 ## Completed So Far
 
