@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/state', async () => {
-	const { createStateMock } = await import('@/tests/mocks');
+	const { createStateMock } = await import('@/tests/mocks/state');
 	return createStateMock({
 		chats: {
 			replaceActiveTree: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock('@/state', async () => {
 });
 
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks');
+	const { createExternalMock } = await import('@/tests/mocks/external');
 	return createExternalMock({
 		streams: {
 			isStreaming: vi.fn(() => false),

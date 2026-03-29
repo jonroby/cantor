@@ -1,10 +1,9 @@
-import { vi } from 'vitest';
+import * as domain from '@/domain';
+import domainContract from '@/tests/contracts/domain.json';
 
-import type * as domain from '@/domain';
+import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
 
-import { mergeMock, type DeepPartial, type PublicApiMock } from './helpers';
-
-type DomainMock = PublicApiMock<typeof domain>;
+type DomainMock = PublicApiMock<typeof domain, typeof domainContract>;
 
 export function createDomainMock(overrides?: DeepPartial<DomainMock>): DomainMock {
 	const base = {
@@ -32,52 +31,53 @@ export function createDomainMock(overrides?: DeepPartial<DomainMock>): DomainMoc
 				'mistral',
 				'groq'
 			] as const,
-			isKeyBasedProvider: vi.fn((provider: string) =>
+			isKeyBasedProvider: mockFn<typeof domain.models.isKeyBasedProvider>((provider) =>
 				['claude', 'openai', 'gemini', 'moonshot', 'qwen', 'deepseek', 'mistral', 'groq'].includes(
 					provider
 				)
 			)
 		},
 		search: {
-			getDefaultItems: vi.fn(() => []),
-			groupResults: vi.fn(() => []),
-			searchChats: vi.fn(() => [])
+			getDefaultItems: mockFn<typeof domain.search.getDefaultItems>(() => []),
+			groupResults: mockFn<typeof domain.search.groupResults>(() => []),
+			searchChats: mockFn<typeof domain.search.searchChats>(() => [])
 		},
 		tree: {
-			ChatTreeOperationError:
-				class ChatTreeOperationError extends Error {} as unknown as DomainMock['tree']['ChatTreeOperationError'],
-			addDocumentExchangeResult: vi.fn(),
-			addExchange: vi.fn(),
-			addExchangeResult: vi.fn(),
-			buildEmptyTree: vi.fn(() => ({ rootId: null, exchanges: {} })),
-			canAcceptNewChat: vi.fn(() => false),
-			canCreateSideChats: vi.fn(() => false),
-			canPromoteSideChatToMainChat: vi.fn(() => false),
-			copyPath: vi.fn(),
-			deleteExchangeWithMode: vi.fn(),
-			deleteExchangeWithModeResult: vi.fn(),
-			findRootId: vi.fn(),
-			findSideChatParent: vi.fn(),
-			getChildExchanges: vi.fn(() => []),
-			getDescendantExchanges: vi.fn(() => []),
-			getHistory: vi.fn(() => []),
-			getMainChatHistory: vi.fn(() => []),
-			getMainChatTail: vi.fn(() => null),
-			getPathTokenTotal: vi.fn(() => 0),
-			getRootExchange: vi.fn(),
-			promoteSideChatToMainChat: vi.fn(),
-			removeExchange: vi.fn(),
-			removeExchangeSubtree: vi.fn(),
-			removeMainChatChild: vi.fn(),
-			removeSideChatChildren: vi.fn(),
-			updateExchangeResponse: vi.fn(),
-			updateExchangeTokens: vi.fn(),
-			validateChatTree: vi.fn()
+			ChatTreeOperationError: domain.tree.ChatTreeOperationError,
+			addDocumentExchangeResult: mockFn<typeof domain.tree.addDocumentExchangeResult>(),
+			addExchange: mockFn<typeof domain.tree.addExchange>(),
+			addExchangeResult: mockFn<typeof domain.tree.addExchangeResult>(),
+			buildEmptyTree: mockFn<typeof domain.tree.buildEmptyTree>(() => ({
+				rootId: null,
+				exchanges: {}
+			})),
+			canAcceptNewChat: mockFn<typeof domain.tree.canAcceptNewChat>(() => false),
+			canCreateSideChats: mockFn<typeof domain.tree.canCreateSideChats>(() => false),
+			canPromoteSideChatToMainChat: mockFn<typeof domain.tree.canPromoteSideChatToMainChat>(
+				() => false
+			),
+			copyPath: mockFn<typeof domain.tree.copyPath>(),
+			deleteExchangeWithMode: mockFn<typeof domain.tree.deleteExchangeWithMode>(),
+			deleteExchangeWithModeResult: mockFn<typeof domain.tree.deleteExchangeWithModeResult>(),
+			findRootId: mockFn<typeof domain.tree.findRootId>(),
+			findSideChatParent: mockFn<typeof domain.tree.findSideChatParent>(),
+			getChildExchanges: mockFn<typeof domain.tree.getChildExchanges>(() => []),
+			getDescendantExchanges: mockFn<typeof domain.tree.getDescendantExchanges>(() => []),
+			getHistory: mockFn<typeof domain.tree.getHistory>(() => []),
+			getMainChatHistory: mockFn<typeof domain.tree.getMainChatHistory>(() => []),
+			getMainChatTail: mockFn<typeof domain.tree.getMainChatTail>(() => null),
+			getPathTokenTotal: mockFn<typeof domain.tree.getPathTokenTotal>(() => 0),
+			getRootExchange: mockFn<typeof domain.tree.getRootExchange>(),
+			promoteSideChatToMainChat: mockFn<typeof domain.tree.promoteSideChatToMainChat>(),
+			removeExchange: mockFn<typeof domain.tree.removeExchange>(),
+			removeExchangeSubtree: mockFn<typeof domain.tree.removeExchangeSubtree>(),
+			removeMainChatChild: mockFn<typeof domain.tree.removeMainChatChild>(),
+			removeSideChatChildren: mockFn<typeof domain.tree.removeSideChatChildren>(),
+			updateExchangeResponse: mockFn<typeof domain.tree.updateExchangeResponse>(),
+			updateExchangeTokens: mockFn<typeof domain.tree.updateExchangeTokens>(),
+			validateChatTree: mockFn<typeof domain.tree.validateChatTree>()
 		}
 	} satisfies DomainMock;
 
-	return mergeMock(
-		base as unknown as Record<string, unknown>,
-		overrides as DeepPartial<Record<string, unknown>>
-	) as unknown as DomainMock;
+	return mergeMock<DomainMock>(base, overrides);
 }

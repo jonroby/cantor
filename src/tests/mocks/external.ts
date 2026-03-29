@@ -1,96 +1,100 @@
-import { vi } from 'vitest';
-
 import type * as external from '@/external';
+import externalContract from '@/tests/contracts/external.json';
+import { CLAUDE_MODELS, PROVIDER_CONFIG, PROVIDER_MODELS } from '@/external/providers/catalog';
+import { DEFAULT_OLLAMA_URL } from '@/external/providers/ollama';
+import { WEBLLM_CONTEXT_OPTIONS } from '@/external/providers/webllm';
 
-import { mergeMock, type DeepPartial, type PublicApiMock } from './helpers';
+import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
 
-type ExternalMock = PublicApiMock<typeof external>;
+type ExternalMock = PublicApiMock<typeof external, typeof externalContract>;
 
 export function createExternalMock(overrides?: DeepPartial<ExternalMock>): ExternalMock {
 	const base = {
 		files: {
-			deduplicateName: vi.fn((name: string) => name),
-			findRootId: vi.fn(),
-			validateChatUpload: vi.fn((value: unknown) => value)
+			deduplicateName: mockFn<typeof external.files.deduplicateName>((name) => name),
+			findRootId: mockFn<typeof external.files.findRootId>(),
+			validateChatUpload: mockFn<typeof external.files.validateChatUpload>(
+				(value) => value as ReturnType<typeof external.files.validateChatUpload>
+			)
 		},
 		persistence: {
-			clearVaultStorage: vi.fn(),
-			getPersistedLayout: vi.fn(() => ({})),
-			getVaultStore: vi.fn(() => ({})),
-			loadFromStorage: vi.fn(),
-			migrateVaultStorage: vi.fn(),
-			saveToStorage: vi.fn(),
-			setPersistedLayout: vi.fn(),
-			setVaultStore: vi.fn()
+			clearVaultStorage: mockFn<typeof external.persistence.clearVaultStorage>(),
+			getPersistedLayout: mockFn<typeof external.persistence.getPersistedLayout>(() => ({})),
+			getVaultStore: mockFn<typeof external.persistence.getVaultStore>(() => ({})),
+			loadFromStorage: mockFn<typeof external.persistence.loadFromStorage>(),
+			migrateVaultStorage: mockFn<typeof external.persistence.migrateVaultStorage>(),
+			saveToStorage: mockFn<typeof external.persistence.saveToStorage>(),
+			setPersistedLayout: mockFn<typeof external.persistence.setPersistedLayout>(),
+			setVaultStore: mockFn<typeof external.persistence.setVaultStore>()
 		},
 		providers: {
 			catalog: {
-				CLAUDE_MODELS: [],
-				getModelContextLength: vi.fn(() => null),
-				getProviderForModelId: vi.fn(() => null),
-				PROVIDER_CONFIG: {} as ExternalMock['providers']['catalog']['PROVIDER_CONFIG'],
-				PROVIDER_MODELS: {} as ExternalMock['providers']['catalog']['PROVIDER_MODELS']
+				CLAUDE_MODELS,
+				getModelContextLength: mockFn<typeof external.providers.catalog.getModelContextLength>(
+					() => null
+				),
+				getProviderForModelId: mockFn<typeof external.providers.catalog.getProviderForModelId>(
+					() => null
+				),
+				PROVIDER_CONFIG,
+				PROVIDER_MODELS
 			},
 			claude: {
-				streamClaudeChat: vi.fn()
+				streamClaudeChat: mockFn<typeof external.providers.claude.streamClaudeChat>()
 			},
 			gemini: {
-				streamGeminiChat: vi.fn()
+				streamGeminiChat: mockFn<typeof external.providers.gemini.streamGeminiChat>()
 			},
 			ollama: {
-				DEFAULT_OLLAMA_URL: 'http://localhost:11434',
-				fetchAvailableModels: vi.fn(),
-				fetchModelContextLength: vi.fn(),
-				streamOllamaChat: vi.fn()
+				DEFAULT_OLLAMA_URL,
+				fetchAvailableModels: mockFn<typeof external.providers.ollama.fetchAvailableModels>(),
+				fetchModelContextLength: mockFn<typeof external.providers.ollama.fetchModelContextLength>(),
+				streamOllamaChat: mockFn<typeof external.providers.ollama.streamOllamaChat>()
 			},
 			openAiCompat: {
-				streamOpenAICompatChat: vi.fn()
+				streamOpenAICompatChat:
+					mockFn<typeof external.providers.openAiCompat.streamOpenAICompatChat>()
 			},
 			stream: {
-				getProviderStream: vi.fn()
+				getProviderStream: mockFn<typeof external.providers.stream.getProviderStream>()
 			},
 			vault: {
-				clearProviderKey: vi.fn(),
-				clearVault: vi.fn(),
-				hasProviderKey: vi.fn(() => false),
-				hasVault: vi.fn(() => false),
-				loadAllApiKeys: vi.fn(async () => ({})),
-				loadApiKey: vi.fn(async () => null),
-				migrateVault: vi.fn(),
-				saveApiKey: vi.fn(async () => {}),
-				storedProviders: vi.fn(() => [])
+				clearProviderKey: mockFn<typeof external.providers.vault.clearProviderKey>(),
+				clearVault: mockFn<typeof external.providers.vault.clearVault>(),
+				hasProviderKey: mockFn<typeof external.providers.vault.hasProviderKey>(() => false),
+				hasVault: mockFn<typeof external.providers.vault.hasVault>(() => false),
+				loadAllApiKeys: mockFn<typeof external.providers.vault.loadAllApiKeys>(async () => ({})),
+				loadApiKey: mockFn<typeof external.providers.vault.loadApiKey>(async () => ''),
+				migrateVault: mockFn<typeof external.providers.vault.migrateVault>(),
+				saveApiKey: mockFn<typeof external.providers.vault.saveApiKey>(async () => {}),
+				storedProviders: mockFn<typeof external.providers.vault.storedProviders>(() => [])
 			},
 			webllm: {
-				deleteAllModelCaches: vi.fn(async () => {}),
-				deleteModelCache: vi.fn(async () => {}),
-				getLoadedModelId: vi.fn(() => null),
-				getWebLLMEngine: vi.fn(),
-				getWebLLMModels: vi.fn(async () => []),
-				isModelCached: vi.fn(async () => false),
-				isWebLLMReady: vi.fn(() => false),
-				loadWebLLMModel: vi.fn(async () => {}),
-				streamWebLLMChat: vi.fn(),
-				unloadWebLLM: vi.fn(),
-				WEBLLM_CONTEXT_OPTIONS: [
-					{ label: '4K', value: 4_096 },
-					{ label: '8K', value: 8_192 },
-					{ label: '16K', value: 16_384 }
-				] as const
+				deleteAllModelCaches: mockFn<typeof external.providers.webllm.deleteAllModelCaches>(
+					async () => {}
+				),
+				deleteModelCache: mockFn<typeof external.providers.webllm.deleteModelCache>(async () => {}),
+				getLoadedModelId: mockFn<typeof external.providers.webllm.getLoadedModelId>(() => null),
+				getWebLLMEngine: mockFn<typeof external.providers.webllm.getWebLLMEngine>(),
+				getWebLLMModels: mockFn<typeof external.providers.webllm.getWebLLMModels>(async () => []),
+				isModelCached: mockFn<typeof external.providers.webllm.isModelCached>(async () => false),
+				isWebLLMReady: mockFn<typeof external.providers.webllm.isWebLLMReady>(() => false),
+				loadWebLLMModel: mockFn<typeof external.providers.webllm.loadWebLLMModel>(async () => {}),
+				streamWebLLMChat: mockFn<typeof external.providers.webllm.streamWebLLMChat>(),
+				unloadWebLLM: mockFn<typeof external.providers.webllm.unloadWebLLM>(),
+				WEBLLM_CONTEXT_OPTIONS
 			}
 		},
 		streams: {
-			cancelAllStreams: vi.fn(),
-			cancelStream: vi.fn(),
-			cancelStreamsForChat: vi.fn(),
-			cancelStreamsForExchanges: vi.fn(),
-			isAnyStreaming: vi.fn(() => false),
-			isStreaming: vi.fn(() => false),
-			startStream: vi.fn()
+			cancelAllStreams: mockFn<typeof external.streams.cancelAllStreams>(),
+			cancelStream: mockFn<typeof external.streams.cancelStream>(),
+			cancelStreamsForChat: mockFn<typeof external.streams.cancelStreamsForChat>(),
+			cancelStreamsForExchanges: mockFn<typeof external.streams.cancelStreamsForExchanges>(),
+			isAnyStreaming: mockFn<typeof external.streams.isAnyStreaming>(() => false),
+			isStreaming: mockFn<typeof external.streams.isStreaming>(() => false),
+			startStream: mockFn<typeof external.streams.startStream>()
 		}
 	} satisfies ExternalMock;
 
-	return mergeMock(
-		base as unknown as Record<string, unknown>,
-		overrides as DeepPartial<Record<string, unknown>>
-	) as unknown as ExternalMock;
+	return mergeMock<ExternalMock>(base, overrides);
 }

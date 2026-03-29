@@ -14,7 +14,7 @@ vi.mock('dompurify', () => ({
 }));
 
 vi.mock('@/app', async () => {
-	const { createAppMock } = await import('@/tests/mocks');
+	const { createAppMock } = await import('@/tests/mocks/app');
 	return createAppMock({
 		content: {
 			mapDocument: vi.fn((text: string) =>

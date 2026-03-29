@@ -15,9 +15,9 @@ export default defineConfig({
 
 ## Key rules
 
-1. **Test filenames must include `.svelte`** (e.g., `foo.svelte.test.ts`) for the Svelte compiler to process runes in the test file itself.
+1. **Tests under `src/` must use the `*.test.ts` suffix.** Only actual Svelte components use `.svelte`; non-component test files should not include `.svelte` in the filename.
 
-2. **`$state({...})` objects** — property mutations are synchronously visible in tests. This is why `chatState.chats = [...]` works in `chats.svelte.test.ts`.
+2. **`$state({...})` objects** — property mutations are synchronously visible in tests. This is why `chatState.chats = [...]` works in `chats.test.ts`.
 
 3. **`let x = $state([]); x = [...]` (reassignment)** — the compiled setter notifies Svelte's reactivity system, but the new value is NOT immediately visible to a plain read in a test. You must call `flushSync()` to synchronize.
 

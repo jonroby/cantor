@@ -10,11 +10,11 @@ import * as domain from '@/domain';
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks');
+	const { createExternalMock } = await import('@/tests/mocks/external');
 	return createExternalMock({
 		providers: {
 			webllm: {
-				getWebLLMModels: vi.fn(() => [])
+				getWebLLMModels: vi.fn(async () => [])
 			},
 			vault: {
 				storedProviders: vi.fn(() => [])

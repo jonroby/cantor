@@ -21,7 +21,7 @@ vi.mock('./openai-compat', () => ({
 }));
 
 vi.mock('@/state', async () => {
-	const { createStateMock } = await import('@/tests/mocks');
+	const { createStateMock } = await import('@/tests/mocks/state');
 	return createStateMock({
 		providers: {
 			providerState: {

@@ -22,14 +22,21 @@
 			"PROVIDER_CONFIG": true,
 			"PROVIDER_MODELS": true
 		},
-		"claude": {},
-		"gemini": {},
+		"claude": {
+			"streamClaudeChat": true
+		},
+		"gemini": {
+			"streamGeminiChat": true
+		},
 		"ollama": {
 			"DEFAULT_OLLAMA_URL": true,
 			"fetchAvailableModels": true,
-			"fetchModelContextLength": true
+			"fetchModelContextLength": true,
+			"streamOllamaChat": true
 		},
-		"openAiCompat": {},
+		"openAiCompat": {
+			"streamOpenAICompatChat": true
+		},
 		"stream": {
 			"getProviderStream": true
 		},
@@ -53,6 +60,7 @@
 			"isModelCached": true,
 			"isWebLLMReady": true,
 			"loadWebLLMModel": true,
+			"streamWebLLMChat": true,
 			"unloadWebLLM": true,
 			"WEBLLM_CONTEXT_OPTIONS": true
 		}

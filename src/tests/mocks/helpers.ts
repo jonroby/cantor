@@ -1,16 +1,24 @@
-export type PublicApiMock<T> = T extends (...args: unknown[]) => unknown
-	? unknown
-	: T extends readonly unknown[]
-		? unknown
-		: T extends object
-			? { [K in keyof T]: PublicApiMock<T[K]> }
-			: unknown;
+import { vi } from 'vitest';
+
+export type PublicApiMock<T, TContract> = TContract extends true
+	? T
+	: TContract extends object
+		? {
+				[K in keyof TContract]: K extends keyof T ? PublicApiMock<T[K], TContract[K]> : never;
+			}
+		: never;
 
 export type DeepPartial<T> = T extends readonly unknown[]
 	? T
 	: T extends object
 		? { [K in keyof T]?: DeepPartial<T[K]> }
 		: T;
+
+export function mockFn<T extends (...args: never[]) => unknown>(
+	implementation?: (...args: Parameters<T>) => ReturnType<T>
+): T {
+	return vi.fn(implementation as T | undefined) as T;
+}
 
 export function mergeMock<T>(base: T, overrides?: DeepPartial<T>): T {
 	if (!overrides) return base;

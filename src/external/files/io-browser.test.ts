@@ -74,10 +74,12 @@ vi.mock('@/lib', async (importOriginal) => ({
 }));
 
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks');
+	const { createExternalMock } = await import('@/tests/mocks/external');
 	return createExternalMock({
 		files: {
-			validateChatUpload: vi.fn((data) => data),
+			validateChatUpload: vi.fn(
+				(data) => data as ReturnType<typeof domain.tree.buildEmptyTree> & domain.tree.Chat
+			),
 			deduplicateName: vi.fn((name: string, existingNames: string[]) => {
 				if (!existingNames.includes(name)) return name;
 				const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
@@ -89,7 +91,7 @@ vi.mock('@/external', async () => {
 		},
 		providers: {
 			webllm: {
-				getWebLLMModels: vi.fn(() => [])
+				getWebLLMModels: vi.fn(async () => [])
 			},
 			vault: {
 				storedProviders: vi.fn(() => [])

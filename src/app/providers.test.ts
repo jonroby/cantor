@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks');
+	const { createExternalMock } = await import('@/tests/mocks/external');
 	return createExternalMock({
 		providers: {
 			webllm: {
-				getWebLLMModels: vi.fn(() => [{ id: 'web-model', label: 'web-model', vramMB: 1024 }])
+				getWebLLMModels: vi.fn(async () => [{ id: 'web-model', label: 'web-model', vramMB: 1024 }])
 			},
 			vault: {
 				storedProviders: vi.fn(() => ['claude'])

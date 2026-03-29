@@ -29,7 +29,7 @@ vi.mock('@/view/components/shadcn/ui/sidebar/index.js', async () => ({
 }));
 
 vi.mock('@/app', async () => {
-	const { createAppMock } = await import('@/tests/mocks');
+	const { createAppMock } = await import('@/tests/mocks/app');
 	return createAppMock({
 		bootstrap: {
 			initialize: vi.fn(() => ({ restoredDocument: null, hadDuplicateRenames: false })),

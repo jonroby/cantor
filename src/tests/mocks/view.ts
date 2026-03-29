@@ -1,25 +1,23 @@
-import type * as view from '@/view';
+import * as view from '@/view';
+import viewContract from '@/tests/contracts/view.json';
 
 import { mergeMock, type DeepPartial, type PublicApiMock } from './helpers';
 
-type ViewMock = PublicApiMock<typeof view>;
+type ViewMock = PublicApiMock<typeof view, typeof viewContract>;
 
 export function createViewMock(overrides?: DeepPartial<ViewMock>): ViewMock {
 	const base = {
 		classic: {
-			ChatMessage: {} as ViewMock['classic']['ChatMessage'],
-			ChatView: {} as ViewMock['classic']['ChatView']
+			ChatMessage: view.classic.ChatMessage,
+			ChatView: view.classic.ChatView
 		},
 		shared: {
-			AppSidebar: {} as ViewMock['shared']['AppSidebar'],
-			ChatInput: {} as ViewMock['shared']['ChatInput'],
-			Composer: {} as ViewMock['shared']['Composer'],
-			SearchDialog: {} as ViewMock['shared']['SearchDialog']
+			AppSidebar: view.shared.AppSidebar,
+			ChatInput: view.shared.ChatInput,
+			Composer: view.shared.Composer,
+			SearchDialog: view.shared.SearchDialog
 		}
 	} satisfies ViewMock;
 
-	return mergeMock(
-		base as unknown as Record<string, unknown>,
-		overrides as DeepPartial<Record<string, unknown>>
-	) as unknown as ViewMock;
+	return mergeMock<ViewMock>(base, overrides);
 }

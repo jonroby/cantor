@@ -68,7 +68,7 @@ src/
 │   ├── providers/       claude.ts, gemini.ts, ollama.ts, openai-compat.ts, webllm.ts, webllm-worker.ts, stream.ts, vault.ts
 │   ├── search/          index.ts
 │   ├── tree/            index.ts
-│   └── validate-md/     index.ts, validate-md.spec.ts
+│   └── validate-md/     index.ts, validate-md.test.ts
 │
 ├── state/
 │   ├── chats.svelte.ts

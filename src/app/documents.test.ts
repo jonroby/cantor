@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks');
+	const { createExternalMock } = await import('@/tests/mocks/external');
 	return createExternalMock({
 		persistence: {
 			getPersistedLayout: vi.fn(() => ({})),
