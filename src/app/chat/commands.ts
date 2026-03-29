@@ -2,6 +2,13 @@ import * as domain from '@/domain';
 import * as state from '@/state';
 import * as external from '@/external';
 
+export interface ChatTransferFeedback {
+	success?: (message: string) => void;
+	error?: (message: string) => void;
+}
+
+const NOOP_FEEDBACK: ChatTransferFeedback = {};
+
 export interface ChatCommandDeps {
 	replaceActiveTree: (tree: domain.tree.ChatTree) => void;
 	setActiveExchangeId: (id: string | null) => void;
@@ -116,7 +123,7 @@ export function quickAsk(
 	);
 }
 
-export function addDocToChat(
+export function addDocumentToChat(
 	tree: domain.tree.ChatTree,
 	activeExchangeId: string | null,
 	content: string,
@@ -133,4 +140,62 @@ export function addDocToChat(
 	deps.replaceActiveTree(result);
 	deps.setActiveExchangeId(result.id);
 	return result.id;
+}
+
+export function exportState() {
+	const payload = JSON.stringify(
+		{
+			chats: state.chats.chatState.chats,
+			activeChatIndex: state.chats.chatState.activeChatIndex,
+			folders: state.documents.docState.folders
+		},
+		null,
+		2
+	);
+	const blob = new Blob([payload], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = `chat-tree-${Date.now()}.json`;
+	link.click();
+	URL.revokeObjectURL(url);
+}
+
+export function exportChat(index: number) {
+	const chat = state.chats.chatState.chats[index];
+	const payload = JSON.stringify(chat, null, 2);
+	const blob = new Blob([payload], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = `${chat.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`;
+	link.click();
+	URL.revokeObjectURL(url);
+}
+
+export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void {
+	const input = document.createElement('input');
+	input.type = 'file';
+	input.accept = '.json';
+	input.onchange = async () => {
+		const file = input.files?.[0];
+		if (!file) return;
+		try {
+			const text = await file.text();
+			const data = JSON.parse(text);
+			const chat = external.files.validateChatUpload(data);
+			chat.id = crypto.randomUUID();
+			const baseName = file.name.replace(/\.json$/i, '');
+			chat.name = external.files.deduplicateName(
+				baseName,
+				state.chats.chatState.chats.map((c) => c.name)
+			);
+			state.chats.chatState.chats = [...state.chats.chatState.chats, chat];
+			state.chats.chatState.activeChatIndex = state.chats.chatState.chats.length - 1;
+			feedback.success?.(`Imported "${chat.name}"`);
+		} catch (e) {
+			feedback.error?.(e instanceof Error ? e.message : 'Invalid chat file');
+		}
+	};
+	input.click();
 }

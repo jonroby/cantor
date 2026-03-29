@@ -6,7 +6,15 @@ import ChatMessage from './ChatMessage.svelte';
 import * as app from '@/app';
 
 vi.mock('@/view/shared/katex', () => ({
-	renderRichText: (text: string) => text
+	renderRichText: (text: string) => text,
+	renderMarkdownKatexBlocks: vi.fn((text: string) =>
+		text
+			? text.split('\n\n').map((block) => ({
+					source: block,
+					html: `<p>${block}</p>`
+				}))
+			: []
+	)
 }));
 
 vi.mock('dompurify', () => ({
@@ -19,19 +27,7 @@ vi.mock('@/view/assets/provider-logos', () => ({
 
 vi.mock('@/app', async () => {
 	const { createAppMock } = await import('@/tests/mocks/app');
-	return createAppMock({
-		content: {
-			mapDocument: vi.fn((text: string) =>
-				text
-					? text.split('\n\n').map((block) => ({
-							source: block,
-							html: `<p>${block}</p>`
-						}))
-					: []
-			),
-			marked: { lexer: vi.fn(() => []), parser: vi.fn(() => ''), parse: vi.fn((t: string) => t) }
-		}
-	});
+	return createAppMock();
 });
 
 function makeNodeData(

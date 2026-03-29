@@ -3,12 +3,12 @@ import * as app from '@/app';
 
 describe('@/app public API', () => {
 	it('exposes its public namespaces', () => {
-		expect(app.bootstrap).toBeDefined();
-		expect(app.chat).toBeDefined();
-		expect(app.search).toBeDefined();
-		expect(app.content).toBeDefined();
-		expect(app.documents).toBeDefined();
-		expect(app.providers).toBeDefined();
-		expect(app.files).toBeDefined();
+		expect(Object.keys(app).sort()).toEqual([
+			'bootstrap',
+			'chat',
+			'documents',
+			'providers',
+			'search'
+		]);
 	});
 });

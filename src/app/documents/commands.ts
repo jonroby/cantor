@@ -1,34 +1,30 @@
 import * as state from '@/state';
 import * as external from '@/external';
-import { addDocToChat } from '@/app/chat/commands';
-
-interface RestoreResult {
-	folderId: string;
-	fileId: string;
-}
+import * as lib from '@/lib';
+import JSZip from 'jszip';
+import { addDocumentToChat as appendDocumentToChat } from '@/app/chat/commands';
 
 export interface DocumentCommandDeps {
 	getActiveChat: typeof state.chats.getActiveChat;
 	getFolders: () => state.documents.ChatFolder[];
 	newDocInFolder: typeof state.documents.newDocInFolder;
 	selectDoc: typeof state.documents.selectDoc;
-	closeDoc: typeof state.documents.closeDoc;
-	getPersistedLayout: typeof external.persistence.getPersistedLayout;
-	setPersistedLayout: typeof external.persistence.setPersistedLayout;
-	saveToStorage: typeof external.persistence.saveToStorage;
-	addDocToChat: typeof addDocToChat;
+	appendDocumentToChat: typeof appendDocumentToChat;
 }
+
+export interface DocumentTransferFeedback {
+	success?: (message: string) => void;
+	error?: (message: string) => void;
+}
+
+const NOOP_FEEDBACK: DocumentTransferFeedback = {};
 
 const defaultDeps: DocumentCommandDeps = {
 	getActiveChat: state.chats.getActiveChat,
 	getFolders: () => state.documents.docState.folders,
 	newDocInFolder: state.documents.newDocInFolder,
 	selectDoc: state.documents.selectDoc,
-	closeDoc: state.documents.closeDoc,
-	getPersistedLayout: external.persistence.getPersistedLayout,
-	setPersistedLayout: external.persistence.setPersistedLayout,
-	saveToStorage: external.persistence.saveToStorage,
-	addDocToChat
+	appendDocumentToChat
 };
 
 export function openDocument(
@@ -41,54 +37,21 @@ export function openDocument(
 	if (!file) return false;
 
 	deps.selectDoc(folderId, fileId);
-	deps.setPersistedLayout({ openDocument: { folderId, fileId } });
-	deps.saveToStorage();
 	return true;
 }
 
 export function createDocument(
 	folderId: string,
 	deps: DocumentCommandDeps = defaultDeps
-): RestoreResult | null {
+): { folderId: string; fileId: string } | null {
 	const fileId = deps.newDocInFolder(folderId);
 	if (!fileId) return null;
 
 	deps.selectDoc(folderId, fileId);
-	deps.setPersistedLayout({ openDocument: { folderId, fileId } });
-	deps.saveToStorage();
 	return { folderId, fileId };
 }
 
-export function closeDocumentPanel(openDocIndex: number, deps: DocumentCommandDeps = defaultDeps) {
-	if (openDocIndex >= 0) {
-		deps.closeDoc(openDocIndex);
-	}
-	deps.setPersistedLayout({});
-	deps.saveToStorage();
-}
-
-export function clearDocumentLayout(deps: DocumentCommandDeps = defaultDeps) {
-	deps.setPersistedLayout({});
-	deps.saveToStorage();
-}
-
-export function restoreOpenDocument(deps: DocumentCommandDeps = defaultDeps): RestoreResult | null {
-	const layout = deps.getPersistedLayout();
-	const openDocument = layout.openDocument;
-	if (!openDocument) return null;
-
-	const folder = deps.getFolders().find((candidate) => candidate.id === openDocument.folderId);
-	const file = folder?.files?.find((candidate) => candidate.id === openDocument.fileId);
-	if (!file) {
-		deps.setPersistedLayout({});
-		return null;
-	}
-
-	deps.selectDoc(openDocument.folderId, openDocument.fileId);
-	return openDocument;
-}
-
-export function addFolderDocumentToChat(
+export function addDocumentToChat(
 	folderId: string,
 	fileId: string,
 	deps: DocumentCommandDeps = defaultDeps
@@ -99,6 +62,168 @@ export function addFolderDocumentToChat(
 
 	const activeChat = deps.getActiveChat();
 	const tree = { rootId: activeChat.rootId, exchanges: activeChat.exchanges };
-	deps.addDocToChat(tree, activeChat.activeExchangeId, file.content, file.name);
+	deps.appendDocumentToChat(tree, activeChat.activeExchangeId, file.content, file.name);
 	return true;
+}
+
+export function importDocument(
+	folderId: string,
+	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
+) {
+	const input = document.createElement('input');
+	input.type = 'file';
+	input.accept = '.md';
+	input.onchange = () => {
+		const file = input.files?.[0];
+		if (!file) return;
+		const folder = state.documents.docState.folders.find((candidate) => candidate.id === folderId);
+		if (!folder) {
+			feedback.error?.('Folder not found');
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (typeof reader.result !== 'string') return;
+			const errors = lib.validateMd.validate(reader.result);
+			if (errors.length > 0) {
+				feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
+				return;
+			}
+			const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
+			const name = external.files.deduplicateName(file.name, existingNames);
+			const docFile: state.documents.DocFile = {
+				id: crypto.randomUUID(),
+				name,
+				content: reader.result
+			};
+			state.documents.docState.folders = state.documents.docState.folders.map((candidate) =>
+				candidate.id === folderId ? { ...candidate, files: [...(candidate.files ?? []), docFile] } : candidate
+			);
+			feedback.success?.(`Uploaded ${file.name}`);
+		};
+		reader.readAsText(file);
+	};
+	input.click();
+}
+
+export async function exportFolder(
+	folderId: string,
+	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
+) {
+	const folder = state.documents.docState.folders.find((candidate) => candidate.id === folderId);
+	if (!folder || !folder.files?.length) {
+		feedback.error?.('Folder is empty');
+		return;
+	}
+	const zip = new JSZip();
+	for (const file of folder.files) {
+		zip.file(file.name, file.content);
+	}
+	const blob = await zip.generateAsync({ type: 'blob' });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = `${folder.name}.zip`;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+function importDocumentsIntoFolder(
+	folderId: string,
+	mdFiles: File[],
+	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
+) {
+	const folder = state.documents.docState.folders.find((candidate) => candidate.id === folderId);
+	if (!folder) {
+		feedback.error?.('Folder not found');
+		return;
+	}
+
+	let imported = 0;
+	let processed = 0;
+	const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
+
+	for (const file of mdFiles) {
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (typeof reader.result !== 'string') return;
+			const errors = lib.validateMd.validate(reader.result);
+			if (errors.length > 0) {
+				feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
+			} else {
+				const name = external.files.deduplicateName(file.name, existingNames);
+				existingNames.push(name);
+				const docFile: state.documents.DocFile = {
+					id: crypto.randomUUID(),
+					name,
+					content: reader.result
+				};
+				state.documents.docState.folders = state.documents.docState.folders.map((candidate) =>
+					candidate.id === folderId
+						? { ...candidate, files: [...(candidate.files ?? []), docFile] }
+						: candidate
+				);
+				imported++;
+			}
+
+			processed++;
+			if (processed === mdFiles.length && imported > 0) {
+				feedback.success?.(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
+			}
+		};
+		reader.readAsText(file);
+	}
+}
+
+export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK) {
+	const input = document.createElement('input');
+	input.type = 'file';
+	input.webkitdirectory = true;
+	input.onchange = () => {
+		const files = input.files;
+		if (!files || files.length === 0) return;
+
+		const mdFiles = Array.from(files).filter((file) => file.name.endsWith('.md'));
+		if (mdFiles.length === 0) {
+			feedback.error?.('No .md files found in the selected folder');
+			return;
+		}
+
+		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
+		const folderName = external.files.deduplicateName(
+			dirName,
+			state.documents.docState.folders.map((folder) => folder.name)
+		);
+
+		const folderId = crypto.randomUUID();
+		const newFolder: state.documents.ChatFolder = { id: folderId, name: folderName, files: [] };
+		state.documents.docState.folders = [...state.documents.docState.folders, newFolder];
+
+		importDocumentsIntoFolder(folderId, mdFiles, feedback);
+	};
+	input.click();
+}
+
+export function importFolderIntoFolder(
+	folderId: string,
+	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
+) {
+	const input = document.createElement('input');
+	input.type = 'file';
+	input.webkitdirectory = true;
+	input.onchange = () => {
+		const files = input.files;
+		if (!files || files.length === 0) return;
+
+		const mdFiles = Array.from(files).filter((file) => file.name.endsWith('.md'));
+		if (mdFiles.length === 0) {
+			feedback.error?.('No .md files found in the selected folder');
+			return;
+		}
+
+		importDocumentsIntoFolder(folderId, mdFiles, feedback);
+	};
+	input.click();
 }

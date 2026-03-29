@@ -14,6 +14,42 @@
 	} from '@/state/documents.svelte';
 
 	const noop = () => {};
+
+	function renameChatThroughApp(index: number, name: string): string | null {
+		const trimmed = name.trim();
+		if (!trimmed) return null;
+		let candidate = trimmed;
+		let suffix = 1;
+		while (!renameChat(index, candidate)) {
+			candidate = `${trimmed} (${suffix})`;
+			suffix += 1;
+		}
+		return candidate;
+	}
+
+	function renameFolderThroughApp(folderId: string, name: string): string | null {
+		const trimmed = name.trim();
+		if (!trimmed) return null;
+		let candidate = trimmed;
+		let suffix = 1;
+		while (!renameFolder(folderId, candidate)) {
+			candidate = `${trimmed} (${suffix})`;
+			suffix += 1;
+		}
+		return candidate;
+	}
+
+	function renameDocumentThroughApp(folderId: string, fileId: string, name: string): string | null {
+		const trimmed = name.trim();
+		if (!trimmed) return null;
+		let candidate = trimmed;
+		let suffix = 1;
+		while (!renameDocInFolder(folderId, fileId, candidate)) {
+			candidate = `${trimmed} (${suffix})`;
+			suffix += 1;
+		}
+		return candidate;
+	}
 </script>
 
 <Sidebar.Provider>
@@ -23,14 +59,14 @@
 		onSelectChat={selectChat}
 		onNewChat={newChat}
 		onDeleteChat={deleteChat}
-		onRenameChat={renameChat}
+		onRenameChat={renameChatThroughApp}
 		onDownloadChat={noop}
 		onUploadChat={noop}
 		folders={docState.folders}
 		onNewFolder={newFolder}
 		onDeleteFolder={deleteFolder}
 		onDownloadFolder={noop}
-		onRenameFolder={renameFolder}
+		onRenameFolder={renameFolderThroughApp}
 		onNewDoc={noop}
 		onUploadDoc={noop}
 		onUploadFolder={noop}
@@ -38,7 +74,7 @@
 		onSelectDoc={selectDoc}
 		onAddDocToChat={noop}
 		onDeleteDoc={deleteDocFromFolder}
-		onRenameDoc={renameDocInFolder}
+		onRenameDoc={renameDocumentThroughApp}
 		onMoveDoc={moveDocToFolder}
 	/>
 </Sidebar.Provider>

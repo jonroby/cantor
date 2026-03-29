@@ -1,31 +1,35 @@
+import * as documents from './index';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/external', async () => {
 	const { createExternalMock } = await import('@/tests/mocks/external');
-	return createExternalMock({
-		persistence: {
-			getPersistedLayout: vi.fn(() => ({})),
-			saveToStorage: vi.fn(),
-			setPersistedLayout: vi.fn()
-		}
-	});
+	return createExternalMock();
 });
 
 vi.mock('../chat/index', async () => {
 	const actual = await import('../chat/index');
 	return {
 		...actual,
-		addDocToChat: vi.fn()
+		addDocumentToChat: vi.fn()
 	};
 });
 
 import {
-	clearDocumentLayout,
-	addFolderDocumentToChat,
-	closeDocumentPanel,
+	addDocumentToChat,
 	createDocument,
+	createFolder,
+	deleteDocument,
+	getDocument,
+	getState,
+	importDocument,
+	importFolder,
+	importFolderIntoFolder,
+	moveDocument,
 	openDocument,
-	restoreOpenDocument,
+	exportFolder,
+	renameDocument,
+	updateDocumentContent,
+	validateDocumentMarkdown,
 	type DocumentCommandDeps
 } from './index';
 
@@ -41,11 +45,7 @@ function createDeps(overrides: Partial<DocumentCommandDeps> = {}): DocumentComma
 		getFolders: () => [],
 		newDocInFolder: vi.fn(() => null),
 		selectDoc: vi.fn(),
-		closeDoc: vi.fn(),
-		getPersistedLayout: () => ({}),
-		setPersistedLayout: vi.fn(),
-		saveToStorage: vi.fn(),
-		addDocToChat: vi.fn(() => 'exchange-1'),
+		appendDocumentToChat: vi.fn(() => 'exchange-1'),
 		...overrides
 	};
 }
@@ -55,37 +55,25 @@ describe('document app actions', () => {
 		vi.clearAllMocks();
 	});
 
-	it('opens an existing document and persists layout', () => {
+	it('opens an existing document', () => {
 		const selectDoc = vi.fn();
-		const setPersistedLayout = vi.fn();
-		const saveToStorage = vi.fn();
 		const deps = createDeps({
 			getFolders: () => [
 				{ id: 'folder-1', name: 'Docs', files: [{ id: 'file-1', name: 'a.md', content: '' }] }
 			],
-			selectDoc,
-			setPersistedLayout,
-			saveToStorage
+			selectDoc
 		});
 
 		expect(openDocument('folder-1', 'file-1', deps)).toBe(true);
 		expect(selectDoc).toHaveBeenCalledWith('folder-1', 'file-1');
-		expect(setPersistedLayout).toHaveBeenCalledWith({
-			openDocument: { folderId: 'folder-1', fileId: 'file-1' }
-		});
-		expect(saveToStorage).toHaveBeenCalledOnce();
 	});
 
-	it('creates a document, selects it, and persists layout', () => {
+	it('creates a document and selects it', () => {
 		const newDocInFolder = vi.fn(() => 'file-2');
 		const selectDoc = vi.fn();
-		const setPersistedLayout = vi.fn();
-		const saveToStorage = vi.fn();
 		const deps = createDeps({
 			newDocInFolder,
-			selectDoc,
-			setPersistedLayout,
-			saveToStorage
+			selectDoc
 		});
 
 		expect(createDocument('folder-1', deps)).toEqual({
@@ -94,52 +82,10 @@ describe('document app actions', () => {
 		});
 		expect(newDocInFolder).toHaveBeenCalledWith('folder-1');
 		expect(selectDoc).toHaveBeenCalledWith('folder-1', 'file-2');
-		expect(setPersistedLayout).toHaveBeenCalledWith({
-			openDocument: { folderId: 'folder-1', fileId: 'file-2' }
-		});
-		expect(saveToStorage).toHaveBeenCalledOnce();
-	});
-
-	it('closes an open document and clears layout', () => {
-		const closeDoc = vi.fn();
-		const setPersistedLayout = vi.fn();
-		const saveToStorage = vi.fn();
-		const deps = createDeps({ closeDoc, setPersistedLayout, saveToStorage });
-
-		closeDocumentPanel(3, deps);
-
-		expect(closeDoc).toHaveBeenCalledWith(3);
-		expect(setPersistedLayout).toHaveBeenCalledWith({});
-		expect(saveToStorage).toHaveBeenCalledOnce();
-	});
-
-	it('restores a persisted document when it still exists', () => {
-		const selectDoc = vi.fn();
-		const deps = createDeps({
-			getFolders: () => [
-				{ id: 'folder-1', name: 'Docs', files: [{ id: 'file-1', name: 'a.md', content: '' }] }
-			],
-			getPersistedLayout: () => ({ openDocument: { folderId: 'folder-1', fileId: 'file-1' } }),
-			selectDoc
-		});
-
-		expect(restoreOpenDocument(deps)).toEqual({ folderId: 'folder-1', fileId: 'file-1' });
-		expect(selectDoc).toHaveBeenCalledWith('folder-1', 'file-1');
-	});
-
-	it('clears stale persisted layout when the document is gone', () => {
-		const setPersistedLayout = vi.fn();
-		const deps = createDeps({
-			getPersistedLayout: () => ({ openDocument: { folderId: 'folder-1', fileId: 'file-1' } }),
-			setPersistedLayout
-		});
-
-		expect(restoreOpenDocument(deps)).toBeNull();
-		expect(setPersistedLayout).toHaveBeenCalledWith({});
 	});
 
 	it('adds a folder document to the active chat', () => {
-		const addDocToChat = vi.fn(() => 'exchange-9');
+		const appendDocumentToChat = vi.fn(() => 'exchange-9');
 		const deps = createDeps({
 			getFolders: () => [
 				{
@@ -148,11 +94,11 @@ describe('document app actions', () => {
 					files: [{ id: 'file-1', name: 'notes.md', content: '# Notes' }]
 				}
 			],
-			addDocToChat
+			appendDocumentToChat
 		});
 
-		expect(addFolderDocumentToChat('folder-1', 'file-1', deps)).toBe(true);
-		expect(addDocToChat).toHaveBeenCalledWith(
+		expect(addDocumentToChat('folder-1', 'file-1', deps)).toBe(true);
+		expect(appendDocumentToChat).toHaveBeenCalledWith(
 			{ rootId: 'root-1', exchanges: {} },
 			'root-1',
 			'# Notes',
@@ -160,14 +106,38 @@ describe('document app actions', () => {
 		);
 	});
 
-	it('can clear document layout without touching documents', () => {
-		const setPersistedLayout = vi.fn();
-		const saveToStorage = vi.fn();
-		const deps = createDeps({ setPersistedLayout, saveToStorage });
-
-		clearDocumentLayout(deps);
-
-		expect(setPersistedLayout).toHaveBeenCalledWith({});
-		expect(saveToStorage).toHaveBeenCalledOnce();
+	it('exposes the expected public API', () => {
+		expect(Object.keys(documents).sort()).toEqual([
+			'addDocumentToChat',
+			'closeDocument',
+			'createDocument',
+			'createFolder',
+			'deleteDocument',
+			'deleteFolder',
+			'exportFolder',
+			'getDocument',
+			'getState',
+			'importDocument',
+			'importFolder',
+			'importFolderIntoFolder',
+			'moveDocument',
+			'openDocument',
+			'renameDocument',
+			'renameFolder',
+			'updateDocumentContent',
+			'validateDocumentMarkdown'
+		]);
+		expect(createFolder).toBeTypeOf('function');
+		expect(deleteDocument).toBeTypeOf('function');
+		expect(getDocument).toBeTypeOf('function');
+		expect(getState).toBeTypeOf('function');
+		expect(importDocument).toBeTypeOf('function');
+		expect(importFolder).toBeTypeOf('function');
+		expect(importFolderIntoFolder).toBeTypeOf('function');
+		expect(moveDocument).toBeTypeOf('function');
+		expect(renameDocument).toBeTypeOf('function');
+		expect(updateDocumentContent).toBeTypeOf('function');
+		expect(validateDocumentMarkdown).toBeTypeOf('function');
+		expect(exportFolder).toBeTypeOf('function');
 	});
 });

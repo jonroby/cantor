@@ -19,15 +19,15 @@
 	let searchItems = $derived(
 		searchQuery.trim()
 			? app.search.searchChats(
-					app.chat.getChats(),
+					app.chat.getState().chats,
 					searchQuery.trim(),
 					searchAllChats
-						? app.chat.getChats().map((_: app.chat.Chat, index: number) => index)
-						: [app.chat.getActiveChatIndex()]
+						? app.chat.getState().chats.map((_: app.chat.Chat, index: number) => index)
+						: [app.chat.getState().activeChatIndex]
 				)
 			: app.search.getDefaultItems(
-					app.chat.getChats(),
-					app.chat.getActiveChatIndex(),
+					app.chat.getState().chats,
+					app.chat.getState().activeChatIndex,
 					searchAllChats
 				)
 	);
@@ -93,7 +93,7 @@
 	}
 
 	function newChat(): number {
-		const index = app.chat.newChat();
+		const index = app.chat.createChat();
 		resetUIState();
 		return index;
 	}
@@ -104,27 +104,27 @@
 	}
 
 	function doDeleteChat(index: number) {
-		const chat = app.chat.getChats()[index];
-		if (chat) app.chat.cancelStreamsForChat(chat.id);
-		app.chat.deleteChat(index);
+		const chat = app.chat.getState().chats[index];
+		if (chat) app.chat.stopChatStreams(chat.id);
+		app.chat.removeChat(index);
 		resetUIState();
 	}
 
 	function addDocToChat(folderId: string, fileId: string) {
-		const folder = app.documents.getFolders().find((f) => f.id === folderId);
+		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
 		const file = folder?.files?.find((f) => f.id === fileId);
 		if (!file) return;
-		app.documents.addFolderDocumentToChat(folderId, fileId);
+		app.documents.addDocumentToChat(folderId, fileId);
 	}
 
 	function handleSearchSelect(result: app.search.SearchResult) {
 		app.chat.selectChat(result.chatIndex);
-		app.chat.setActiveExchangeId(result.exchangeId);
+		app.chat.selectExchange(result.exchangeId);
 	}
 
-	const fileFeedback: app.files.FileCommandFeedback = {
-		success: (message) => toast.success(message),
-		error: (message) => toast.error(message)
+	const fileFeedback = {
+		success: (message: string) => toast.success(message),
+		error: (message: string) => toast.error(message)
 	};
 </script>
 
@@ -137,37 +137,39 @@
 {:else}
 	<SidebarPrimitive.Provider>
 		<AppSidebar
-			chats={app.chat.getChats()}
-			activeChatIndex={app.chat.getActiveChatIndex()}
+			chats={app.chat.getState().chats}
+			activeChatIndex={app.chat.getState().activeChatIndex}
 			onSelectChat={selectChat}
 			onNewChat={newChat}
 			onDeleteChat={doDeleteChat}
 			onRenameChat={app.chat.renameChat}
-			onDownloadChat={app.files.downloadChat}
-			onUploadChat={() => app.files.uploadChat(fileFeedback)}
-			folders={app.documents.getFolders()}
-			onNewFolder={app.documents.newFolder}
+			onDownloadChat={app.chat.exportChat}
+			onUploadChat={() => app.chat.importChat(fileFeedback)}
+			folders={app.documents.getState().folders}
+			onNewFolder={app.documents.createFolder}
 			onDeleteFolder={app.documents.deleteFolder}
-			onDownloadFolder={(folderId) => app.files.downloadFolder(folderId, fileFeedback)}
+			onDownloadFolder={(folderId) => app.documents.exportFolder(folderId, fileFeedback)}
 			onRenameFolder={app.documents.renameFolder}
 			onNewDoc={(folderId) => {
 				const document = app.documents.createDocument(folderId);
 				if (document) {
+					app.bootstrap.rememberOpenDocument(document.folderId, document.fileId);
 					chatViewRef?.showDocument(document.folderId, document.fileId);
 				}
 			}}
-			onUploadDoc={(folderId) => app.files.uploadDocToFolder(folderId, fileFeedback)}
-			onUploadFolder={(folderId) => app.files.uploadFolderToFolder(folderId, fileFeedback)}
-			onUploadNewFolder={() => app.files.uploadFolder(fileFeedback)}
+			onUploadDoc={(folderId) => app.documents.importDocument(folderId, fileFeedback)}
+			onUploadFolder={(folderId) => app.documents.importFolderIntoFolder(folderId, fileFeedback)}
+			onUploadNewFolder={() => app.documents.importFolder(fileFeedback)}
 			onSelectDoc={(folderId, fileId) => {
 				if (app.documents.openDocument(folderId, fileId)) {
+					app.bootstrap.rememberOpenDocument(folderId, fileId);
 					chatViewRef?.showDocument(folderId, fileId);
 				}
 			}}
 			onAddDocToChat={addDocToChat}
-			onDeleteDoc={app.documents.deleteDocFromFolder}
-			onRenameDoc={app.documents.renameDocInFolder}
-			onMoveDoc={app.documents.moveDocToFolder}
+			onDeleteDoc={app.documents.deleteDocument}
+			onRenameDoc={app.documents.renameDocument}
+			onMoveDoc={app.documents.moveDocument}
 		/>
 		<SidebarPrimitive.Inset>
 			<ChatView bind:this={chatViewRef} />

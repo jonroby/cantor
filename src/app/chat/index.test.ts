@@ -1,3 +1,4 @@
+import * as chat from './index';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/state', async () => {
@@ -36,7 +37,7 @@ import {
 	getDeleteMode,
 	quickAsk,
 	submitPrompt,
-	addDocToChat,
+	addDocumentToChat,
 	type ChatCommandDeps,
 	type ChatQueryDeps
 } from './index';
@@ -145,12 +146,12 @@ function buildTreeWithSideDescendant(): {
 	return { tree: sideChild, rootId: root.id, sideId: side.id, sideChildId: sideChild.id };
 }
 
-describe('addDocToChat', () => {
+describe('addDocumentToChat', () => {
 	it('adds a labeled document exchange and activates it', () => {
 		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
 
-		const addedId = addDocToChat(tree, leafId, '# Notes', 'notes.md', deps);
+		const addedId = addDocumentToChat(tree, leafId, '# Notes', 'notes.md', deps);
 		const nextTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]?.[0];
 
 		expect(addedId).toBeTruthy();
@@ -158,6 +159,38 @@ describe('addDocToChat', () => {
 		expect(deps.setActiveExchangeId).toHaveBeenCalledWith(addedId);
 		expect(nextTree?.exchanges[addedId]?.prompt.text).toBe('# Notes');
 		expect(nextTree?.exchanges[addedId]?.label).toBe('notes.md was added to chat');
+	});
+});
+
+describe('public API', () => {
+	it('exposes the expected public API', () => {
+		expect(Object.keys(chat).sort()).toEqual([
+			'addDocumentToChat',
+			'canAcceptNewChat',
+			'copyChat',
+			'createChat',
+			'deleteExchange',
+			'exportChat',
+			'exportState',
+			'getChildExchanges',
+			'getDeleteMode',
+			'getExchangeNodeData',
+			'getMainChatHistory',
+			'getPathTokenTotal',
+			'getRootExchange',
+			'getState',
+			'importChat',
+			'isStreaming',
+			'promoteExchange',
+			'quickAsk',
+			'removeChat',
+			'renameChat',
+			'selectChat',
+			'selectExchange',
+			'stopChatStreams',
+			'stopStream',
+			'submitPrompt'
+		]);
 	});
 });
 

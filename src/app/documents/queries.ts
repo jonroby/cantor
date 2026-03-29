@@ -1,6 +1,6 @@
 import type * as state from '@/state';
 
-export function getFolderFile(
+export function getDocument(
 	folders: state.documents.ChatFolder[],
 	folderId: string,
 	fileId: string

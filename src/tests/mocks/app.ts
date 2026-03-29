@@ -3,7 +3,6 @@ import type * as app from '@/app';
 import type * as domain from '@/domain';
 import type * as state from '@/state';
 import appContract from '@/tests/contracts/app.json';
-import { marked } from '@/app/content';
 
 import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
 
@@ -53,7 +52,18 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 	const appStateBacking = {
 		cancelStream: vi.fn(),
 		cancelStreamsForChat: vi.fn(),
-		chatState: { chats: [] as domain.tree.Chat[], activeChatIndex: 0 },
+		chatState: {
+			chats: [
+				{
+					id: 'chat-1',
+					name: 'Chat 1',
+					rootId: null,
+					exchanges: {},
+					activeExchangeId: null
+				}
+			] as domain.tree.Chat[],
+			activeChatIndex: 0
+		},
 		deleteChat: vi.fn(),
 		deleteDocFromFolder: vi.fn(),
 		deleteFolder: vi.fn(),
@@ -82,85 +92,69 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 
 	const base = {
 		bootstrap: {
+			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
 			initialize: mockFn<typeof app.bootstrap.initialize>(() => ({
 				restoredDocument: null,
 				hadDuplicateRenames: false
 			})),
+			rememberOpenDocument: mockFn<typeof app.bootstrap.rememberOpenDocument>(),
 			save: mockFn<typeof app.bootstrap.save>()
 		},
 		chat: {
-			addDocToChat: mockFn<typeof app.chat.addDocToChat>(),
+			addDocumentToChat: mockFn<typeof app.chat.addDocumentToChat>(),
 			canAcceptNewChat: mockFn<typeof app.chat.canAcceptNewChat>(() => false),
-			cancelStream: mockFn<typeof app.chat.cancelStream>(),
-			cancelStreamsForChat: mockFn<typeof app.chat.cancelStreamsForChat>(),
 			copyChat: mockFn<typeof app.chat.copyChat>(),
+			createChat: mockFn<typeof app.chat.createChat>(),
 			deleteExchange: mockFn<typeof app.chat.deleteExchange>(),
-			deleteChat: mockFn<typeof app.chat.deleteChat>(),
-			getActiveChat: mockFn<typeof app.chat.getActiveChat>(
-				() => appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]
-			),
-			getActiveChatIndex: mockFn<typeof app.chat.getActiveChatIndex>(() => 0),
-			getActiveExchangeId: mockFn<typeof app.chat.getActiveExchangeId>(
-				() =>
-					appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]
-						?.activeExchangeId
-			),
-			getActiveExchanges: mockFn<typeof app.chat.getActiveExchanges>(
-				() =>
-					appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]?.exchanges ??
-					{}
-			),
+			exportChat: mockFn<typeof app.chat.exportChat>(),
+			exportState: mockFn<typeof app.chat.exportState>(),
 			getChildExchanges: mockFn<typeof app.chat.getChildExchanges>(() => []),
-			getChats: mockFn<typeof app.chat.getChats>(() => appStateBacking.chatState.chats),
 			getDeleteMode: mockFn<typeof app.chat.getDeleteMode>(),
 			getExchangeNodeData: mockFn<typeof app.chat.getExchangeNodeData>(),
 			getMainChatHistory: mockFn<typeof app.chat.getMainChatHistory>(() => []),
 			getPathTokenTotal: mockFn<typeof app.chat.getPathTokenTotal>(() => 0),
 			getRootExchange: mockFn<typeof app.chat.getRootExchange>(),
+			getState: mockFn<typeof app.chat.getState>(() => {
+				const activeChat = appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]!;
+				return {
+					chats: appStateBacking.chatState.chats,
+					activeChatIndex: appStateBacking.chatState.activeChatIndex,
+					activeChat,
+					activeExchanges: activeChat?.exchanges ?? {},
+					activeExchangeId: activeChat?.activeExchangeId ?? null
+				};
+			}),
+			importChat: mockFn<typeof app.chat.importChat>(),
 			isStreaming: mockFn<typeof app.chat.isStreaming>(() => false),
-			newChat: mockFn<typeof app.chat.newChat>(),
 			promoteExchange: mockFn<typeof app.chat.promoteExchange>(),
 			quickAsk: mockFn<typeof app.chat.quickAsk>(),
+			removeChat: mockFn<typeof app.chat.removeChat>(),
 			renameChat: mockFn<typeof app.chat.renameChat>(),
 			selectChat: mockFn<typeof app.chat.selectChat>(),
-			setActiveExchangeId: mockFn<typeof app.chat.setActiveExchangeId>(),
+			selectExchange: mockFn<typeof app.chat.selectExchange>(),
+			stopChatStreams: mockFn<typeof app.chat.stopChatStreams>(),
+			stopStream: mockFn<typeof app.chat.stopStream>(),
 			submitPrompt: mockFn<typeof app.chat.submitPrompt>()
 		},
-		content: {
-			diffLines: mockFn<typeof app.content.diffLines>(() => []),
-			mapDocument: mockFn<typeof app.content.mapDocument>(() => []),
-			marked,
-			renameWithDedup: mockFn<typeof app.content.renameWithDedup>(),
-			validate: mockFn<typeof app.content.validate>(() => [])
-		},
 		documents: {
-			addFolderDocumentToChat: mockFn<typeof app.documents.addFolderDocumentToChat>(),
-			clearDocumentLayout: mockFn<typeof app.documents.clearDocumentLayout>(),
-			closeDocumentPanel: mockFn<typeof app.documents.closeDocumentPanel>(),
+			addDocumentToChat: mockFn<typeof app.documents.addDocumentToChat>(),
+			closeDocument: mockFn<typeof app.documents.closeDocument>(),
 			createDocument: mockFn<typeof app.documents.createDocument>(),
-			deleteDocFromFolder: mockFn<typeof app.documents.deleteDocFromFolder>(),
+			createFolder: mockFn<typeof app.documents.createFolder>(),
+			deleteDocument: mockFn<typeof app.documents.deleteDocument>(),
 			deleteFolder: mockFn<typeof app.documents.deleteFolder>(),
-			getFolderFile: mockFn<typeof app.documents.getFolderFile>(),
-			getFolders: mockFn<typeof app.documents.getFolders>(() => appStateBacking.docState.folders),
-			getOpenDocs: mockFn<typeof app.documents.getOpenDocs>(
-				() => appStateBacking.docState.openDocs
-			),
-			moveDocToFolder: mockFn<typeof app.documents.moveDocToFolder>(),
-			newFolder: mockFn<typeof app.documents.newFolder>(),
+			exportFolder: mockFn<typeof app.documents.exportFolder>(),
+			getDocument: mockFn<typeof app.documents.getDocument>(),
+			getState: mockFn<typeof app.documents.getState>(() => appStateBacking.docState),
+			importDocument: mockFn<typeof app.documents.importDocument>(),
+			importFolder: mockFn<typeof app.documents.importFolder>(),
+			importFolderIntoFolder: mockFn<typeof app.documents.importFolderIntoFolder>(),
+			moveDocument: mockFn<typeof app.documents.moveDocument>(),
 			openDocument: mockFn<typeof app.documents.openDocument>(),
-			renameDocInFolder: mockFn<typeof app.documents.renameDocInFolder>(),
+			renameDocument: mockFn<typeof app.documents.renameDocument>(),
 			renameFolder: mockFn<typeof app.documents.renameFolder>(),
-			restoreOpenDocument: mockFn<typeof app.documents.restoreOpenDocument>(),
-			updateDocContent: mockFn<typeof app.documents.updateDocContent>()
-		},
-		files: {
-			downloadChat: mockFn<typeof app.files.downloadChat>(),
-			downloadFolder: mockFn<typeof app.files.downloadFolder>(),
-			downloadToFile: mockFn<typeof app.files.downloadToFile>(),
-			uploadChat: mockFn<typeof app.files.uploadChat>(),
-			uploadDocToFolder: mockFn<typeof app.files.uploadDocToFolder>(),
-			uploadFolder: mockFn<typeof app.files.uploadFolder>(),
-			uploadFolderToFolder: mockFn<typeof app.files.uploadFolderToFolder>()
+			updateDocumentContent: mockFn<typeof app.documents.updateDocumentContent>(),
+			validateDocumentMarkdown: mockFn<typeof app.documents.validateDocumentMarkdown>(() => [])
 		},
 		providers: {
 			clearCachedModels: mockFn<typeof app.providers.clearCachedModels>(),

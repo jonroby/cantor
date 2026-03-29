@@ -31,6 +31,7 @@
 	let commandHistory: app.chat.Message[] = $state([]);
 	let commandAbort: AbortController | null = $state(null);
 	let providerState = $derived(app.providers.getState());
+	let chatState = $derived(app.chat.getState());
 
 	export function focus() {
 		composerRef?.focus();
@@ -45,8 +46,8 @@
 		}
 	}
 
-	let activeExchanges = $derived(app.chat.getActiveExchanges());
-	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
+	let activeExchanges = $derived(chatState.activeExchanges);
+	let activeExchangeId = $derived(chatState.activeExchangeId);
 	let usedTokens = $derived(
 		activeExchanges && activeExchangeId
 			? app.chat.getPathTokenTotal(activeExchanges, activeExchangeId)
@@ -67,7 +68,7 @@
 				: null
 	);
 
-	let activeChatId = $derived(app.chat.getActiveChat().id);
+	let activeChatId = $derived(chatState.activeChat.id);
 	$effect(() => {
 		void activeChatId;
 		tick().then(() => composerRef?.focus());
@@ -84,7 +85,7 @@
 
 		operationError = null;
 
-		const activeChat = app.chat.getActiveChat();
+		const activeChat = chatState.activeChat;
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 
 		let result;
@@ -124,7 +125,7 @@
 			docSection
 		].join('\n');
 
-		const activeChat = app.chat.getActiveChat();
+		const activeChat = chatState.activeChat;
 		const chatHistory = activeExchanges
 			? app.chat.getMainChatHistory({ rootId: activeChat.rootId, exchanges: activeExchanges })
 			: [];
@@ -192,7 +193,7 @@
 			commandStreaming = false;
 			commandAbort = null;
 		} else if (activeExchangeId) {
-			app.chat.cancelStream(activeExchangeId);
+			app.chat.stopStream(activeExchangeId);
 		}
 	}}
 	onOpenPalette={() => (paletteOpen = true)}

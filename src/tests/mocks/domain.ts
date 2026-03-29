@@ -7,6 +7,10 @@ type DomainMock = PublicApiMock<typeof domain, typeof domainContract>;
 
 export function createDomainMock(overrides?: DeepPartial<DomainMock>): DomainMock {
 	const base = {
+		constraints: {
+			enforceUniqueName: mockFn<typeof domain.constraints.enforceUniqueName>((name) => name),
+			enforceUniqueNames: mockFn<typeof domain.constraints.enforceUniqueNames>(() => false)
+		},
 		models: {
 			LOCAL_PROVIDERS: ['ollama', 'webllm'] as const,
 			KEY_BASED_PROVIDERS: [

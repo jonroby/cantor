@@ -39,9 +39,10 @@
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
 	let providerState = $derived(app.providers.getState());
+	let chatState = $derived(app.chat.getState());
 
-	let activeExchanges = $derived(app.chat.getActiveExchanges());
-	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
+	let activeExchanges = $derived(chatState.activeExchanges);
+	let activeExchangeId = $derived(chatState.activeExchangeId);
 	let commandStreaming = $state(false);
 	let pendingDocContent: string | null = $state(null);
 	let mainChatPath = $derived(getMainChatPath());
@@ -67,14 +68,15 @@
 	);
 	let activeDocFile = $derived.by(() => {
 		if (!docContent) return null;
-		const folder = app.documents.getFolders().find((f) => f.id === docContent.folderId);
+		const folder = app.documents.getState().folders.find((f) => f.id === docContent.folderId);
 		const file = folder?.files?.find((f) => f.id === docContent.fileId);
 		return file ?? null;
 	});
 	let activeDocIndex = $derived.by(() => {
 		if (!docContent) return -1;
 		return app.documents
-			.getOpenDocs()
+			.getState()
+			.openDocs
 			.findIndex(
 				(d) => d.docKey?.folderId === docContent.folderId && d.docKey?.fileId === docContent.fileId
 			);
@@ -84,7 +86,7 @@
 	function getMainChatPath(): app.chat.Exchange[] {
 		if (!activeExchanges) return [];
 		const root = app.chat.getRootExchange({
-			rootId: app.chat.getActiveChat().rootId,
+			rootId: chatState.activeChat.rootId,
 			exchanges: activeExchanges
 		});
 		if (!root) return [];
@@ -128,12 +130,12 @@
 		if (focusedPanelId === panelId) return;
 		focusedPanelId = panelId;
 		if (panelId === mainPanel.id) {
-			app.chat.setActiveExchangeId(mainChatTailId);
+			app.chat.selectExchange(mainChatTailId);
 		} else if (sidePanel && panelId === sidePanel.id) {
 			if (sideBranchTailId) {
-				app.chat.setActiveExchangeId(sideBranchTailId);
+				app.chat.selectExchange(sideBranchTailId);
 			} else if (sidePanelParentId) {
-				app.chat.setActiveExchangeId(sidePanelParentId);
+				app.chat.selectExchange(sidePanelParentId);
 			}
 		}
 		if (!isDocPanel) {
@@ -170,9 +172,9 @@
 				if (grandChildren.length === 0) break;
 				current = grandChildren[0];
 			}
-			if (current) app.chat.setActiveExchangeId(current.id);
+			if (current) app.chat.selectExchange(current.id);
 		} else {
-			app.chat.setActiveExchangeId(parentId);
+			app.chat.selectExchange(parentId);
 		}
 		tick().then(() => chatInputRef?.focus());
 	}
@@ -185,7 +187,7 @@
 
 	function addCurrentDocToChat() {
 		if (!docContent) return;
-		app.documents.addFolderDocumentToChat(docContent.folderId, docContent.fileId);
+		app.documents.addDocumentToChat(docContent.folderId, docContent.fileId);
 	}
 
 	function prevBranch() {
@@ -206,7 +208,7 @@
 		if (!sidePanelParentId) return;
 		if (!activeSideBranch || activeSideBranch.length === 0) return;
 		updateSideBranchIndex(sideBranches.length);
-		app.chat.setActiveExchangeId(sidePanelParentId);
+		app.chat.selectExchange(sidePanelParentId);
 		tick().then(() => chatInputRef?.focus());
 	}
 
@@ -255,7 +257,7 @@
 	function quickAsk(exchangeId: string, sourceText: string) {
 		if (!activeExchanges || !providerState.activeModel) return;
 
-		const activeChat = app.chat.getActiveChat();
+		const activeChat = chatState.activeChat;
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 
 		let result;
@@ -284,7 +286,7 @@
 	function getNodeDataForExchange(exchangeId: string) {
 		if (!activeExchanges) return null;
 		return app.chat.getExchangeNodeData(exchangeId, activeExchanges, activeExchangeId, {
-			onSelect: (id) => app.chat.setActiveExchangeId(id),
+			onSelect: (id) => app.chat.selectExchange(id),
 			onCopy: copyChat,
 			onToggleSideChildren: toggleSideChildren,
 			onPromote: promoteExchange,
@@ -295,7 +297,7 @@
 					? (sourceText) => {
 							const current = activeDocFile?.content ?? '';
 							const appended = current ? `${current}\n\n${sourceText}` : sourceText;
-							app.documents.updateDocContent(activeDocIndex, appended);
+							app.documents.updateDocumentContent(activeDocIndex, appended);
 						}
 					: undefined
 		});
@@ -337,7 +339,7 @@
 
 	export function resetUIState() {
 		if (sidePanel !== null) {
-			app.documents.clearDocumentLayout();
+			app.bootstrap.clearOpenDocument();
 		}
 		closeSidePanel();
 	}
@@ -379,7 +381,7 @@
 	// Keep activeExchangeId synced with focused pane's tail
 	$effect(() => {
 		if (sidePanel && focusedPanelId === sidePanel.id && sideBranchTailId) {
-			app.chat.setActiveExchangeId(sideBranchTailId);
+			app.chat.selectExchange(sideBranchTailId);
 		}
 	});
 </script>
@@ -397,7 +399,7 @@
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
-			<div class="chatview-main-title">{app.chat.getActiveChat().name}</div>
+			<div class="chatview-main-title">{chatState.activeChat.name}</div>
 			<div class="chatview-main" bind:this={mainScrollContainer}>
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
@@ -438,11 +440,11 @@
 							commandProvider={providerState.activeModel?.provider}
 							pendingContent={pendingDocContent}
 							onContentChange={(c) => {
-								if (activeDocIndex >= 0) app.documents.updateDocContent(activeDocIndex, c);
+								if (activeDocIndex >= 0) app.documents.updateDocumentContent(activeDocIndex, c);
 							}}
 							onAcceptPending={() => {
 								if (pendingDocContent !== null && activeDocIndex >= 0) {
-									app.documents.updateDocContent(activeDocIndex, pendingDocContent);
+									app.documents.updateDocumentContent(activeDocIndex, pendingDocContent);
 								}
 								pendingDocContent = null;
 							}}
@@ -451,7 +453,10 @@
 							}}
 							onClose={() => {
 								pendingDocContent = null;
-								app.documents.closeDocumentPanel(activeDocIndex);
+								if (activeDocIndex >= 0) {
+									app.documents.closeDocument(activeDocIndex);
+								}
+								app.bootstrap.clearOpenDocument();
 								closeSidePanel();
 							}}
 							onAddToChat={addCurrentDocToChat}

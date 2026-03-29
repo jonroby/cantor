@@ -18,14 +18,14 @@
 		onSelectChat: (index: number) => void;
 		onNewChat: () => number;
 		onDeleteChat: (index: number) => void;
-		onRenameChat: (index: number, name: string) => boolean;
+		onRenameChat: (index: number, name: string) => string | null;
 		onDownloadChat: (index: number) => void;
 		onUploadChat: () => void;
 		folders: app.documents.ChatFolder[];
 		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
 		onDownloadFolder: (folderId: string) => void;
-		onRenameFolder: (folderId: string, name: string) => boolean;
+		onRenameFolder: (folderId: string, name: string) => string | null;
 		onNewDoc: (folderId: string) => void;
 		onUploadDoc: (folderId: string) => void;
 		onUploadFolder: (folderId: string) => void;
@@ -33,7 +33,7 @@
 		onSelectDoc: (folderId: string, fileId: string) => void;
 		onAddDocToChat: (folderId: string, fileId: string) => void;
 		onDeleteDoc: (folderId: string, fileId: string) => void;
-		onRenameDoc: (folderId: string, fileId: string, name: string) => boolean;
+		onRenameDoc: (folderId: string, fileId: string, name: string) => string | null;
 		onMoveDoc: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
 	}
 
@@ -83,7 +83,7 @@
 
 	function commitRenameChat(name: string) {
 		if (editingChatIndex !== null) {
-			const result = app.content.renameWithDedup(name, (c) => onRenameChat(editingChatIndex!, c));
+			const result = onRenameChat(editingChatIndex!, name);
 			if (result && result !== name.trim()) {
 				toast.warning(`Renamed to "${result}" to avoid duplicate`);
 			}
@@ -110,9 +110,7 @@
 
 	function commitRenameDoc(name: string) {
 		if (editingDocFolderId && editingDocFileId) {
-			const result = app.content.renameWithDedup(name, (c) =>
-				onRenameDoc(editingDocFolderId!, editingDocFileId!, c)
-			);
+			const result = onRenameDoc(editingDocFolderId!, editingDocFileId!, name);
 			if (result && result !== name.trim()) {
 				toast.warning(`Renamed to "${result}" to avoid duplicate`);
 			}

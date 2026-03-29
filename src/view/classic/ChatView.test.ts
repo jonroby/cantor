@@ -27,18 +27,8 @@ vi.mock('@/external', async () => {
 });
 
 vi.mock('@/view/shared/katex', () => ({
-	renderRichText: (text: string) => text
-}));
-
-vi.mock('@/lib', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/lib')>()),
-	documentMap: {
-		mapDocument: (text: string) => (text ? [{ source: text, html: text }] : []),
-		marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
-	},
-	validateMd: {
-		validate: () => []
-	}
+	renderRichText: (text: string) => text,
+	renderMarkdownKatexBlocks: (text: string) => (text ? [{ source: text, html: text }] : [])
 }));
 
 vi.mock('katex', () => ({

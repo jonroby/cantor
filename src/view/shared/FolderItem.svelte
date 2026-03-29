@@ -19,7 +19,7 @@
 		onNewDoc: () => void;
 		onUploadDoc: () => void;
 		onUploadFolder: () => void;
-		onRenameFolder: (name: string) => boolean;
+		onRenameFolder: (name: string) => string | null;
 		onDownloadFolder: () => void;
 		onDeleteFolder: () => void;
 		onSelectDoc: (fileId: string) => void;
@@ -85,7 +85,7 @@
 	}
 
 	function commitRenameFolder(name: string) {
-		const result = app.content.renameWithDedup(name, onRenameFolder);
+		const result = onRenameFolder(name);
 		if (result && result !== name.trim()) {
 			toast.warning(`Renamed to "${result}" to avoid duplicate`);
 		}

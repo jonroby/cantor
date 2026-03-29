@@ -5,6 +5,10 @@
 		"LOCAL_PROVIDERS": true,
 		"PROVIDERS": true
 	},
+	"constraints": {
+		"enforceUniqueName": true,
+		"enforceUniqueNames": true
+	},
 	"search": {
 		"getDefaultItems": true,
 		"groupResults": true,

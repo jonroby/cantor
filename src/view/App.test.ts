@@ -26,27 +26,55 @@ vi.mock('@/view/components/shadcn/ui/sidebar/index.js', async () => ({
 
 vi.mock('@/app', async () => {
 	const { createAppMock } = await import('@/tests/mocks/app');
+	const chatState = {
+		chats: [] as {
+			id: string;
+			name: string;
+			rootId: string | null;
+			exchanges: Record<string, unknown>;
+			activeExchangeId: string | null;
+		}[],
+		activeChatIndex: 0
+	};
+	const documentState = { folders: [], openDocs: [] };
 	return createAppMock({
 		bootstrap: {
+			clearOpenDocument: vi.fn(),
 			initialize: vi.fn(() => ({ restoredDocument: null, hadDuplicateRenames: false })),
+			rememberOpenDocument: vi.fn(),
 			save: vi.fn()
 		},
 		chat: {
-			cancelStreamsForChat: vi.fn()
-		},
-		files: {
-			downloadChat: vi.fn(),
-			uploadChat: vi.fn(),
-			downloadFolder: vi.fn(),
-			uploadDocToFolder: vi.fn(),
-			uploadFolder: vi.fn(),
-			uploadFolderToFolder: vi.fn()
+			createChat: vi.fn(),
+			exportChat: vi.fn(),
+			getState: vi.fn(() => ({
+				chats: chatState.chats,
+				activeChatIndex: chatState.activeChatIndex,
+				activeChat: chatState.chats[chatState.activeChatIndex]!,
+				activeExchanges: chatState.chats[chatState.activeChatIndex]?.exchanges ?? {},
+				activeExchangeId: chatState.chats[chatState.activeChatIndex]?.activeExchangeId ?? null
+			})),
+			importChat: vi.fn(),
+			removeChat: vi.fn(),
+			selectExchange: vi.fn(),
+			stopChatStreams: vi.fn()
 		},
 		documents: {
-			addFolderDocumentToChat: vi.fn(),
+			addDocumentToChat: vi.fn(),
+			closeDocument: vi.fn(),
 			createDocument: vi.fn(() => null),
+			createFolder: vi.fn(),
+			deleteDocument: vi.fn(),
+			exportFolder: vi.fn(),
+			getDocument: vi.fn(),
+			getState: vi.fn(() => documentState),
+			importDocument: vi.fn(),
+			importFolder: vi.fn(),
+			importFolderIntoFolder: vi.fn(),
+			moveDocument: vi.fn(),
 			openDocument: vi.fn(() => false),
-			restoreOpenDocument: vi.fn(() => null)
+			renameDocument: vi.fn(),
+			updateDocumentContent: vi.fn()
 		}
 	});
 });
@@ -64,7 +92,7 @@ describe('App', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		vi.restoreAllMocks();
-		const chats = app.chat.getChats();
+		const chats = app.chat.getState().chats;
 		chats.length = 0;
 		chats.push({
 			id: 'chat-1',
@@ -73,7 +101,7 @@ describe('App', () => {
 			exchanges: {},
 			activeExchangeId: null
 		});
-		const folders = app.documents.getFolders();
+		const folders = app.documents.getState().folders;
 		folders.length = 0;
 		routerState.route = 'chat';
 	});
@@ -104,7 +132,7 @@ describe('App', () => {
 	describe('gracefully renames duplicates on load', () => {
 		it('renames duplicate chat names', () => {
 			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
-				const chats = app.chat.getChats();
+				const chats = app.chat.getState().chats;
 				chats.length = 0;
 				chats.push(
 					{ id: '1', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null },
@@ -116,15 +144,15 @@ describe('App', () => {
 
 			render(App);
 
-			expect(app.chat.getChats()[0].name).toBe('Foo');
-			expect(app.chat.getChats()[1].name).toBe('Foo (2)');
+			expect(app.chat.getState().chats[0].name).toBe('Foo');
+			expect(app.chat.getState().chats[1].name).toBe('Foo (2)');
 			expect(warningSpy).toHaveBeenCalled();
 			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 
 		it('renames duplicate folder names', () => {
 			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
-				const folders = app.documents.getFolders();
+				const folders = app.documents.getState().folders;
 				folders.length = 0;
 				folders.push({ id: 'f1', name: 'Docs' }, { id: 'f2', name: 'Docs (2)' });
 				return { restoredDocument: null, hadDuplicateRenames: true };
@@ -133,15 +161,15 @@ describe('App', () => {
 
 			render(App);
 
-			expect(app.documents.getFolders()[0].name).toBe('Docs');
-			expect(app.documents.getFolders()[1].name).toBe('Docs (2)');
+			expect(app.documents.getState().folders[0].name).toBe('Docs');
+			expect(app.documents.getState().folders[1].name).toBe('Docs (2)');
 			expect(warningSpy).toHaveBeenCalled();
 			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 
 		it('renames duplicate file names within a folder', () => {
 			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
-				const folders = app.documents.getFolders();
+				const folders = app.documents.getState().folders;
 				folders.length = 0;
 				folders.push({
 					id: 'f1',
@@ -157,8 +185,8 @@ describe('App', () => {
 
 			render(App);
 
-			expect(app.documents.getFolders()[0].files![0].name).toBe('readme.md');
-			expect(app.documents.getFolders()[0].files![1].name).toBe('readme.md (2)');
+			expect(app.documents.getState().folders[0].files![0].name).toBe('readme.md');
+			expect(app.documents.getState().folders[0].files![1].name).toBe('readme.md (2)');
 			expect(warningSpy).toHaveBeenCalled();
 			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});

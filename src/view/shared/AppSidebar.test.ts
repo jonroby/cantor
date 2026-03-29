@@ -22,20 +22,20 @@ function renderSidebar() {
 		onSelectChat: vi.fn(),
 		onNewChat: vi.fn(() => 0),
 		onDeleteChat: vi.fn(),
-		onRenameChat: vi.fn(),
+		onRenameChat: vi.fn(() => 'Chat 1'),
 		onDownloadChat: vi.fn(),
 		onUploadChat: vi.fn(),
 		folders: [],
 		onNewFolder: vi.fn(() => 'folder-1'),
 		onDeleteFolder: vi.fn(),
 		onDownloadFolder: vi.fn(),
-		onRenameFolder: vi.fn(() => true),
+		onRenameFolder: vi.fn(() => 'Folder 1'),
 		onUploadDoc: vi.fn(),
 		onUploadFolder: vi.fn(),
 		onUploadNewFolder: vi.fn(),
 		onSelectDoc: vi.fn(),
 		onDeleteDoc: vi.fn(),
-		onRenameDoc: vi.fn(() => true),
+		onRenameDoc: vi.fn(() => 'Document 1.md'),
 		onMoveDoc: vi.fn(() => true)
 	};
 	return { ...render(AppSidebarHarness, { props }), props };
@@ -145,7 +145,7 @@ describe('AppSidebar', () => {
 		expect(screen.getByLabelText('Switch to dark mode')).toBeInTheDocument();
 	});
 
-	it('deduplicates folder renames in the UI before saving', async () => {
+	it('shows the adjusted folder name returned by the app rename flow', async () => {
 		const user = userEvent.setup();
 		const props = {
 			chats: [
@@ -155,7 +155,7 @@ describe('AppSidebar', () => {
 			onSelectChat: vi.fn(),
 			onNewChat: vi.fn(() => 0),
 			onDeleteChat: vi.fn(),
-			onRenameChat: vi.fn(),
+			onRenameChat: vi.fn(() => 'Chat 1'),
 			onDownloadChat: vi.fn(),
 			onUploadChat: vi.fn(),
 			folders: [
@@ -165,17 +165,13 @@ describe('AppSidebar', () => {
 			onNewFolder: vi.fn(() => 'folder-3'),
 			onDeleteFolder: vi.fn(),
 			onDownloadFolder: vi.fn(),
-			onRenameFolder: vi
-				.fn()
-				.mockImplementation(
-					(folderId: string, name: string) => folderId === 'folder-2' && name === 'Docs (1)'
-				),
+			onRenameFolder: vi.fn(() => 'Docs (1)'),
 			onUploadDoc: vi.fn(),
 			onUploadFolder: vi.fn(),
 			onUploadNewFolder: vi.fn(),
 			onSelectDoc: vi.fn(),
 			onDeleteDoc: vi.fn(),
-			onRenameDoc: vi.fn(() => true),
+			onRenameDoc: vi.fn(() => 'Document 1.md'),
 			onMoveDoc: vi.fn(() => true)
 		};
 		render(AppSidebarHarness, { props });
@@ -186,12 +182,12 @@ describe('AppSidebar', () => {
 		await user.type(input, 'Docs');
 		await user.tab();
 
-		expect(props.onRenameFolder).toHaveBeenNthCalledWith(1, 'folder-2', 'Docs');
-		expect(props.onRenameFolder).toHaveBeenNthCalledWith(2, 'folder-2', 'Docs (1)');
+		expect(props.onRenameFolder).toHaveBeenCalledOnce();
+		expect(props.onRenameFolder).toHaveBeenCalledWith('folder-2', 'Docs');
 		expect(toast.warning).toHaveBeenCalledWith('Renamed to "Docs (1)" to avoid duplicate');
 	});
 
-	it('deduplicates chat renames in the UI before saving', async () => {
+	it('shows the adjusted chat name returned by the app rename flow', async () => {
 		const user = userEvent.setup();
 		const props = {
 			chats: [
@@ -202,22 +198,20 @@ describe('AppSidebar', () => {
 			onSelectChat: vi.fn(),
 			onNewChat: vi.fn(() => 0),
 			onDeleteChat: vi.fn(),
-			onRenameChat: vi
-				.fn()
-				.mockImplementation((index: number, name: string) => index === 1 && name === 'Alpha (1)'),
+			onRenameChat: vi.fn(() => 'Alpha (1)'),
 			onDownloadChat: vi.fn(),
 			onUploadChat: vi.fn(),
 			folders: [],
 			onNewFolder: vi.fn(() => 'folder-1'),
 			onDeleteFolder: vi.fn(),
 			onDownloadFolder: vi.fn(),
-			onRenameFolder: vi.fn(() => true),
+			onRenameFolder: vi.fn(() => 'Folder 1'),
 			onUploadDoc: vi.fn(),
 			onUploadFolder: vi.fn(),
 			onUploadNewFolder: vi.fn(),
 			onSelectDoc: vi.fn(),
 			onDeleteDoc: vi.fn(),
-			onRenameDoc: vi.fn(() => true),
+			onRenameDoc: vi.fn(() => 'Document 1.md'),
 			onMoveDoc: vi.fn(() => true)
 		};
 		render(AppSidebarHarness, { props });
@@ -228,12 +222,12 @@ describe('AppSidebar', () => {
 		await fireEvent.input(input, { target: { value: 'Alpha' } });
 		await fireEvent.blur(input);
 
-		expect(props.onRenameChat).toHaveBeenNthCalledWith(1, 1, 'Alpha');
-		expect(props.onRenameChat).toHaveBeenNthCalledWith(2, 1, 'Alpha (1)');
+		expect(props.onRenameChat).toHaveBeenCalledOnce();
+		expect(props.onRenameChat).toHaveBeenCalledWith(1, 'Alpha');
 		expect(toast.warning).toHaveBeenCalledWith('Renamed to "Alpha (1)" to avoid duplicate');
 	});
 
-	it('deduplicates doc renames in the UI before saving', async () => {
+	it('shows the adjusted document name returned by the app rename flow', async () => {
 		const user = userEvent.setup();
 		const props = {
 			chats: [
@@ -243,7 +237,7 @@ describe('AppSidebar', () => {
 			onSelectChat: vi.fn(),
 			onNewChat: vi.fn(() => 0),
 			onDeleteChat: vi.fn(),
-			onRenameChat: vi.fn(),
+			onRenameChat: vi.fn(() => 'Chat 1'),
 			onDownloadChat: vi.fn(),
 			onUploadChat: vi.fn(),
 			folders: [
@@ -259,18 +253,13 @@ describe('AppSidebar', () => {
 			onNewFolder: vi.fn(() => 'folder-2'),
 			onDeleteFolder: vi.fn(),
 			onDownloadFolder: vi.fn(),
-			onRenameFolder: vi.fn(() => true),
+			onRenameFolder: vi.fn(() => 'Folder 1'),
 			onUploadDoc: vi.fn(),
 			onUploadFolder: vi.fn(),
 			onUploadNewFolder: vi.fn(),
 			onSelectDoc: vi.fn(),
 			onDeleteDoc: vi.fn(),
-			onRenameDoc: vi
-				.fn()
-				.mockImplementation(
-					(folderId: string, fileId: string, name: string) =>
-						folderId === 'folder-1' && fileId === 'doc-2' && name === 'a.md (1)'
-				),
+			onRenameDoc: vi.fn(() => 'a.md (1)'),
 			onMoveDoc: vi.fn(() => true)
 		};
 		render(AppSidebarHarness, { props });
@@ -282,8 +271,8 @@ describe('AppSidebar', () => {
 		await fireEvent.input(input, { target: { value: 'a.md' } });
 		await fireEvent.blur(input);
 
-		expect(props.onRenameDoc).toHaveBeenNthCalledWith(1, 'folder-1', 'doc-2', 'a.md');
-		expect(props.onRenameDoc).toHaveBeenNthCalledWith(2, 'folder-1', 'doc-2', 'a.md (1)');
+		expect(props.onRenameDoc).toHaveBeenCalledOnce();
+		expect(props.onRenameDoc).toHaveBeenCalledWith('folder-1', 'doc-2', 'a.md');
 		expect(toast.warning).toHaveBeenCalledWith('Renamed to "a.md (1)" to avoid duplicate');
 	});
 });

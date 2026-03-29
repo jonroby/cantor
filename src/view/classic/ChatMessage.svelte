@@ -1,7 +1,7 @@
-<script lang="ts">
+	<script lang="ts">
 	import DOMPurify from 'dompurify';
 	import Button from '@/view/components/custom/button.svelte';
-	import { renderRichText } from '@/view/shared/katex';
+	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/shared/katex';
 	import * as app from '@/app';
 	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
 
@@ -10,7 +10,7 @@
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
 	let responseBlocks = $derived(
 		!data.isStreaming
-			? app.content.mapDocument(data.response).map((block) => ({
+			? renderMarkdownKatexBlocks(data.response).map((block) => ({
 					source: block.source,
 					html: DOMPurify.sanitize(block.html)
 				}))

@@ -1,49 +1,26 @@
-import * as documents from '../documents/index';
+import * as domain from '@/domain';
 import * as providers from '../providers/index';
 import * as external from '@/external';
 import * as state from '@/state';
 
-function deduplicate(name: string, existing: string[]): string {
-	if (!existing.includes(name)) return name;
-	let i = 2;
-	while (existing.includes(`${name} (${i})`)) i++;
-	return `${name} (${i})`;
+interface RestoredDocument {
+	folderId: string;
+	fileId: string;
 }
 
-function fixDuplicateNames() {
-	let changed = false;
+function restoreOpenDocument(): RestoredDocument | null {
+	const openDocument = external.persistence.getPersistedLayout().openDocument;
+	if (!openDocument) return null;
 
-	const chatNames: string[] = [];
-	for (const chat of state.chats.chatState.chats) {
-		const deduped = deduplicate(chat.name, chatNames);
-		if (deduped !== chat.name) {
-			chat.name = deduped;
-			changed = true;
-		}
-		chatNames.push(deduped);
+	const folder = state.documents.docState.folders.find((candidate) => candidate.id === openDocument.folderId);
+	const file = folder?.files?.find((candidate) => candidate.id === openDocument.fileId);
+	if (!file) {
+		external.persistence.setPersistedLayout({});
+		return null;
 	}
 
-	const folderNames: string[] = [];
-	for (const folder of state.documents.docState.folders) {
-		const deduped = deduplicate(folder.name, folderNames);
-		if (deduped !== folder.name) {
-			folder.name = deduped;
-			changed = true;
-		}
-		folderNames.push(deduped);
-
-		const fileNames: string[] = [];
-		for (const file of folder.files ?? []) {
-			const dedupedFile = deduplicate(file.name, fileNames);
-			if (dedupedFile !== file.name) {
-				file.name = dedupedFile;
-				changed = true;
-			}
-			fileNames.push(dedupedFile);
-		}
-	}
-
-	return changed;
+	state.documents.selectDoc(openDocument.folderId, openDocument.fileId);
+	return openDocument;
 }
 
 export function initialize() {
@@ -52,13 +29,26 @@ export function initialize() {
 	try {
 		external.persistence.loadFromStorage();
 	} catch {
-		hadDuplicateRenames = fixDuplicateNames();
+		hadDuplicateRenames = domain.constraints.enforceUniqueNames(
+			state.chats.chatState.chats,
+			state.documents.docState.folders
+		);
 	}
 
-	const restoredDocument = documents.restoreOpenDocument();
+	const restoredDocument = restoreOpenDocument();
 	void providers.initialize();
 
 	return { restoredDocument, hadDuplicateRenames };
+}
+
+export function rememberOpenDocument(folderId: string, fileId: string) {
+	external.persistence.setPersistedLayout({ openDocument: { folderId, fileId } });
+	external.persistence.saveToStorage();
+}
+
+export function clearOpenDocument() {
+	external.persistence.setPersistedLayout({});
+	external.persistence.saveToStorage();
 }
 
 export function save() {
