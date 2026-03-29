@@ -1,3 +1,4 @@
+import * as domain from '@/domain';
 import * as state from '@/state';
 
 const STORAGE_KEY = 'chat-tree-store-svelte';
@@ -6,10 +7,9 @@ const LEGACY_VAULT_KEY = 'byok_vault';
 
 // --- Invariant checks ---
 
-function assertNoDuplicateNames(
-	chats: state.chats.ChatRecord[],
-	folders: state.documents.ChatFolder[]
-) {
+function assertValidNames(chats: state.chats.ChatRecord[], folders: state.documents.ChatFolder[]) {
+	if (!domain.constraints.hasDuplicateNames(chats, folders)) return;
+
 	const chatNames: string[] = [];
 	for (const chat of chats) {
 		if (chatNames.includes(chat.name)) throw new Error(`Duplicate chat name "${chat.name}"`);
@@ -63,11 +63,11 @@ export function loadFromStorage() {
 	if (parsed.layout) {
 		_layout = parsed.layout;
 	}
-	assertNoDuplicateNames(state.chats.chatState.chats, state.documents.docState.folders);
+	assertValidNames(state.chats.chatState.chats, state.documents.docState.folders);
 }
 
 export function saveToStorage() {
-	assertNoDuplicateNames(state.chats.chatState.chats, state.documents.docState.folders);
+	assertValidNames(state.chats.chatState.chats, state.documents.docState.folders);
 	localStorage.setItem(
 		STORAGE_KEY,
 		JSON.stringify({

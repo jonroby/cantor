@@ -37,6 +37,16 @@ function buildTreeWithExchange(): { tree: domain.tree.ChatTree; exchangeId: stri
 	return { tree: { rootId: result.tree.rootId, exchanges }, exchangeId: result.id };
 }
 
+function buildHistory(tree: domain.tree.ChatTree, exchangeId: string): domain.tree.Message[] {
+	return domain.tree.getPath(tree, exchangeId).flatMap((exchange) => {
+		const messages: domain.tree.Message[] = [{ role: 'user', content: exchange.prompt.text }];
+		if (exchange.response) {
+			messages.push({ role: 'assistant', content: exchange.response.text });
+		}
+		return messages;
+	});
+}
+
 function makeDeps(tree: domain.tree.ChatTree): StreamDeps {
 	let currentTree = tree;
 	return {
@@ -120,7 +130,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			expect(isStreaming(store, exchangeId)).toBe(true);
@@ -140,7 +150,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			expect(isAnyStreaming(store)).toBe(true);
@@ -156,7 +166,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			expect(isStreaming(store, exchangeId)).toBe(true);
@@ -170,7 +180,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			await waitForStreamComplete(store, exchangeId);
@@ -188,7 +198,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			await waitForStreamComplete(store, exchangeId);
@@ -204,7 +214,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			await waitForStreamComplete(store, exchangeId);
@@ -235,7 +245,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			await waitForStreamComplete(store, exchangeId);
@@ -265,7 +275,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			await waitForStreamComplete(store, exchangeId);
@@ -301,7 +311,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			await waitForStreamComplete(store, exchangeId);
@@ -336,7 +346,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			await waitForStreamComplete(store, exchangeId);
@@ -354,7 +364,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			expect(isStreaming(store, exchangeId)).toBe(true);
@@ -380,7 +390,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			expect(isAnyStreaming(store)).toBe(true);
@@ -402,7 +412,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			expect(isStreaming(store, exchangeId)).toBe(true);
@@ -430,7 +440,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			expect(isStreaming(store, exchangeId)).toBe(true);
@@ -450,7 +460,7 @@ describe('streams', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree
+				history: buildHistory(tree, exchangeId)
 			});
 
 			cancelStreamsForChat(store, 'chat-2');

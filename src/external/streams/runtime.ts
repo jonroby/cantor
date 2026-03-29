@@ -23,7 +23,11 @@ const store: StreamStore = {
 const deps: StreamDeps = {
 	getTreeByChatId: state.chats.getTreeByChatId,
 	replaceTreeByChatId: state.chats.replaceTreeByChatId,
-	getProviderStream
+	getProviderStream: (model, history, signal) =>
+		getProviderStream(model, history, signal, {
+			apiKey: state.providers.providerState.apiKeys[model.provider] ?? '',
+			ollamaUrl: state.providers.providerState.ollamaUrl
+		})
 };
 
 export function isStreaming(exchangeId: string): boolean {
@@ -38,8 +42,7 @@ export function startStream(params: {
 	exchangeId: string;
 	chatId: string;
 	model: domain.models.ActiveModel;
-	tree: domain.tree.ChatTree;
-	liveDocContent?: string;
+	history: domain.tree.Message[];
 }): void {
 	_startStream(store, deps, params);
 }

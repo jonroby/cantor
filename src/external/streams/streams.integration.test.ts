@@ -85,6 +85,16 @@ function appendPendingExchange(
 	};
 }
 
+function buildHistory(tree: domain.tree.ChatTree, exchangeId: string): domain.tree.Message[] {
+	return domain.tree.getPath(tree, exchangeId).flatMap((exchange) => {
+		const messages: domain.tree.Message[] = [{ role: 'user', content: exchange.prompt.text }];
+		if (exchange.response) {
+			messages.push({ role: 'assistant', content: exchange.response.text });
+		}
+		return messages;
+	});
+}
+
 function immediateStream(chunks: StreamChunk[]): StreamDeps['getProviderStream'] {
 	return async function* () {
 		for (const c of chunks) yield c;
@@ -159,7 +169,7 @@ describe('streams integration', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: readyTree
+				history: buildHistory(readyTree, exchangeId)
 			});
 
 			await waitForIdle(store);
@@ -191,7 +201,7 @@ describe('streams integration', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: readyTree
+				history: buildHistory(readyTree, exchangeId)
 			});
 
 			await waitForIdle(store);
@@ -215,7 +225,7 @@ describe('streams integration', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: readyTree
+				history: buildHistory(readyTree, exchangeId)
 			});
 
 			await waitForIdle(store);
@@ -242,7 +252,7 @@ describe('streams integration', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: readyTree
+				history: buildHistory(readyTree, exchangeId)
 			});
 
 			// Wait for the delta to land
@@ -273,7 +283,7 @@ describe('streams integration', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: readyTree
+				history: buildHistory(readyTree, exchangeId)
 			});
 
 			// Wait for at least one delta, then simulate deleting the chat
@@ -320,13 +330,13 @@ describe('streams integration', () => {
 				exchangeId: exId1,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: ready1
+				history: buildHistory(ready1, exId1)
 			});
 			startStream(store, deps2, {
 				exchangeId: exId2,
 				chatId: 'chat-2',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: ready2
+				history: buildHistory(ready2, exId2)
 			});
 
 			await waitForIdle(store);
@@ -361,13 +371,13 @@ describe('streams integration', () => {
 				exchangeId: exId1,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: ready1
+				history: buildHistory(ready1, exId1)
 			});
 			startStream(store, deps2, {
 				exchangeId: exId2,
 				chatId: 'chat-2',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: ready2
+				history: buildHistory(ready2, exId2)
 			});
 
 			// Wait for chat-2 to finish naturally
@@ -409,7 +419,7 @@ describe('streams integration', () => {
 				exchangeId: exId1,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: tree1
+				history: buildHistory(tree1, exId1)
 			});
 
 			await waitForIdle(store);
@@ -435,7 +445,7 @@ describe('streams integration', () => {
 				exchangeId: exId2,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: tree2
+				history: buildHistory(tree2, exId2)
 			});
 
 			await waitForIdle(store);
@@ -470,7 +480,7 @@ describe('streams integration', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: readyTree
+				history: buildHistory(readyTree, exchangeId)
 			});
 
 			await waitForIdle(store);
@@ -492,7 +502,7 @@ describe('streams integration', () => {
 				exchangeId,
 				chatId: 'chat-1',
 				model: { provider: PROVIDER, modelId: MODEL },
-				tree: treeAfterError
+				history: buildHistory(treeAfterError, exchangeId)
 			});
 
 			await waitForIdle(store);

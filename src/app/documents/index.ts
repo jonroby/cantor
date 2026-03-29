@@ -1,5 +1,4 @@
 import * as state from '@/state';
-import * as external from '@/external';
 import * as lib from '@/lib';
 import JSZip from 'jszip';
 import { addDocumentToChat as appendDocumentToChat } from '@/app/chat';
@@ -23,6 +22,15 @@ export interface DocumentTransferFeedback {
 }
 
 const NOOP_FEEDBACK: DocumentTransferFeedback = {};
+
+function deduplicateImportedName(name: string, existingNames: string[]): string {
+	if (!existingNames.includes(name)) return name;
+	const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
+	const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
+	let i = 1;
+	while (existingNames.includes(`${base} (${i})${ext}`)) i++;
+	return `${base} (${i})${ext}`;
+}
 
 const defaultDeps: DocumentCommandDeps = {
 	getActiveChat: state.chats.getActiveChat,
@@ -124,7 +132,7 @@ export function importDocument(
 				return;
 			}
 			const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
-			const name = external.files.deduplicateName(file.name, existingNames);
+			const name = deduplicateImportedName(file.name, existingNames);
 			const document: state.documents.DocFile = {
 				id: crypto.randomUUID(),
 				name,
@@ -189,7 +197,7 @@ function importDocumentsIntoFolder(
 			if (errors.length > 0) {
 				feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
 			} else {
-				const name = external.files.deduplicateName(file.name, existingNames);
+				const name = deduplicateImportedName(file.name, existingNames);
 				existingNames.push(name);
 				const document: state.documents.DocFile = {
 					id: crypto.randomUUID(),
@@ -228,7 +236,7 @@ export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK)
 		}
 
 		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
-		const folderName = external.files.deduplicateName(
+		const folderName = deduplicateImportedName(
 			dirName,
 			state.documents.docState.folders.map((folder) => folder.name)
 		);

@@ -11,7 +11,6 @@ type ExternalMock = PublicApiMock<typeof external, typeof externalContract>;
 export function createExternalMock(overrides?: DeepPartial<ExternalMock>): ExternalMock {
 	const base = {
 		files: {
-			deduplicateName: mockFn<typeof external.files.deduplicateName>((name) => name),
 			validateChatUpload: mockFn<typeof external.files.validateChatUpload>(
 				(value) => value as ReturnType<typeof external.files.validateChatUpload>
 			)

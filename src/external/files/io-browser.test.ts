@@ -79,17 +79,16 @@ vi.mock('@/external', async () => {
 		files: {
 			validateChatUpload: vi.fn(
 				(data) =>
-					data as ReturnType<typeof domain.tree.buildEmptyTree> &
-						import('@/state/chats.svelte').ChatRecord
-			),
-			deduplicateName: vi.fn((name: string, existingNames: string[]) => {
-				if (!existingNames.includes(name)) return name;
-				const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
-				const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-				let i = 1;
-				while (existingNames.includes(`${base} (${i})${ext}`)) i++;
-				return `${base} (${i})${ext}`;
-			})
+					({
+						id: (data as ReturnType<typeof buildValidUploadData>).id,
+						name: (data as ReturnType<typeof buildValidUploadData>).name,
+						tree: {
+							rootId: (data as ReturnType<typeof buildValidUploadData>).rootId,
+							exchanges: (data as ReturnType<typeof buildValidUploadData>).exchanges
+						},
+						activeExchangeId: (data as ReturnType<typeof buildValidUploadData>).activeExchangeId
+					}) as ReturnType<typeof import('@/external').files.validateChatUpload>
+			)
 		},
 		providers: {
 			webllm: {

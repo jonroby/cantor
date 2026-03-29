@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deduplicateName, validateChatUpload } from './io';
+import { validateChatUpload } from './io';
 import * as domain from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -17,39 +17,6 @@ function buildValidUploadData() {
 	};
 }
 
-// ── deduplicateName ──────────────────────────────────────────────────────────
-
-describe('deduplicateName', () => {
-	it('returns the name unchanged when no conflict', () => {
-		expect(deduplicateName('file.md', ['other.md'])).toBe('file.md');
-	});
-
-	it('returns the name unchanged for empty list', () => {
-		expect(deduplicateName('file.md', [])).toBe('file.md');
-	});
-
-	it('appends (1) on first conflict', () => {
-		expect(deduplicateName('file.md', ['file.md'])).toBe('file (1).md');
-	});
-
-	it('increments the counter past existing duplicates', () => {
-		expect(deduplicateName('file.md', ['file.md', 'file (1).md'])).toBe('file (2).md');
-	});
-
-	it('handles names without extensions', () => {
-		expect(deduplicateName('readme', ['readme'])).toBe('readme (1)');
-	});
-
-	it('handles names with multiple dots', () => {
-		expect(deduplicateName('my.file.txt', ['my.file.txt'])).toBe('my.file (1).txt');
-	});
-
-	it('handles deep conflict chains', () => {
-		const existing = ['doc.md', 'doc (1).md', 'doc (2).md', 'doc (3).md'];
-		expect(deduplicateName('doc.md', existing)).toBe('doc (4).md');
-	});
-});
-
 // ── validateChatUpload ───────────────────────────────────────────────────────
 
 describe('validateChatUpload', () => {
@@ -58,8 +25,8 @@ describe('validateChatUpload', () => {
 		const chat = validateChatUpload(data);
 		expect(chat.id).toBe('chat-1');
 		expect(chat.name).toBe('Test Chat');
-		expect(chat.rootId).not.toBeNull();
-		expect(Object.keys(chat.exchanges).length).toBeGreaterThan(0);
+		expect(chat.tree.rootId).not.toBeNull();
+		expect(Object.keys(chat.tree.exchanges).length).toBeGreaterThan(0);
 	});
 
 	it('sets activeExchangeId from data when provided', () => {
@@ -85,7 +52,7 @@ describe('validateChatUpload', () => {
 		};
 		const chat = validateChatUpload(legacy);
 		expect(chat.id).toBe('legacy-1');
-		expect(Object.keys(chat.exchanges).length).toBeGreaterThan(0);
+		expect(Object.keys(chat.tree.exchanges).length).toBeGreaterThan(0);
 	});
 
 	it('throws for non-object input', () => {

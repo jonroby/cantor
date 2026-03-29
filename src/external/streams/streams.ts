@@ -42,30 +42,10 @@ export function startStream(
 		exchangeId: string;
 		chatId: string;
 		model: domain.models.ActiveModel;
-		tree: domain.tree.ChatTree;
-		liveDocContent?: string;
+		history: domain.tree.Message[];
 	}
 ): void {
-	const { exchangeId, chatId, model, tree, liveDocContent } = params;
-	const history = domain.tree.getPath(tree, exchangeId).flatMap((exchange) => {
-		const messages: domain.tree.Message[] = [{ role: 'user', content: exchange.prompt.text }];
-		if (exchange.response) {
-			messages.push({ role: 'assistant', content: exchange.response.text });
-		}
-		return messages;
-	});
-
-	if (liveDocContent !== undefined) {
-		const docMessage: domain.tree.Message = {
-			role: 'user',
-			content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocContent}`
-		};
-		const docResponse: domain.tree.Message = {
-			role: 'assistant',
-			content: 'Understood, I have the document.'
-		};
-		history.splice(history.length - 1, 0, docMessage, docResponse);
-	}
+	const { exchangeId, chatId, model, history } = params;
 
 	const input: StreamMachineInput = {
 		exchangeId,

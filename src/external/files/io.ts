@@ -1,13 +1,10 @@
 import * as domain from '@/domain';
-import type * as state from '@/state';
 
-export function deduplicateName(name: string, existingNames: string[]): string {
-	if (!existingNames.includes(name)) return name;
-	const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
-	const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-	let i = 1;
-	while (existingNames.includes(`${base} (${i})${ext}`)) i++;
-	return `${base} (${i})${ext}`;
+export interface ValidatedChatUpload {
+	id: string;
+	name: string;
+	tree: domain.tree.ChatTree;
+	activeExchangeId: string | null;
 }
 
 function deriveRootId(exchanges: domain.tree.ExchangeMap): string | null {
@@ -17,7 +14,7 @@ function deriveRootId(exchanges: domain.tree.ExchangeMap): string | null {
 	return null;
 }
 
-export function validateChatUpload(data: unknown): state.chats.ChatRecord {
+export function validateChatUpload(data: unknown): ValidatedChatUpload {
 	if (typeof data !== 'object' || data === null || Array.isArray(data)) {
 		throw new Error('Upload must be a JSON object.');
 	}
@@ -70,8 +67,7 @@ export function validateChatUpload(data: unknown): state.chats.ChatRecord {
 	return {
 		id: obj.id as string,
 		name: obj.name as string,
-		rootId,
-		exchanges,
+		tree,
 		activeExchangeId:
 			typeof obj.activeExchangeId === 'string'
 				? obj.activeExchangeId

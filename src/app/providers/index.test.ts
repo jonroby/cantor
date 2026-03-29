@@ -166,7 +166,8 @@ describe('app/providers', () => {
 		expect(external.providers.stream.getProviderStream).toHaveBeenCalledWith(
 			{ provider: 'claude', modelId: 'claude-sonnet-4-6' },
 			[{ role: 'user', content: 'Hello' }],
-			expect.any(AbortSignal)
+			expect.any(AbortSignal),
+			{ apiKey: 'sk-ant-xxx', ollamaUrl: 'http://localhost:11434' }
 		);
 	});
 });

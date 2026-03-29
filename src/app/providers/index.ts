@@ -310,5 +310,8 @@ export function streamText(
 	history: domain.tree.Message[],
 	signal: AbortSignal
 ) {
-	return external.providers.stream.getProviderStream(model, history, signal);
+	return external.providers.stream.getProviderStream(model, history, signal, {
+		apiKey: state.providers.providerState.apiKeys[model.provider] ?? '',
+		ollamaUrl: state.providers.providerState.ollamaUrl
+	});
 }

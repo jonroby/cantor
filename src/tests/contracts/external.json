@@ -1,6 +1,5 @@
 {
 	"files": {
-		"deduplicateName": true,
 		"validateChatUpload": true
 	},
 	"persistence": {

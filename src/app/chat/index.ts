@@ -9,6 +9,13 @@ export interface ChatTransferFeedback {
 
 const NOOP_FEEDBACK: ChatTransferFeedback = {};
 
+function deduplicateImportedName(name: string, existingNames: string[]): string {
+	if (!existingNames.includes(name)) return name;
+	let i = 1;
+	while (existingNames.includes(`${name} (${i})`)) i++;
+	return `${name} (${i})`;
+}
+
 export interface ChatActionDeps {
 	replaceActiveTree: (tree: domain.tree.ChatTree) => void;
 	setActiveExchangeId: (id: string | null) => void;
@@ -213,6 +220,24 @@ export function submitPrompt(
 		activeExchangeId !== null && domain.tree.getChildren(tree, activeExchangeId).length > 0;
 
 	const created = domain.tree.addExchange(tree, parentId, prompt, model.modelId, model.provider);
+	const history = domain.tree.getPath(created.tree, created.id).flatMap((exchange) => {
+		const messages: domain.tree.Message[] = [{ role: 'user', content: exchange.prompt.text }];
+		if (exchange.response) {
+			messages.push({ role: 'assistant', content: exchange.response.text });
+		}
+		return messages;
+	});
+	if (liveDocContent !== undefined) {
+		history.splice(
+			history.length - 1,
+			0,
+			{
+				role: 'user',
+				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocContent}`
+			},
+			{ role: 'assistant', content: 'Understood, I have the document.' }
+		);
+	}
 
 	deps.replaceActiveTree(created.tree);
 	deps.setActiveExchangeId(created.id);
@@ -221,8 +246,7 @@ export function submitPrompt(
 		exchangeId: created.id,
 		chatId,
 		model,
-		tree: created.tree,
-		liveDocContent
+		history
 	});
 
 	return { id: created.id, parentId, hasSideChildren };
@@ -313,13 +337,18 @@ export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void
 		try {
 			const text = await file.text();
 			const data = JSON.parse(text);
-			const chat = external.files.validateChatUpload(data);
-			chat.id = crypto.randomUUID();
+			const upload = external.files.validateChatUpload(data);
 			const baseName = file.name.replace(/\.json$/i, '');
-			chat.name = external.files.deduplicateName(
-				baseName,
-				state.chats.chatState.chats.map((c) => c.name)
-			);
+			const chat: state.chats.ChatRecord = {
+				id: crypto.randomUUID(),
+				name: deduplicateImportedName(
+					baseName,
+					state.chats.chatState.chats.map((c) => c.name)
+				),
+				rootId: upload.tree.rootId,
+				exchanges: upload.tree.exchanges,
+				activeExchangeId: upload.activeExchangeId
+			};
 			state.chats.chatState.chats = [...state.chats.chatState.chats, chat];
 			state.chats.chatState.activeChatIndex = state.chats.chatState.chats.length - 1;
 			feedback.success?.(`Imported "${chat.name}"`);

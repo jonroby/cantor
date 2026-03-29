@@ -5,7 +5,11 @@ import { streamWebLLMChat } from './webllm';
 import { streamClaudeChat } from './claude';
 import { streamGeminiChat } from './gemini';
 import { streamOpenAICompatChat } from './openai-compat';
-import * as state from '@/state';
+
+export interface ProviderStreamRuntime {
+	apiKey?: string;
+	ollamaUrl?: string;
+}
 
 export type StreamChunk =
 	| { type: 'delta'; delta: string }
@@ -14,20 +18,23 @@ export type StreamChunk =
 export function getProviderStream(
 	model: domain.models.ActiveModel,
 	history: domain.tree.Message[],
-	signal: AbortSignal
+	signal: AbortSignal,
+	runtime: ProviderStreamRuntime = {}
 ) {
-	const key = state.providers.providerState.apiKeys[model.provider] ?? '';
 	if (model.provider === 'webllm') return streamWebLLMChat(history, signal);
 	if (model.provider === 'ollama')
-		return streamOllamaChat(
-			model.modelId,
-			history,
-			signal,
-			state.providers.providerState.ollamaUrl
-		);
-	if (model.provider === 'claude') return streamClaudeChat(model.modelId, history, key, signal);
-	if (model.provider === 'gemini') return streamGeminiChat(model.modelId, history, key, signal);
+		return streamOllamaChat(model.modelId, history, signal, runtime.ollamaUrl ?? '');
+	if (model.provider === 'claude')
+		return streamClaudeChat(model.modelId, history, runtime.apiKey ?? '', signal);
+	if (model.provider === 'gemini')
+		return streamGeminiChat(model.modelId, history, runtime.apiKey ?? '', signal);
 	const config =
 		catalog.PROVIDER_CONFIG[model.provider as Exclude<domain.models.Provider, 'ollama' | 'webllm'>];
-	return streamOpenAICompatChat(config.baseUrl, model.modelId, history, key, signal);
+	return streamOpenAICompatChat(
+		config.baseUrl,
+		model.modelId,
+		history,
+		runtime.apiKey ?? '',
+		signal
+	);
 }
