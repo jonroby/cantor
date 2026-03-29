@@ -2,12 +2,6 @@ import * as state from '@/state';
 
 export * from './commands';
 export * from './queries';
-export {
-	addFolderDocumentToChat as performAddFolderDocumentToChat,
-	createDocument as performCreateDocument,
-	openDocument as performOpenDocument,
-	closeDocumentPanel as performCloseDocumentPanel
-} from './commands';
 export const getFolders = () => state.documents.docState.folders;
 export const getOpenDocs = () => state.documents.docState.openDocs;
 export const newFolder = state.documents.newFolder;

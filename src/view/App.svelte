@@ -114,7 +114,7 @@
 		const folder = app.documents.getFolders().find((f) => f.id === folderId);
 		const file = folder?.files?.find((f) => f.id === fileId);
 		if (!file) return;
-		app.documents.performAddFolderDocumentToChat(folderId, fileId);
+		app.documents.addFolderDocumentToChat(folderId, fileId);
 	}
 
 	function handleSearchSelect(result: app.search.SearchResult) {
@@ -151,7 +151,7 @@
 			onDownloadFolder={(folderId) => app.files.downloadFolder(folderId, fileFeedback)}
 			onRenameFolder={app.documents.renameFolder}
 			onNewDoc={(folderId) => {
-				const document = app.documents.performCreateDocument(folderId);
+				const document = app.documents.createDocument(folderId);
 				if (document) {
 					chatViewRef?.showDocument(document.folderId, document.fileId);
 				}
@@ -160,7 +160,7 @@
 			onUploadFolder={(folderId) => app.files.uploadFolderToFolder(folderId, fileFeedback)}
 			onUploadNewFolder={() => app.files.uploadFolder(fileFeedback)}
 			onSelectDoc={(folderId, fileId) => {
-				if (app.documents.performOpenDocument(folderId, fileId)) {
+				if (app.documents.openDocument(folderId, fileId)) {
 					chatViewRef?.showDocument(folderId, fileId);
 				}
 			}}

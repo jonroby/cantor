@@ -43,9 +43,9 @@ vi.mock('@/app', async () => {
 			uploadFolderToFolder: vi.fn()
 		},
 		documents: {
-			performAddFolderDocumentToChat: vi.fn(),
-			performCreateDocument: vi.fn(() => null),
-			performOpenDocument: vi.fn(() => false),
+			addFolderDocumentToChat: vi.fn(),
+			createDocument: vi.fn(() => null),
+			openDocument: vi.fn(() => false),
 			restoreOpenDocument: vi.fn(() => null)
 		}
 	});

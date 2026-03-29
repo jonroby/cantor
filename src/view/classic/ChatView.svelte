@@ -185,7 +185,7 @@
 
 	function addCurrentDocToChat() {
 		if (!docContent) return;
-		app.documents.performAddFolderDocumentToChat(docContent.folderId, docContent.fileId);
+		app.documents.addFolderDocumentToChat(docContent.folderId, docContent.fileId);
 	}
 
 	function prevBranch() {
@@ -211,7 +211,7 @@
 	}
 
 	function copyChat(exchangeId: string) {
-		app.chat.performCopy(exchangeId);
+		app.chat.copyChat(exchangeId);
 		toast.success('Copied to new chat');
 	}
 
@@ -223,7 +223,7 @@
 
 	function confirmDelete() {
 		if (!activeExchanges || !deleteTargetId) return;
-		const result = app.chat.performDelete(
+		const result = app.chat.deleteExchange(
 			activeExchanges,
 			deleteTargetId,
 			deleteMode,
@@ -239,7 +239,7 @@
 
 	function promoteExchange(exchangeId: string) {
 		if (!activeExchanges) return;
-		const result = app.chat.performPromote(activeExchanges, exchangeId);
+		const result = app.chat.promoteExchange(activeExchanges, exchangeId);
 		if (result.error) {
 			operationError = result.error;
 		} else {
@@ -260,7 +260,7 @@
 
 		let result;
 		try {
-			result = app.chat.performQuickAsk(
+			result = app.chat.quickAsk(
 				activeChat.id,
 				tree,
 				exchangeId,
@@ -451,7 +451,7 @@
 							}}
 							onClose={() => {
 								pendingDocContent = null;
-								app.documents.performCloseDocumentPanel(activeDocIndex);
+								app.documents.closeDocumentPanel(activeDocIndex);
 								closeSidePanel();
 							}}
 							onAddToChat={addCurrentDocToChat}

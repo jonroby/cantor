@@ -1,5 +1,5 @@
-import * as documents from '@/app/documents';
-import * as providers from '@/app/providers';
+import * as documents from '../documents/index';
+import * as providers from '../providers/index';
 import * as external from '@/external';
 import * as state from '@/state';
 
@@ -56,7 +56,7 @@ export function initialize() {
 	}
 
 	const restoredDocument = documents.restoreOpenDocument();
-	providers.init();
+	providers.initProviders();
 	providers.autoConnectOllama();
 
 	return { restoredDocument, hadDuplicateRenames };

@@ -199,6 +199,19 @@ Examples to review:
 - `src/app/files/index.ts`
 - `src/app/bootstrap/index.ts`
 
+What has already improved:
+
+- [x] `app.runtime` is gone
+- [x] root-level compatibility files under `src/app/` are gone
+- [x] duplicate `perform*` command aliases were removed from `app.chat` and `app.documents`
+- [x] duplicate `init` alias was removed from `app.providers`
+- [x] Canvas code was removed entirely, which reduced app/view compatibility noise
+
+Important correction:
+
+- [ ] `app.search` should remain a distinct namespace
+- [ ] the attempted fold of `search` into `app.chat` was a mistake and should be reverted
+
 ## What We Are Trying To Achieve In `app`
 
 The `app` layer should expose app-shaped feature APIs.
@@ -243,7 +256,26 @@ Status:
 
 - [ ] not done
 - [x] `app.runtime` has been removed
+- [x] fake root-level `src/app/*.ts` compatibility files have been removed
+- [x] obvious duplicate alias exports have been removed
+- [ ] `app.search` needs to be restored as its own namespace
 - [ ] root `app` surface still needs semantic cleanup, even though structural barrel rules are in place
+
+### Step 1a. Restore `app.search`
+
+`search` is a real feature concern, not just arbitrary forwarding.
+
+Required restore work:
+
+- re-add `src/app/search/index.ts`
+- re-export `search` from `src/app/index.ts`
+- move `SearchResult`, `searchChats`, and `getDefaultItems` back to `app.search`
+- restore the search branch in `src/tests/mocks/app.ts`
+- regenerate contracts and rerun checks
+
+Status:
+
+- [ ] not done
 
 ### Step 2. Start semantic cleanup bottom-up
 

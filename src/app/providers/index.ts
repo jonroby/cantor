@@ -6,7 +6,6 @@ import * as logos from './logos';
 
 export * from './commands';
 export * from './queries';
-export { initProviders as init } from './queries';
 
 export const PROVIDER_MODELS = external.providers.catalog.PROVIDER_MODELS;
 export const PROVIDER_CONFIG = external.providers.catalog.PROVIDER_CONFIG;

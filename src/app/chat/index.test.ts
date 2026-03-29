@@ -30,15 +30,16 @@ vi.mock('@/external', async () => {
 
 import {
 	getExchangeNodeData,
-	performDelete,
-	performPromote,
-	performCopy,
+	deleteExchange,
+	promoteExchange,
+	copyChat,
 	getDeleteMode,
-	performQuickAsk,
-	performSubmitPrompt,
-	performAddDocToChat,
-	type ChatActionDeps
-} from './chat-actions';
+	quickAsk,
+	submitPrompt,
+	addDocToChat,
+	type ChatCommandDeps,
+	type ChatQueryDeps
+} from './index';
 
 import * as domain from '@/domain';
 
@@ -58,6 +59,8 @@ function setResponse(
 
 const PROVIDER: domain.models.Provider = 'claude';
 const MODEL = 'claude-sonnet-4-6';
+
+type ChatActionDeps = ChatCommandDeps & ChatQueryDeps;
 
 function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
 	return {
@@ -142,12 +145,12 @@ function buildTreeWithSideDescendant(): {
 	return { tree: sideChild, rootId: root.id, sideId: side.id, sideChildId: sideChild.id };
 }
 
-describe('performAddDocToChat', () => {
+describe('addDocToChat', () => {
 	it('adds a labeled document exchange and activates it', () => {
 		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
 
-		const addedId = performAddDocToChat(tree, leafId, '# Notes', 'notes.md', deps);
+		const addedId = addDocToChat(tree, leafId, '# Notes', 'notes.md', deps);
 		const nextTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]?.[0];
 
 		expect(addedId).toBeTruthy();
@@ -378,13 +381,13 @@ describe('getExchangeNodeData', () => {
 	});
 });
 
-// ── performDelete ────────────────────────────────────────────────────────────
+// ── deleteExchange ───────────────────────────────────────────────────────────
 
-describe('performDelete', () => {
+describe('deleteExchange', () => {
 	it('deletes exchange, cancels streams, replaces tree, returns no error', () => {
 		const { tree, leafId, childId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = performDelete(tree.exchanges, leafId, 'exchange', childId, undefined, deps);
+		const result = deleteExchange(tree.exchanges, leafId, 'exchange', childId, undefined, deps);
 		expect(result.error).toBeNull();
 		expect(deps.cancelStreamsForExchanges).toHaveBeenCalledWith([leafId]);
 		expect(deps.replaceActiveTree).toHaveBeenCalled();
@@ -393,14 +396,14 @@ describe('performDelete', () => {
 	it('redirects activeExchangeId to main chat tail when deleting active exchange', () => {
 		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
-		performDelete(tree.exchanges, leafId, 'exchange', leafId, undefined, deps);
+		deleteExchange(tree.exchanges, leafId, 'exchange', leafId, undefined, deps);
 		expect(deps.setActiveExchangeId).toHaveBeenCalled();
 	});
 
 	it('does not redirect activeExchangeId when deleting non-active exchange', () => {
 		const { tree, leafId, childId } = buildLinearTree();
 		const deps = mockDeps();
-		performDelete(tree.exchanges, leafId, 'exchange', childId, undefined, deps);
+		deleteExchange(tree.exchanges, leafId, 'exchange', childId, undefined, deps);
 		// childId still exists in the tree after deleting leafId, so no redirect
 		expect(deps.setActiveExchangeId).not.toHaveBeenCalled();
 	});
@@ -408,13 +411,13 @@ describe('performDelete', () => {
 	it('calls onResetMeasuredHeights when provided', () => {
 		const { tree, leafId } = buildLinearTree();
 		const onReset = vi.fn();
-		performDelete(tree.exchanges, leafId, 'exchange', null, onReset, mockDeps());
+		deleteExchange(tree.exchanges, leafId, 'exchange', null, onReset, mockDeps());
 		expect(onReset).toHaveBeenCalled();
 	});
 
 	it('returns error when domain throws', () => {
 		const { tree } = buildLinearTree();
-		const result = performDelete(
+		const result = deleteExchange(
 			tree.exchanges,
 			'nonexistent',
 			'exchange',
@@ -426,13 +429,13 @@ describe('performDelete', () => {
 	});
 });
 
-// ── performPromote ───────────────────────────────────────────────────────────
+// ── promoteExchange ──────────────────────────────────────────────────────────
 
-describe('performPromote', () => {
+describe('promoteExchange', () => {
 	it('promotes side chat, updates state, returns no error', () => {
 		const { tree, sideId } = buildTreeWithSideChat();
 		const deps = mockDeps();
-		const result = performPromote(tree.exchanges, sideId, undefined, deps);
+		const result = promoteExchange(tree.exchanges, sideId, undefined, deps);
 		expect(result.error).toBeNull();
 		expect(deps.setActiveExchangeId).toHaveBeenCalledWith(sideId);
 		expect(deps.replaceActiveTree).toHaveBeenCalled();
@@ -441,14 +444,14 @@ describe('performPromote', () => {
 	it('calls onResetMeasuredHeights when provided', () => {
 		const { tree, sideId } = buildTreeWithSideChat();
 		const onReset = vi.fn();
-		performPromote(tree.exchanges, sideId, onReset, mockDeps());
+		promoteExchange(tree.exchanges, sideId, onReset, mockDeps());
 		expect(onReset).toHaveBeenCalled();
 	});
 
 	it('returns error and does not mutate state when domain throws (non-side-root)', () => {
 		const { tree, mainId } = buildTreeWithSideChat();
 		const deps = mockDeps();
-		const result = performPromote(tree.exchanges, mainId, undefined, deps);
+		const result = promoteExchange(tree.exchanges, mainId, undefined, deps);
 		expect(result.error).toBeTypeOf('string');
 		expect(result.error!.length).toBeGreaterThan(0);
 		expect(deps.setActiveExchangeId).not.toHaveBeenCalled();
@@ -458,32 +461,32 @@ describe('performPromote', () => {
 	it('returns error and does not mutate state for nonexistent exchange', () => {
 		const { tree } = buildTreeWithSideChat();
 		const deps = mockDeps();
-		const result = performPromote(tree.exchanges, 'nonexistent', undefined, deps);
+		const result = promoteExchange(tree.exchanges, 'nonexistent', undefined, deps);
 		expect(result.error).toBeTypeOf('string');
 		expect(deps.setActiveExchangeId).not.toHaveBeenCalled();
 		expect(deps.replaceActiveTree).not.toHaveBeenCalled();
 	});
 });
 
-// ── performCopy ──────────────────────────────────────────────────────────────
+// ── copyChat ────────────────────────────────────────────────────────────────
 
-describe('performCopy', () => {
+describe('copyChat', () => {
 	it('delegates to deps.copyToNewChat', () => {
 		const deps = mockDeps();
-		performCopy('exchange-123', deps);
+		copyChat('exchange-123', deps);
 		expect(deps.copyToNewChat).toHaveBeenCalledWith('exchange-123');
 	});
 });
 
-// ── performSubmitPrompt ──────────────────────────────────────────────────────
+// ── submitPrompt ─────────────────────────────────────────────────────────────
 
-describe('performSubmitPrompt', () => {
+describe('submitPrompt', () => {
 	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
 
 	it('returns parentId so caller can expand the correct side chat parent', () => {
 		const { tree, childId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = performSubmitPrompt(
+		const result = submitPrompt(
 			'chat-1',
 			tree,
 			childId,
@@ -498,27 +501,19 @@ describe('performSubmitPrompt', () => {
 	it('returns parentId as main chat tail when activeExchangeId is null', () => {
 		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = performSubmitPrompt(
-			'chat-1',
-			tree,
-			null,
-			'new prompt',
-			activeModel,
-			undefined,
-			deps
-		);
+		const result = submitPrompt('chat-1', tree, null, 'new prompt', activeModel, undefined, deps);
 		expect(result.parentId).toBe(leafId);
 	});
 });
 
-describe('performQuickAsk', () => {
+describe('quickAsk', () => {
 	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
 
 	it('wraps the source text in the quick ask prompt template', () => {
 		const { tree, childId } = buildLinearTree();
 		const deps = mockDeps();
 
-		performQuickAsk('chat-1', tree, childId, 'Selected paragraph', activeModel, deps);
+		quickAsk('chat-1', tree, childId, 'Selected paragraph', activeModel, deps);
 
 		expect(deps.replaceActiveTree).toHaveBeenCalledOnce();
 		const createdTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]![0];

@@ -5,14 +5,6 @@ import * as external from '@/external';
 export * from './commands';
 export * from './queries';
 export * from './types';
-export {
-	copyChat as performCopy,
-	addDocToChat as performAddDocToChat,
-	deleteExchange as performDelete,
-	promoteExchange as performPromote,
-	quickAsk as performQuickAsk,
-	submitPrompt as performSubmitPrompt
-} from './commands';
 
 export const getChildExchanges = domain.tree.getChildExchanges;
 export const getRootExchange = domain.tree.getRootExchange;

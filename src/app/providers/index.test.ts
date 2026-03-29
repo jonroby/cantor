@@ -18,9 +18,9 @@ import * as external from '@/external';
 import {
 	connectOllama,
 	fetchOllamaContextLength,
-	init,
+	initProviders,
 	loadWebLLMModel_ as loadWebLLMModel
-} from './providers';
+} from './index';
 
 describe('app/providers', () => {
 	beforeEach(() => {
@@ -41,8 +41,8 @@ describe('app/providers', () => {
 		state.providers.providerState.webllmContextSize = 4_096;
 	});
 
-	it('init hydrates vault providers and webllm models', async () => {
-		await init();
+	it('initProviders hydrates vault providers and webllm models', async () => {
+		await initProviders();
 
 		expect(external.providers.vault.migrateVault).toHaveBeenCalledOnce();
 		expect(external.providers.vault.storedProviders).toHaveBeenCalledOnce();

@@ -11,21 +11,25 @@ vi.mock('@/external', async () => {
 	});
 });
 
-vi.mock('./chat-actions', () => ({
-	performAddDocToChat: vi.fn()
-}));
+vi.mock('../chat/index', async () => {
+	const actual = await import('../chat/index');
+	return {
+		...actual,
+		addDocToChat: vi.fn()
+	};
+});
 
 import {
 	clearDocumentLayout,
-	performAddFolderDocumentToChat,
-	performCloseDocumentPanel,
-	performCreateDocument,
-	performOpenDocument,
+	addFolderDocumentToChat,
+	closeDocumentPanel,
+	createDocument,
+	openDocument,
 	restoreOpenDocument,
-	type DocumentActionDeps
-} from './documents';
+	type DocumentCommandDeps
+} from './index';
 
-function createDeps(overrides: Partial<DocumentActionDeps> = {}): DocumentActionDeps {
+function createDeps(overrides: Partial<DocumentCommandDeps> = {}): DocumentCommandDeps {
 	return {
 		getActiveChat: () => ({
 			id: 'chat-1',
@@ -41,7 +45,7 @@ function createDeps(overrides: Partial<DocumentActionDeps> = {}): DocumentAction
 		getPersistedLayout: () => ({}),
 		setPersistedLayout: vi.fn(),
 		saveToStorage: vi.fn(),
-		performAddDocToChat: vi.fn(() => 'exchange-1'),
+		addDocToChat: vi.fn(() => 'exchange-1'),
 		...overrides
 	};
 }
@@ -64,7 +68,7 @@ describe('document app actions', () => {
 			saveToStorage
 		});
 
-		expect(performOpenDocument('folder-1', 'file-1', deps)).toBe(true);
+		expect(openDocument('folder-1', 'file-1', deps)).toBe(true);
 		expect(selectDoc).toHaveBeenCalledWith('folder-1', 'file-1');
 		expect(setPersistedLayout).toHaveBeenCalledWith({
 			openDocument: { folderId: 'folder-1', fileId: 'file-1' }
@@ -84,7 +88,7 @@ describe('document app actions', () => {
 			saveToStorage
 		});
 
-		expect(performCreateDocument('folder-1', deps)).toEqual({
+		expect(createDocument('folder-1', deps)).toEqual({
 			folderId: 'folder-1',
 			fileId: 'file-2'
 		});
@@ -102,7 +106,7 @@ describe('document app actions', () => {
 		const saveToStorage = vi.fn();
 		const deps = createDeps({ closeDoc, setPersistedLayout, saveToStorage });
 
-		performCloseDocumentPanel(3, deps);
+		closeDocumentPanel(3, deps);
 
 		expect(closeDoc).toHaveBeenCalledWith(3);
 		expect(setPersistedLayout).toHaveBeenCalledWith({});
@@ -135,7 +139,7 @@ describe('document app actions', () => {
 	});
 
 	it('adds a folder document to the active chat', () => {
-		const performAddDocToChat = vi.fn(() => 'exchange-9');
+		const addDocToChat = vi.fn(() => 'exchange-9');
 		const deps = createDeps({
 			getFolders: () => [
 				{
@@ -144,11 +148,11 @@ describe('document app actions', () => {
 					files: [{ id: 'file-1', name: 'notes.md', content: '# Notes' }]
 				}
 			],
-			performAddDocToChat
+			addDocToChat
 		});
 
-		expect(performAddFolderDocumentToChat('folder-1', 'file-1', deps)).toBe(true);
-		expect(performAddDocToChat).toHaveBeenCalledWith(
+		expect(addFolderDocumentToChat('folder-1', 'file-1', deps)).toBe(true);
+		expect(addDocToChat).toHaveBeenCalledWith(
 			{ rootId: 'root-1', exchanges: {} },
 			'root-1',
 			'# Notes',
