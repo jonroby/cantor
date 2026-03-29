@@ -12,7 +12,7 @@ import {
 	updateDocContent,
 	closeDoc,
 	type DocFile
-} from './documents';
+} from './documents.svelte';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

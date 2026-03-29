@@ -3,7 +3,7 @@
 	import ChatToolbar from './ChatToolbar.svelte';
 	import ChatTree from './ChatTree.svelte';
 	import { ChatInput } from '@/view/shared';
-	import { getActiveChat, getActiveExchangeId } from '@/state/chats';
+	import { getActiveChat, getActiveExchangeId } from '@/state/chats.svelte';
 	import { downloadToFile } from '@/app/files';
 
 	interface Props {

@@ -4,7 +4,7 @@
 	import * as app from '@/app';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
-	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.js';
+	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.svelte.js';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
 	import ChatItem from './ChatItem.svelte';

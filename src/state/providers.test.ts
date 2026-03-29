@@ -8,7 +8,7 @@ vi.mock('@mlc-ai/web-llm', () => ({
 	hasModelInCache: vi.fn()
 }));
 
-import { providerState, selectModel, updateContextLength } from './providers';
+import { providerState, selectModel, updateContextLength } from './providers.svelte';
 
 describe('providers state', () => {
 	beforeEach(() => {

@@ -57,14 +57,14 @@ vi.mock('@/app', async () => {
 	});
 });
 
-vi.mock('@/view/routes/router', () => ({
+vi.mock('@/view/routes/router.svelte', () => ({
 	routerState: { route: 'chat' as 'chat' | 'canvas' | 'landing' }
 }));
 
 import { toast } from 'svelte-sonner';
 import App from './App.svelte';
 import * as app from '@/app';
-import { routerState } from '@/view/routes/router';
+import { routerState } from '@/view/routes/router.svelte';
 
 describe('App', () => {
 	beforeEach(() => {
