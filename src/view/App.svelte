@@ -4,7 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar, SearchDialog } from '@/view/shared';
-	import { routerState } from '@/view/routes/router.svelte';
+	import { routerState } from '@/view/routes/router';
 	import { ChatView } from '@/view/classic';
 	import { CanvasView } from '@/view/canvas';
 	import LandingPage from '@/view/routes/LandingPage.svelte';

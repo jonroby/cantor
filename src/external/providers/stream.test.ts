@@ -20,18 +20,21 @@ vi.mock('./openai-compat', () => ({
 	streamOpenAICompatChat: vi.fn(() => 'openai-stream')
 }));
 
-vi.mock('@/state', () => ({
-	providers: {
-		providerState: {
-			apiKeys: {
-				claude: 'claude-key',
-				gemini: 'gemini-key',
-				openai: 'openai-key'
-			},
-			ollamaUrl: 'http://localhost:11434'
+vi.mock('@/state', async () => {
+	const { createStateMock } = await import('@/tests/mocks');
+	return createStateMock({
+		providers: {
+			providerState: {
+				apiKeys: {
+					claude: 'claude-key',
+					gemini: 'gemini-key',
+					openai: 'openai-key'
+				},
+				ollamaUrl: 'http://localhost:11434'
+			}
 		}
-	}
-}));
+	});
+});
 
 import type * as domain from '@/domain';
 import { getProviderStream } from './stream';

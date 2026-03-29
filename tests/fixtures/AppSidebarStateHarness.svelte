@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AppSidebar from '@/view/shared/AppSidebar.svelte';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
-	import { chatState, newChat, selectChat, deleteChat, renameChat } from '@/state/chats.svelte';
+	import { chatState, newChat, selectChat, deleteChat, renameChat } from '@/state/chats';
 	import {
 		docState,
 		newFolder,
@@ -11,7 +11,7 @@
 		deleteDocFromFolder,
 		renameDocInFolder,
 		moveDocToFolder
-	} from '@/state/documents.svelte';
+	} from '@/state/documents';
 
 	const noop = () => {};
 </script>

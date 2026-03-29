@@ -41,20 +41,6 @@ vi.mock('@/lib', async (importOriginal) => ({
 	}
 }));
 
-vi.mock('@/app', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/app')>()),
-	connectOllama: vi.fn(),
-	autoConnectOllama: vi.fn(),
-	loadWebLLMModel_: vi.fn(),
-	deleteWebLLMCache: vi.fn(),
-	deleteAllWebLLMCaches: vi.fn(),
-	unlockKeys: vi.fn(),
-	saveKey: vi.fn(),
-	forgetKey: vi.fn(),
-	fetchOllamaContextLength: vi.fn(),
-	init: vi.fn()
-}));
-
 vi.mock('katex', () => ({
 	default: { renderToString: (tex: string) => tex }
 }));

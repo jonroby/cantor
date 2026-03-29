@@ -28,23 +28,19 @@ vi.mock('@/view/components/shadcn/ui/sidebar/index.js', async () => ({
 	Inset: (await import('../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
 
-vi.mock('@/app', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('@/app')>();
-	return {
-		...actual,
+vi.mock('@/app', async () => {
+	const { createAppMock } = await import('@/tests/mocks');
+	return createAppMock({
 		runtime: {
-			...actual.runtime,
 			loadFromStorage: vi.fn(),
 			saveToStorage: vi.fn(),
 			cancelStreamsForChat: vi.fn()
 		},
 		providers: {
-			...actual.providers,
 			init: vi.fn(),
 			autoConnectOllama: vi.fn()
 		},
 		files: {
-			...actual.files,
 			downloadChat: vi.fn(),
 			uploadChat: vi.fn(),
 			downloadFolder: vi.fn(),
@@ -53,23 +49,22 @@ vi.mock('@/app', async (importOriginal) => {
 			uploadFolderToFolder: vi.fn()
 		},
 		documents: {
-			...actual.documents,
 			performAddFolderDocumentToChat: vi.fn(),
 			performCreateDocument: vi.fn(() => null),
 			performOpenDocument: vi.fn(() => false),
 			restoreOpenDocument: vi.fn(() => null)
 		}
-	};
+	});
 });
 
-vi.mock('@/view/routes/router.svelte', () => ({
+vi.mock('@/view/routes/router', () => ({
 	routerState: { route: 'chat' as 'chat' | 'canvas' | 'landing' }
 }));
 
 import { toast } from 'svelte-sonner';
 import App from './App.svelte';
 import * as app from '@/app';
-import { routerState } from '@/view/routes/router.svelte';
+import { routerState } from '@/view/routes/router';
 
 describe('App', () => {
 	beforeEach(() => {

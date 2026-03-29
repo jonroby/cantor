@@ -19,7 +19,7 @@ import {
 	renameChat,
 	copyToNewChat,
 	hydrate
-} from './chats.svelte';
+} from './chats';
 import * as domain from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

@@ -1,26 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/state', () => ({
-	chats: {
-		replaceActiveTree: vi.fn(),
-		setActiveExchangeId: vi.fn(),
-		copyToNewChat: vi.fn(),
-		getTreeByChatId: vi.fn(),
-		replaceTreeByChatId: vi.fn()
-	}
-}));
+vi.mock('@/state', async () => {
+	const { createStateMock } = await import('@/tests/mocks');
+	return createStateMock({
+		chats: {
+			replaceActiveTree: vi.fn(),
+			setActiveExchangeId: vi.fn(),
+			copyToNewChat: vi.fn(),
+			getTreeByChatId: vi.fn(),
+			replaceTreeByChatId: vi.fn()
+		}
+	});
+});
 
-vi.mock('@/external', () => ({
-	streams: {
-		isStreaming: vi.fn(() => false),
-		cancelStreamsForExchanges: vi.fn(),
-		startStream: vi.fn(),
-		cancelStream: vi.fn(),
-		cancelAllStreams: vi.fn(),
-		cancelStreamsForChat: vi.fn(),
-		isAnyStreaming: vi.fn(() => false)
-	}
-}));
+vi.mock('@/external', async () => {
+	const { createExternalMock } = await import('@/tests/mocks');
+	return createExternalMock({
+		streams: {
+			isStreaming: vi.fn(() => false),
+			cancelStreamsForExchanges: vi.fn(),
+			startStream: vi.fn(),
+			cancelStream: vi.fn(),
+			cancelAllStreams: vi.fn(),
+			cancelStreamsForChat: vi.fn(),
+			isAnyStreaming: vi.fn(() => false)
+		}
+	});
+});
 
 import {
 	getExchangeNodeData,

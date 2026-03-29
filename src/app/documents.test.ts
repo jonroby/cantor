@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/external', () => ({
-	persistence: {
-		getPersistedLayout: vi.fn(() => ({})),
-		saveToStorage: vi.fn(),
-		setPersistedLayout: vi.fn()
-	}
-}));
+vi.mock('@/external', async () => {
+	const { createExternalMock } = await import('@/tests/mocks');
+	return createExternalMock({
+		persistence: {
+			getPersistedLayout: vi.fn(() => ({})),
+			saveToStorage: vi.fn(),
+			setPersistedLayout: vi.fn()
+		}
+	});
+});
 
 vi.mock('./chat-actions', () => ({
 	performAddDocToChat: vi.fn()

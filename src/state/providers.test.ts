@@ -1,14 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-vi.mock('@/external', () => ({
-	DEFAULT_OLLAMA_URL: 'http://localhost:11434'
-}));
-
-vi.mock('@/external', () => ({
-	WEBLLM_CONTEXT_OPTIONS: [4_096, 8_192],
-	type: {}
-}));
-
 // Mock web-llm to prevent CJS/ESM issues in test environment
 vi.mock('@mlc-ai/web-llm', () => ({
 	CreateWebWorkerMLCEngine: vi.fn(),
@@ -17,7 +8,7 @@ vi.mock('@mlc-ai/web-llm', () => ({
 	hasModelInCache: vi.fn()
 }));
 
-import { providerState, selectModel, updateContextLength } from './providers.svelte';
+import { providerState, selectModel, updateContextLength } from './providers';
 
 describe('providers state', () => {
 	beforeEach(() => {

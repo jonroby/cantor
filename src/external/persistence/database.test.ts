@@ -6,7 +6,7 @@ import {
 	setVaultStore,
 	migrateVaultStorage,
 	clearVaultStorage
-} from './database.svelte';
+} from './database';
 import * as state from '@/state';
 import * as domain from '@/domain';
 

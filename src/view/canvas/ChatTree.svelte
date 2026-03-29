@@ -21,8 +21,8 @@
 		getActiveExchanges,
 		getActiveExchangeId,
 		setActiveExchangeId
-	} from '@/state/chats.svelte';
-	import { docState, updateDocContent, closeDoc } from '@/state/documents.svelte';
+	} from '@/state/chats';
+	import { docState, updateDocContent, closeDoc } from '@/state/documents';
 	import {
 		getExchangeNodeData as getNodeData,
 		performDelete,

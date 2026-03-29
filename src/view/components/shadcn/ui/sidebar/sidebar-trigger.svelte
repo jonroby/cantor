@@ -5,7 +5,7 @@
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
 	import { cn } from '@/view/components/shadcn/utils';
 	import type { ComponentProps } from 'svelte';
-	import { useSidebar } from './context.svelte.js';
+	import { useSidebar } from './context.js';
 
 	let {
 		ref = $bindable(null),

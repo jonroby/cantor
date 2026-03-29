@@ -9,26 +9,29 @@ vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
 }));
 
-vi.mock('@/lib', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/lib')>()),
-	mapDocument: (text: string) =>
-		text
-			? text.split('\n\n').map((block) => ({
-					source: block,
-					html: `<p>${block}</p>`
-				}))
-			: [],
-	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
-}));
-
 vi.mock('dompurify', () => ({
 	default: { sanitize: (html: string) => html }
 }));
 
-vi.mock('@/domain', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/domain')>()),
-	PROVIDER_LOGOS: {}
-}));
+vi.mock('@/app', async () => {
+	const { createAppMock } = await import('@/tests/mocks');
+	return createAppMock({
+		content: {
+			mapDocument: vi.fn((text: string) =>
+				text
+					? text.split('\n\n').map((block) => ({
+							source: block,
+							html: `<p>${block}</p>`
+						}))
+					: []
+			),
+			marked: { lexer: vi.fn(() => []), parser: vi.fn(() => ''), parse: vi.fn((t: string) => t) }
+		},
+		providers: {
+			PROVIDER_LOGOS: {}
+		}
+	});
+});
 
 function makeNodeData(
 	overrides: Partial<app.types.ExchangeNodeData> = {}
