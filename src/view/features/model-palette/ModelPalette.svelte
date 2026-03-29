@@ -1,22 +1,18 @@
 <script lang="ts">
 	import './palette.css';
-	import { PROVIDER_MODELS } from '@/domain';
-	import type { ActiveModel, Provider } from '@/domain';
-	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '@/external';
-	import { PROVIDER_LOGOS } from '@/domain';
+	import * as app from '@/app';
 	import OllamaTab from './OllamaTab.svelte';
 	import FrontierTab from './FrontierTab.svelte';
 	import WebLLMTab from './WebLLMTab.svelte';
 	import ApiKeyFlow from './ApiKeyFlow.svelte';
-	import type { OllamaStatus } from '@/domain';
 
 	interface Props {
 		open: boolean;
 		onClose: () => void;
-		activeModel: ActiveModel | null;
-		onSelectModel: (model: ActiveModel) => void;
+		activeModel: app.providers.ActiveModel | null;
+		onSelectModel: (model: app.providers.ActiveModel) => void;
 		ollamaUrl: string;
-		ollamaStatus: OllamaStatus;
+		ollamaStatus: app.runtime.OllamaStatus;
 		ollamaModels: string[];
 		onConnectOllama: (url: string) => Promise<void>;
 		apiKeys: Record<string, string>;
@@ -24,14 +20,14 @@
 		onUnlockKeys: (password: string) => Promise<void>;
 		onSaveKey: (provider: string, apiKey: string, password: string) => Promise<void>;
 		onForgetKey: (provider: string) => void;
-		webllmStatus: WebLLMStatus;
+		webllmStatus: app.runtime.WebLLMStatus;
 		webllmProgress: number;
 		webllmProgressText: string;
-		webllmModels: WebLLMModelEntry[];
+		webllmModels: app.runtime.WebLLMModelEntry[];
 		webllmError: string | null;
-		webllmContextSize: WebLLMContextSize;
-		webllmContextOptions: ReadonlyArray<{ label: string; value: WebLLMContextSize }>;
-		onWebLLMContextSizeChange: (size: WebLLMContextSize) => void;
+		webllmContextSize: app.runtime.WebLLMContextSize;
+		webllmContextOptions: ReadonlyArray<{ label: string; value: app.runtime.WebLLMContextSize }>;
+		onWebLLMContextSizeChange: (size: app.runtime.WebLLMContextSize) => void;
 		onLoadWebLLMModel: (modelId: string) => Promise<void>;
 		onDeleteWebLLMCache: (modelId: string) => Promise<void>;
 		onDeleteAllWebLLMCaches: () => Promise<void>;
@@ -68,7 +64,7 @@
 	}: Props = $props();
 
 	let keyFlow: KeyFlow | null = $state(null);
-	let pendingModel: ActiveModel | null = $state(null);
+	let pendingModel: app.providers.ActiveModel | null = $state(null);
 
 	const defaultTab: Tab = $derived.by(() => {
 		if (!activeModel) return 'frontier';
@@ -91,19 +87,19 @@
 		onClose();
 	}
 
-	function handleSelectModel(model: ActiveModel) {
+	function handleSelectModel(model: app.providers.ActiveModel) {
 		onSelectModel(model);
 		handleClose();
 	}
 
 	function handleSelectProvider(provider: string, modelId: string) {
 		if (apiKeys[provider]) {
-			handleSelectModel({ provider: provider as Provider, modelId });
+			handleSelectModel({ provider: provider as app.providers.Provider, modelId });
 		} else if (vaultProviders.length > 0) {
-			pendingModel = { provider: provider as Provider, modelId };
+			pendingModel = { provider: provider as app.providers.Provider, modelId };
 			keyFlow = { provider, mode: 'unlock' };
 		} else {
-			pendingModel = { provider: provider as Provider, modelId };
+			pendingModel = { provider: provider as app.providers.Provider, modelId };
 			keyFlow = { provider, mode: 'setup' };
 		}
 	}
@@ -119,7 +115,9 @@
 		if (!activeModel) return 'No model selected';
 		if (activeModel.provider !== 'ollama' && activeModel.provider !== 'webllm') {
 			const models =
-				PROVIDER_MODELS[activeModel.provider as Exclude<Provider, 'ollama' | 'webllm'>];
+				app.providers.PROVIDER_MODELS[
+					activeModel.provider as Exclude<app.providers.Provider, 'ollama' | 'webllm'>
+				];
 			const found = models?.find((m) => m.id === activeModel.modelId);
 			if (found) return found.label;
 		}
@@ -160,7 +158,7 @@
 						class:active={activeTab === 'ollama'}
 						onclick={() => (activeTab = 'ollama')}
 					>
-						<img src={PROVIDER_LOGOS.ollama} alt="Ollama" class="palette-tab-icon" />
+						<img src={app.providers.PROVIDER_LOGOS.ollama} alt="Ollama" class="palette-tab-icon" />
 						Ollama
 					</button>
 					<button
@@ -175,7 +173,7 @@
 						class:active={activeTab === 'webllm'}
 						onclick={() => (activeTab = 'webllm')}
 					>
-						<img src={PROVIDER_LOGOS.webllm} alt="WebLLM" class="palette-tab-icon" />
+						<img src={app.providers.PROVIDER_LOGOS.webllm} alt="WebLLM" class="palette-tab-icon" />
 						WebLLM
 					</button>
 				</div>

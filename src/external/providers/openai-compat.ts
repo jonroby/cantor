@@ -1,4 +1,4 @@
-import type { Message } from '@/domain';
+import type * as domain from '@/domain';
 import type { StreamChunk } from './stream';
 
 /**
@@ -8,7 +8,7 @@ import type { StreamChunk } from './stream';
 export async function* streamOpenAICompatChat(
 	baseUrl: string,
 	model: string,
-	messages: Message[],
+	messages: domain.Message[],
 	apiKey: string,
 	signal: AbortSignal
 ): AsyncGenerator<StreamChunk> {

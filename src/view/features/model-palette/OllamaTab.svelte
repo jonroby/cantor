@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { ActiveModel, OllamaStatus } from '@/domain';
+	import * as app from '@/app';
 	import Button from '@/view/components/custom/button.svelte';
 	import Input from '@/view/components/custom/input.svelte';
 
 	interface Props {
-		activeModel: ActiveModel | null;
+		activeModel: app.providers.ActiveModel | null;
 		ollamaUrl: string;
-		ollamaStatus: OllamaStatus;
+		ollamaStatus: app.runtime.OllamaStatus;
 		ollamaModels: string[];
 		onConnectOllama: (url: string) => Promise<void>;
-		onSelectModel: (model: ActiveModel) => void;
+		onSelectModel: (model: app.providers.ActiveModel) => void;
 	}
 
 	let {

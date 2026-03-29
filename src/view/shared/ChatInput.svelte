@@ -2,22 +2,7 @@
 	import { tick } from 'svelte';
 	import Composer from './Composer.svelte';
 	import { ModelPalette } from '@/view/features/model-palette';
-	import { canAcceptNewChat, getMainChatHistory, getPathTokenTotal, type Message } from '@/domain';
-	import { getActiveChat, getActiveExchanges, getActiveExchangeId } from '@/state';
-	import { providerState, WEBLLM_CONTEXT_OPTIONS, selectModel, updateContextLength } from '@/state';
-	import {
-		connectOllama,
-		loadWebLLMModel_ as loadWebLLMModel,
-		deleteWebLLMCache,
-		deleteAllWebLLMCaches,
-		unlockKeys,
-		saveKey,
-		forgetKey,
-		fetchOllamaContextLength
-	} from '@/app';
-	import { submitPrompt as performSubmitPrompt } from '@/app';
-	import { isStreaming, cancelStream } from '@/external';
-	import { getProviderStream } from '@/external';
+	import * as app from '@/app';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
@@ -44,7 +29,7 @@
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
-	let commandHistory: Message[] = $state([]);
+	let commandHistory: app.chat.Message[] = $state([]);
 	let commandAbort: AbortController | null = $state(null);
 
 	export function focus() {
@@ -60,36 +45,40 @@
 		}
 	}
 
-	let activeExchanges = $derived(getActiveExchanges());
-	let activeExchangeId = $derived(getActiveExchangeId());
+	let activeExchanges = $derived(app.runtime.getActiveExchanges());
+	let activeExchangeId = $derived(app.runtime.getActiveExchangeId());
 	let usedTokens = $derived(
-		activeExchanges && activeExchangeId ? getPathTokenTotal(activeExchanges, activeExchangeId) : 0
+		activeExchanges && activeExchangeId
+			? app.chat.getPathTokenTotal(activeExchanges, activeExchangeId)
+			: 0
 	);
 	let activeNodeStreaming = $derived.by(() => {
 		const id = activeExchangeId;
 		if (!id) return false;
-		return isStreaming(id);
+		return app.runtime.isStreaming(id);
 	});
 	let submitDisabledReason = $derived(
-		!providerState.activeModel
+		!app.runtime.providerState.activeModel
 			? 'Select a model first.'
-			: activeExchangeId && activeExchanges && !canAcceptNewChat(activeExchanges, activeExchangeId)
+			: activeExchangeId &&
+				  activeExchanges &&
+				  !app.chat.canAcceptNewChat(activeExchanges, activeExchangeId)
 				? 'Choose a branch tip or main-chain node to continue.'
 				: null
 	);
 
-	let activeChatId = $derived(getActiveChat().id);
+	let activeChatId = $derived(app.runtime.getActiveChat().id);
 	$effect(() => {
 		void activeChatId;
 		tick().then(() => composerRef?.focus());
 	});
 
 	$effect(() => {
-		updateContextLength();
+		app.runtime.updateContextLength();
 	});
 
 	$effect(() => {
-		fetchOllamaContextLength();
+		app.providers.fetchOllamaContextLength();
 	});
 
 	async function submitPrompt() {
@@ -99,21 +88,27 @@
 		}
 
 		const prompt = composerValue.trim();
-		if (!prompt || !activeExchanges || submitDisabledReason || !providerState.activeModel) return;
+		if (
+			!prompt ||
+			!activeExchanges ||
+			submitDisabledReason ||
+			!app.runtime.providerState.activeModel
+		)
+			return;
 
 		operationError = null;
 
-		const activeChat = getActiveChat();
+		const activeChat = app.runtime.getActiveChat();
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 
 		let result;
 		try {
-			result = performSubmitPrompt(
+			result = app.chat.submitPrompt(
 				activeChat.id,
 				tree,
 				activeExchangeId,
 				prompt,
-				providerState.activeModel,
+				app.runtime.providerState.activeModel,
 				liveDocContent
 			);
 		} catch (error) {
@@ -130,7 +125,7 @@
 		onScrollToNode(result.id);
 	}
 
-	function buildCommandMessages(prompt: string): Message[] {
+	function buildCommandMessages(prompt: string): app.chat.Message[] {
 		const docSection = liveDocContent
 			? `\n\n<current_document>\n${liveDocContent}\n</current_document>`
 			: '\n\nThe document is currently empty.';
@@ -143,9 +138,9 @@
 			docSection
 		].join('\n');
 
-		const activeChat = getActiveChat();
+		const activeChat = app.runtime.getActiveChat();
 		const chatHistory = activeExchanges
-			? getMainChatHistory({ rootId: activeChat.rootId, exchanges: activeExchanges })
+			? app.chat.getMainChatHistory({ rootId: activeChat.rootId, exchanges: activeExchanges })
 			: [];
 
 		return [
@@ -159,7 +154,7 @@
 
 	async function submitCommand() {
 		const prompt = composerValue.trim();
-		if (!prompt || !providerState.activeModel) return;
+		if (!prompt || !app.runtime.providerState.activeModel) return;
 
 		operationError = null;
 		const messages = buildCommandMessages(prompt);
@@ -172,7 +167,11 @@
 
 		let responseText = '';
 		try {
-			const stream = getProviderStream(providerState.activeModel, messages, abort.signal);
+			const stream = app.runtime.getProviderStream(
+				app.runtime.providerState.activeModel,
+				messages,
+				abort.signal
+			);
 			for await (const chunk of stream) {
 				if (chunk.type === 'delta') {
 					responseText += chunk.delta;
@@ -202,9 +201,9 @@
 	inputMessage={commandPending ? 'Accept or reject pending changes first.' : null}
 	{submitDisabledReason}
 	streaming={commandStreaming || activeNodeStreaming}
-	activeModelId={providerState.activeModel?.modelId ?? null}
+	activeModelId={app.runtime.providerState.activeModel?.modelId ?? null}
 	{usedTokens}
-	contextLength={providerState.contextLength}
+	contextLength={app.runtime.providerState.contextLength}
 	onSubmit={submitPrompt}
 	onStop={() => {
 		if (commandStreaming && commandAbort) {
@@ -212,7 +211,7 @@
 			commandStreaming = false;
 			commandAbort = null;
 		} else if (activeExchangeId) {
-			cancelStream(activeExchangeId);
+			app.runtime.cancelStream(activeExchangeId);
 		}
 	}}
 	onToggleCanvasMode={() => (canvasMode = !canvasMode)}
@@ -224,28 +223,28 @@
 	onClose={() => {
 		paletteOpen = false;
 	}}
-	activeModel={providerState.activeModel}
-	onSelectModel={selectModel}
-	ollamaUrl={providerState.ollamaUrl}
-	ollamaStatus={providerState.ollamaStatus}
-	ollamaModels={providerState.ollamaModels}
-	onConnectOllama={connectOllama}
-	apiKeys={providerState.apiKeys}
-	vaultProviders={providerState.vaultProviders}
-	onUnlockKeys={unlockKeys}
-	onSaveKey={saveKey}
-	onForgetKey={forgetKey}
-	webllmStatus={providerState.webllmStatus}
-	webllmProgress={providerState.webllmProgress}
-	webllmProgressText={providerState.webllmProgressText}
-	webllmModels={providerState.webllmModels}
-	webllmError={providerState.webllmError}
-	webllmContextSize={providerState.webllmContextSize}
-	webllmContextOptions={WEBLLM_CONTEXT_OPTIONS}
+	activeModel={app.runtime.providerState.activeModel}
+	onSelectModel={app.runtime.selectModel}
+	ollamaUrl={app.runtime.providerState.ollamaUrl}
+	ollamaStatus={app.runtime.providerState.ollamaStatus}
+	ollamaModels={app.runtime.providerState.ollamaModels}
+	onConnectOllama={app.providers.connectOllama}
+	apiKeys={app.runtime.providerState.apiKeys}
+	vaultProviders={app.runtime.providerState.vaultProviders}
+	onUnlockKeys={app.providers.unlockKeys}
+	onSaveKey={app.providers.saveKey}
+	onForgetKey={app.providers.forgetKey}
+	webllmStatus={app.runtime.providerState.webllmStatus}
+	webllmProgress={app.runtime.providerState.webllmProgress}
+	webllmProgressText={app.runtime.providerState.webllmProgressText}
+	webllmModels={app.runtime.providerState.webllmModels}
+	webllmError={app.runtime.providerState.webllmError}
+	webllmContextSize={app.runtime.providerState.webllmContextSize}
+	webllmContextOptions={app.providers.WEBLLM_CONTEXT_OPTIONS}
 	onWebLLMContextSizeChange={(size) => {
-		providerState.webllmContextSize = size;
+		app.runtime.providerState.webllmContextSize = size;
 	}}
-	onLoadWebLLMModel={loadWebLLMModel}
-	onDeleteWebLLMCache={deleteWebLLMCache}
-	onDeleteAllWebLLMCaches={deleteAllWebLLMCaches}
+	onLoadWebLLMModel={app.providers.loadWebLLMModel_}
+	onDeleteWebLLMCache={app.providers.deleteWebLLMCache}
+	onDeleteAllWebLLMCaches={app.providers.deleteAllWebLLMCaches}
 />

@@ -1,6 +1,5 @@
-import { getActiveChat } from '@/state';
-import { docState, newDocInFolder, selectDoc, closeDoc, type ChatFolder } from '@/state';
-import { getPersistedLayout, saveToStorage, setPersistedLayout } from '@/external';
+import * as state from '@/state';
+import * as external from '@/external';
 import { performAddDocToChat } from './chat-actions';
 export { getFolderFile } from '@/app/documents/queries';
 
@@ -10,26 +9,26 @@ interface RestoreResult {
 }
 
 export interface DocumentActionDeps {
-	getActiveChat: typeof getActiveChat;
-	getFolders: () => ChatFolder[];
-	newDocInFolder: typeof newDocInFolder;
-	selectDoc: typeof selectDoc;
-	closeDoc: typeof closeDoc;
-	getPersistedLayout: typeof getPersistedLayout;
-	setPersistedLayout: typeof setPersistedLayout;
-	saveToStorage: typeof saveToStorage;
+	getActiveChat: typeof state.getActiveChat;
+	getFolders: () => state.ChatFolder[];
+	newDocInFolder: typeof state.newDocInFolder;
+	selectDoc: typeof state.selectDoc;
+	closeDoc: typeof state.closeDoc;
+	getPersistedLayout: typeof external.getPersistedLayout;
+	setPersistedLayout: typeof external.setPersistedLayout;
+	saveToStorage: typeof external.saveToStorage;
 	performAddDocToChat: typeof performAddDocToChat;
 }
 
 const defaultDeps: DocumentActionDeps = {
-	getActiveChat,
-	getFolders: () => docState.folders,
-	newDocInFolder,
-	selectDoc,
-	closeDoc,
-	getPersistedLayout,
-	setPersistedLayout,
-	saveToStorage,
+	getActiveChat: state.getActiveChat,
+	getFolders: () => state.documents.docState.folders,
+	newDocInFolder: state.newDocInFolder,
+	selectDoc: state.selectDoc,
+	closeDoc: state.closeDoc,
+	getPersistedLayout: external.getPersistedLayout,
+	setPersistedLayout: external.setPersistedLayout,
+	saveToStorage: external.saveToStorage,
 	performAddDocToChat
 };
 

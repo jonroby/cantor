@@ -1,21 +1,19 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { renameWithDedup } from '@/lib';
+	import * as app from '@/app';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.svelte.js';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import type { Chat } from '@/domain';
-	import type { ChatFolder } from '@/state';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from './ConfirmDeleteDialog.svelte';
 	import powersetLogo from '@/assets/powerset-logo.svg';
 
 	interface Props {
-		chats: Chat[];
+		chats: app.chat.Chat[];
 		activeChatIndex: number;
 		onSelectChat: (index: number) => void;
 		onNewChat: () => number;
@@ -23,7 +21,7 @@
 		onRenameChat: (index: number, name: string) => boolean;
 		onDownloadChat: (index: number) => void;
 		onUploadChat: () => void;
-		folders: ChatFolder[];
+		folders: app.runtime.ChatFolder[];
 		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
 		onDownloadFolder: (folderId: string) => void;
@@ -85,7 +83,7 @@
 
 	function commitRenameChat(name: string) {
 		if (editingChatIndex !== null) {
-			const result = renameWithDedup(name, (c) => onRenameChat(editingChatIndex!, c));
+			const result = app.content.renameWithDedup(name, (c) => onRenameChat(editingChatIndex!, c));
 			if (result && result !== name.trim()) {
 				toast.warning(`Renamed to "${result}" to avoid duplicate`);
 			}
@@ -112,7 +110,7 @@
 
 	function commitRenameDoc(name: string) {
 		if (editingDocFolderId && editingDocFileId) {
-			const result = renameWithDedup(name, (c) =>
+			const result = app.content.renameWithDedup(name, (c) =>
 				onRenameDoc(editingDocFolderId!, editingDocFileId!, c)
 			);
 			if (result && result !== name.trim()) {
@@ -136,7 +134,7 @@
 
 	// Delete targets
 	let deleteChatTarget: { index: number; name: string } | null = $state(null);
-	let deleteFolderTarget: ChatFolder | null = $state(null);
+	let deleteFolderTarget: app.runtime.ChatFolder | null = $state(null);
 	let deleteDocTarget: { folderId: string; fileId: string; fileName: string } | null = $state(null);
 
 	// New folder

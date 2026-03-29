@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { PROVIDER_MODELS, PROVIDER_CONFIG, KEY_BASED_PROVIDERS } from '@/domain';
-	import type { ActiveModel, Provider } from '@/domain';
-	import { PROVIDER_LOGOS } from '@/domain';
+	import * as app from '@/app';
 
 	interface Props {
-		activeModel: ActiveModel | null;
+		activeModel: app.providers.ActiveModel | null;
 		apiKeys: Record<string, string>;
 		vaultProviders: string[];
 		onSelectProvider: (provider: string, modelId: string) => void;
@@ -14,7 +12,11 @@
 	let { activeModel, apiKeys, vaultProviders, onSelectProvider, onForgetKey }: Props = $props();
 
 	function providerDisplayName(provider: string): string {
-		return PROVIDER_CONFIG[provider as Exclude<Provider, 'ollama' | 'webllm'>]?.name ?? provider;
+		return (
+			app.providers.PROVIDER_CONFIG[
+				provider as Exclude<app.providers.Provider, 'ollama' | 'webllm'>
+			]?.name ?? provider
+		);
 	}
 
 	function getBadge(provider: string): string | undefined {
@@ -29,11 +31,11 @@
 		<!-- Claude (active) -->
 		<div class="palette-provider-group">
 			<div class="palette-provider-title">
-				<img src={PROVIDER_LOGOS.claude} alt="Claude" class="palette-provider-logo" />
+				<img src={app.providers.PROVIDER_LOGOS.claude} alt="Claude" class="palette-provider-logo" />
 				<span class="palette-provider-name">Claude</span>
 			</div>
 			<div class="palette-provider-models">
-				{#each PROVIDER_MODELS.claude as model (model.id)}
+				{#each app.providers.PROVIDER_MODELS.claude as model (model.id)}
 					<button
 						class="palette-model-row"
 						class:active={activeModel?.provider === 'claude' && activeModel.modelId === model.id}
@@ -59,9 +61,9 @@
 		</div>
 
 		<!-- Other providers (coming soon) -->
-		{#each KEY_BASED_PROVIDERS.filter((p) => p !== 'claude') as provider (provider)}
-			{@const models = PROVIDER_MODELS[provider]}
-			{@const logo = PROVIDER_LOGOS[provider]}
+		{#each app.providers.KEY_BASED_PROVIDERS.filter((p) => p !== 'claude') as provider (provider)}
+			{@const models = app.providers.PROVIDER_MODELS[provider]}
+			{@const logo = app.providers.PROVIDER_LOGOS[provider]}
 			{@const name = providerDisplayName(provider)}
 			<div class="palette-provider-group">
 				<div class="palette-provider-title">

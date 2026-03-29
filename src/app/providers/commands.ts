@@ -1,12 +1,5 @@
-import { DEFAULT_OLLAMA_URL, fetchAvailableModels, fetchModelContextLength } from '@/external';
-import { loadWebLLMModel, deleteModelCache, deleteAllModelCaches } from '@/external';
-import {
-	clearProviderKey,
-	loadAllApiKeys,
-	saveApiKey,
-	storedProviders as getStoredProviders
-} from '@/external';
-import { providerState } from '@/state';
+import * as external from '@/external';
+import * as state from '@/state';
 
 export function autoConnectOllama() {
 	return _autoConnectOllama();
@@ -14,12 +7,14 @@ export function autoConnectOllama() {
 
 async function _autoConnectOllama() {
 	try {
-		const models = await fetchAvailableModels(DEFAULT_OLLAMA_URL);
+		const models = await external.providers.fetchAvailableModels(
+			external.providers.DEFAULT_OLLAMA_URL
+		);
 		if (models.length > 0) {
-			providerState.ollamaUrl = DEFAULT_OLLAMA_URL;
-			providerState.ollamaModels = models;
-			providerState.ollamaStatus = 'connected';
-			providerState.activeModel = { provider: 'ollama', modelId: models[0] };
+			state.providers.providerState.ollamaUrl = external.providers.DEFAULT_OLLAMA_URL;
+			state.providers.providerState.ollamaModels = models;
+			state.providers.providerState.ollamaStatus = 'connected';
+			state.providers.providerState.activeModel = { provider: 'ollama', modelId: models[0] };
 		}
 	} catch {
 		// Ollama not running
@@ -27,109 +22,119 @@ async function _autoConnectOllama() {
 }
 
 export async function connectOllama(url: string) {
-	providerState.ollamaStatus = 'connecting';
+	state.providers.providerState.ollamaStatus = 'connecting';
 	try {
-		const models = await fetchAvailableModels(url);
-		providerState.ollamaUrl = url;
-		providerState.ollamaModels = models;
-		providerState.ollamaStatus = 'connected';
-		if (providerState.activeModel?.provider === 'ollama') {
-			if (models.includes(providerState.activeModel.modelId)) {
-				providerState.activeModel = {
+		const models = await external.providers.fetchAvailableModels(url);
+		state.providers.providerState.ollamaUrl = url;
+		state.providers.providerState.ollamaModels = models;
+		state.providers.providerState.ollamaStatus = 'connected';
+		if (state.providers.providerState.activeModel?.provider === 'ollama') {
+			if (models.includes(state.providers.providerState.activeModel.modelId)) {
+				state.providers.providerState.activeModel = {
 					provider: 'ollama',
-					modelId: providerState.activeModel.modelId
+					modelId: state.providers.providerState.activeModel.modelId
 				};
 			} else {
-				providerState.activeModel = models[0] ? { provider: 'ollama', modelId: models[0] } : null;
+				state.providers.providerState.activeModel = models[0]
+					? { provider: 'ollama', modelId: models[0] }
+					: null;
 			}
 		}
 	} catch (error) {
-		providerState.ollamaStatus = 'error';
-		providerState.ollamaModels = [];
-		providerState.operationError =
+		state.providers.providerState.ollamaStatus = 'error';
+		state.providers.providerState.ollamaModels = [];
+		state.providers.providerState.operationError =
 			error instanceof Error ? error.message : 'Failed to connect to Ollama.';
 	}
 }
 
 export async function loadWebLLMModel_(modelId: string) {
-	providerState.webllmStatus = 'loading';
-	providerState.webllmProgress = 0;
-	providerState.webllmProgressText = '';
-	providerState.webllmError = null;
+	state.providers.providerState.webllmStatus = 'loading';
+	state.providers.providerState.webllmProgress = 0;
+	state.providers.providerState.webllmProgressText = '';
+	state.providers.providerState.webllmError = null;
 	try {
-		await loadWebLLMModel(modelId, providerState.webllmContextSize, (report) => {
-			providerState.webllmProgress = report.progress;
-			providerState.webllmProgressText = report.text;
-		});
-		providerState.webllmStatus = 'ready';
-		providerState.activeModel = { provider: 'webllm', modelId };
-		providerState.contextLength = providerState.webllmContextSize;
+		await external.providers.loadWebLLMModel(
+			modelId,
+			state.providers.providerState.webllmContextSize,
+			(report) => {
+				state.providers.providerState.webllmProgress = report.progress;
+				state.providers.providerState.webllmProgressText = report.text;
+			}
+		);
+		state.providers.providerState.webllmStatus = 'ready';
+		state.providers.providerState.activeModel = { provider: 'webllm', modelId };
+		state.providers.providerState.contextLength = state.providers.providerState.webllmContextSize;
 	} catch (error) {
-		providerState.webllmStatus = 'error';
-		providerState.webllmError = error instanceof Error ? error.message : 'Failed to load model.';
+		state.providers.providerState.webllmStatus = 'error';
+		state.providers.providerState.webllmError =
+			error instanceof Error ? error.message : 'Failed to load model.';
 	}
 }
 
 export async function deleteWebLLMCache(modelId: string) {
-	await deleteModelCache(modelId);
+	await external.providers.deleteModelCache(modelId);
 	if (
-		providerState.activeModel?.provider === 'webllm' &&
-		providerState.activeModel.modelId === modelId
+		state.providers.providerState.activeModel?.provider === 'webllm' &&
+		state.providers.providerState.activeModel.modelId === modelId
 	) {
-		providerState.activeModel = null;
-		providerState.webllmStatus = 'idle';
+		state.providers.providerState.activeModel = null;
+		state.providers.providerState.webllmStatus = 'idle';
 	}
 }
 
 export async function deleteAllWebLLMCaches() {
-	await deleteAllModelCaches();
-	if (providerState.activeModel?.provider === 'webllm') {
-		providerState.activeModel = null;
+	await external.providers.deleteAllModelCaches();
+	if (state.providers.providerState.activeModel?.provider === 'webllm') {
+		state.providers.providerState.activeModel = null;
 	}
-	providerState.webllmStatus = 'idle';
+	state.providers.providerState.webllmStatus = 'idle';
 }
 
 export async function unlockKeys(password: string) {
-	providerState.apiKeys = await loadAllApiKeys(password);
+	state.providers.providerState.apiKeys = await external.providers.loadAllApiKeys(password);
 }
 
 export async function saveKey(provider: string, apiKey: string, password: string) {
-	await saveApiKey(provider, apiKey, password);
-	providerState.apiKeys = { ...providerState.apiKeys, [provider]: apiKey };
-	providerState.vaultProviders = getStoredProviders();
+	await external.providers.saveApiKey(provider, apiKey, password);
+	state.providers.providerState.apiKeys = {
+		...state.providers.providerState.apiKeys,
+		[provider]: apiKey
+	};
+	state.providers.providerState.vaultProviders = external.providers.storedProviders();
 }
 
 export function forgetKey(provider: string) {
-	clearProviderKey(provider);
-	const { [provider]: _, ...rest } = providerState.apiKeys;
+	external.providers.clearProviderKey(provider);
+	const { [provider]: _, ...rest } = state.providers.providerState.apiKeys;
 	void _;
-	providerState.apiKeys = rest;
-	providerState.vaultProviders = getStoredProviders();
-	if (providerState.activeModel?.provider === provider) {
-		providerState.activeModel = null;
+	state.providers.providerState.apiKeys = rest;
+	state.providers.providerState.vaultProviders = external.providers.storedProviders();
+	if (state.providers.providerState.activeModel?.provider === provider) {
+		state.providers.providerState.activeModel = null;
 	}
 }
 
 export async function fetchOllamaContextLength() {
-	if (providerState.activeModel?.provider === 'ollama') {
-		const modelId = providerState.activeModel.modelId;
-		const url = providerState.ollamaUrl;
+	if (state.providers.providerState.activeModel?.provider === 'ollama') {
+		const modelId = state.providers.providerState.activeModel.modelId;
+		const url = state.providers.providerState.ollamaUrl;
 		try {
-			const length = await fetchModelContextLength(modelId, url);
+			const length = await external.providers.fetchModelContextLength(modelId, url);
 			if (
-				providerState.activeModel?.provider === 'ollama' &&
-				providerState.activeModel.modelId === modelId &&
-				providerState.ollamaUrl === url
+				state.providers.providerState.activeModel?.provider === 'ollama' &&
+				state.providers.providerState.activeModel.modelId === modelId &&
+				state.providers.providerState.ollamaUrl === url
 			) {
-				providerState.contextLength = length;
+				state.providers.providerState.contextLength = length;
 			}
 		} catch {
 			if (
-				providerState.activeModel?.provider === 'ollama' &&
-				providerState.activeModel.modelId === modelId &&
-				providerState.ollamaUrl === url
+				state.providers.providerState.activeModel?.provider === 'ollama' &&
+				state.providers.providerState.activeModel.modelId === modelId &&
+				state.providers.providerState.ollamaUrl === url
 			) {
-				providerState.contextLength = null;
+				state.providers.providerState.contextLength = null;
 			}
 		}
 	}

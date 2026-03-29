@@ -59,6 +59,61 @@ This means:
 - `app` is the only place that coordinates them
 - `view` talks to `app`, not directly to the lower layers
 
+## Public Surface Rule
+
+Cross-area module APIs should stay small.
+
+- many private functions inside a module are fine
+- many exported functions across `src` area boundaries are not fine
+- exported cross-area APIs should be minimal and intentional
+- implementation detail helpers should stay private inside the module or folder that owns them
+
+The goal is real isolation, not fake isolation.
+
+If one area exports a large grab bag of functions and another area imports them freely, the boundary is weak even if the folder structure looks clean.
+
+Prefer:
+
+- small feature-shaped public APIs
+- richer private implementation behind those APIs
+- concern-based public namespaces at area barrels
+
+Avoid:
+
+- large public toolboxes
+- exporting low-level primitives when a higher-level feature API would do
+
+## Barrel Organization Rule
+
+Each top-level `src` area has a public barrel at its root.
+
+Cross-area imports must:
+
+- go through that root barrel
+- use a namespace import
+
+Examples:
+
+- `import * as app from '@/app'`
+- `import * as external from '@/external'`
+- `import * as state from '@/state'`
+
+Call sites should preserve ownership:
+
+- `app.chat.submitPrompt()`
+- `app.documents.performOpenDocument()`
+- `app.files.uploadFolder()`
+- `external.files.validateChatUpload()`
+
+This rule is primarily about organization.
+
+The goal is to make ownership obvious at the call site and reduce ambiguity for both humans and LLMs.
+
+Many private helpers inside a module are fine.
+Many flat named imports across areas are not.
+
+Use the shortest namespace chain that still preserves ownership clarity.
+
 ## Ownership
 
 ### Domain
@@ -197,11 +252,17 @@ Put code in `external` when it:
 - crosses the app boundary
 - talks to storage, network, browser APIs, files, crypto, or workers
 
+Keep the exported surface small.
+`external` should expose the smallest feature-shaped API that `app` needs, not every low-level browser or transport primitive.
+
 Put code in `app` when it:
 
 - coordinates multiple steps
 - combines rules, state, and boundaries
 - represents a workflow or user action
+
+Keep the exported surface small.
+`app` should expose focused actions and view-facing queries, not a grab bag of lower-layer passthroughs.
 
 Put code in `view` when it:
 

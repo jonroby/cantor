@@ -1,22 +1,20 @@
-import {
-	CreateWebWorkerMLCEngine,
-	prebuiltAppConfig,
-	deleteModelAllInfoInCache,
-	hasModelInCache,
-	type WebWorkerMLCEngine,
-	type InitProgressReport
-} from '@mlc-ai/web-llm';
-import type { Message } from '@/domain';
-import { WEBLLM_CONTEXT_OPTIONS, type WebLLMContextSize } from '@/lib';
-import type { WebLLMModelEntry, WebLLMStatus } from '@/lib';
+import type { WebWorkerMLCEngine, InitProgressReport } from '@mlc-ai/web-llm';
+import type * as domain from '@/domain';
+import * as lib from '@/lib';
 import type { StreamChunk } from './stream';
 
-export { WEBLLM_CONTEXT_OPTIONS };
-export type { WebLLMContextSize };
-export type { WebLLMModelEntry, WebLLMStatus };
+export const WEBLLM_CONTEXT_OPTIONS = lib.WEBLLM_CONTEXT_OPTIONS;
+export type WebLLMContextSize = lib.WebLLMContextSize;
+export type WebLLMModelEntry = lib.WebLLMModelEntry;
+export type WebLLMStatus = lib.WebLLMStatus;
+
+async function loadWebLLMLib() {
+	return import('@mlc-ai/web-llm');
+}
 
 /** Return the list of available WebLLM models from the built-in registry. */
-export function getWebLLMModels(): WebLLMModelEntry[] {
+export async function getWebLLMModels(): Promise<WebLLMModelEntry[]> {
+	const { prebuiltAppConfig } = await loadWebLLMLib();
 	return prebuiltAppConfig.model_list.map((m) => ({
 		id: m.model_id,
 		label: m.model_id,
@@ -25,7 +23,8 @@ export function getWebLLMModels(): WebLLMModelEntry[] {
 }
 
 /** Build an appConfig that overrides the context_window_size for the target model. */
-function buildAppConfig(modelId: string, contextWindowSize: number) {
+async function buildAppConfig(modelId: string, contextWindowSize: number) {
+	const { prebuiltAppConfig } = await loadWebLLMLib();
 	return {
 		...prebuiltAppConfig,
 		model_list: prebuiltAppConfig.model_list.map((m) =>
@@ -84,9 +83,10 @@ export async function loadWebLLMModel(
 	}
 
 	const worker = new Worker(new URL('./webllm-worker.ts', import.meta.url), { type: 'module' });
+	const { CreateWebWorkerMLCEngine } = await loadWebLLMLib();
 
 	engine = await CreateWebWorkerMLCEngine(worker, modelId, {
-		appConfig: buildAppConfig(modelId, contextWindowSize),
+		appConfig: await buildAppConfig(modelId, contextWindowSize),
 		initProgressCallback: progressCallback
 	});
 	engineWorker = worker;
@@ -111,6 +111,7 @@ export function unloadWebLLM(): void {
 
 /** Check if a model is cached in the browser. */
 export async function isModelCached(modelId: string): Promise<boolean> {
+	const { hasModelInCache } = await loadWebLLMLib();
 	return hasModelInCache(modelId);
 }
 
@@ -120,12 +121,14 @@ export async function deleteModelCache(modelId: string): Promise<void> {
 	if (currentModelId === modelId) {
 		unloadWebLLM();
 	}
+	const { deleteModelAllInfoInCache } = await loadWebLLMLib();
 	await deleteModelAllInfoInCache(modelId);
 }
 
 /** Delete all cached WebLLM models from the browser. */
 export async function deleteAllModelCaches(): Promise<void> {
 	unloadWebLLM();
+	const { prebuiltAppConfig, deleteModelAllInfoInCache } = await loadWebLLMLib();
 	for (const model of prebuiltAppConfig.model_list) {
 		try {
 			await deleteModelAllInfoInCache(model.model_id);
@@ -137,7 +140,7 @@ export async function deleteAllModelCaches(): Promise<void> {
 
 /** Stream a chat completion from the loaded WebLLM engine. */
 export async function* streamWebLLMChat(
-	messages: Message[],
+	messages: domain.Message[],
 	signal: AbortSignal
 ): AsyncGenerator<StreamChunk> {
 	if (!engine) throw new Error('WebLLM engine not loaded');

@@ -1,12 +1,6 @@
-import {
-	validateChatTree,
-	getMainChatTail,
-	findRootId,
-	type Chat,
-	type ExchangeMap
-} from '@/domain';
+import * as domain from '@/domain';
 
-export { findRootId };
+export const findRootId = domain.findRootId;
 
 export function deduplicateName(name: string, existingNames: string[]): string {
 	if (!existingNames.includes(name)) return name;
@@ -17,7 +11,7 @@ export function deduplicateName(name: string, existingNames: string[]): string {
 	return `${base} (${i})${ext}`;
 }
 
-export function validateChatUpload(data: unknown): Chat {
+export function validateChatUpload(data: unknown): domain.Chat {
 	if (typeof data !== 'object' || data === null || Array.isArray(data)) {
 		throw new Error('Upload must be a JSON object.');
 	}
@@ -31,12 +25,12 @@ export function validateChatUpload(data: unknown): Chat {
 		throw new Error('Chat is missing a valid "name".');
 	}
 
-	let exchanges: ExchangeMap;
+	let exchanges: domain.ExchangeMap;
 	if (obj.exchanges && typeof obj.exchanges === 'object' && !Array.isArray(obj.exchanges)) {
-		exchanges = obj.exchanges as ExchangeMap;
+		exchanges = obj.exchanges as domain.ExchangeMap;
 	} else if (Array.isArray(obj.roots) && obj.roots.length > 0) {
 		const rootIndex = typeof obj.activeRootIndex === 'number' ? obj.activeRootIndex : 0;
-		exchanges = obj.roots[rootIndex] as ExchangeMap;
+		exchanges = obj.roots[rootIndex] as domain.ExchangeMap;
 	} else {
 		throw new Error('Chat must have an "exchanges" map.');
 	}
@@ -59,10 +53,10 @@ export function validateChatUpload(data: unknown): Chat {
 		}
 	}
 
-	const rootId = findRootId(exchanges);
+	const rootId = domain.findRootId(exchanges);
 	const tree = { rootId, exchanges };
 	try {
-		validateChatTree(tree);
+		domain.validateChatTree(tree);
 	} catch (e) {
 		throw new Error(e instanceof Error ? e.message : String(e));
 	}
@@ -73,6 +67,6 @@ export function validateChatUpload(data: unknown): Chat {
 		rootId,
 		exchanges,
 		activeExchangeId:
-			typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : getMainChatTail(tree)
+			typeof obj.activeExchangeId === 'string' ? obj.activeExchangeId : domain.getMainChatTail(tree)
 	};
 }

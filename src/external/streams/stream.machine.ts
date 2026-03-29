@@ -1,18 +1,17 @@
 import { setup, assign, fromCallback } from 'xstate';
 import type { StreamChunk } from '@/external/providers/stream';
-import type { ActiveModel } from '@/domain';
-import type { Message } from '@/domain';
+import type * as domain from '@/domain';
 
 type StreamFactory = (
-	model: ActiveModel,
-	history: Message[],
+	model: domain.ActiveModel,
+	history: domain.Message[],
 	signal: AbortSignal
 ) => AsyncGenerator<StreamChunk>;
 
 export interface StreamMachineInput {
 	exchangeId: string;
-	model: ActiveModel;
-	history: Message[];
+	model: domain.ActiveModel;
+	history: domain.Message[];
 	getStream: StreamFactory;
 }
 
@@ -23,8 +22,8 @@ export type StreamMachineEvent =
 	| { type: 'CANCEL' };
 
 interface CallbackInput {
-	model: ActiveModel;
-	history: Message[];
+	model: domain.ActiveModel;
+	history: domain.Message[];
 	getStream: StreamFactory;
 }
 
@@ -67,8 +66,8 @@ export const streamMachine = setup({
 			promptTokens: number;
 			responseTokens: number;
 			error: string | null;
-			model: ActiveModel;
-			history: Message[];
+			model: domain.ActiveModel;
+			history: domain.Message[];
 			getStream: StreamFactory;
 		},
 		events: {} as StreamMachineEvent,

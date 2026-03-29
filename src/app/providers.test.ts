@@ -1,30 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/external', () => ({
-	DEFAULT_OLLAMA_URL: 'http://localhost:11434',
-	fetchAvailableModels: vi.fn(),
-	fetchModelContextLength: vi.fn(),
-	getWebLLMModels: vi.fn(() => [{ id: 'web-model', label: 'web-model', vramMB: 1024 }]),
-	loadWebLLMModel: vi.fn(),
-	deleteModelCache: vi.fn(),
-	deleteAllModelCaches: vi.fn(),
-	clearProviderKey: vi.fn(),
-	loadAllApiKeys: vi.fn(),
-	migrateVault: vi.fn(),
-	saveApiKey: vi.fn(),
-	storedProviders: vi.fn(() => ['claude'])
+	providers: {
+		DEFAULT_OLLAMA_URL: 'http://localhost:11434',
+		fetchAvailableModels: vi.fn(),
+		fetchModelContextLength: vi.fn(),
+		getWebLLMModels: vi.fn(() => [{ id: 'web-model', label: 'web-model', vramMB: 1024 }]),
+		loadWebLLMModel: vi.fn(),
+		deleteModelCache: vi.fn(),
+		deleteAllModelCaches: vi.fn(),
+		clearProviderKey: vi.fn(),
+		loadAllApiKeys: vi.fn(),
+		migrateVault: vi.fn(),
+		saveApiKey: vi.fn(),
+		storedProviders: vi.fn(() => ['claude'])
+	}
 }));
 
 import { providerState } from '@/state';
+import { providers as externalProviders } from '@/external';
 import {
 	connectOllama,
 	fetchOllamaContextLength,
 	init,
 	loadWebLLMModel_ as loadWebLLMModel
 } from './providers';
-import { fetchAvailableModels, fetchModelContextLength } from '@/external';
-import { loadWebLLMModel as loadWebLLMModelService } from '@/external';
-import { migrateVault, storedProviders } from '@/external';
 
 describe('app/providers', () => {
 	beforeEach(() => {
@@ -45,11 +45,11 @@ describe('app/providers', () => {
 		providerState.webllmContextSize = 4_096;
 	});
 
-	it('init hydrates vault providers and webllm models', () => {
-		init();
+	it('init hydrates vault providers and webllm models', async () => {
+		await init();
 
-		expect(migrateVault).toHaveBeenCalledOnce();
-		expect(storedProviders).toHaveBeenCalledOnce();
+		expect(externalProviders.migrateVault).toHaveBeenCalledOnce();
+		expect(externalProviders.storedProviders).toHaveBeenCalledOnce();
 		expect(providerState.vaultProviders).toEqual(['claude']);
 		expect(providerState.webllmModels).toEqual([
 			{ id: 'web-model', label: 'web-model', vramMB: 1024 }
@@ -57,7 +57,7 @@ describe('app/providers', () => {
 	});
 
 	it('connectOllama keeps active model when it still exists', async () => {
-		vi.mocked(fetchAvailableModels).mockResolvedValue(['llama3', 'mistral']);
+		vi.mocked(externalProviders.fetchAvailableModels).mockResolvedValue(['llama3', 'mistral']);
 		providerState.activeModel = { provider: 'ollama', modelId: 'mistral' };
 
 		await connectOllama('http://ollama.local');
@@ -68,7 +68,7 @@ describe('app/providers', () => {
 	});
 
 	it('connectOllama replaces a stale active model with the first returned model', async () => {
-		vi.mocked(fetchAvailableModels).mockResolvedValue(['llama3', 'mistral']);
+		vi.mocked(externalProviders.fetchAvailableModels).mockResolvedValue(['llama3', 'mistral']);
 		providerState.activeModel = { provider: 'ollama', modelId: 'stale-model' };
 
 		await connectOllama('http://ollama.local');
@@ -77,7 +77,7 @@ describe('app/providers', () => {
 	});
 
 	it('connectOllama clears the active model when the server returns no models', async () => {
-		vi.mocked(fetchAvailableModels).mockResolvedValue([]);
+		vi.mocked(externalProviders.fetchAvailableModels).mockResolvedValue([]);
 		providerState.activeModel = { provider: 'ollama', modelId: 'stale-model' };
 
 		await connectOllama('http://ollama.local');
@@ -87,13 +87,16 @@ describe('app/providers', () => {
 	});
 
 	it('fetchOllamaContextLength updates context only if the active model is unchanged', async () => {
-		vi.mocked(fetchModelContextLength).mockResolvedValue(65_536);
+		vi.mocked(externalProviders.fetchModelContextLength).mockResolvedValue(65_536);
 		providerState.activeModel = { provider: 'ollama', modelId: 'llama3' };
 		providerState.ollamaUrl = 'http://ollama.local';
 
 		await fetchOllamaContextLength();
 
-		expect(fetchModelContextLength).toHaveBeenCalledWith('llama3', 'http://ollama.local');
+		expect(externalProviders.fetchModelContextLength).toHaveBeenCalledWith(
+			'llama3',
+			'http://ollama.local'
+		);
 		expect(providerState.contextLength).toBe(65_536);
 	});
 
@@ -102,7 +105,11 @@ describe('app/providers', () => {
 
 		await loadWebLLMModel('Llama-3');
 
-		expect(loadWebLLMModelService).toHaveBeenCalledWith('Llama-3', 8_192, expect.any(Function));
+		expect(externalProviders.loadWebLLMModel).toHaveBeenCalledWith(
+			'Llama-3',
+			8_192,
+			expect.any(Function)
+		);
 		expect(providerState.activeModel).toEqual({ provider: 'webllm', modelId: 'Llama-3' });
 		expect(providerState.contextLength).toBe(8_192);
 		expect(providerState.webllmStatus).toBe('ready');

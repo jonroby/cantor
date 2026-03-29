@@ -3,13 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import ChatMessage from './ChatMessage.svelte';
-import type { ExchangeNodeData } from '@/app';
+import * as app from '@/app';
 
 vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
 }));
 
-vi.mock('@/lib', () => ({
+vi.mock('@/lib', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/lib')>()),
 	mapDocument: (text: string) =>
 		text
 			? text.split('\n\n').map((block) => ({
@@ -24,11 +25,14 @@ vi.mock('dompurify', () => ({
 	default: { sanitize: (html: string) => html }
 }));
 
-vi.mock('@/domain', () => ({
+vi.mock('@/domain', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/domain')>()),
 	PROVIDER_LOGOS: {}
 }));
 
-function makeNodeData(overrides: Partial<ExchangeNodeData> = {}): ExchangeNodeData {
+function makeNodeData(
+	overrides: Partial<app.types.ExchangeNodeData> = {}
+): app.types.ExchangeNodeData {
 	return {
 		prompt: 'Hello world',
 		response: 'Hi there',

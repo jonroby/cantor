@@ -1,7 +1,6 @@
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-import type { ActiveModel } from '@/domain';
-import type { ChatTree } from '@/domain';
-import { getTreeByChatId, replaceTreeByChatId } from '@/state';
+import type * as domain from '@/domain';
+import * as state from '@/state';
 import { getProviderStream } from '@/external/providers/stream';
 import {
 	isStreaming as _isStreaming,
@@ -22,8 +21,8 @@ const store: StreamStore = {
 };
 
 const deps: StreamDeps = {
-	getTreeByChatId,
-	replaceTreeByChatId,
+	getTreeByChatId: state.getTreeByChatId,
+	replaceTreeByChatId: state.replaceTreeByChatId,
 	getProviderStream
 };
 
@@ -38,8 +37,8 @@ export function isAnyStreaming(): boolean {
 export function startStream(params: {
 	exchangeId: string;
 	chatId: string;
-	model: ActiveModel;
-	tree: ChatTree;
+	model: domain.ActiveModel;
+	tree: domain.ChatTree;
 	liveDocContent?: string;
 }): void {
 	_startStream(store, deps, params);

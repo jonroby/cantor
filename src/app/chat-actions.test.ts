@@ -1,21 +1,25 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/state', () => ({
-	replaceActiveTree: vi.fn(),
-	setActiveExchangeId: vi.fn(),
-	copyToNewChat: vi.fn(),
-	getTreeByChatId: vi.fn(),
-	replaceTreeByChatId: vi.fn()
+	chats: {
+		replaceActiveTree: vi.fn(),
+		setActiveExchangeId: vi.fn(),
+		copyToNewChat: vi.fn(),
+		getTreeByChatId: vi.fn(),
+		replaceTreeByChatId: vi.fn()
+	}
 }));
 
 vi.mock('@/external', () => ({
-	isStreaming: vi.fn(() => false),
-	cancelStreamsForExchanges: vi.fn(),
-	startStream: vi.fn(),
-	cancelStream: vi.fn(),
-	cancelAllStreams: vi.fn(),
-	cancelStreamsForChat: vi.fn(),
-	isAnyStreaming: vi.fn(() => false)
+	streams: {
+		isStreaming: vi.fn(() => false),
+		cancelStreamsForExchanges: vi.fn(),
+		startStream: vi.fn(),
+		cancelStream: vi.fn(),
+		cancelAllStreams: vi.fn(),
+		cancelStreamsForChat: vi.fn(),
+		isAnyStreaming: vi.fn(() => false)
+	}
 }));
 
 import {

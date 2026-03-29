@@ -3,10 +3,7 @@
 	import { Marked } from 'marked';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
-	import { validate as validateMd } from '@/lib';
-	import { diffLines } from '@/lib';
-	import { PROVIDER_LOGOS } from '@/domain';
-	import type { Provider } from '@/domain';
+	import * as app from '@/app';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
 
 	interface Props {
@@ -14,7 +11,7 @@
 		content: string;
 		commandStreaming?: boolean;
 		commandModel?: string;
-		commandProvider?: Provider | null;
+		commandProvider?: app.providers.Provider | null;
 		pendingContent?: string | null;
 		onContentChange?: (content: string) => void;
 		onAcceptPending?: () => void;
@@ -56,7 +53,9 @@
 		showCloseConfirm = false;
 	}
 
-	let pendingDiff = $derived(pendingContent !== null ? diffLines(content, pendingContent) : null);
+	let pendingDiff = $derived(
+		pendingContent !== null ? app.content.diffLines(content, pendingContent) : null
+	);
 	let contentEl: HTMLDivElement | null = $state(null);
 
 	$effect(() => {
@@ -107,7 +106,7 @@
 	}
 
 	function validate(md: string): string | null {
-		const errors = validateMd(md);
+		const errors = app.content.validate(md);
 		if (errors.length > 0) return errors.join('; ');
 		try {
 			processContent(md);
@@ -394,9 +393,9 @@
 			{#if commandStreaming}
 				<div class="docs-streaming">
 					<div class="chatmsg-response-header">
-						{#if commandProvider && PROVIDER_LOGOS[commandProvider]}
+						{#if commandProvider && app.providers.PROVIDER_LOGOS[commandProvider]}
 							<img
-								src={PROVIDER_LOGOS[commandProvider]}
+								src={app.providers.PROVIDER_LOGOS[commandProvider]}
 								alt={commandProvider}
 								class="chatmsg-provider-logo"
 							/>

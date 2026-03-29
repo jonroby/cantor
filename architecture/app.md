@@ -35,6 +35,43 @@ If code:
 
 then it belongs in `app`.
 
+## Public API Rule
+
+The public API of `app` should stay small and intentional.
+
+- many private helpers inside an `app` module are fine
+- many exported cross-area functions are not fine
+- `view` should get only what it actually needs
+
+Good:
+
+- a few feature-shaped actions
+- a few view-facing queries
+- small compatibility aliases during a transition
+
+Bad:
+
+- exporting every helper just because `view` might use it
+- turning `app` into a giant pass-through surface for lower layers
+- exposing low-level primitives when a higher-level workflow API would do
+
+The boundary should reduce knowledge, not merely relocate it.
+
+## Namespace Rule
+
+`app` is consumed as an organizational namespace.
+
+Prefer:
+
+- `app.chat.submitPrompt()`
+- `app.documents.performOpenDocument()`
+- `app.files.uploadFolder()`
+- `app.runtime.chatState`
+
+Do not prefer flat named imports from `@/app` in normal source files.
+
+The point is to keep ownership visible at the call site.
+
 ## Typical Flow
 
 1. Read current state

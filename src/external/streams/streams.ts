@@ -1,8 +1,6 @@
 import { createActor, type Actor, type SnapshotFrom } from 'xstate';
 import { streamMachine, type StreamMachineInput } from './stream.machine';
-import type { ActiveModel } from '@/domain';
-import type { ChatTree, Message } from '@/domain';
-import { getHistory, updateExchangeResponse, updateExchangeTokens } from '@/domain';
+import * as domain from '@/domain';
 import type { StreamChunk } from '@/external/providers/stream';
 
 type StreamActor = Actor<typeof streamMachine>;
@@ -14,11 +12,11 @@ export interface StreamStore {
 }
 
 export interface StreamDeps {
-	getTreeByChatId: (chatId: string) => ChatTree | undefined;
-	replaceTreeByChatId: (chatId: string, tree: ChatTree) => void;
+	getTreeByChatId: (chatId: string) => domain.ChatTree | undefined;
+	replaceTreeByChatId: (chatId: string, tree: domain.ChatTree) => void;
 	getProviderStream: (
-		model: ActiveModel,
-		history: Message[],
+		model: domain.ActiveModel,
+		history: domain.Message[],
 		signal: AbortSignal
 	) => AsyncGenerator<StreamChunk>;
 }
@@ -43,20 +41,23 @@ export function startStream(
 	params: {
 		exchangeId: string;
 		chatId: string;
-		model: ActiveModel;
-		tree: ChatTree;
+		model: domain.ActiveModel;
+		tree: domain.ChatTree;
 		liveDocContent?: string;
 	}
 ): void {
 	const { exchangeId, chatId, model, tree, liveDocContent } = params;
-	const history = getHistory(tree, exchangeId);
+	const history = domain.getHistory(tree, exchangeId);
 
 	if (liveDocContent !== undefined) {
-		const docMessage: Message = {
+		const docMessage: domain.Message = {
 			role: 'user',
 			content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocContent}`
 		};
-		const docResponse: Message = { role: 'assistant', content: 'Understood, I have the document.' };
+		const docResponse: domain.Message = {
+			role: 'assistant',
+			content: 'Understood, I have the document.'
+		};
 		history.splice(history.length - 1, 0, docMessage, docResponse);
 	}
 
@@ -90,7 +91,11 @@ export function startStream(
 			lastResponse = context.response;
 			deps.replaceTreeByChatId(targetChatId, {
 				rootId: currentTree.rootId,
-				exchanges: updateExchangeResponse(currentTree.exchanges, exchangeId, context.response)
+				exchanges: domain.updateExchangeResponse(
+					currentTree.exchanges,
+					exchangeId,
+					context.response
+				)
 			});
 		}
 
@@ -100,7 +105,7 @@ export function startStream(
 				if (latestTree) {
 					deps.replaceTreeByChatId(targetChatId, {
 						rootId: latestTree.rootId,
-						exchanges: updateExchangeTokens(
+						exchanges: domain.updateExchangeTokens(
 							latestTree.exchanges,
 							exchangeId,
 							context.promptTokens,
@@ -115,7 +120,11 @@ export function startStream(
 				if (latestTree) {
 					deps.replaceTreeByChatId(targetChatId, {
 						rootId: latestTree.rootId,
-						exchanges: updateExchangeResponse(latestTree.exchanges, exchangeId, context.response)
+						exchanges: domain.updateExchangeResponse(
+							latestTree.exchanges,
+							exchangeId,
+							context.response
+						)
 					});
 				}
 			}

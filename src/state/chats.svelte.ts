@@ -1,38 +1,31 @@
-import {
-	buildEmptyTree,
-	copyPath,
-	getMainChatTail,
-	type ChatTree,
-	type Chat,
-	type ExchangeMap
-} from '@/domain';
+import * as domain from '@/domain';
 import { buildInitialExchanges } from '@/state/initial-exchanges';
 
-function makeDefaultChat(): Chat {
+function makeDefaultChat(): domain.tree.Chat {
 	const tree = buildInitialExchanges();
 	return {
 		id: crypto.randomUUID(),
 		name: 'Chat 1',
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
-		activeExchangeId: getMainChatTail(tree)
+		activeExchangeId: domain.tree.getMainChatTail(tree)
 	};
 }
 
 export const chatState = $state({
-	chats: [makeDefaultChat()] as Chat[],
+	chats: [makeDefaultChat()] as domain.tree.Chat[],
 	activeChatIndex: 0
 });
 
-export function getActiveChat(): Chat {
+export function getActiveChat(): domain.tree.Chat {
 	return chatState.chats[chatState.activeChatIndex] ?? chatState.chats[0];
 }
 
-export function getActiveExchanges(): ExchangeMap {
+export function getActiveExchanges(): domain.tree.ExchangeMap {
 	return getActiveChat().exchanges;
 }
 
-export function getActiveTree(): ChatTree {
+export function getActiveTree(): domain.tree.ChatTree {
 	const chat = getActiveChat();
 	return { rootId: chat.rootId, exchanges: chat.exchanges };
 }
@@ -41,41 +34,41 @@ export function getActiveExchangeId(): string | null {
 	return getActiveChat().activeExchangeId;
 }
 
-export function getChatById(chatId: string): Chat | undefined {
+export function getChatById(chatId: string): domain.tree.Chat | undefined {
 	return chatState.chats.find((c) => c.id === chatId);
 }
 
-export function getExchangesByChatId(chatId: string): ExchangeMap | undefined {
+export function getExchangesByChatId(chatId: string): domain.tree.ExchangeMap | undefined {
 	return getChatById(chatId)?.exchanges;
 }
 
-export function getTreeByChatId(chatId: string): ChatTree | undefined {
+export function getTreeByChatId(chatId: string): domain.tree.ChatTree | undefined {
 	const chat = getChatById(chatId);
 	if (!chat) return undefined;
 	return { rootId: chat.rootId, exchanges: chat.exchanges };
 }
 
-export function replaceExchangesByChatId(chatId: string, nextExchanges: ExchangeMap) {
+export function replaceExchangesByChatId(chatId: string, nextExchanges: domain.tree.ExchangeMap) {
 	const chat = chatState.chats.find((c) => c.id === chatId);
 	if (chat) chat.exchanges = nextExchanges;
 }
 
-export function replaceTreeByChatId(chatId: string, nextTree: ChatTree) {
+export function replaceTreeByChatId(chatId: string, nextTree: domain.tree.ChatTree) {
 	const chat = chatState.chats.find((c) => c.id === chatId);
 	if (!chat) return;
 	chat.rootId = nextTree.rootId;
 	chat.exchanges = nextTree.exchanges;
 }
 
-function hasRenderableExchanges(exchanges: ExchangeMap) {
+function hasRenderableExchanges(exchanges: domain.tree.ExchangeMap) {
 	return Object.keys(exchanges).length > 0;
 }
 
-export function replaceActiveExchanges(nextExchanges: ExchangeMap) {
+export function replaceActiveExchanges(nextExchanges: domain.tree.ExchangeMap) {
 	chatState.chats[chatState.activeChatIndex].exchanges = nextExchanges;
 }
 
-export function replaceActiveTree(nextTree: ChatTree) {
+export function replaceActiveTree(nextTree: domain.tree.ChatTree) {
 	const chat = chatState.chats[chatState.activeChatIndex];
 	chat.rootId = nextTree.rootId;
 	chat.exchanges = nextTree.exchanges;
@@ -93,13 +86,13 @@ function nextChatName(): string {
 }
 
 export function newChat(): number {
-	const tree = buildEmptyTree();
-	const chat: Chat = {
+	const tree = domain.tree.buildEmptyTree();
+	const chat: domain.tree.Chat = {
 		id: crypto.randomUUID(),
 		name: nextChatName(),
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
-		activeExchangeId: getMainChatTail(tree)
+		activeExchangeId: domain.tree.getMainChatTail(tree)
 	};
 	chatState.chats = [...chatState.chats, chat];
 	chatState.activeChatIndex = chatState.chats.length - 1;
@@ -134,25 +127,28 @@ export function copyToNewChat(exchangeId: string) {
 	const activeChat = chatState.chats[chatState.activeChatIndex];
 	if (!activeChat) return;
 
-	const result = copyPath(
+	const result = domain.tree.copyPath(
 		{ rootId: activeChat.rootId, exchanges: activeChat.exchanges },
 		exchangeId
 	);
 
-	const copiedTree: ChatTree = { rootId: result.rootId, exchanges: result.copiedExchanges };
+	const copiedTree: domain.tree.ChatTree = {
+		rootId: result.rootId,
+		exchanges: result.copiedExchanges
+	};
 	const name = nextCopyName();
-	const copiedChat: Chat = {
+	const copiedChat: domain.tree.Chat = {
 		id: crypto.randomUUID(),
 		name,
 		rootId: result.rootId,
 		exchanges: result.copiedExchanges,
-		activeExchangeId: getMainChatTail(copiedTree)
+		activeExchangeId: domain.tree.getMainChatTail(copiedTree)
 	};
 	chatState.chats = [...chatState.chats, copiedChat];
 	chatState.activeChatIndex = chatState.chats.length - 1;
 }
 
-export function hydrate(parsed: { chats?: Chat[]; activeChatIndex?: number }) {
+export function hydrate(parsed: { chats?: domain.tree.Chat[]; activeChatIndex?: number }) {
 	if (parsed.chats?.length) {
 		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
 			chatState.chats = parsed.chats;

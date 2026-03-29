@@ -1,15 +1,21 @@
 import JSZip from 'jszip';
-import { toast } from 'svelte-sonner';
-import { chatState, docState, type ChatFolder, type DocFile } from '@/state';
-import { validate } from '@/lib';
-import { validateChatUpload, deduplicateName } from '@/external';
+import * as state from '@/state';
+import * as lib from '@/lib';
+import * as external from '@/external';
+
+export interface FileCommandFeedback {
+	success?: (message: string) => void;
+	error?: (message: string) => void;
+}
+
+const NOOP_FEEDBACK: FileCommandFeedback = {};
 
 export function downloadToFile() {
 	const payload = JSON.stringify(
 		{
-			chats: chatState.chats,
-			activeChatIndex: chatState.activeChatIndex,
-			folders: docState.folders
+			chats: state.chats.chatState.chats,
+			activeChatIndex: state.chats.chatState.activeChatIndex,
+			folders: state.documents.docState.folders
 		},
 		null,
 		2
@@ -24,7 +30,7 @@ export function downloadToFile() {
 }
 
 export function downloadChat(index: number) {
-	const chat = chatState.chats[index];
+	const chat = state.chats.chatState.chats[index];
 	const payload = JSON.stringify(chat, null, 2);
 	const blob = new Blob([payload], { type: 'application/json' });
 	const url = URL.createObjectURL(blob);
@@ -35,7 +41,7 @@ export function downloadChat(index: number) {
 	URL.revokeObjectURL(url);
 }
 
-export function uploadChat(): void {
+export function uploadChat(feedback: FileCommandFeedback = NOOP_FEEDBACK): void {
 	const input = document.createElement('input');
 	input.type = 'file';
 	input.accept = '.json';
@@ -45,54 +51,54 @@ export function uploadChat(): void {
 		try {
 			const text = await file.text();
 			const data = JSON.parse(text);
-			const chat = validateChatUpload(data);
+			const chat = external.files.validateChatUpload(data);
 			chat.id = crypto.randomUUID();
 			const baseName = file.name.replace(/\.json$/i, '');
-			chat.name = deduplicateName(
+			chat.name = external.files.deduplicateName(
 				baseName,
-				chatState.chats.map((c) => c.name)
+				state.chats.chatState.chats.map((c) => c.name)
 			);
-			chatState.chats = [...chatState.chats, chat];
-			chatState.activeChatIndex = chatState.chats.length - 1;
-			toast.success(`Imported "${chat.name}"`);
+			state.chats.chatState.chats = [...state.chats.chatState.chats, chat];
+			state.chats.chatState.activeChatIndex = state.chats.chatState.chats.length - 1;
+			feedback.success?.(`Imported "${chat.name}"`);
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Invalid chat file');
+			feedback.error?.(e instanceof Error ? e.message : 'Invalid chat file');
 		}
 	};
 	input.click();
 }
 
-export function uploadDocToFolder(folderId: string) {
+export function uploadDocToFolder(folderId: string, feedback: FileCommandFeedback = NOOP_FEEDBACK) {
 	const input = document.createElement('input');
 	input.type = 'file';
 	input.accept = '.md';
 	input.onchange = () => {
 		const file = input.files?.[0];
 		if (!file) return;
-		const folder = docState.folders.find((f) => f.id === folderId);
+		const folder = state.documents.docState.folders.find((f) => f.id === folderId);
 		if (!folder) {
-			toast.error('Folder not found');
+			feedback.error?.('Folder not found');
 			return;
 		}
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result === 'string') {
-				const errors = validate(reader.result);
+				const errors = lib.validateMd.validate(reader.result);
 				if (errors.length > 0) {
-					toast.error(`Invalid markdown: ${errors.join('; ')}`);
+					feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
 					return;
 				}
 				const existingNames = (folder.files ?? []).map((f) => f.name);
-				const name = deduplicateName(file.name, existingNames);
-				const docFile: DocFile = {
+				const name = external.files.deduplicateName(file.name, existingNames);
+				const docFile: state.documents.DocFile = {
 					id: crypto.randomUUID(),
 					name,
 					content: reader.result
 				};
-				docState.folders = docState.folders.map((f) =>
+				state.documents.docState.folders = state.documents.docState.folders.map((f) =>
 					f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
 				);
-				toast.success(`Uploaded ${file.name}`);
+				feedback.success?.(`Uploaded ${file.name}`);
 			}
 		};
 		reader.readAsText(file);
@@ -100,10 +106,13 @@ export function uploadDocToFolder(folderId: string) {
 	input.click();
 }
 
-export async function downloadFolder(folderId: string) {
-	const folder = docState.folders.find((f) => f.id === folderId);
+export async function downloadFolder(
+	folderId: string,
+	feedback: FileCommandFeedback = NOOP_FEEDBACK
+) {
+	const folder = state.documents.docState.folders.find((f) => f.id === folderId);
 	if (!folder || !folder.files?.length) {
-		toast.error('Folder is empty');
+		feedback.error?.('Folder is empty');
 		return;
 	}
 	const zip = new JSZip();
@@ -121,10 +130,14 @@ export async function downloadFolder(folderId: string) {
 	setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
-function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
-	const folder = docState.folders.find((f) => f.id === folderId);
+function uploadDocsIntoFolder(
+	folderId: string,
+	mdFiles: File[],
+	feedback: FileCommandFeedback = NOOP_FEEDBACK
+) {
+	const folder = state.documents.docState.folders.find((f) => f.id === folderId);
 	if (!folder) {
-		toast.error('Folder not found');
+		feedback.error?.('Folder not found');
 		return;
 	}
 
@@ -136,18 +149,18 @@ function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result === 'string') {
-				const errors = validate(reader.result);
+				const errors = lib.validateMd.validate(reader.result);
 				if (errors.length > 0) {
-					toast.error(`Skipped ${file.name}: ${errors.join('; ')}`);
+					feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
 				} else {
-					const name = deduplicateName(file.name, existingNames);
+					const name = external.files.deduplicateName(file.name, existingNames);
 					existingNames.push(name);
-					const docFile: DocFile = {
+					const docFile: state.documents.DocFile = {
 						id: crypto.randomUUID(),
 						name,
 						content: reader.result
 					};
-					docState.folders = docState.folders.map((f) =>
+					state.documents.docState.folders = state.documents.docState.folders.map((f) =>
 						f.id === folderId ? { ...f, files: [...(f.files ?? []), docFile] } : f
 					);
 					imported++;
@@ -155,7 +168,7 @@ function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
 
 				processed++;
 				if (processed === mdFiles.length && imported > 0) {
-					toast.success(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
+					feedback.success?.(`Uploaded ${imported} file${imported === 1 ? '' : 's'}`);
 				}
 			}
 		};
@@ -163,7 +176,7 @@ function uploadDocsIntoFolder(folderId: string, mdFiles: File[]) {
 	}
 }
 
-export function uploadFolder() {
+export function uploadFolder(feedback: FileCommandFeedback = NOOP_FEEDBACK) {
 	const input = document.createElement('input');
 	input.type = 'file';
 	input.webkitdirectory = true;
@@ -173,26 +186,29 @@ export function uploadFolder() {
 
 		const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
 		if (mdFiles.length === 0) {
-			toast.error('No .md files found in the selected folder');
+			feedback.error?.('No .md files found in the selected folder');
 			return;
 		}
 
 		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
-		const folderName = deduplicateName(
+		const folderName = external.files.deduplicateName(
 			dirName,
-			docState.folders.map((f) => f.name)
+			state.documents.docState.folders.map((f) => f.name)
 		);
 
 		const folderId = crypto.randomUUID();
-		const newFolderObj: ChatFolder = { id: folderId, name: folderName, files: [] };
-		docState.folders = [...docState.folders, newFolderObj];
+		const newFolderObj: state.documents.ChatFolder = { id: folderId, name: folderName, files: [] };
+		state.documents.docState.folders = [...state.documents.docState.folders, newFolderObj];
 
-		uploadDocsIntoFolder(folderId, mdFiles);
+		uploadDocsIntoFolder(folderId, mdFiles, feedback);
 	};
 	input.click();
 }
 
-export function uploadFolderToFolder(folderId: string) {
+export function uploadFolderToFolder(
+	folderId: string,
+	feedback: FileCommandFeedback = NOOP_FEEDBACK
+) {
 	const input = document.createElement('input');
 	input.type = 'file';
 	input.webkitdirectory = true;
@@ -202,11 +218,11 @@ export function uploadFolderToFolder(folderId: string) {
 
 		const mdFiles = Array.from(files).filter((f) => f.name.endsWith('.md'));
 		if (mdFiles.length === 0) {
-			toast.error('No .md files found in the selected folder');
+			feedback.error?.('No .md files found in the selected folder');
 			return;
 		}
 
-		uploadDocsIntoFolder(folderId, mdFiles);
+		uploadDocsIntoFolder(folderId, mdFiles, feedback);
 	};
 	input.click();
 }

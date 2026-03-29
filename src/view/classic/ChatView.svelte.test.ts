@@ -20,29 +20,35 @@ import type { Provider } from '@/domain';
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 vi.mock('@/external', () => ({
-	startStream: vi.fn(),
-	cancelStream: vi.fn(),
-	cancelAllStreams: vi.fn(),
-	cancelStreamsForExchanges: vi.fn(),
-	cancelStreamsForChat: vi.fn(),
-	isStreaming: vi.fn(() => false),
-	isAnyStreaming: vi.fn(() => false),
-	getProviderStream: vi.fn(),
-	DEFAULT_OLLAMA_URL: 'http://localhost:11434',
-	fetchAvailableModels: vi.fn(),
-	fetchModelContextLength: vi.fn(),
-	getWebLLMModels: vi.fn(() => []),
-	loadWebLLMModel: vi.fn(),
-	deleteModelCache: vi.fn(),
-	deleteAllModelCaches: vi.fn(),
-	clearProviderKey: vi.fn(),
-	loadAllApiKeys: vi.fn(),
-	migrateVault: vi.fn(),
-	saveApiKey: vi.fn(),
-	storedProviders: vi.fn(() => []),
-	getPersistedLayout: vi.fn(() => ({})),
-	saveToStorage: vi.fn(),
-	setPersistedLayout: vi.fn()
+	streams: {
+		startStream: vi.fn(),
+		cancelStream: vi.fn(),
+		cancelAllStreams: vi.fn(),
+		cancelStreamsForExchanges: vi.fn(),
+		cancelStreamsForChat: vi.fn(),
+		isStreaming: vi.fn(() => false),
+		isAnyStreaming: vi.fn(() => false),
+		getProviderStream: vi.fn()
+	},
+	providers: {
+		DEFAULT_OLLAMA_URL: 'http://localhost:11434',
+		fetchAvailableModels: vi.fn(),
+		fetchModelContextLength: vi.fn(),
+		getWebLLMModels: vi.fn(() => []),
+		loadWebLLMModel: vi.fn(),
+		deleteModelCache: vi.fn(),
+		deleteAllModelCaches: vi.fn(),
+		clearProviderKey: vi.fn(),
+		loadAllApiKeys: vi.fn(),
+		migrateVault: vi.fn(),
+		saveApiKey: vi.fn(),
+		storedProviders: vi.fn(() => [])
+	},
+	persistence: {
+		getPersistedLayout: vi.fn(() => ({})),
+		saveToStorage: vi.fn(),
+		setPersistedLayout: vi.fn()
+	}
 }));
 
 vi.mock('@/view/shared/katex', () => ({
@@ -243,7 +249,7 @@ describe('ChatView', () => {
 		});
 
 		it('calls startStream after submit', async () => {
-			const { startStream } = await import('@/external');
+			const { streams } = await import('@/external');
 			resetState(buildVisibleTree(1));
 			render(ChatView);
 
@@ -252,7 +258,7 @@ describe('ChatView', () => {
 			await userEvent.click(screen.getByRole('button', { name: 'Send message' }));
 			await tick();
 
-			expect(startStream).toHaveBeenCalledOnce();
+			expect(streams.startStream).toHaveBeenCalledOnce();
 		});
 	});
 

@@ -1,14 +1,6 @@
 import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
 import { addExchangeResult, buildEmptyTree, updateExchangeResponse } from '@/domain';
 
-// Mock external dependencies
-vi.mock('svelte-sonner', () => ({
-	toast: {
-		success: vi.fn(),
-		error: vi.fn()
-	}
-}));
-
 vi.mock('jszip', () => {
 	const mockFile = vi.fn();
 	const mockGenerateAsync = vi.fn().mockResolvedValue(new Blob(['zip-content']));
@@ -29,76 +21,96 @@ vi.mock('@/state', async () => {
 	const result = addExchangeResult(empty, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
 	const exchanges = updateExchangeResponse(result.exchanges, result.id, 'world');
 	const tree = { rootId: result.rootId, exchanges };
+	const chatState = {
+		chats: [
+			{
+				id: 'chat-1',
+				name: 'Test Chat',
+				rootId: tree.rootId,
+				exchanges: tree.exchanges,
+				activeExchangeId: getMainChatTail(tree)
+			}
+		],
+		activeChatIndex: 0
+	};
+	const docState = {
+		folders: [
+			{
+				id: 'folder-1',
+				name: 'Test Folder',
+				files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
+			}
+		]
+	};
 	return {
 		...actual,
-		chatState: {
-			chats: [
-				{
-					id: 'chat-1',
-					name: 'Test Chat',
-					rootId: tree.rootId,
-					exchanges: tree.exchanges,
-					activeExchangeId: getMainChatTail(tree)
-				}
-			],
-			activeChatIndex: 0
+		chatState,
+		docState,
+		chats: {
+			...actual.chats,
+			chatState
 		},
-		docState: {
-			folders: [
-				{
-					id: 'folder-1',
-					name: 'Test Folder',
-					files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
-				}
-			]
+		documents: {
+			...actual.documents,
+			docState
 		}
 	};
 });
 
 vi.mock('@/lib', async (importOriginal) => ({
 	...(await importOriginal<typeof import('@/lib')>()),
-	validate: vi.fn().mockReturnValue([])
+	validate: vi.fn().mockReturnValue([]),
+	validateMd: {
+		validate: vi.fn().mockReturnValue([])
+	}
 }));
 
 vi.mock('@/external', () => ({
-	validateChatUpload: vi.fn((data) => data),
-	deduplicateName: vi.fn((name: string, existingNames: string[]) => {
-		if (!existingNames.includes(name)) return name;
-		const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
-		const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
-		let i = 1;
-		while (existingNames.includes(`${base} (${i})${ext}`)) i++;
-		return `${base} (${i})${ext}`;
-	}),
-	DEFAULT_OLLAMA_URL: 'http://localhost:11434',
-	fetchAvailableModels: vi.fn(),
-	fetchModelContextLength: vi.fn(),
-	getWebLLMModels: vi.fn(() => []),
-	loadWebLLMModel: vi.fn(),
-	deleteModelCache: vi.fn(),
-	deleteAllModelCaches: vi.fn(),
-	clearProviderKey: vi.fn(),
-	loadAllApiKeys: vi.fn(),
-	migrateVault: vi.fn(),
-	saveApiKey: vi.fn(),
-	storedProviders: vi.fn(() => []),
-	getPersistedLayout: vi.fn(() => ({})),
-	saveToStorage: vi.fn(),
-	setPersistedLayout: vi.fn(),
-	startStream: vi.fn(),
-	cancelStream: vi.fn(),
-	cancelAllStreams: vi.fn(),
-	cancelStreamsForExchanges: vi.fn(),
-	cancelStreamsForChat: vi.fn(),
-	isStreaming: vi.fn(() => false),
-	isAnyStreaming: vi.fn(() => false),
-	getProviderStream: vi.fn()
+	files: {
+		validateChatUpload: vi.fn((data) => data),
+		deduplicateName: vi.fn((name: string, existingNames: string[]) => {
+			if (!existingNames.includes(name)) return name;
+			const ext = name.lastIndexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
+			const base = ext ? name.slice(0, name.lastIndexOf('.')) : name;
+			let i = 1;
+			while (existingNames.includes(`${base} (${i})${ext}`)) i++;
+			return `${base} (${i})${ext}`;
+		})
+	},
+	providers: {
+		DEFAULT_OLLAMA_URL: 'http://localhost:11434',
+		fetchAvailableModels: vi.fn(),
+		fetchModelContextLength: vi.fn(),
+		getWebLLMModels: vi.fn(() => []),
+		loadWebLLMModel: vi.fn(),
+		deleteModelCache: vi.fn(),
+		deleteAllModelCaches: vi.fn(),
+		clearProviderKey: vi.fn(),
+		loadAllApiKeys: vi.fn(),
+		migrateVault: vi.fn(),
+		saveApiKey: vi.fn(),
+		storedProviders: vi.fn(() => [])
+	},
+	persistence: {
+		getPersistedLayout: vi.fn(() => ({})),
+		saveToStorage: vi.fn(),
+		setPersistedLayout: vi.fn()
+	},
+	streams: {
+		startStream: vi.fn(),
+		cancelStream: vi.fn(),
+		cancelAllStreams: vi.fn(),
+		cancelStreamsForExchanges: vi.fn(),
+		cancelStreamsForChat: vi.fn(),
+		isStreaming: vi.fn(() => false),
+		isAnyStreaming: vi.fn(() => false),
+		getProviderStream: vi.fn()
+	}
 }));
 
-import { toast } from 'svelte-sonner';
 import { chatState } from '@/state';
 import { docState } from '@/state';
-import { validate } from '@/lib';
+import * as lib from '@/lib';
 import {
 	downloadToFile,
 	downloadChat,
@@ -108,6 +120,7 @@ import {
 	uploadFolder,
 	uploadFolderToFolder
 } from '@/app';
+import type { FileCommandFeedback } from '@/app';
 
 // ── DOM mocking helpers ─────────────────────────────────────────────────────
 
@@ -139,6 +152,13 @@ class MockFileReader {
 	}
 }
 
+function createFeedback(): Required<FileCommandFeedback> {
+	return {
+		success: vi.fn(),
+		error: vi.fn()
+	};
+}
+
 function buildValidUploadData() {
 	let tree = buildEmptyTree();
 	const result = addExchangeResult(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
@@ -158,7 +178,7 @@ function buildValidUploadData() {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	vi.mocked(validate).mockReturnValue([]);
+	vi.mocked(lib.validateMd.validate).mockReturnValue([]);
 
 	lastCreatedLink = { href: '', download: '', click: vi.fn() };
 	lastCreatedInput = {
@@ -238,7 +258,8 @@ describe('app/files', () => {
 
 	describe('uploadChat', () => {
 		it('imports a valid chat file', async () => {
-			uploadChat();
+			const feedback = createFeedback();
+			uploadChat(feedback);
 
 			const fileContent = JSON.stringify(buildValidUploadData());
 			const file = new File([fileContent], 'Imported Chat.json', { type: 'application/json' });
@@ -248,7 +269,7 @@ describe('app/files', () => {
 
 			// Wait for async file reading
 			await vi.waitFor(() => {
-				expect(toast.success).toHaveBeenCalled();
+				expect(feedback.success).toHaveBeenCalled();
 			});
 
 			expect(chatState.chats.length).toBe(2);
@@ -259,8 +280,9 @@ describe('app/files', () => {
 		});
 
 		it('deduplicates imported chat names based on the filename', async () => {
+			const feedback = createFeedback();
 			chatState.chats[0].name = 'Imported Chat';
-			uploadChat();
+			uploadChat(feedback);
 
 			const file = new File([JSON.stringify(buildValidUploadData())], 'Imported Chat.json', {
 				type: 'application/json'
@@ -270,14 +292,15 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.success).toHaveBeenCalled();
+				expect(feedback.success).toHaveBeenCalled();
 			});
 
 			expect(chatState.chats[1].name).toBe('Imported Chat (1)');
 		});
 
 		it('shows error toast for invalid JSON', async () => {
-			uploadChat();
+			const feedback = createFeedback();
+			uploadChat(feedback);
 
 			const file = new File(['not json'], 'bad.json', { type: 'application/json' });
 			lastCreatedInput.files = [file];
@@ -285,12 +308,13 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.error).toHaveBeenCalled();
+				expect(feedback.error).toHaveBeenCalled();
 			});
 		});
 
 		it('does nothing when no file selected', () => {
-			uploadChat();
+			const feedback = createFeedback();
+			uploadChat(feedback);
 
 			lastCreatedInput.files = [] as unknown as File[];
 			// Simulate onchange with no files
@@ -301,25 +325,27 @@ describe('app/files', () => {
 			// Should not throw
 			lastCreatedInput.onchange!();
 
-			expect(toast.success).not.toHaveBeenCalled();
-			expect(toast.error).not.toHaveBeenCalled();
+			expect(feedback.success).not.toHaveBeenCalled();
+			expect(feedback.error).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('uploadDocToFolder', () => {
 		it('does nothing when no file is selected', () => {
-			uploadDocToFolder('folder-1');
+			const feedback = createFeedback();
+			uploadDocToFolder('folder-1', feedback);
 
 			lastCreatedInput.files = null;
 			lastCreatedInput.onchange!();
 
-			expect(toast.success).not.toHaveBeenCalled();
-			expect(toast.error).not.toHaveBeenCalled();
+			expect(feedback.success).not.toHaveBeenCalled();
+			expect(feedback.error).not.toHaveBeenCalled();
 			expect(docState.folders[0].files).toHaveLength(1);
 		});
 
 		it('imports a valid markdown file', async () => {
-			uploadDocToFolder('folder-1');
+			const feedback = createFeedback();
+			uploadDocToFolder('folder-1', feedback);
 
 			const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
 			lastCreatedInput.files = [file];
@@ -328,7 +354,7 @@ describe('app/files', () => {
 
 			// FileReader is async — wait for toast
 			await vi.waitFor(() => {
-				expect(toast.success).toHaveBeenCalled();
+				expect(feedback.success).toHaveBeenCalled();
 			});
 
 			expect(docState.folders[0].files).toHaveLength(2);
@@ -339,9 +365,10 @@ describe('app/files', () => {
 		});
 
 		it('shows error toast for invalid markdown', async () => {
-			vi.mocked(validate).mockReturnValue(['Invalid heading']);
+			vi.mocked(lib.validateMd.validate).mockReturnValue(['Invalid heading']);
+			const feedback = createFeedback();
 
-			uploadDocToFolder('folder-1');
+			uploadDocToFolder('folder-1', feedback);
 
 			const file = new File(['bad markdown'], 'bad.md', { type: 'text/markdown' });
 			lastCreatedInput.files = [file];
@@ -349,15 +376,16 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Invalid markdown'));
+				expect(feedback.error).toHaveBeenCalledWith(expect.stringContaining('Invalid markdown'));
 			});
 
 			expect(docState.folders[0].files).toHaveLength(1);
 		});
 
 		it('creates the files array when the target folder has none', async () => {
+			const feedback = createFeedback();
 			docState.folders = [{ id: 'folder-1', name: 'Test Folder' }] as typeof docState.folders;
-			uploadDocToFolder('folder-1');
+			uploadDocToFolder('folder-1', feedback);
 
 			const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
 			lastCreatedInput.files = [file];
@@ -365,7 +393,7 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.success).toHaveBeenCalled();
+				expect(feedback.success).toHaveBeenCalled();
 			});
 
 			expect(docState.folders[0].files).toHaveLength(1);
@@ -373,17 +401,18 @@ describe('app/files', () => {
 		});
 
 		it('reports an error when uploading into a missing folder', async () => {
-			uploadDocToFolder('missing-folder');
+			const feedback = createFeedback();
+			uploadDocToFolder('missing-folder', feedback);
 
 			const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
 			lastCreatedInput.files = [file];
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.error).toHaveBeenCalledWith('Folder not found');
+				expect(feedback.error).toHaveBeenCalledWith('Folder not found');
 			});
 
-			expect(toast.success).not.toHaveBeenCalled();
+			expect(feedback.success).not.toHaveBeenCalled();
 		});
 	});
 
@@ -397,33 +426,37 @@ describe('app/files', () => {
 		});
 
 		it('shows error for empty folder', async () => {
+			const feedback = createFeedback();
 			docState.folders = [
 				{ id: 'empty-folder', name: 'Empty', files: [] }
 			] as typeof docState.folders;
 
-			await downloadFolder('empty-folder');
+			await downloadFolder('empty-folder', feedback);
 
-			expect(toast.error).toHaveBeenCalledWith('Folder is empty');
+			expect(feedback.error).toHaveBeenCalledWith('Folder is empty');
 		});
 
 		it('shows error for folder with no files property', async () => {
+			const feedback = createFeedback();
 			docState.folders = [{ id: 'no-files', name: 'NoFiles' }] as typeof docState.folders;
 
-			await downloadFolder('no-files');
+			await downloadFolder('no-files', feedback);
 
-			expect(toast.error).toHaveBeenCalledWith('Folder is empty');
+			expect(feedback.error).toHaveBeenCalledWith('Folder is empty');
 		});
 
 		it('shows error for nonexistent folder', async () => {
-			await downloadFolder('nonexistent');
+			const feedback = createFeedback();
+			await downloadFolder('nonexistent', feedback);
 
-			expect(toast.error).toHaveBeenCalledWith('Folder is empty');
+			expect(feedback.error).toHaveBeenCalledWith('Folder is empty');
 		});
 	});
 
 	describe('uploadFolder', () => {
 		it('shows error when no .md files found', () => {
-			uploadFolder();
+			const feedback = createFeedback();
+			uploadFolder(feedback);
 
 			const txtFile = new File(['text'], 'readme.txt');
 			Object.defineProperty(txtFile, 'name', { value: 'readme.txt' });
@@ -431,21 +464,23 @@ describe('app/files', () => {
 
 			lastCreatedInput.onchange!();
 
-			expect(toast.error).toHaveBeenCalledWith('No .md files found in the selected folder');
+			expect(feedback.error).toHaveBeenCalledWith('No .md files found in the selected folder');
 		});
 
 		it('does nothing when no files selected', () => {
-			uploadFolder();
+			const feedback = createFeedback();
+			uploadFolder(feedback);
 
 			lastCreatedInput.files = null;
 			lastCreatedInput.onchange!();
 
-			expect(toast.error).not.toHaveBeenCalled();
-			expect(toast.success).not.toHaveBeenCalled();
+			expect(feedback.error).not.toHaveBeenCalled();
+			expect(feedback.success).not.toHaveBeenCalled();
 		});
 
 		it('creates a new folder and imports .md files', async () => {
-			uploadFolder();
+			const feedback = createFeedback();
+			uploadFolder(feedback);
 
 			const mdFile = new File(['# Doc'], 'doc.md');
 			Object.defineProperty(mdFile, 'webkitRelativePath', { value: 'MyFolder/doc.md' });
@@ -463,7 +498,8 @@ describe('app/files', () => {
 		});
 
 		it('falls back to "Uploaded Folder" when relative path is missing', async () => {
-			uploadFolder();
+			const feedback = createFeedback();
+			uploadFolder(feedback);
 
 			const mdFile = new File(['# Doc'], 'doc.md');
 			lastCreatedInput.files = [mdFile] as unknown as File[];
@@ -478,6 +514,7 @@ describe('app/files', () => {
 		});
 
 		it('deduplicates the created folder name when the uploaded directory already exists', async () => {
+			const feedback = createFeedback();
 			docState.folders = [
 				{
 					id: 'folder-1',
@@ -487,7 +524,7 @@ describe('app/files', () => {
 				{ id: 'folder-2', name: 'MyFolder', files: [] }
 			] as typeof docState.folders;
 
-			uploadFolder();
+			uploadFolder(feedback);
 
 			const mdFile = new File(['# Doc'], 'doc.md');
 			Object.defineProperty(mdFile, 'webkitRelativePath', { value: 'MyFolder/doc.md' });
@@ -505,7 +542,8 @@ describe('app/files', () => {
 		});
 
 		it('deduplicates duplicate file names within the uploaded batch for the new folder', async () => {
-			uploadFolder();
+			const feedback = createFeedback();
+			uploadFolder(feedback);
 
 			const first = new File(['# One'], 'doc.md');
 			Object.defineProperty(first, 'webkitRelativePath', { value: 'Batch/doc.md' });
@@ -516,7 +554,7 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.success).toHaveBeenCalledWith('Uploaded 2 files');
+				expect(feedback.success).toHaveBeenCalledWith('Uploaded 2 files');
 			});
 
 			expect(docState.folders[1]?.name).toBe('Batch');
@@ -527,11 +565,12 @@ describe('app/files', () => {
 		});
 
 		it('still shows a success summary for valid files when one file in the batch is invalid', async () => {
-			vi.mocked(validate).mockImplementation((markdown: string) =>
+			vi.mocked(lib.validateMd.validate).mockImplementation((markdown: string) =>
 				markdown.includes('bad') ? ['Invalid heading'] : []
 			);
+			const feedback = createFeedback();
 
-			uploadFolder();
+			uploadFolder(feedback);
 
 			const validFile = new File(['# Good'], 'good.md');
 			Object.defineProperty(validFile, 'webkitRelativePath', { value: 'Mixed/good.md' });
@@ -542,38 +581,41 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Skipped bad.md'));
+				expect(feedback.error).toHaveBeenCalledWith(expect.stringContaining('Skipped bad.md'));
 			});
 
 			await vi.waitFor(() => {
-				expect(toast.success).toHaveBeenCalledWith('Uploaded 1 file');
+				expect(feedback.success).toHaveBeenCalledWith('Uploaded 1 file');
 			});
 		});
 	});
 
 	describe('uploadFolderToFolder', () => {
 		it('shows error when no .md files found', () => {
-			uploadFolderToFolder('folder-1');
+			const feedback = createFeedback();
+			uploadFolderToFolder('folder-1', feedback);
 
 			const txtFile = new File(['text'], 'readme.txt');
 			lastCreatedInput.files = [txtFile] as unknown as File[];
 
 			lastCreatedInput.onchange!();
 
-			expect(toast.error).toHaveBeenCalledWith('No .md files found in the selected folder');
+			expect(feedback.error).toHaveBeenCalledWith('No .md files found in the selected folder');
 		});
 
 		it('does nothing when no files selected', () => {
-			uploadFolderToFolder('folder-1');
+			const feedback = createFeedback();
+			uploadFolderToFolder('folder-1', feedback);
 
 			lastCreatedInput.files = null;
 			lastCreatedInput.onchange!();
 
-			expect(toast.error).not.toHaveBeenCalled();
+			expect(feedback.error).not.toHaveBeenCalled();
 		});
 
 		it('imports markdown files into an existing folder and summarizes the count', async () => {
-			uploadFolderToFolder('folder-1');
+			const feedback = createFeedback();
+			uploadFolderToFolder('folder-1', feedback);
 
 			const first = new File(['# One'], 'doc.md');
 			const second = new File(['# Two'], 'doc.md');
@@ -582,7 +624,7 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.success).toHaveBeenCalledWith('Uploaded 2 files');
+				expect(feedback.success).toHaveBeenCalledWith('Uploaded 2 files');
 			});
 
 			expect(docState.folders[0].files).toHaveLength(3);
@@ -594,7 +636,8 @@ describe('app/files', () => {
 		});
 
 		it('reports an error when the target folder does not exist', async () => {
-			uploadFolderToFolder('missing-folder');
+			const feedback = createFeedback();
+			uploadFolderToFolder('missing-folder', feedback);
 
 			const file = new File(['# One'], 'doc.md');
 			lastCreatedInput.files = [file] as unknown as File[];
@@ -602,10 +645,10 @@ describe('app/files', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(toast.error).toHaveBeenCalledWith('Folder not found');
+				expect(feedback.error).toHaveBeenCalledWith('Folder not found');
 			});
 
-			expect(toast.success).not.toHaveBeenCalled();
+			expect(feedback.success).not.toHaveBeenCalled();
 		});
 	});
 });

@@ -24,22 +24,37 @@ const GENERAL_RULES = {
 
 const AREA_RULES = {
 	domain: {
-		allowedCrossAreaImports: new Set()
+		allowedCrossAreaImports: new Set(),
+		forbiddenSourcePatterns: []
 	},
 	lib: {
-		allowedCrossAreaImports: new Set()
+		allowedCrossAreaImports: new Set(),
+		forbiddenSourcePatterns: []
 	},
 	state: {
-		allowedCrossAreaImports: new Set(['domain', 'lib'])
+		allowedCrossAreaImports: new Set(['domain', 'lib']),
+		forbiddenSourcePatterns: []
 	},
 	external: {
-		allowedCrossAreaImports: new Set(['domain', 'lib'])
+		allowedCrossAreaImports: new Set(['domain', 'lib', 'state']),
+		forbiddenSourcePatterns: []
 	},
 	app: {
-		allowedCrossAreaImports: new Set(['domain', 'lib', 'state', 'external'])
+		allowedCrossAreaImports: new Set(['domain', 'lib', 'state', 'external']),
+		forbiddenSourcePatterns: [
+			{
+				pattern: /from\s+['"]svelte-sonner['"]/,
+				message: 'app may not import svelte-sonner; UI notifications belong in view'
+			},
+			{
+				pattern: /\blocalStorage\b/,
+				message: 'app may not touch localStorage directly; route persistence through external'
+			}
+		]
 	},
 	view: {
-		allowedCrossAreaImports: new Set(['app'])
+		allowedCrossAreaImports: new Set(['app']),
+		forbiddenSourcePatterns: []
 	}
 };
 
@@ -84,6 +99,10 @@ function importSpecs(code) {
 	return specs;
 }
 
+function escapeForRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function isDeclaredPackage(spec) {
 	if (declaredPackages.has(spec)) return true;
 	const [scopeOrName, maybeName] = spec.split('/');
@@ -108,6 +127,11 @@ for (const file of walk(SRC_DIR)) {
 	const area = areaFor(relPath);
 	if (!area) continue;
 	const code = fs.readFileSync(file, 'utf8');
+	for (const rule of AREA_RULES[area]?.forbiddenSourcePatterns ?? []) {
+		if (rule.pattern.test(code)) {
+			violations.push(`${relPath}: ${rule.message}`);
+		}
+	}
 	for (const spec of importSpecs(code)) {
 		if (spec.startsWith('.')) continue;
 
@@ -133,6 +157,14 @@ for (const file of walk(SRC_DIR)) {
 					`${relPath}: ${area} may not import ${target.area}; allowed cross-area imports: ` +
 						`${[...AREA_RULES[area].allowedCrossAreaImports].map((name) => `"${name}"`).join(', ') || '(none)'}`
 				);
+				continue;
+			}
+			const namespacePattern = new RegExp(
+				`^\\s*import\\s+(?:type\\s+)?\\*\\s+as\\s+[A-Za-z_$][\\w$]*\\s+from\\s*['"]${escapeForRegExp(spec)}['"]`,
+				'm'
+			);
+			if (!namespacePattern.test(code)) {
+				violations.push(`${relPath}: cross-area root import "${spec}" must use a namespace import`);
 				continue;
 			}
 			continue;

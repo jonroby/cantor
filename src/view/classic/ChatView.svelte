@@ -4,7 +4,6 @@
 	import Button from '@/view/components/custom/button.svelte';
 	import ChatMessage from './ChatMessage.svelte';
 	import { ChatInput } from '@/view/shared';
-	import { getChildExchanges, getRootExchange, type Exchange, type DeleteMode } from '@/domain';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -14,27 +13,7 @@
 	} from './panel';
 	import type { Panel } from './panel';
 	import Document from '@/view/features/document/Document.svelte';
-	import { docState, updateDocContent } from '@/state';
-	import {
-		getActiveChat,
-		getActiveExchanges,
-		getActiveExchangeId,
-		setActiveExchangeId
-	} from '@/state';
-	import {
-		getExchangeNodeData as getNodeData,
-		performDelete,
-		performPromote,
-		performCopy,
-		performQuickAsk,
-		getDeleteMode
-	} from '@/app';
-	import {
-		clearDocumentLayout,
-		performAddFolderDocumentToChat,
-		performCloseDocumentPanel
-	} from '@/app';
-	import { providerState } from '@/state';
+	import * as app from '@/app';
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());
@@ -54,14 +33,14 @@
 
 	let trackLatestBranch = $state(false);
 	let deleteTargetId: string | null = $state(null);
-	let deleteMode: DeleteMode = $state('exchange');
+	let deleteMode: app.chat.DeleteMode = $state('exchange');
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
 
-	let activeExchanges = $derived(getActiveExchanges());
-	let activeExchangeId = $derived(getActiveExchangeId());
+	let activeExchanges = $derived(app.runtime.getActiveExchanges());
+	let activeExchangeId = $derived(app.runtime.getActiveExchangeId());
 	let commandStreaming = $state(false);
 	let pendingDocContent: string | null = $state(null);
 	let mainChatPath = $derived(getMainChatPath());
@@ -87,26 +66,29 @@
 	);
 	let activeDocFile = $derived.by(() => {
 		if (!docContent) return null;
-		const folder = docState.folders.find((f) => f.id === docContent.folderId);
+		const folder = app.runtime.docState.folders.find((f) => f.id === docContent.folderId);
 		const file = folder?.files?.find((f) => f.id === docContent.fileId);
 		return file ?? null;
 	});
 	let activeDocIndex = $derived.by(() => {
 		if (!docContent) return -1;
-		return docState.openDocs.findIndex(
+		return app.runtime.docState.openDocs.findIndex(
 			(d) => d.docKey?.folderId === docContent.folderId && d.docKey?.fileId === docContent.fileId
 		);
 	});
 	let isDocPanel = $derived(sidePanel !== null && sidePanel.content.type === 'document');
 
-	function getMainChatPath(): Exchange[] {
+	function getMainChatPath(): app.chat.Exchange[] {
 		if (!activeExchanges) return [];
-		const root = getRootExchange({ rootId: getActiveChat().rootId, exchanges: activeExchanges });
+		const root = app.chat.getRootExchange({
+			rootId: app.runtime.getActiveChat().rootId,
+			exchanges: activeExchanges
+		});
 		if (!root) return [];
-		const path: Exchange[] = [root];
+		const path: app.chat.Exchange[] = [root];
 		let currentId: string | null = root.id;
 		while (currentId) {
-			const children = getChildExchanges(activeExchanges, currentId);
+			const children = app.chat.getChildExchanges(activeExchanges, currentId);
 			if (children.length === 0) break;
 			const mainChild = children[0]!;
 			path.push(mainChild);
@@ -115,18 +97,18 @@
 		return path;
 	}
 
-	function getSideBranches(): Exchange[][] {
+	function getSideBranches(): app.chat.Exchange[][] {
 		if (!activeExchanges || !sidePanelParentId) return [];
-		const children = getChildExchanges(activeExchanges, sidePanelParentId);
+		const children = app.chat.getChildExchanges(activeExchanges, sidePanelParentId);
 		if (children.length <= 1) return [];
 
-		const branches: Exchange[][] = [];
+		const branches: app.chat.Exchange[][] = [];
 		for (let i = 1; i < children.length; i++) {
-			const branch: Exchange[] = [];
-			let current: Exchange | undefined = children[i];
+			const branch: app.chat.Exchange[] = [];
+			let current: app.chat.Exchange | undefined = children[i];
 			while (current) {
 				branch.push(current);
-				const grandChildren = getChildExchanges(activeExchanges, current.id);
+				const grandChildren = app.chat.getChildExchanges(activeExchanges, current.id);
 				current = grandChildren[0];
 			}
 			branches.push(branch);
@@ -143,12 +125,12 @@
 		if (focusedPanelId === panelId) return;
 		focusedPanelId = panelId;
 		if (panelId === mainPanel.id) {
-			setActiveExchangeId(mainChatTailId);
+			app.runtime.setActiveExchangeId(mainChatTailId);
 		} else if (sidePanel && panelId === sidePanel.id) {
 			if (sideBranchTailId) {
-				setActiveExchangeId(sideBranchTailId);
+				app.runtime.setActiveExchangeId(sideBranchTailId);
 			} else if (sidePanelParentId) {
-				setActiveExchangeId(sidePanelParentId);
+				app.runtime.setActiveExchangeId(sidePanelParentId);
 			}
 		}
 		if (!isDocPanel) {
@@ -170,7 +152,7 @@
 			return;
 		}
 
-		const children = activeExchanges ? getChildExchanges(activeExchanges, parentId) : [];
+		const children = activeExchanges ? app.chat.getChildExchanges(activeExchanges, parentId) : [];
 		const branchIdx = children.length > 1 ? children.length - 2 : 0;
 
 		sidePanel = createSideChatPanel(parentId, branchIdx);
@@ -179,13 +161,15 @@
 		if (children.length > 1) {
 			let current = children[children.length - 1];
 			while (current) {
-				const grandChildren = activeExchanges ? getChildExchanges(activeExchanges, current.id) : [];
+				const grandChildren = activeExchanges
+					? app.chat.getChildExchanges(activeExchanges, current.id)
+					: [];
 				if (grandChildren.length === 0) break;
 				current = grandChildren[0];
 			}
-			if (current) setActiveExchangeId(current.id);
+			if (current) app.runtime.setActiveExchangeId(current.id);
 		} else {
-			setActiveExchangeId(parentId);
+			app.runtime.setActiveExchangeId(parentId);
 		}
 		tick().then(() => chatInputRef?.focus());
 	}
@@ -198,7 +182,7 @@
 
 	function addCurrentDocToChat() {
 		if (!docContent) return;
-		performAddFolderDocumentToChat(docContent.folderId, docContent.fileId);
+		app.documents.performAddFolderDocumentToChat(docContent.folderId, docContent.fileId);
 	}
 
 	function prevBranch() {
@@ -219,24 +203,29 @@
 		if (!sidePanelParentId) return;
 		if (!activeSideBranch || activeSideBranch.length === 0) return;
 		updateSideBranchIndex(sideBranches.length);
-		setActiveExchangeId(sidePanelParentId);
+		app.runtime.setActiveExchangeId(sidePanelParentId);
 		tick().then(() => chatInputRef?.focus());
 	}
 
 	function copyChat(exchangeId: string) {
-		performCopy(exchangeId);
+		app.chat.performCopy(exchangeId);
 		toast.success('Copied to new chat');
 	}
 
 	function openDeleteDialog(exchangeId: string) {
 		if (!activeExchanges) return;
 		deleteTargetId = exchangeId;
-		deleteMode = getDeleteMode(activeExchanges, exchangeId);
+		deleteMode = app.chat.getDeleteMode(activeExchanges, exchangeId);
 	}
 
 	function confirmDelete() {
 		if (!activeExchanges || !deleteTargetId) return;
-		const result = performDelete(activeExchanges, deleteTargetId, deleteMode, activeExchangeId);
+		const result = app.chat.performDelete(
+			activeExchanges,
+			deleteTargetId,
+			deleteMode,
+			activeExchangeId
+		);
 		if (result.error) {
 			operationError = result.error;
 		} else {
@@ -247,7 +236,7 @@
 
 	function promoteExchange(exchangeId: string) {
 		if (!activeExchanges) return;
-		const result = performPromote(activeExchanges, exchangeId);
+		const result = app.chat.performPromote(activeExchanges, exchangeId);
 		if (result.error) {
 			operationError = result.error;
 		} else {
@@ -261,19 +250,19 @@
 	}
 
 	function quickAsk(exchangeId: string, sourceText: string) {
-		if (!activeExchanges || !providerState.activeModel) return;
+		if (!activeExchanges || !app.runtime.providerState.activeModel) return;
 
-		const activeChat = getActiveChat();
+		const activeChat = app.runtime.getActiveChat();
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 
 		let result;
 		try {
-			result = performQuickAsk(
+			result = app.chat.performQuickAsk(
 				activeChat.id,
 				tree,
 				exchangeId,
 				sourceText,
-				providerState.activeModel
+				app.runtime.providerState.activeModel
 			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
@@ -291,8 +280,8 @@
 
 	function getNodeDataForExchange(exchangeId: string) {
 		if (!activeExchanges) return null;
-		return getNodeData(exchangeId, activeExchanges, activeExchangeId, {
-			onSelect: (id) => setActiveExchangeId(id),
+		return app.chat.getExchangeNodeData(exchangeId, activeExchanges, activeExchangeId, {
+			onSelect: (id) => app.runtime.setActiveExchangeId(id),
 			onCopy: copyChat,
 			onToggleSideChildren: toggleSideChildren,
 			onPromote: promoteExchange,
@@ -303,7 +292,7 @@
 					? (sourceText) => {
 							const current = activeDocFile?.content ?? '';
 							const appended = current ? `${current}\n\n${sourceText}` : sourceText;
-							updateDocContent(activeDocIndex, appended);
+							app.runtime.updateDocContent(activeDocIndex, appended);
 						}
 					: undefined
 		});
@@ -345,7 +334,7 @@
 
 	export function resetUIState() {
 		if (sidePanel !== null) {
-			clearDocumentLayout();
+			app.documents.clearDocumentLayout();
 		}
 		closeSidePanel();
 	}
@@ -387,7 +376,7 @@
 	// Keep activeExchangeId synced with focused pane's tail
 	$effect(() => {
 		if (sidePanel && focusedPanelId === sidePanel.id && sideBranchTailId) {
-			setActiveExchangeId(sideBranchTailId);
+			app.runtime.setActiveExchangeId(sideBranchTailId);
 		}
 	});
 </script>
@@ -405,7 +394,7 @@
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
-			<div class="chatview-main-title">{getActiveChat().name}</div>
+			<div class="chatview-main-title">{app.runtime.getActiveChat().name}</div>
 			<div class="chatview-main" bind:this={mainScrollContainer}>
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
@@ -442,15 +431,15 @@
 							title={activeDocFile.name}
 							content={activeDocFile.content}
 							{commandStreaming}
-							commandModel={providerState.activeModel?.modelId}
-							commandProvider={providerState.activeModel?.provider}
+							commandModel={app.runtime.providerState.activeModel?.modelId}
+							commandProvider={app.runtime.providerState.activeModel?.provider}
 							pendingContent={pendingDocContent}
 							onContentChange={(c) => {
-								if (activeDocIndex >= 0) updateDocContent(activeDocIndex, c);
+								if (activeDocIndex >= 0) app.runtime.updateDocContent(activeDocIndex, c);
 							}}
 							onAcceptPending={() => {
 								if (pendingDocContent !== null && activeDocIndex >= 0) {
-									updateDocContent(activeDocIndex, pendingDocContent);
+									app.runtime.updateDocContent(activeDocIndex, pendingDocContent);
 								}
 								pendingDocContent = null;
 							}}
@@ -459,7 +448,7 @@
 							}}
 							onClose={() => {
 								pendingDocContent = null;
-								performCloseDocumentPanel(activeDocIndex);
+								app.documents.performCloseDocumentPanel(activeDocIndex);
 								closeSidePanel();
 							}}
 							onAddToChat={addCurrentDocToChat}
@@ -627,7 +616,9 @@
 </div>
 
 {#if deleteTargetId}
-	{@const children = activeExchanges ? getChildExchanges(activeExchanges, deleteTargetId) : []}
+	{@const children = activeExchanges
+		? app.chat.getChildExchanges(activeExchanges, deleteTargetId)
+		: []}
 	<button
 		class="modal-scrim"
 		type="button"

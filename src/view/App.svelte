@@ -2,49 +2,13 @@
 	import { onMount } from 'svelte';
 	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
 	import { toast } from 'svelte-sonner';
-	import { getDefaultItems, searchChats, type SearchResult } from '@/domain';
-	import type { Chat } from '@/domain';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
 	import { AppSidebar, SearchDialog } from '@/view/shared';
 	import { routerState } from '@/view/routes/router.svelte';
 	import { ChatView } from '@/view/classic';
 	import { CanvasView } from '@/view/canvas';
 	import LandingPage from '@/view/routes/LandingPage.svelte';
-	import {
-		chatState,
-		newChat as newChatAction,
-		selectChat as selectChatAction,
-		deleteChat as deleteChatAction,
-		renameChat,
-		setActiveExchangeId
-	} from '@/state';
-	import {
-		docState,
-		newFolder,
-		deleteFolder,
-		renameFolder,
-		deleteDocFromFolder,
-		renameDocInFolder,
-		moveDocToFolder
-	} from '@/state';
-	import { loadFromStorage, saveToStorage } from '@/external';
-	import type { ChatFolder } from '@/state';
-	import {
-		downloadChat,
-		uploadChat,
-		downloadFolder,
-		uploadDocToFolder,
-		uploadFolder,
-		uploadFolderToFolder
-	} from '@/app';
-	import { init as initProviders, autoConnectOllama } from '@/app';
-	import { cancelStreamsForChat } from '@/external';
-	import {
-		performAddFolderDocumentToChat,
-		performCreateDocument,
-		performOpenDocument,
-		restoreOpenDocument
-	} from '@/app';
+	import * as app from '@/app';
 
 	function deduplicate(name: string, existing: string[]): string {
 		if (!existing.includes(name)) return name;
@@ -53,7 +17,7 @@
 		return `${name} (${i})`;
 	}
 
-	function fixDuplicateNames(chats: Chat[], folders: ChatFolder[]) {
+	function fixDuplicateNames(chats: app.chat.Chat[], folders: app.runtime.ChatFolder[]) {
 		const chatNames: string[] = [];
 		for (const chat of chats) {
 			const deduped = deduplicate(chat.name, chatNames);
@@ -86,19 +50,23 @@
 
 	let searchItems = $derived(
 		searchQuery.trim()
-			? searchChats(
-					chatState.chats,
+			? app.search.searchChats(
+					app.runtime.chatState.chats,
 					searchQuery.trim(),
 					searchAllChats
-						? chatState.chats.map((_: Chat, index: number) => index)
-						: [chatState.activeChatIndex]
+						? app.runtime.chatState.chats.map((_: app.chat.Chat, index: number) => index)
+						: [app.runtime.chatState.activeChatIndex]
 				)
-			: getDefaultItems(chatState.chats, chatState.activeChatIndex, searchAllChats)
+			: app.search.getDefaultItems(
+					app.runtime.chatState.chats,
+					app.runtime.chatState.activeChatIndex,
+					searchAllChats
+				)
 	);
 
 	$effect(() => {
 		if (hasHydrated) {
-			saveToStorage();
+			app.runtime.saveToStorage();
 		}
 	});
 
@@ -138,17 +106,17 @@
 		window.addEventListener('drop', handleWindowDrop);
 
 		try {
-			loadFromStorage();
+			app.runtime.loadFromStorage();
 		} catch {
-			fixDuplicateNames(chatState.chats, docState.folders);
+			fixDuplicateNames(app.runtime.chatState.chats, app.runtime.docState.folders);
 			toast.warning('Some items had duplicate names and were automatically renamed.');
 		}
-		const restoredDocument = restoreOpenDocument();
+		const restoredDocument = app.documents.restoreOpenDocument();
 		if (restoredDocument) {
 			chatViewRef?.showDocument(restoredDocument.folderId, restoredDocument.fileId);
 		}
-		initProviders();
-		autoConnectOllama();
+		app.providers.init();
+		app.providers.autoConnectOllama();
 
 		hasHydrated = true;
 
@@ -163,35 +131,40 @@
 	}
 
 	function newChat(): number {
-		const index = newChatAction();
+		const index = app.runtime.newChat();
 		resetUIState();
 		return index;
 	}
 
 	function selectChat(index: number) {
-		selectChatAction(index);
+		app.runtime.selectChat(index);
 		resetUIState();
 	}
 
 	function doDeleteChat(index: number) {
-		const chat = chatState.chats[index];
-		if (chat) cancelStreamsForChat(chat.id);
-		deleteChatAction(index);
+		const chat = app.runtime.chatState.chats[index];
+		if (chat) app.runtime.cancelStreamsForChat(chat.id);
+		app.runtime.deleteChat(index);
 		resetUIState();
 	}
 
 	function addDocToChat(folderId: string, fileId: string) {
-		const folder = docState.folders.find((f) => f.id === folderId);
+		const folder = app.runtime.docState.folders.find((f) => f.id === folderId);
 		const file = folder?.files?.find((f) => f.id === fileId);
 		if (!file) return;
-		performAddFolderDocumentToChat(folderId, fileId);
+		app.documents.performAddFolderDocumentToChat(folderId, fileId);
 	}
 
-	function handleSearchSelect(result: SearchResult) {
-		selectChatAction(result.chatIndex);
-		setActiveExchangeId(result.exchangeId);
+	function handleSearchSelect(result: app.search.SearchResult) {
+		app.runtime.selectChat(result.chatIndex);
+		app.runtime.setActiveExchangeId(result.exchangeId);
 		canvasViewRef?.scrollToNode(result.exchangeId);
 	}
+
+	const fileFeedback: app.files.FileCommandFeedback = {
+		success: (message) => toast.success(message),
+		error: (message) => toast.error(message)
+	};
 </script>
 
 <svelte:head>
@@ -203,37 +176,37 @@
 {:else}
 	<SidebarPrimitive.Provider>
 		<AppSidebar
-			chats={chatState.chats}
-			activeChatIndex={chatState.activeChatIndex}
+			chats={app.runtime.chatState.chats}
+			activeChatIndex={app.runtime.chatState.activeChatIndex}
 			onSelectChat={selectChat}
 			onNewChat={newChat}
 			onDeleteChat={doDeleteChat}
-			onRenameChat={renameChat}
-			onDownloadChat={downloadChat}
-			onUploadChat={uploadChat}
-			folders={docState.folders}
-			onNewFolder={newFolder}
-			onDeleteFolder={deleteFolder}
-			onDownloadFolder={downloadFolder}
-			onRenameFolder={renameFolder}
+			onRenameChat={app.runtime.renameChat}
+			onDownloadChat={app.files.downloadChat}
+			onUploadChat={() => app.files.uploadChat(fileFeedback)}
+			folders={app.runtime.docState.folders}
+			onNewFolder={app.runtime.newFolder}
+			onDeleteFolder={app.runtime.deleteFolder}
+			onDownloadFolder={(folderId) => app.files.downloadFolder(folderId, fileFeedback)}
+			onRenameFolder={app.runtime.renameFolder}
 			onNewDoc={(folderId) => {
-				const document = performCreateDocument(folderId);
+				const document = app.documents.performCreateDocument(folderId);
 				if (document) {
 					chatViewRef?.showDocument(document.folderId, document.fileId);
 				}
 			}}
-			onUploadDoc={uploadDocToFolder}
-			onUploadFolder={uploadFolderToFolder}
-			onUploadNewFolder={uploadFolder}
+			onUploadDoc={(folderId) => app.files.uploadDocToFolder(folderId, fileFeedback)}
+			onUploadFolder={(folderId) => app.files.uploadFolderToFolder(folderId, fileFeedback)}
+			onUploadNewFolder={() => app.files.uploadFolder(fileFeedback)}
 			onSelectDoc={(folderId, fileId) => {
-				if (performOpenDocument(folderId, fileId)) {
+				if (app.documents.performOpenDocument(folderId, fileId)) {
 					chatViewRef?.showDocument(folderId, fileId);
 				}
 			}}
 			onAddDocToChat={addDocToChat}
-			onDeleteDoc={deleteDocFromFolder}
-			onRenameDoc={renameDocInFolder}
-			onMoveDoc={moveDocToFolder}
+			onDeleteDoc={app.runtime.deleteDocFromFolder}
+			onRenameDoc={app.runtime.renameDocInFolder}
+			onMoveDoc={app.runtime.moveDocToFolder}
 		/>
 		<SidebarPrimitive.Inset>
 			{#if routerState.route === 'canvas'}

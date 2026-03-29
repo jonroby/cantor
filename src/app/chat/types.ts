@@ -1,10 +1,10 @@
-import type { Provider } from '@/domain';
+import type * as domain from '@/domain';
 
 export interface ExchangeNodeData {
 	prompt: string;
 	response: string;
 	model?: string;
-	provider?: Provider | null;
+	provider?: domain.models.Provider | null;
 	label?: string;
 	isActive: boolean;
 	isStreaming: boolean;

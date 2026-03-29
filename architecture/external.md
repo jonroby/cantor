@@ -34,6 +34,41 @@
 - files
 - worker processes
 
+## Public API Rule
+
+The public API of `external` should stay small.
+
+- many private helpers inside `external` modules are fine
+- many exported boundary primitives are not fine
+- `app` should depend on the smallest feature-shaped external contract possible
+
+Prefer exports like:
+
+- `importChatFile`
+- `exportFolderZip`
+- `loadPersistedState`
+
+Over exports like:
+
+- `createBlobUrl`
+- `readTextFile`
+- `openFilePicker`
+
+when the lower-level primitives do not need to cross the layer boundary.
+
+## Namespace Rule
+
+`external` is consumed as an organizational namespace.
+
+Prefer:
+
+- `external.persistence.loadFromStorage()`
+- `external.files.validateChatUpload()`
+- `external.providers.fetchAvailableModels()`
+- `external.streams.startStream()`
+
+The namespace should tell the reader what kind of boundary they are crossing.
+
 ## Current Examples
 
 Likely examples in this repo:

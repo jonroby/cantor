@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { PROVIDER_CONFIG } from '@/domain';
-	import type { ActiveModel, Provider } from '@/domain';
+	import * as app from '@/app';
 	import Button from '@/view/components/custom/button.svelte';
 	import Input from '@/view/components/custom/input.svelte';
 
@@ -9,8 +8,8 @@
 		flow: { provider: string; mode: 'unlock' | 'setup' };
 		onUnlockKeys: (password: string) => Promise<void>;
 		onSaveKey: (provider: string, apiKey: string, password: string) => Promise<void>;
-		onSelectModel: (model: ActiveModel) => void;
-		pendingModel: ActiveModel | null;
+		onSelectModel: (model: app.providers.ActiveModel) => void;
+		pendingModel: app.providers.ActiveModel | null;
 		onBack: () => void;
 		onDone: () => void;
 	}
@@ -28,13 +27,18 @@
 	let passwordRef: ReturnType<typeof Input> | undefined = $state();
 
 	function providerDisplayName(provider: string): string {
-		return PROVIDER_CONFIG[provider as Exclude<Provider, 'ollama' | 'webllm'>]?.name ?? provider;
+		return (
+			app.providers.PROVIDER_CONFIG[
+				provider as Exclude<app.providers.Provider, 'ollama' | 'webllm'>
+			]?.name ?? provider
+		);
 	}
 
 	function keyPlaceholder(provider: string): string {
 		return (
-			PROVIDER_CONFIG[provider as Exclude<Provider, 'ollama' | 'webllm'>]?.keyPlaceholder ??
-			'sk-...'
+			app.providers.PROVIDER_CONFIG[
+				provider as Exclude<app.providers.Provider, 'ollama' | 'webllm'>
+			]?.keyPlaceholder ?? 'sk-...'
 		);
 	}
 

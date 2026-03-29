@@ -1,9 +1,12 @@
-import { getWebLLMModels } from '@/external';
-import { migrateVault, storedProviders as getStoredProviders } from '@/external';
-import { providerState } from '@/state';
+import * as external from '@/external';
+import * as state from '@/state';
 
 export function initProviders() {
-	migrateVault();
-	providerState.vaultProviders = getStoredProviders();
-	providerState.webllmModels = getWebLLMModels();
+	external.providers.migrateVault();
+	state.providers.providerState.vaultProviders = external.providers.storedProviders();
+	return hydrateWebLLMModels();
+}
+
+async function hydrateWebLLMModels() {
+	state.providers.providerState.webllmModels = await external.providers.getWebLLMModels();
 }

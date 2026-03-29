@@ -1,8 +1,8 @@
-import type { Message } from '@/domain';
-import { DEFAULT_OLLAMA_URL } from '@/lib';
+import type * as domain from '@/domain';
+import * as lib from '@/lib';
 import type { StreamChunk } from './stream';
 
-export { DEFAULT_OLLAMA_URL };
+export const DEFAULT_OLLAMA_URL = lib.DEFAULT_OLLAMA_URL;
 
 export async function fetchAvailableModels(baseUrl: string): Promise<string[]> {
 	const response = await fetch(`${baseUrl}/api/tags`);
@@ -38,7 +38,7 @@ export async function fetchModelContextLength(model: string, baseUrl: string): P
 
 export async function* streamOllamaChat(
 	model: string,
-	messages: Message[],
+	messages: domain.Message[],
 	signal: AbortSignal,
 	baseUrl: string
 ): AsyncGenerator<StreamChunk> {

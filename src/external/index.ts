@@ -1,10 +1,8 @@
+export * as persistence from './persistence/database';
+export * as files from './files/io';
+export * as providers from './providers/index';
+export * as streams from './streams';
 export * from './persistence/database';
 export * from './files/io';
-export * from './providers/claude';
-export * from './providers/gemini';
-export * from './providers/ollama';
-export * from './providers/openai-compat';
-export * from './providers/stream';
-export * from './providers/vault';
-export * from './providers/webllm';
+export * from './providers/index';
 export * from './streams';

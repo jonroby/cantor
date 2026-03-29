@@ -1,10 +1,10 @@
-import type { ChatFolder, DocFile } from '@/state';
+import type * as state from '@/state';
 
 export function getFolderFile(
-	folders: ChatFolder[],
+	folders: state.documents.ChatFolder[],
 	folderId: string,
 	fileId: string
-): { folder: ChatFolder; file: DocFile } | null {
+): { folder: state.documents.ChatFolder; file: state.documents.DocFile } | null {
 	const folder = folders.find((candidate) => candidate.id === folderId);
 	const file = folder?.files?.find((candidate) => candidate.id === fileId);
 	if (!folder || !file) return null;

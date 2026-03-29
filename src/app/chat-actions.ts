@@ -1,5 +1,4 @@
-import type { ActiveModel } from '@/domain';
-import type { ChatTree, DeleteMode, ExchangeMap } from '@/domain';
+import type * as domain from '@/domain';
 import {
 	addDocToChat,
 	copyChat,
@@ -15,9 +14,9 @@ import type { ExchangeNodeData } from '@/app/chat/types';
 export interface ChatActionDeps extends ChatCommandDeps, ChatQueryDeps {}
 
 export function performDelete(
-	activeExchanges: ExchangeMap,
+	activeExchanges: domain.tree.ExchangeMap,
 	deleteTargetId: string,
-	deleteMode: DeleteMode,
+	deleteMode: domain.tree.DeleteMode,
 	activeExchangeId: string | null,
 	onResetMeasuredHeights?: () => void,
 	deps?: ChatActionDeps
@@ -33,7 +32,7 @@ export function performDelete(
 }
 
 export function performPromote(
-	activeExchanges: ExchangeMap,
+	activeExchanges: domain.tree.ExchangeMap,
 	exchangeId: string,
 	onResetMeasuredHeights?: () => void,
 	deps?: ChatActionDeps
@@ -47,10 +46,10 @@ export function performCopy(exchangeId: string, deps?: ChatActionDeps) {
 
 export function performSubmitPrompt(
 	chatId: string,
-	tree: ChatTree,
+	tree: domain.tree.ChatTree,
 	activeExchangeId: string | null,
 	prompt: string,
-	model: ActiveModel,
+	model: domain.models.ActiveModel,
 	liveDocContent?: string,
 	deps?: ChatActionDeps
 ): { id: string; parentId: string; hasSideChildren: boolean } {
@@ -59,17 +58,17 @@ export function performSubmitPrompt(
 
 export function performQuickAsk(
 	chatId: string,
-	tree: ChatTree,
+	tree: domain.tree.ChatTree,
 	exchangeId: string,
 	sourceText: string,
-	model: ActiveModel,
+	model: domain.models.ActiveModel,
 	deps?: ChatActionDeps
 ): { id: string; parentId: string; hasSideChildren: boolean } {
 	return quickAsk(chatId, tree, exchangeId, sourceText, model, deps);
 }
 
 export function performAddDocToChat(
-	tree: ChatTree,
+	tree: domain.tree.ChatTree,
 	activeExchangeId: string | null,
 	content: string,
 	fileName: string,

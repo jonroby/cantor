@@ -2,16 +2,14 @@
 	import DOMPurify from 'dompurify';
 	import Button from '@/view/components/custom/button.svelte';
 	import { renderRichText } from '@/view/shared/katex';
-	import { mapDocument } from '@/lib';
-	import { PROVIDER_LOGOS } from '@/domain';
-	import type { ExchangeNodeData } from '@/app';
+	import * as app from '@/app';
 
-	let { data }: { data: ExchangeNodeData } = $props();
+	let { data }: { data: app.types.ExchangeNodeData } = $props();
 
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
 	let responseBlocks = $derived(
 		!data.isStreaming
-			? mapDocument(data.response).map((block) => ({
+			? app.content.mapDocument(data.response).map((block) => ({
 					source: block.source,
 					html: DOMPurify.sanitize(block.html)
 				}))
@@ -112,9 +110,9 @@
 
 		<div class="chatmsg-response">
 			<div class="chatmsg-response-header">
-				{#if data.provider && PROVIDER_LOGOS[data.provider]}
+				{#if data.provider && app.providers.PROVIDER_LOGOS[data.provider]}
 					<img
-						src={PROVIDER_LOGOS[data.provider]}
+						src={app.providers.PROVIDER_LOGOS[data.provider]}
 						alt={data.provider}
 						class="chatmsg-provider-logo"
 					/>

@@ -28,28 +28,39 @@ vi.mock('@/view/components/shadcn/ui/sidebar/index.js', async () => ({
 	Inset: (await import('../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
 
-vi.mock('@/external', () => ({
-	loadFromStorage: vi.fn(),
-	saveToStorage: vi.fn(),
-	getPersistedLayout: vi.fn(() => ({})),
-	setPersistedLayout: vi.fn(),
-	cancelStreamsForChat: vi.fn()
-}));
-
-vi.mock('@/app', () => ({
-	init: vi.fn(),
-	autoConnectOllama: vi.fn(),
-	downloadChat: vi.fn(),
-	uploadChat: vi.fn(),
-	downloadFolder: vi.fn(),
-	uploadDocToFolder: vi.fn(),
-	uploadFolder: vi.fn(),
-	uploadFolderToFolder: vi.fn(),
-	performAddFolderDocumentToChat: vi.fn(),
-	performCreateDocument: vi.fn(() => null),
-	performOpenDocument: vi.fn(() => false),
-	restoreOpenDocument: vi.fn(() => null)
-}));
+vi.mock('@/app', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('@/app')>();
+	return {
+		...actual,
+		runtime: {
+			...actual.runtime,
+			loadFromStorage: vi.fn(),
+			saveToStorage: vi.fn(),
+			cancelStreamsForChat: vi.fn()
+		},
+		providers: {
+			...actual.providers,
+			init: vi.fn(),
+			autoConnectOllama: vi.fn()
+		},
+		files: {
+			...actual.files,
+			downloadChat: vi.fn(),
+			uploadChat: vi.fn(),
+			downloadFolder: vi.fn(),
+			uploadDocToFolder: vi.fn(),
+			uploadFolder: vi.fn(),
+			uploadFolderToFolder: vi.fn()
+		},
+		documents: {
+			...actual.documents,
+			performAddFolderDocumentToChat: vi.fn(),
+			performCreateDocument: vi.fn(() => null),
+			performOpenDocument: vi.fn(() => false),
+			restoreOpenDocument: vi.fn(() => null)
+		}
+	};
+});
 
 vi.mock('@/view/routes/router.svelte', () => ({
 	routerState: { route: 'chat' as 'chat' | 'canvas' | 'landing' }
@@ -57,17 +68,14 @@ vi.mock('@/view/routes/router.svelte', () => ({
 
 import { toast } from 'svelte-sonner';
 import App from './App.svelte';
-import { chatState } from '@/state';
-import { docState } from '@/state';
-import { loadFromStorage, saveToStorage } from '@/external';
-import { autoConnectOllama, init } from '@/app';
+import * as app from '@/app';
 import { routerState } from '@/view/routes/router.svelte';
 
 describe('App', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		vi.restoreAllMocks();
-		chatState.chats = [
+		app.runtime.chatState.chats = [
 			{
 				id: 'chat-1',
 				name: 'Chat 1',
@@ -76,17 +84,17 @@ describe('App', () => {
 				activeExchangeId: null
 			}
 		];
-		chatState.activeChatIndex = 0;
-		docState.folders = [];
+		app.runtime.chatState.activeChatIndex = 0;
+		app.runtime.docState.folders = [];
 		routerState.route = 'chat';
 	});
 
 	it('loads persisted state and initializes providers on mount', () => {
 		render(App);
 
-		expect(loadFromStorage).toHaveBeenCalledOnce();
-		expect(init).toHaveBeenCalledOnce();
-		expect(autoConnectOllama).toHaveBeenCalledOnce();
+		expect(app.runtime.loadFromStorage).toHaveBeenCalledOnce();
+		expect(app.providers.init).toHaveBeenCalledOnce();
+		expect(app.providers.autoConnectOllama).toHaveBeenCalledOnce();
 		expect(screen.getByTestId('chat-view-mock')).toBeInTheDocument();
 	});
 
@@ -108,8 +116,8 @@ describe('App', () => {
 
 	describe('gracefully renames duplicates on load', () => {
 		it('renames duplicate chat names', () => {
-			vi.mocked(loadFromStorage).mockImplementation(() => {
-				chatState.chats = [
+			vi.mocked(app.runtime.loadFromStorage).mockImplementation(() => {
+				app.runtime.chatState.chats = [
 					{ id: '1', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null },
 					{ id: '2', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null }
 				];
@@ -119,15 +127,15 @@ describe('App', () => {
 
 			render(App);
 
-			expect(chatState.chats[0].name).toBe('Foo');
-			expect(chatState.chats[1].name).toBe('Foo (2)');
+			expect(app.runtime.chatState.chats[0].name).toBe('Foo');
+			expect(app.runtime.chatState.chats[1].name).toBe('Foo (2)');
 			expect(warningSpy).toHaveBeenCalled();
-			expect(saveToStorage).toHaveBeenCalledOnce();
+			expect(app.runtime.saveToStorage).toHaveBeenCalledOnce();
 		});
 
 		it('renames duplicate folder names', () => {
-			vi.mocked(loadFromStorage).mockImplementation(() => {
-				docState.folders = [
+			vi.mocked(app.runtime.loadFromStorage).mockImplementation(() => {
+				app.runtime.docState.folders = [
 					{ id: 'f1', name: 'Docs' },
 					{ id: 'f2', name: 'Docs' }
 				];
@@ -137,15 +145,15 @@ describe('App', () => {
 
 			render(App);
 
-			expect(docState.folders[0].name).toBe('Docs');
-			expect(docState.folders[1].name).toBe('Docs (2)');
+			expect(app.runtime.docState.folders[0].name).toBe('Docs');
+			expect(app.runtime.docState.folders[1].name).toBe('Docs (2)');
 			expect(warningSpy).toHaveBeenCalled();
-			expect(saveToStorage).toHaveBeenCalledOnce();
+			expect(app.runtime.saveToStorage).toHaveBeenCalledOnce();
 		});
 
 		it('renames duplicate file names within a folder', () => {
-			vi.mocked(loadFromStorage).mockImplementation(() => {
-				docState.folders = [
+			vi.mocked(app.runtime.loadFromStorage).mockImplementation(() => {
+				app.runtime.docState.folders = [
 					{
 						id: 'f1',
 						name: 'Docs',
@@ -161,10 +169,10 @@ describe('App', () => {
 
 			render(App);
 
-			expect(docState.folders[0].files![0].name).toBe('readme.md');
-			expect(docState.folders[0].files![1].name).toBe('readme.md (2)');
+			expect(app.runtime.docState.folders[0].files![0].name).toBe('readme.md');
+			expect(app.runtime.docState.folders[0].files![1].name).toBe('readme.md (2)');
 			expect(warningSpy).toHaveBeenCalled();
-			expect(saveToStorage).toHaveBeenCalledOnce();
+			expect(app.runtime.saveToStorage).toHaveBeenCalledOnce();
 		});
 
 		it('does not show a toast when no duplicates exist', () => {

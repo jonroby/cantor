@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { renameWithDedup } from '@/lib';
+	import * as app from '@/app';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu/index.js';
-	import type { ChatFolder } from '@/state';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 	import DocItem from './DocItem.svelte';
 
 	interface Props {
-		folder: ChatFolder;
+		folder: app.runtime.ChatFolder;
 		expanded: boolean;
 		isDragOver: boolean;
 		startEditing?: boolean;
@@ -86,7 +85,7 @@
 	}
 
 	function commitRenameFolder(name: string) {
-		const result = renameWithDedup(name, onRenameFolder);
+		const result = app.content.renameWithDedup(name, onRenameFolder);
 		if (result && result !== name.trim()) {
 			toast.warning(`Renamed to "${result}" to avoid duplicate`);
 		}

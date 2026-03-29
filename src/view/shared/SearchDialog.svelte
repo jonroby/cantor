@@ -1,13 +1,13 @@
 <script lang="ts">
 	import Input from '@/view/components/custom/input.svelte';
-	import type { SearchResult } from '@/domain';
+	import * as app from '@/app';
 
 	interface Props {
 		searchQuery: string;
 		searchAllChats: boolean;
-		searchItems: SearchResult[];
+		searchItems: app.search.SearchResult[];
 		onClose: () => void;
-		onSelect: (result: SearchResult) => void;
+		onSelect: (result: app.search.SearchResult) => void;
 	}
 
 	let {

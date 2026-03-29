@@ -1,14 +1,5 @@
-import { getProviderForModelId, type Provider } from '@/domain';
-import {
-	canAcceptNewChat,
-	canCreateSideChats,
-	canPromoteSideChatToMainChat,
-	findRootId,
-	getChildExchanges,
-	type ExchangeMap,
-	type DeleteMode
-} from '@/domain';
-import { isStreaming as isExchangeStreaming } from '@/external';
+import * as domain from '@/domain';
+import * as external from '@/external';
 import type { ExchangeNodeData } from './types';
 
 export interface ChatQueryDeps {
@@ -16,12 +7,12 @@ export interface ChatQueryDeps {
 }
 
 const defaultDeps: ChatQueryDeps = {
-	isStreaming: isExchangeStreaming
+	isStreaming: external.streams.isStreaming
 };
 
 export function getExchangeNodeData(
 	exchangeId: string,
-	activeExchanges: ExchangeMap,
+	activeExchanges: domain.tree.ExchangeMap,
 	activeExchangeId: string | null,
 	callbacks: {
 		onMeasure?: (exchangeId: string, height: number) => void;
@@ -37,29 +28,34 @@ export function getExchangeNodeData(
 ): ExchangeNodeData | null {
 	const exchange = activeExchanges[exchangeId];
 	if (!exchange) return null;
-	const children = getChildExchanges(activeExchanges, exchangeId);
+	const children = domain.tree.getChildExchanges(activeExchanges, exchangeId);
 	const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
-	const hasSideChildren = canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
+	const hasSideChildren =
+		domain.tree.canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
 	const isSideRoot = exchange.parentId
-		? (getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !== exchangeId
+		? (domain.tree.getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !==
+			exchangeId
 		: false;
 	return {
 		prompt: exchange.prompt.text,
 		response: exchange.response?.text ?? '',
 		model: exchange.model,
-		provider: (exchange.provider as Provider) || getProviderForModelId(exchange.model) || null,
+		provider:
+			(exchange.provider as domain.models.Provider) ||
+			domain.models.getProviderForModelId(exchange.model) ||
+			null,
 		label: exchange.label,
 		isActive: activeExchangeId === exchangeId,
 		isStreaming: deps.isStreaming(exchangeId),
 		hasSideChildren,
 		sideChildrenCount,
 		isSideRoot,
-		canCreateSideChat: canCreateSideChats(activeExchanges, exchangeId),
-		canPromote: canPromoteSideChatToMainChat(
-			{ rootId: findRootId(activeExchanges), exchanges: activeExchanges },
+		canCreateSideChat: domain.tree.canCreateSideChats(activeExchanges, exchangeId),
+		canPromote: domain.tree.canPromoteSideChatToMainChat(
+			{ rootId: domain.tree.findRootId(activeExchanges), exchanges: activeExchanges },
 			exchangeId
 		),
-		canQuickAsk: canAcceptNewChat(activeExchanges, exchangeId),
+		canQuickAsk: domain.tree.canAcceptNewChat(activeExchanges, exchangeId),
 		canQuickAdd: !!callbacks.onQuickAdd,
 		onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
 		onSelect: () => callbacks.onSelect(exchangeId),
@@ -72,7 +68,10 @@ export function getExchangeNodeData(
 	};
 }
 
-export function getDeleteMode(activeExchanges: ExchangeMap, exchangeId: string): DeleteMode {
-	const children = getChildExchanges(activeExchanges, exchangeId);
+export function getDeleteMode(
+	activeExchanges: domain.tree.ExchangeMap,
+	exchangeId: string
+): domain.tree.DeleteMode {
+	const children = domain.tree.getChildExchanges(activeExchanges, exchangeId);
 	return children.length > 1 ? 'exchangeAndSideChats' : 'exchange';
 }

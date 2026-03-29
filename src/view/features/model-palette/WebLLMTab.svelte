@@ -1,18 +1,17 @@
 <script lang="ts">
-	import type { ActiveModel } from '@/domain';
-	import type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize } from '@/external';
+	import * as app from '@/app';
 	import Input from '@/view/components/custom/input.svelte';
 
 	interface Props {
-		activeModel: ActiveModel | null;
-		webllmStatus: WebLLMStatus;
+		activeModel: app.providers.ActiveModel | null;
+		webllmStatus: app.runtime.WebLLMStatus;
 		webllmProgress: number;
 		webllmProgressText: string;
-		webllmModels: WebLLMModelEntry[];
+		webllmModels: app.runtime.WebLLMModelEntry[];
 		webllmError: string | null;
-		webllmContextSize: WebLLMContextSize;
-		webllmContextOptions: ReadonlyArray<{ label: string; value: WebLLMContextSize }>;
-		onWebLLMContextSizeChange: (size: WebLLMContextSize) => void;
+		webllmContextSize: app.runtime.WebLLMContextSize;
+		webllmContextOptions: ReadonlyArray<{ label: string; value: app.runtime.WebLLMContextSize }>;
+		onWebLLMContextSizeChange: (size: app.runtime.WebLLMContextSize) => void;
 		onLoadWebLLMModel: (modelId: string) => Promise<void>;
 		onDeleteWebLLMCache: (modelId: string) => Promise<void>;
 		onDeleteAllWebLLMCaches: () => Promise<void>;
