@@ -1,11 +1,4 @@
 {
-	"diff": {
-		"diffLines": true
-	},
-	"documentMap": {
-		"mapDocument": true,
-		"marked": true
-	},
 	"providerDefaults": {
 		"DEFAULT_OLLAMA_URL": true,
 		"WEBLLM_CONTEXT_OPTIONS": true

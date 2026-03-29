@@ -7,13 +7,6 @@ type LibMock = PublicApiMock<typeof lib, typeof libContract>;
 
 export function createLibMock(overrides?: DeepPartial<LibMock>): LibMock {
 	const base = {
-		diff: {
-			diffLines: mockFn<typeof lib.diff.diffLines>(() => [])
-		},
-		documentMap: {
-			mapDocument: mockFn<typeof lib.documentMap.mapDocument>(() => []),
-			marked: lib.documentMap.marked
-		},
 		providerDefaults: {
 			DEFAULT_OLLAMA_URL: lib.providerDefaults.DEFAULT_OLLAMA_URL,
 			WEBLLM_CONTEXT_OPTIONS: lib.providerDefaults.WEBLLM_CONTEXT_OPTIONS

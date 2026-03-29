@@ -1,6 +1,5 @@
 import * as domain from '@/domain';
 import * as external from '@/external';
-import * as lib from '@/lib';
 import * as state from '@/state';
 import type { Provider, ActiveModel, ContextSize, State } from './types';
 
@@ -223,7 +222,7 @@ function getLocalProviders(): State['providers'] {
 			},
 			context: {
 				value: state.providers.providerState.webllmContextSize,
-				options: lib.providerDefaults.WEBLLM_CONTEXT_OPTIONS
+				options: external.providers.webllm.WEBLLM_CONTEXT_OPTIONS
 			},
 			models: state.providers.providerState.webllmModels.map((model) => ({
 				id: model.id,

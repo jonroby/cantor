@@ -1,7 +1,6 @@
 import type * as domain from '@/domain';
 import * as lib from '@/lib';
 import type { StreamChunk } from './stream';
-
 export const DEFAULT_OLLAMA_URL = lib.providerDefaults.DEFAULT_OLLAMA_URL;
 
 export async function fetchAvailableModels(baseUrl: string): Promise<string[]> {

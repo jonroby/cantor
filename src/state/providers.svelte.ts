@@ -1,9 +1,9 @@
 import * as domain from '@/domain';
 import * as lib from '@/lib';
 
-export type WebLLMStatus = import('@/lib').providerTypes.WebLLMStatus;
-export type WebLLMModelEntry = import('@/lib').providerTypes.WebLLMModelEntry;
-export type WebLLMContextSize = import('@/lib').providerDefaults.WebLLMContextSize;
+export type WebLLMStatus = lib.providerTypes.WebLLMStatus;
+export type WebLLMModelEntry = lib.providerTypes.WebLLMModelEntry;
+export type WebLLMContextSize = lib.providerDefaults.WebLLMContextSize;
 export type ActiveModel = domain.models.ActiveModel;
 export type OllamaStatus = domain.models.OllamaStatus;
 

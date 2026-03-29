@@ -2,7 +2,6 @@ import type { WebWorkerMLCEngine, InitProgressReport } from '@mlc-ai/web-llm';
 import type * as domain from '@/domain';
 import * as lib from '@/lib';
 import type { StreamChunk } from './stream';
-
 export const WEBLLM_CONTEXT_OPTIONS = lib.providerDefaults.WEBLLM_CONTEXT_OPTIONS;
 export type WebLLMContextSize = lib.providerDefaults.WebLLMContextSize;
 export type WebLLMModelEntry = lib.providerTypes.WebLLMModelEntry;
