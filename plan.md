@@ -140,13 +140,19 @@ These parts are already in place:
 - [x] top-level source areas exist
 - [x] root public barrels exist
 - [x] cross-area imports are checked programmatically
+- [x] import boundary checks use TypeScript AST, not source-regex parsing
 - [x] namespace-style cross-area imports are enforced
 - [x] approved public submodules are whitelisted
 - [x] `view -> app only` is enforced mechanically
 - [x] public API contract snapshots exist under `src/tests/contracts`
 - [x] canonical mock factories exist under `src/tests/mocks`
+- [x] canonical mock factories are checked against public API contracts
+- [x] top-level public barrels have required nested public API tests
 - [x] `external` has no `svelte` filenames
 - [x] non-component `svelte` test filenames were cleaned up where possible
+- [x] `src/**` tests are `*.test.ts` only
+- [x] `app.runtime` has been deleted
+- [x] view bootstrap/save flows go through `app.bootstrap`
 
 ## Current Constraints
 
@@ -160,37 +166,38 @@ Current required rune-backed files:
 - `src/view/routes/router.svelte.ts`
 - `src/view/components/shadcn/ui/sidebar/context.svelte.ts`
 
+## Proven Checks
+
+These checks have been deliberately tripped and confirmed to fail when violated:
+
+- [x] `check:imports`
+- [x] `check:contracts`
+- [x] `check:public-tests`
+
+Current confidence:
+
+- [x] top-level module boundary import enforcement is rock solid
+- [x] root public API drift is strongly guarded
+- [x] root mock/test drift is strongly guarded
+- [ ] third-party package import allowlists are not enforced yet
+- [ ] same-area internal import discipline is intentionally still permissive
+- [ ] semantic misuse through legal imports is still possible
+
 ## Current Problems
 
-### 1. `app` still exposes lower-layer structure
+### 1. `app` still exposes thin forwarding surfaces
 
-The biggest current mismatch is that some `app` modules still forward lower-layer APIs instead of exposing app-shaped APIs.
+The biggest current mismatch is no longer structural. It is semantic.
 
-Example:
+Some `app` namespaces still forward lower-layer APIs too directly instead of exposing app-shaped operations.
 
-- `src/app/runtime/index.ts`
+Examples to review:
 
-This currently exports state and external details such as:
-
-- `chatState`
-- `docState`
-- `providerState`
-- `loadFromStorage`
-- `saveToStorage`
-
-That is not the target architecture.
-
-### 2. `app` still has compatibility-style flat exports
-
-- `src/app/index.ts`
-
-This still includes flat re-exports that weaken the namespace rule and make it easier to bypass the intended organization.
-
-### 3. Some feature barrels still flatten too much
-
-Several `app` feature barrels still use `export *` or expose lower-layer concepts too directly.
-
-That makes the app surface too loose.
+- `src/app/chat/index.ts`
+- `src/app/documents/index.ts`
+- `src/app/providers/index.ts`
+- `src/app/files/index.ts`
+- `src/app/bootstrap/index.ts`
 
 ## What We Are Trying To Achieve In `app`
 
@@ -214,7 +221,7 @@ Not disguised layer forwarding.
 
 ## Immediate Next Steps
 
-### Step 1. Audit `src/app/**` as a public API surface
+### Step 1. Audit `src/app/**` as a semantic public API surface
 
 For each public `app` namespace:
 
@@ -226,18 +233,61 @@ For each public `app` namespace:
 
 Priority:
 
-- `src/app/runtime/index.ts`
-- `src/app/index.ts`
 - `src/app/chat/index.ts`
 - `src/app/documents/index.ts`
 - `src/app/providers/index.ts`
 - `src/app/files/index.ts`
+- `src/app/bootstrap/index.ts`
 
 Status:
 
 - [ ] not done
-- [ ] `app.runtime` still needs to be audited and reduced
+- [x] `app.runtime` has been removed
 - [ ] root `app` surface still needs semantic cleanup, even though structural barrel rules are in place
+
+### Step 2. Start semantic cleanup bottom-up
+
+The next likely bottom-up target is `domain.tree`.
+
+Reason:
+
+- it likely exposes too many public functions
+- low-level tree surgery helpers probably should not be public
+- cleaning it first will make higher-layer cleanup easier
+
+Status:
+
+- [ ] not started
+
+## Testing / Contract Hardening
+
+- [x] root public API contracts exist
+- [x] root public API test presence is enforced
+- [x] root canonical mocks exist
+- [x] root canonical mocks are checked against public API contracts
+- [ ] public submodule entrypoints do not yet have the same 1:1 contract/test enforcement
+
+## Deferred / Later
+
+- [ ] strict namespace checks are AST-based at the root level; extend further only if needed
+- [ ] strict whitelist of allowed third-party/node-module imports per top-level area
+- [ ] dead code elimination pass
+- [ ] comments on every single function
+- [ ] agents/skills files for each major module once boundaries settle
+
+Note on comments:
+
+- blanket "comment every function" is still questionable
+- comments on non-obvious functions/logic may be a better target than comments on every function mechanically
+
+## Next Session Start Here
+
+If restarting fresh, start here:
+
+1. audit `src/app/**` namespace by namespace
+2. classify exports as app-shaped vs thin-but-acceptable vs bad forwarding
+3. clean the worst `app` namespace first while keeping checks green
+4. once `app` is tighter, move bottom-up into `domain.tree` public-surface cleanup
 
 ### Step 2. Remove `app.runtime` as a lower-layer facade
 

@@ -6,7 +6,6 @@
 	import { AppSidebar, SearchDialog } from '@/view/shared';
 	import { routerState } from '@/view/routes/router.svelte';
 	import { ChatView } from '@/view/classic';
-	import { CanvasView } from '@/view/canvas';
 	import LandingPage from '@/view/routes/LandingPage.svelte';
 	import * as app from '@/app';
 
@@ -15,7 +14,6 @@
 	let searchOpen = $state(false);
 	let hasHydrated = $state(false);
 
-	let canvasViewRef: ReturnType<typeof CanvasView> | null = $state(null);
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 
 	let searchItems = $derived(
@@ -91,7 +89,6 @@
 	});
 
 	function resetUIState() {
-		canvasViewRef?.resetUIState();
 		chatViewRef?.resetUIState();
 	}
 
@@ -123,7 +120,6 @@
 	function handleSearchSelect(result: app.search.SearchResult) {
 		app.chat.selectChat(result.chatIndex);
 		app.chat.setActiveExchangeId(result.exchangeId);
-		canvasViewRef?.scrollToNode(result.exchangeId);
 	}
 
 	const fileFeedback: app.files.FileCommandFeedback = {
@@ -174,11 +170,7 @@
 			onMoveDoc={app.documents.moveDocToFolder}
 		/>
 		<SidebarPrimitive.Inset>
-			{#if routerState.route === 'canvas'}
-				<CanvasView bind:this={canvasViewRef} onSearchOpen={() => (searchOpen = true)} />
-			{:else}
-				<ChatView bind:this={chatViewRef} />
-			{/if}
+			<ChatView bind:this={chatViewRef} />
 
 			{#if searchOpen}
 				<SearchDialog

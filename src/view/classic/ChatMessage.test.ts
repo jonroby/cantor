@@ -34,8 +34,8 @@ vi.mock('@/app', async () => {
 });
 
 function makeNodeData(
-	overrides: Partial<app.types.ExchangeNodeData> = {}
-): app.types.ExchangeNodeData {
+	overrides: Partial<app.chat.ExchangeNodeData> = {}
+): app.chat.ExchangeNodeData {
 	return {
 		prompt: 'Hello world',
 		response: 'Hi there',

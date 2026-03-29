@@ -7,7 +7,6 @@ import Composer from './Composer.svelte';
 function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {}) {
 	const props = {
 		composerValue: '',
-		canvasMode: false,
 		commandMode: false,
 		inputMessage: null,
 		submitDisabledReason: null,
@@ -17,7 +16,6 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 		contextLength: 128000,
 		onSubmit: vi.fn(),
 		onStop: vi.fn(),
-		onToggleCanvasMode: vi.fn(),
 		onOpenPalette: vi.fn(),
 		...overrides
 	};

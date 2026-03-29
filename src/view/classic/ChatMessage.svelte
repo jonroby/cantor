@@ -4,7 +4,7 @@
 	import { renderRichText } from '@/view/shared/katex';
 	import * as app from '@/app';
 
-	let { data }: { data: app.types.ExchangeNodeData } = $props();
+	let { data }: { data: app.chat.ExchangeNodeData } = $props();
 
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
 	let responseBlocks = $derived(

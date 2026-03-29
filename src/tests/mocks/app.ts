@@ -192,8 +192,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		search: {
 			getDefaultItems: mockFn<typeof app.search.getDefaultItems>(() => []),
 			searchChats: mockFn<typeof app.search.searchChats>(() => [])
-		},
-		types: {}
+		}
 	} satisfies AppMock;
 
 	return mergeMock<AppMock>(base, overrides);

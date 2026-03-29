@@ -25,7 +25,6 @@
 	}: Props = $props();
 
 	let composerValue = $state('');
-	let canvasMode = $state(false);
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
@@ -191,7 +190,6 @@
 <Composer
 	bind:this={composerRef}
 	bind:composerValue
-	bind:canvasMode
 	{commandMode}
 	inputMessage={commandPending ? 'Accept or reject pending changes first.' : null}
 	{submitDisabledReason}
@@ -209,7 +207,6 @@
 			app.chat.cancelStream(activeExchangeId);
 		}
 	}}
-	onToggleCanvasMode={() => (canvasMode = !canvasMode)}
 	onOpenPalette={() => (paletteOpen = true)}
 />
 

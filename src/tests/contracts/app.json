@@ -101,6 +101,5 @@
 	"search": {
 		"getDefaultItems": true,
 		"searchChats": true
-	},
-	"types": {}
+	}
 }

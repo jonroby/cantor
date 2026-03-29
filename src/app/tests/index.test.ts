@@ -10,6 +10,5 @@ describe('@/app public API', () => {
 		expect(app.documents).toBeDefined();
 		expect(app.providers).toBeDefined();
 		expect(app.files).toBeDefined();
-		expect(app.types).toBeDefined();
 	});
 });

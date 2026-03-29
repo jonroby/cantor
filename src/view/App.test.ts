@@ -15,10 +15,6 @@ vi.mock('@/view/classic', async () => ({
 	ChatView: (await import('../../tests/fixtures/ChatViewMock.svelte')).default
 }));
 
-vi.mock('@/view/canvas', async () => ({
-	CanvasView: (await import('../../tests/fixtures/CanvasViewMock.svelte')).default
-}));
-
 vi.mock('@/view/routes/LandingPage.svelte', async () => ({
 	default: (await import('../../tests/fixtures/LandingPageMock.svelte')).default
 }));
@@ -56,7 +52,7 @@ vi.mock('@/app', async () => {
 });
 
 vi.mock('@/view/routes/router.svelte', () => ({
-	routerState: { route: 'chat' as 'chat' | 'canvas' | 'landing' }
+	routerState: { route: 'chat' as 'chat' | 'landing' }
 }));
 
 import { toast } from 'svelte-sonner';

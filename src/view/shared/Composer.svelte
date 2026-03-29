@@ -4,7 +4,6 @@
 
 	interface Props {
 		composerValue: string;
-		canvasMode: boolean;
 		commandMode: boolean;
 		inputMessage: string | null;
 		submitDisabledReason: string | null;
@@ -14,13 +13,11 @@
 		contextLength: number | null;
 		onSubmit: () => void;
 		onStop: () => void;
-		onToggleCanvasMode: () => void;
 		onOpenPalette: () => void;
 	}
 
 	let {
 		composerValue = $bindable(),
-		canvasMode = $bindable(),
 		commandMode,
 		inputMessage,
 		submitDisabledReason,
@@ -30,7 +27,6 @@
 		contextLength,
 		onSubmit,
 		onStop,
-		onToggleCanvasMode: _onToggleCanvasMode,
 		onOpenPalette
 	}: Props = $props();
 
@@ -48,7 +44,7 @@
 		onSubmit();
 	}}
 >
-	<div class="composer-shell" class:canvas-mode={canvasMode}>
+	<div class="composer-shell">
 		<div class="composer-row">
 			{#if inputMessage}
 				<span class="composer-message">{inputMessage}</span>
@@ -57,11 +53,7 @@
 					bind:this={inputRef}
 					bind:value={composerValue}
 					class="composer-input"
-					placeholder={commandMode
-						? 'Command...'
-						: canvasMode
-							? 'Ask about the canvas...'
-							: (submitDisabledReason ?? 'Chat...')}
+					placeholder={commandMode ? 'Command...' : (submitDisabledReason ?? 'Chat...')}
 				/>
 			{/if}
 			{#if streaming}

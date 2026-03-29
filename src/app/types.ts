@@ -1,1 +1,1 @@
-export type { ExchangeNodeData } from '@/app/chat/types';
+export type { ExchangeNodeData } from './chat/types';
