@@ -20,7 +20,7 @@ vi.mock('./openai-compat', () => ({
 	streamOpenAICompatChat: vi.fn(() => 'openai-stream')
 }));
 
-vi.mock('@/state/providers.svelte', () => ({
+vi.mock('@/state', () => ({
 	providerState: {
 		apiKeys: {
 			claude: 'claude-key',

@@ -1,147 +1,263 @@
 # Architecture
 
-## Philosophy
+## Purpose
 
-Four layers. Dependencies flow downward only. A layer may import from any layer above it, never below. This is the one rule that cannot be broken.
+This codebase is organized to make code placement obvious.
 
-```
-┌─────────────────────────────────────────────────┐
-│  Domain                                         │
-│  The primitives. Pure types, data structures,   │
-│  and operations. No state, no effects.          │
-├─────────────────────────────────────────────────┤
-│  State                                          │
-│  Reactive stores and effectful services.        │
-│  Owns IO, persistence, networking, streaming.   │
-├─────────────────────────────────────────────────┤
-│  App                                            │
-│  Orchestration. Sequences domain logic with     │
-│  state mutations and service calls.             │
-├─────────────────────────────────────────────────┤
-│  View                                           │
-│  Svelte components. Renders state, delegates    │
-│  actions to App.                                │
-└─────────────────────────────────────────────────┘
-```
+The goal is:
 
-Each layer maps to one top-level directory:
+- clear ownership
+- predictable imports
+- minimal ambiguity for both humans and LLMs
 
-```
+## Top-Level Areas
+
+```text
 src/
-├── domain/        ← 1. Pure types and functions
-├── state/         ← 2. Reactive stores + services
-├── app/           ← 3. Orchestration
-├── view/          ← 4. Presentation
-└── assets/        ← Static files (outside the hierarchy)
+├── domain/
+├── lib/
+├── state/
+├── external/
+├── app/
+└── view/
 ```
 
-## Why this order
+Each area has one job:
 
-Domain defines the concepts the app is built on. State holds the live instances of those concepts and talks to the outside world. App wires domain logic to state changes. View renders the result. Each layer only needs to know about the layers above it.
+- `domain` = app-specific business rules
+- `lib` = generic pure support code
+- `state` = app runtime state
+- `external` = persistence and outside-world boundaries
+- `app` = orchestration
+- `view` = UI and presentation logic
 
-If you find yourself importing from a lower layer, the code is in the wrong place.
+## Dependency Rule
 
-## Testability
+Dependencies flow one way only.
 
-The layering exists to make code testable. Domain functions are pure — test them with plain data, no mocks. State modules use `$state` but are still directly testable. App functions mock their state/service dependencies. View components are tested last and least — extract logic into App or Domain first.
+Allowed imports:
 
-If you need a mock to test a domain function, the function doesn't belong in domain.
+- `domain` imports no app-specific areas
+- `lib` imports no app-specific areas
+- `state` may import `domain` and `lib`
+- `external` may import `domain` and `lib`
+- `app` may import `domain`, `lib`, `state`, and `external`
+- `view` may import `app`, `lib`, and other `view` modules
 
-## Layers
+Forbidden imports:
 
-### Domain — `src/domain/`
+- `domain` must not import `state`, `external`, `app`, or `view`
+- `lib` must not import `domain`, `state`, `external`, `app`, or `view`
+- `state` must not import `external`, `app`, or `view`
+- `external` must not import `state`, `app`, or `view`
+- `app` must not import `view`
+- `view` must not import `domain`, `state`, or `external`
 
-The base primitives. These define the concepts and the rules about them. Given the same input, always the same output. No `$state`, no `$derived`, no `fetch`, no `localStorage`, no timers.
+This means:
 
-- `tree/` — `ChatTree`, `Exchange`, `ExchangeMap`, and all tree operations. The core data model.
-- `models/` — provider definitions, model lists, logo assets. The vocabulary for LLM providers.
-- `search/` — search algorithms (substring, trigram). How you find things in chat data.
-- `validate-md/` — markdown validation. What valid markdown looks like.
+- `state` and `external` are siblings
+- `app` is the only place that coordinates them
+- `view` talks to `app`, not directly to the lower layers
 
-### State — `src/state/`
+## Ownership
 
-Reactive stores and effectful services. Imports from Domain only.
+### Domain
 
-**Stores** — reactive containers that hold data and expose read/write access:
+`domain` defines what the app means.
 
-- `chats.svelte.ts` — chat list, active chat, active exchange. Getters and setters.
-- `documents.svelte.ts` — folders, files, open doc panels.
-- `providers.svelte.ts` — active model, context length, API keys. State only.
+It owns:
 
-**Services** (`state/services/`) — effectful utilities that talk to the outside world:
+- conversation tree rules
+- branching invariants
+- copy/promote/delete semantics
+- app-specific pure transformations
 
-- `services/streams/` — XState actors for streaming LLM responses.
-- `services/database.svelte.ts` — localStorage persistence.
-- `services/io.svelte.ts` — file import/export. Pure validation logic lives in `io.ts`.
-- `services/providers/` — provider-specific HTTP clients and vault.
+It does not own:
 
-Stores do not sequence multi-step operations. Services handle IO but do not orchestrate domain + state together. That's App's job.
+- generic helpers
+- persistence logic
+- browser APIs
+- UI concepts
 
-### App — `src/app/`
+### Lib
 
-Orchestration. Each function represents a user action that coordinates domain logic, state updates, and service calls. Imports from Domain and State.
+`lib` holds generic pure support code.
 
-- `chat-actions.ts` — delete, promote, copy, build exchange node view-models.
-- `providers.ts` — connect providers, manage keys, dispatch streams.
+It owns:
 
-App is the only place where domain + state + services are composed together.
+- reusable text helpers
+- generic parsing
+- generic transforms
+- generic support logic that could make sense in many apps
 
-### View — `src/view/`
+It does not own:
 
-Svelte components. Renders state, handles interactions, delegates to App. Imports from all layers above.
+- business rules
+- state
+- side effects
+- orchestration
 
-- `classic/` — linear chat interface (default view).
-- `canvas/` — visual node graph on a pan/zoom canvas.
-- `shared/` — components used by both views: `ChatInput`, `AppSidebar`, `SearchDialog`.
-- `features/` — self-contained feature modules: model-palette, docs-panel, code-editor, python-editor, drawing-board.
-- `components/` — reusable UI primitives (custom buttons/inputs, shadcn-svelte).
-- `routes/` — hash-based router.
-- `css/` — global styles.
+### State
 
-Views can read state directly and call App functions. They should not sequence multiple state updates — that belongs in App. Pure domain queries (e.g., `getChildExchanges`) are fine for rendering.
+`state` is app runtime state.
 
-## Where things go
+This is the in-memory state the app owns while running.
 
-| You're writing...                                              | It goes in...     |
-| -------------------------------------------------------------- | ----------------- |
-| A function that takes data and returns data                    | `domain/`         |
-| A reactive `$state` or `$derived` store                        | `state/`          |
-| A function that calls `fetch`, `localStorage`, or browser APIs | `state/services/` |
-| A function that sequences domain + state + services            | `app/`            |
-| A Svelte component                                             | `view/`           |
+It owns:
 
-If you're not sure: does it need effects? No -> Domain. Does it sequence multiple steps? Yes -> App. Does it talk to the outside world? Yes -> Services.
+- chats in memory
+- active selections
+- provider selection state
+- document state in memory
+- shared runtime state used by multiple workflows
 
-## Core Data Model
+It does not own:
 
-`ChatTree` and `Exchange` from `src/domain/tree/`.
+- persistence calls
+- network calls
+- file APIs
+- browser boundary code
+- workflows
 
-- `ChatTree` bundles `rootId: string | null` with an `ExchangeMap`. Always passed together.
-- Each `Exchange` has `id`, `parentId`, `childIds`, `prompt`, `response`, `model`, `provider`, `createdAt`.
-- `response` is `null` until the model responds. This distinguishes "no response yet" from "empty response."
-- The exchange with `parentId === null` is the root. `rootId` must point to it.
-- First child path (`childIds[0]` at each node) is the main chat.
-- Additional siblings are side chats.
-- Tree utilities enforce invariants: parent/child consistency, single root, reachability, side-chat depth constraint (max 1 child).
+### External
 
-## Branching Concepts
+`external` is for boundaries outside the in-memory app.
 
-Three distinct concepts. Do not confuse them.
+It owns:
 
-**Sessions** — top-level chat conversations in the sidebar. Each has its own tree(s). Stored in `chatState`.
+- localStorage persistence
+- future SQLite persistence
+- provider HTTP clients
+- stream transport
+- browser APIs at the app boundary
+- crypto/vault
+- file import/export
+- worker bridges
 
-**Copies** — copy a conversation path into a new chat. `copyPath` (domain) produces a deep copy of the root-to-node path with new IDs. `copyToNewChat` (state) wraps it into a new `Chat` and switches to it. No depth restriction.
+It does not own:
 
-**Side Chats** — sibling branches off an existing node within the same tree. Created by selecting a node and typing. One level deep only — a side chat node can have at most 1 child. Can be promoted to become the main chat path.
+- workflows
+- runtime app state
+- UI concepts
 
-## Persistence
+### App
 
-- Chat trees and folders are stored in `localStorage` under `chat-tree-store-svelte`.
-- Open doc panels are transient — not persisted across reloads.
-- API keys are encrypted with `PBKDF2` + `AES-GCM` in the vault.
+`app` is the orchestration layer.
 
-## UI Notes
+It owns:
 
-- Canvas exchange node actions use custom CSS tooltips (`.action-tip-wrap`), not Floating UI — the canvas CSS transform breaks Floating UI positioning.
-- Classic chat message actions appear inline, not as hover overlays.
-- Sidebar pushes the main content area when open.
+- user actions
+- workflows
+- multi-step operations
+- sequencing domain rules with state updates
+- sequencing state updates with external calls
+
+It is the only layer that coordinates across architectural areas.
+
+### View
+
+`view` is the UI layer.
+
+It owns:
+
+- Svelte components
+- presentation logic
+- layout
+- ephemeral UI state
+- UI-only concepts such as panels, dialogs, tabs, focus, and display shaping
+
+It does not own:
+
+- persistence
+- provider/network clients
+- cross-layer workflows
+
+## Placement Rules
+
+Put code in `domain` when it is:
+
+- app-specific
+- pure
+- part of the business meaning of the app
+
+Put code in `lib` when it is:
+
+- generic
+- pure
+- useful outside this app’s business model
+
+Put code in `state` when it is:
+
+- app-owned runtime state
+- shared in-memory state
+- not just a local UI concern
+
+Put code in `external` when it:
+
+- crosses the app boundary
+- talks to storage, network, browser APIs, files, crypto, or workers
+
+Put code in `app` when it:
+
+- coordinates multiple steps
+- combines rules, state, and boundaries
+- represents a workflow or user action
+
+Put code in `view` when it:
+
+- exists for presentation
+- is UI-only
+- is local interaction logic
+
+## Key Distinctions
+
+### Domain vs Lib
+
+- `domain` is app-specific meaning
+- `lib` is generic support code
+
+If code would still make sense in many unrelated apps, it probably belongs in `lib`, not `domain`.
+
+### State vs View
+
+- `state` is app runtime state
+- `view` is UI logic and presentation state
+
+If the state is the app’s working memory, it belongs in `state`.
+If it only exists to make the interface work, it belongs in `view`.
+
+### State vs External
+
+- `state` is in-memory app state
+- `external` is persistence and integration boundaries
+
+The app may load state from `external`, but `state` does not own boundary logic.
+
+### Domain vs External
+
+- `domain` defines business rules
+- `external` defines storage and integration rules
+
+If a rule should still exist after replacing localStorage with SQLite, it is probably a domain rule.
+
+## Functional Bias
+
+This codebase should be functionally biased, not functionally dogmatic.
+
+- `domain` should be strongly functional
+- `lib` should be strongly functional
+- `external` should be thin and explicit
+- `app` should orchestrate in clear steps
+- `state` should stay simple
+- `view` should stay pragmatic
+
+## More Detail
+
+See:
+
+- [domain.md](/Users/jonroby/ai/superset-svelte/architecture/domain.md)
+- [lib.md](/Users/jonroby/ai/superset-svelte/architecture/lib.md)
+- [state.md](/Users/jonroby/ai/superset-svelte/architecture/state.md)
+- [external.md](/Users/jonroby/ai/superset-svelte/architecture/external.md)
+- [app.md](/Users/jonroby/ai/superset-svelte/architecture/app.md)
+- [view.md](/Users/jonroby/ai/superset-svelte/architecture/view.md)

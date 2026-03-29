@@ -17,7 +17,7 @@ import {
 	updateExchangeResponse,
 	validateChatTree
 } from '@/domain/tree';
-import type { StreamChunk } from '@/state/services/providers/stream';
+import type { StreamChunk } from '@/external/providers/stream';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

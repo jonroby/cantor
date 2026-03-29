@@ -5,7 +5,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"prebuild": "bun run check && bun run lint",
+		"check:imports": "bun ./scripts/check-imports.mjs",
+		"prebuild": "bun run check:imports && bun run check && bun run lint",
 		"build": "vite build",
 		"preview": "vite preview",
 		"check": "svelte-check --tsconfig ./tsconfig.json",

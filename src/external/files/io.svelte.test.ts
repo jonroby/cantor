@@ -21,7 +21,7 @@ vi.mock('jszip', () => {
 	};
 });
 
-vi.mock('@/state/chats.svelte', async () => {
+vi.mock('@/state', async () => {
 	const { buildEmptyTree, addExchangeResult, updateExchangeResponse, getMainChatTail } =
 		await vi.importActual<typeof import('@/domain/tree')>('@/domain/tree');
 	const empty = buildEmptyTree();
@@ -40,30 +40,27 @@ vi.mock('@/state/chats.svelte', async () => {
 				}
 			],
 			activeChatIndex: 0
+		},
+		docState: {
+			folders: [
+				{
+					id: 'folder-1',
+					name: 'Test Folder',
+					files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
+				}
+			]
 		}
 	};
 });
 
-vi.mock('@/state/documents.svelte', () => ({
-	docState: {
-		folders: [
-			{
-				id: 'folder-1',
-				name: 'Test Folder',
-				files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
-			}
-		]
-	}
-}));
-
-vi.mock('@/domain/validate-md', () => ({
+vi.mock('@/lib/validate-md', () => ({
 	validate: vi.fn().mockReturnValue([])
 }));
 
 import { toast } from 'svelte-sonner';
-import { chatState } from '@/state/chats.svelte';
-import { docState } from '@/state/documents.svelte';
-import { validate } from '@/domain/validate-md';
+import { chatState } from '@/state';
+import { docState } from '@/state';
+import { validate } from '@/lib/validate-md';
 import {
 	downloadToFile,
 	downloadChat,

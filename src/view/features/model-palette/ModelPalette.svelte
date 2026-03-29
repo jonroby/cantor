@@ -6,7 +6,7 @@
 		WebLLMStatus,
 		WebLLMModelEntry,
 		WebLLMContextSize
-	} from '@/state/services/providers/webllm';
+	} from '@/external/providers/webllm';
 	import { PROVIDER_LOGOS } from '@/domain/models/logos';
 	import OllamaTab from './OllamaTab.svelte';
 	import FrontierTab from './FrontierTab.svelte';

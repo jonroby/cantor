@@ -4,13 +4,12 @@ import {
 	type ActiveModel,
 	type OllamaStatus
 } from '@/domain/models';
-import { DEFAULT_OLLAMA_URL } from '@/state/services/providers/ollama';
 import {
+	DEFAULT_OLLAMA_URL,
 	WEBLLM_CONTEXT_OPTIONS,
-	type WebLLMStatus,
-	type WebLLMModelEntry,
 	type WebLLMContextSize
-} from '@/state/services/providers/webllm';
+} from '@/lib/provider-defaults';
+import type { WebLLMStatus, WebLLMModelEntry } from '@/lib/provider-types';
 
 export { WEBLLM_CONTEXT_OPTIONS };
 export type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize, ActiveModel, OllamaStatus };

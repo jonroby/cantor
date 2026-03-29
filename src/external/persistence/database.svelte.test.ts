@@ -7,8 +7,8 @@ import {
 	migrateVaultStorage,
 	clearVaultStorage
 } from './database.svelte';
-import { chatState } from '@/state/chats.svelte';
-import { docState } from '@/state/documents.svelte';
+import { chatState } from '@/state';
+import { docState } from '@/state';
 import {
 	addExchangeResult,
 	buildEmptyTree,

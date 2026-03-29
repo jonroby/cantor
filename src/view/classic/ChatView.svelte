@@ -19,13 +19,13 @@
 	} from './panel';
 	import type { Panel } from './panel';
 	import Document from '@/view/features/document/Document.svelte';
-	import { docState, updateDocContent } from '@/state/documents.svelte';
+	import { docState, updateDocContent } from '@/state';
 	import {
 		getActiveChat,
 		getActiveExchanges,
 		getActiveExchangeId,
 		setActiveExchangeId
-	} from '@/state/chats.svelte';
+	} from '@/state';
 	import {
 		getExchangeNodeData as getNodeData,
 		performDelete,
@@ -33,13 +33,13 @@
 		performCopy,
 		performQuickAsk,
 		getDeleteMode
-	} from '@/app/chat-actions';
+	} from '@/app/chat';
 	import {
 		clearDocumentLayout,
 		performAddFolderDocumentToChat,
 		performCloseDocumentPanel
 	} from '@/app/documents';
-	import { providerState } from '@/state/providers.svelte';
+	import { providerState } from '@/state';
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());

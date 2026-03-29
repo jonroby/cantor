@@ -17,7 +17,7 @@
 		deleteChat as deleteChatAction,
 		renameChat,
 		setActiveExchangeId
-	} from '@/state/chats.svelte';
+	} from '@/state';
 	import {
 		docState,
 		newFolder,
@@ -26,9 +26,9 @@
 		deleteDocFromFolder,
 		renameDocInFolder,
 		moveDocToFolder
-	} from '@/state/documents.svelte';
-	import { loadFromStorage, saveToStorage } from '@/state/services/database.svelte';
-	import type { ChatFolder } from '@/state/documents.svelte';
+	} from '@/state';
+	import { loadFromStorage, saveToStorage } from '@/external/persistence/database';
+	import type { ChatFolder } from '@/state';
 	import {
 		downloadChat,
 		uploadChat,
@@ -36,9 +36,9 @@
 		uploadDocToFolder,
 		uploadFolder,
 		uploadFolderToFolder
-	} from '@/state/services/io.svelte';
+	} from '@/app/files';
 	import { init as initProviders, autoConnectOllama } from '@/app/providers';
-	import { cancelStreamsForChat } from '@/state/services/streams';
+	import { cancelStreamsForChat } from '@/external/streams';
 	import {
 		performAddFolderDocumentToChat,
 		performCreateDocument,

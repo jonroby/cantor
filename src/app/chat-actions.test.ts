@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/state/chats.svelte', () => ({
+vi.mock('@/state', () => ({
 	replaceActiveTree: vi.fn(),
 	setActiveExchangeId: vi.fn(),
 	copyToNewChat: vi.fn(),
@@ -8,7 +8,7 @@ vi.mock('@/state/chats.svelte', () => ({
 	replaceTreeByChatId: vi.fn()
 }));
 
-vi.mock('@/state/services/streams', () => ({
+vi.mock('@/external/streams', () => ({
 	isStreaming: vi.fn(() => false),
 	cancelStreamsForExchanges: vi.fn(),
 	startStream: vi.fn(),

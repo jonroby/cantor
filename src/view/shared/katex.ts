@@ -1,4 +1,4 @@
-import { marked } from '@/domain/document-map';
+import { marked } from '@/lib/document-map';
 
 // CLEANUP: Output is rendered via {@html} without sanitization. Add DOMPurify (or similar) after
 // the marked + KaTeX pipeline to prevent XSS from user prompts or LLM responses containing HTML.

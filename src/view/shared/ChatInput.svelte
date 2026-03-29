@@ -8,13 +8,8 @@
 		getPathTokenTotal,
 		type Message
 	} from '@/domain/tree';
-	import { getActiveChat, getActiveExchanges, getActiveExchangeId } from '@/state/chats.svelte';
-	import {
-		providerState,
-		WEBLLM_CONTEXT_OPTIONS,
-		selectModel,
-		updateContextLength
-	} from '@/state/providers.svelte';
+	import { getActiveChat, getActiveExchanges, getActiveExchangeId } from '@/state';
+	import { providerState, WEBLLM_CONTEXT_OPTIONS, selectModel, updateContextLength } from '@/state';
 	import {
 		connectOllama,
 		loadWebLLMModel_ as loadWebLLMModel,
@@ -25,9 +20,9 @@
 		forgetKey,
 		fetchOllamaContextLength
 	} from '@/app/providers';
-	import { performSubmitPrompt } from '@/app/chat-actions';
-	import { isStreaming, cancelStream } from '@/state/services/streams';
-	import { getProviderStream } from '@/state/services/providers/stream';
+	import { submitPrompt as performSubmitPrompt } from '@/app/chat';
+	import { isStreaming, cancelStream } from '@/external/streams';
+	import { getProviderStream } from '@/external/providers/stream';
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;

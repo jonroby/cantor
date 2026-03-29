@@ -4,9 +4,9 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ChatView from './ChatView.svelte';
-import { chatState, getActiveExchanges } from '@/state/chats.svelte';
-import { docState } from '@/state/documents.svelte';
-import { providerState } from '@/state/providers.svelte';
+import { chatState, getActiveExchanges } from '@/state';
+import { docState } from '@/state';
+import { providerState } from '@/state';
 import {
 	buildEmptyTree,
 	addExchangeResult,
@@ -19,7 +19,7 @@ import type { Provider } from '@/domain/models';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@/state/services/streams', () => ({
+vi.mock('@/external/streams', () => ({
 	startStream: vi.fn(),
 	cancelStream: vi.fn(),
 	cancelAllStreams: vi.fn(),
@@ -33,7 +33,7 @@ vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
 }));
 
-vi.mock('@/domain/document-map/index', () => ({
+vi.mock('@/lib/document-map/index', () => ({
 	mapDocument: (text: string) => (text ? [{ source: text, html: text }] : []),
 	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
 }));
@@ -72,11 +72,11 @@ vi.mock('marked', () => ({
 	}
 }));
 
-vi.mock('@/state/services/providers/stream', () => ({
+vi.mock('@/external/providers/stream', () => ({
 	getProviderStream: vi.fn()
 }));
 
-vi.mock('@/domain/validate-md', () => ({
+vi.mock('@/lib/validate-md', () => ({
 	validate: () => []
 }));
 
@@ -232,7 +232,7 @@ describe('ChatView', () => {
 		});
 
 		it('calls startStream after submit', async () => {
-			const { startStream } = await import('@/state/services/streams');
+			const { startStream } = await import('@/external/streams');
 			resetState(buildVisibleTree(1));
 			render(ChatView);
 

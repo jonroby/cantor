@@ -1,17 +1,12 @@
-import { getActiveChat } from '@/state/chats.svelte';
-import {
-	docState,
-	newDocInFolder,
-	selectDoc,
-	closeDoc,
-	type ChatFolder
-} from '@/state/documents.svelte';
+import { getActiveChat } from '@/state';
+import { docState, newDocInFolder, selectDoc, closeDoc, type ChatFolder } from '@/state';
 import {
 	getPersistedLayout,
 	saveToStorage,
 	setPersistedLayout
-} from '@/state/services/database.svelte';
+} from '@/external/persistence/database';
 import { performAddDocToChat } from './chat-actions';
+export { getFolderFile } from '@/app/documents/queries';
 
 interface RestoreResult {
 	folderId: string;

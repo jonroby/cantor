@@ -1,2 +1,3 @@
+bun run check:imports
 bun run check
 bunx lint-staged

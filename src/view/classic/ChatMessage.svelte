@@ -2,9 +2,9 @@
 	import DOMPurify from 'dompurify';
 	import Button from '@/view/components/custom/button.svelte';
 	import { renderRichText } from '@/view/shared/katex';
-	import { mapDocument } from '@/domain/document-map/index';
+	import { mapDocument } from '@/lib/document-map/index';
 	import { PROVIDER_LOGOS } from '@/domain/models/logos';
-	import type { ExchangeNodeData } from '@/app/types';
+	import type { ExchangeNodeData } from '@/app/chat/types';
 
 	let { data }: { data: ExchangeNodeData } = $props();
 

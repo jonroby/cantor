@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import ChatMessage from './ChatMessage.svelte';
-import type { ExchangeNodeData } from '@/app/types';
+import type { ExchangeNodeData } from '@/app/chat/types';
 
 vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
 }));
 
-vi.mock('@/domain/document-map/index', () => ({
+vi.mock('@/lib/document-map/index', () => ({
 	mapDocument: (text: string) =>
 		text
 			? text.split('\n\n').map((block) => ({

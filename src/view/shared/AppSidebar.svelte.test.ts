@@ -5,8 +5,8 @@ import userEvent from '@testing-library/user-event';
 import AppSidebarHarness from '../../../tests/fixtures/AppSidebarHarness.svelte';
 import AppSidebarStateHarness from '../../../tests/fixtures/AppSidebarStateHarness.svelte';
 import { toast } from 'svelte-sonner';
-import { chatState } from '@/state/chats.svelte';
-import { docState } from '@/state/documents.svelte';
+import { chatState } from '@/state';
+import { docState } from '@/state';
 
 vi.mock('svelte-sonner', () => ({
 	toast: {

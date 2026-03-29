@@ -4,7 +4,7 @@
 		WebLLMStatus,
 		WebLLMModelEntry,
 		WebLLMContextSize
-	} from '@/state/services/providers/webllm';
+	} from '@/external/providers/webllm';
 	import Input from '@/view/components/custom/input.svelte';
 
 	interface Props {

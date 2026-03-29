@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ModelPalette from './ModelPalette.svelte';
 import type { ActiveModel } from '@/domain/models';
-import type { WebLLMContextSize } from '@/state/services/providers/webllm';
+import type { WebLLMContextSize } from '@/external/providers/webllm';
 
 vi.mock('@/domain/models/logos', () => ({
 	PROVIDER_LOGOS: {}

@@ -3,8 +3,8 @@
 	import { Marked } from 'marked';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
-	import { validate as validateMd } from '@/domain/validate-md';
-	import { diffLines } from '@/domain/diff';
+	import { validate as validateMd } from '@/lib/validate-md';
+	import { diffLines } from '@/lib/diff';
 	import { PROVIDER_LOGOS } from '@/domain/models/logos';
 	import type { Provider } from '@/domain/models';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';

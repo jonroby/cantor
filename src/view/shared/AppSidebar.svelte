@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { renameWithDedup } from '@/domain/rename';
+	import { renameWithDedup } from '@/lib/rename';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.svelte.js';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
 	import type { Chat } from '@/domain/tree';
-	import type { ChatFolder } from '@/state/documents.svelte';
+	import type { ChatFolder } from '@/state';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from './ConfirmDeleteDialog.svelte';

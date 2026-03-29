@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/state/services/providers/ollama', () => ({
+vi.mock('@/external/providers/ollama', () => ({
 	DEFAULT_OLLAMA_URL: 'http://localhost:11434',
 	fetchAvailableModels: vi.fn(),
 	fetchModelContextLength: vi.fn()
 }));
 
-vi.mock('@/state/services/providers/webllm', () => ({
+vi.mock('@/external/providers/webllm', () => ({
 	getWebLLMModels: vi.fn(() => [{ id: 'web-model', label: 'web-model', vramMB: 1024 }]),
 	loadWebLLMModel: vi.fn(),
 	deleteModelCache: vi.fn(),
 	deleteAllModelCaches: vi.fn()
 }));
 
-vi.mock('@/state/services/providers/vault', () => ({
+vi.mock('@/external/providers/vault', () => ({
 	clearProviderKey: vi.fn(),
 	loadAllApiKeys: vi.fn(),
 	migrateVault: vi.fn(),
@@ -21,16 +21,16 @@ vi.mock('@/state/services/providers/vault', () => ({
 	storedProviders: vi.fn(() => ['claude'])
 }));
 
-import { providerState } from '@/state/providers.svelte';
+import { providerState } from '@/state';
 import {
 	connectOllama,
 	fetchOllamaContextLength,
 	init,
 	loadWebLLMModel_ as loadWebLLMModel
 } from './providers';
-import { fetchAvailableModels, fetchModelContextLength } from '@/state/services/providers/ollama';
-import { loadWebLLMModel as loadWebLLMModelService } from '@/state/services/providers/webllm';
-import { migrateVault, storedProviders } from '@/state/services/providers/vault';
+import { fetchAvailableModels, fetchModelContextLength } from '@/external/providers/ollama';
+import { loadWebLLMModel as loadWebLLMModelService } from '@/external/providers/webllm';
+import { migrateVault, storedProviders } from '@/external/providers/vault';
 
 describe('app/providers', () => {
 	beforeEach(() => {

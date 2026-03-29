@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createActor, type SnapshotFrom } from 'xstate';
 import { streamMachine, type StreamMachineInput } from './stream.machine';
-import type { StreamChunk } from '@/state/services/providers/stream';
+import type { StreamChunk } from '@/external/providers/stream';
 import type { Message } from '@/domain/tree';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
