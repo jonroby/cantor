@@ -56,8 +56,7 @@ export function initialize() {
 	}
 
 	const restoredDocument = documents.restoreOpenDocument();
-	providers.initProviders();
-	providers.autoConnectOllama();
+	void providers.initialize();
 
 	return { restoredDocument, hadDuplicateRenames };
 }

@@ -321,6 +321,71 @@ If restarting fresh, start here:
 3. clean the worst `app` namespace first while keeping checks green
 4. once `app` is tighter, move bottom-up into `domain.tree` public-surface cleanup
 
+## Fresh-Start Instructions
+
+If context is wiped, assume these are true unless the repo proves otherwise:
+
+- top-level module boundary enforcement is already solid
+- root public barrels are intentional and namespaced
+- `view -> app only` is intentional and should not be weakened
+- Canvas has been deleted and should not be reintroduced accidentally
+- `app.search` is a real namespace and should stay separate from `app.chat`
+- the current problem is semantic cleanup, not structural folder churn
+
+When restarting:
+
+1. Do not redesign the architecture again.
+2. Do not re-open the `state vs view` debate unless the repo itself forces it.
+3. Do not add new compatibility barrels or flat root exports.
+4. Treat old pass-through exports as suspicious by default.
+5. Prefer deleting duplicate aliases over preserving them.
+6. Keep public APIs small, but do not remove distinct concerns just because they are small.
+7. Search is distinct. Content may or may not be; decide carefully.
+8. Do not touch `scripts/`, `src/tests/contracts/`, or `src/tests/mocks/` unless a change genuinely requires it.
+9. If those files do change, rerun all guardrails immediately.
+
+What to preserve:
+
+- `app.search` remains separate
+- `app.bootstrap` remains the app-facing startup/save boundary
+- root-level fake `src/app/*.ts` compatibility files should stay gone
+- duplicate `perform*` aliases should stay gone
+- duplicate provider `init` alias should stay gone
+
+How to work:
+
+1. Pick one `app` namespace.
+2. List its public exports.
+3. Mark each export:
+   - app-shaped
+   - thin-but-acceptable
+   - bad forwarding
+4. Remove only the bad forwarding that is clearly unnecessary.
+5. Keep checks green after each small cut.
+
+Always rerun:
+
+- `bun run check:imports`
+- `bun run check:contracts`
+- `bun run check:public-tests`
+- `bun run typecheck`
+- `bun run test`
+
+Current likely targets:
+
+- `src/app/chat/index.ts`
+- `src/app/documents/index.ts`
+- `src/app/providers/index.ts`
+- `src/app/files/index.ts`
+- `src/app/content/index.ts`
+
+Current likely non-targets:
+
+- `src/app/search/index.ts`
+- root barrel structure
+- test naming rules
+- AST import checker design
+
 ### Step 2. Remove `app.runtime` as a lower-layer facade
 
 Replace broad `app.runtime.*` forwarding with feature-oriented exports in:

@@ -4,6 +4,7 @@
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
 	import * as app from '@/app';
+	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
 
 	interface Props {
@@ -393,9 +394,9 @@
 			{#if commandStreaming}
 				<div class="docs-streaming">
 					<div class="chatmsg-response-header">
-						{#if commandProvider && app.providers.PROVIDER_LOGOS[commandProvider]}
+						{#if commandProvider && PROVIDER_LOGOS[commandProvider]}
 							<img
-								src={app.providers.PROVIDER_LOGOS[commandProvider]}
+								src={PROVIDER_LOGOS[commandProvider]}
 								alt={commandProvider}
 								class="chatmsg-provider-logo"
 							/>

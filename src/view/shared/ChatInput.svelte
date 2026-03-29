@@ -73,14 +73,6 @@
 		tick().then(() => composerRef?.focus());
 	});
 
-	$effect(() => {
-		app.providers.updateContextLength();
-	});
-
-	$effect(() => {
-		app.providers.fetchOllamaContextLength();
-	});
-
 	async function submitPrompt() {
 		if (commandMode) {
 			await submitCommand();
@@ -161,11 +153,7 @@
 
 		let responseText = '';
 		try {
-			const stream = app.providers.getProviderStream(
-				providerState.activeModel,
-				messages,
-				abort.signal
-			);
+			const stream = app.providers.streamText(providerState.activeModel, messages, abort.signal);
 			for await (const chunk of stream) {
 				if (chunk.type === 'delta') {
 					responseText += chunk.delta;
@@ -215,26 +203,13 @@
 	onClose={() => {
 		paletteOpen = false;
 	}}
-	activeModel={providerState.activeModel}
+	state={providerState}
 	onSelectModel={app.providers.selectModel}
-	ollamaUrl={providerState.ollamaUrl}
-	ollamaStatus={providerState.ollamaStatus}
-	ollamaModels={providerState.ollamaModels}
-	onConnectOllama={app.providers.connectOllama}
-	apiKeys={providerState.apiKeys}
-	vaultProviders={providerState.vaultProviders}
-	onUnlockKeys={app.providers.unlockKeys}
-	onSaveKey={app.providers.saveKey}
-	onForgetKey={app.providers.forgetKey}
-	webllmStatus={providerState.webllmStatus}
-	webllmProgress={providerState.webllmProgress}
-	webllmProgressText={providerState.webllmProgressText}
-	webllmModels={providerState.webllmModels}
-	webllmError={providerState.webllmError}
-	webllmContextSize={providerState.webllmContextSize}
-	webllmContextOptions={app.providers.WEBLLM_CONTEXT_OPTIONS}
-	onWebLLMContextSizeChange={app.providers.setWebLLMContextSize}
-	onLoadWebLLMModel={app.providers.loadWebLLMModel_}
-	onDeleteWebLLMCache={app.providers.deleteWebLLMCache}
-	onDeleteAllWebLLMCaches={app.providers.deleteAllWebLLMCaches}
+	onConnect={app.providers.connect}
+	onUnlockCredentials={app.providers.unlockCredentials}
+	onSaveCredential={app.providers.saveCredential}
+	onClearCredential={app.providers.clearCredential}
+	onSetContextSize={app.providers.setContextSize}
+	onRemoveCachedModel={app.providers.removeCachedModel}
+	onClearCachedModels={app.providers.clearCachedModels}
 />

@@ -13,6 +13,10 @@ vi.mock('dompurify', () => ({
 	default: { sanitize: (html: string) => html }
 }));
 
+vi.mock('@/view/assets/provider-logos', () => ({
+	PROVIDER_LOGOS: {}
+}));
+
 vi.mock('@/app', async () => {
 	const { createAppMock } = await import('@/tests/mocks/app');
 	return createAppMock({
@@ -26,9 +30,6 @@ vi.mock('@/app', async () => {
 					: []
 			),
 			marked: { lexer: vi.fn(() => []), parser: vi.fn(() => ''), parse: vi.fn((t: string) => t) }
-		},
-		providers: {
-			PROVIDER_LOGOS: {}
 		}
 	});
 });

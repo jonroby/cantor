@@ -4,12 +4,6 @@ import type * as domain from '@/domain';
 import type * as state from '@/state';
 import appContract from '@/tests/contracts/app.json';
 import { marked } from '@/app/content';
-import {
-	PROVIDER_CONFIG,
-	PROVIDER_LOGOS,
-	PROVIDER_MODELS,
-	WEBLLM_CONTEXT_OPTIONS
-} from '@/app/providers/index';
 
 import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
 
@@ -19,18 +13,41 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 	const providerStateBacking: ReturnType<typeof app.providers.getState> = {
 		activeModel: null,
 		contextLength: null,
-		ollamaUrl: 'http://localhost:11434',
-		ollamaStatus: 'disconnected',
-		ollamaModels: [],
-		apiKeys: {},
-		vaultProviders: [],
-		operationError: null,
-		webllmStatus: 'idle',
-		webllmProgress: 0,
-		webllmProgressText: '',
-		webllmModels: [],
-		webllmError: null,
-		webllmContextSize: 4_096
+		providers: [
+			{
+				id: 'claude',
+				name: 'Claude',
+				kind: 'remote',
+				credentialState: 'missing',
+				models: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', enabled: true }]
+			},
+			{
+				id: 'ollama',
+				name: 'Ollama',
+				kind: 'local',
+				connection: {
+					status: 'disconnected',
+					value: 'http://localhost:11434',
+					label: 'Server URL'
+				},
+				models: []
+			},
+			{
+				id: 'webllm',
+				name: 'WebLLM',
+				kind: 'embedded',
+				context: {
+					value: 4_096,
+					options: [
+						{ label: '4K', value: 4_096 },
+						{ label: '8K', value: 8_192 },
+						{ label: '16K', value: 16_384 }
+					]
+				},
+				loadState: { status: 'idle', progress: 0, text: '', error: null },
+				models: []
+			}
+		]
 	};
 
 	const appStateBacking = {
@@ -47,7 +64,6 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		getActiveChat: vi.fn(),
 		getActiveExchangeId: vi.fn(),
 		getActiveExchanges: vi.fn(() => ({})),
-		getProviderStream: vi.fn(),
 		isStreaming: vi.fn(() => false),
 		loadFromStorage: vi.fn(),
 		moveDocToFolder: vi.fn(),
@@ -61,7 +77,6 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		selectChat: vi.fn(),
 		selectModel: vi.fn(),
 		setActiveExchangeId: vi.fn(),
-		updateContextLength: vi.fn(),
 		updateDocContent: vi.fn()
 	};
 
@@ -148,35 +163,17 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			uploadFolderToFolder: mockFn<typeof app.files.uploadFolderToFolder>()
 		},
 		providers: {
-			autoConnectOllama: mockFn<typeof app.providers.autoConnectOllama>(),
-			connectOllama: mockFn<typeof app.providers.connectOllama>(),
-			deleteAllWebLLMCaches: mockFn<typeof app.providers.deleteAllWebLLMCaches>(),
-			deleteWebLLMCache: mockFn<typeof app.providers.deleteWebLLMCache>(),
-			fetchOllamaContextLength: mockFn<typeof app.providers.fetchOllamaContextLength>(),
-			forgetKey: mockFn<typeof app.providers.forgetKey>(),
-			initProviders: mockFn<typeof app.providers.initProviders>(),
-			KEY_BASED_PROVIDERS: [
-				'claude',
-				'openai',
-				'gemini',
-				'moonshot',
-				'qwen',
-				'deepseek',
-				'mistral',
-				'groq'
-			] as const,
-			loadWebLLMModel_: mockFn<typeof app.providers.loadWebLLMModel_>(),
-			PROVIDER_CONFIG,
-			PROVIDER_LOGOS,
-			PROVIDER_MODELS,
+			clearCachedModels: mockFn<typeof app.providers.clearCachedModels>(),
+			clearCredential: mockFn<typeof app.providers.clearCredential>(),
+			connect: mockFn<typeof app.providers.connect>(),
 			getState: mockFn<typeof app.providers.getState>(() => providerStateBacking),
-			getProviderStream: mockFn<typeof app.providers.getProviderStream>(),
-			saveKey: mockFn<typeof app.providers.saveKey>(),
+			initialize: mockFn<typeof app.providers.initialize>(),
+			removeCachedModel: mockFn<typeof app.providers.removeCachedModel>(),
+			saveCredential: mockFn<typeof app.providers.saveCredential>(),
 			selectModel: mockFn<typeof app.providers.selectModel>(),
-			setWebLLMContextSize: mockFn<typeof app.providers.setWebLLMContextSize>(),
-			unlockKeys: mockFn<typeof app.providers.unlockKeys>(),
-			updateContextLength: mockFn<typeof app.providers.updateContextLength>(),
-			WEBLLM_CONTEXT_OPTIONS
+			setContextSize: mockFn<typeof app.providers.setContextSize>(),
+			streamText: mockFn<typeof app.providers.streamText>(),
+			unlockCredentials: mockFn<typeof app.providers.unlockCredentials>()
 		},
 		search: {
 			getDefaultItems: mockFn<typeof app.search.getDefaultItems>(() => []),

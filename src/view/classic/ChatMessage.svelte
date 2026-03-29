@@ -3,6 +3,7 @@
 	import Button from '@/view/components/custom/button.svelte';
 	import { renderRichText } from '@/view/shared/katex';
 	import * as app from '@/app';
+	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
 
 	let { data }: { data: app.chat.ExchangeNodeData } = $props();
 
@@ -110,9 +111,9 @@
 
 		<div class="chatmsg-response">
 			<div class="chatmsg-response-header">
-				{#if data.provider && app.providers.PROVIDER_LOGOS[data.provider]}
+				{#if data.provider && PROVIDER_LOGOS[data.provider]}
 					<img
-						src={app.providers.PROVIDER_LOGOS[data.provider]}
+						src={PROVIDER_LOGOS[data.provider]}
 						alt={data.provider}
 						class="chatmsg-provider-logo"
 					/>
