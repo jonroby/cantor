@@ -371,6 +371,54 @@
 		tick().then(() => chatInputRef?.focus());
 	}
 
+	function getExchangePath(exchangeId: string): app.chat.Exchange[] {
+		if (!activeExchanges || !activeExchanges[exchangeId]) return [];
+
+		const path: app.chat.Exchange[] = [];
+		let current: app.chat.Exchange | undefined = activeExchanges[exchangeId];
+		while (current) {
+			path.push(current);
+			current = current.parentId ? activeExchanges[current.parentId] : undefined;
+		}
+		return path.reverse();
+	}
+
+	function getSidePanelTarget(
+		exchangeId: string
+	): { parentId: string; sideChatIndex: number } | null {
+		const path = getExchangePath(exchangeId);
+		for (let index = 1; index < path.length; index += 1) {
+			const parent = path[index - 1];
+			const child = path[index];
+			if (!parent || !child) continue;
+			if ((parent.childIds[0] ?? null) === child.id) continue;
+
+			const sideChats = app.chat.getSideChats(activeTree, parent.id);
+			const sideChatIndex = sideChats.findIndex((sideChat) => sideChat[0]?.id === child.id);
+			if (sideChatIndex >= 0) {
+				return { parentId: parent.id, sideChatIndex };
+			}
+			return null;
+		}
+		return null;
+	}
+
+	export async function revealExchange(exchangeId: string) {
+		const sideTarget = getSidePanelTarget(exchangeId);
+		if (sideTarget) {
+			sidePanel = createSideChatPanel(sideTarget.parentId, sideTarget.sideChatIndex);
+			focusedPanelId = sidePanel.id;
+			await tick();
+			app.chat.selectExchange(exchangeId);
+			await scrollToNode(exchangeId);
+			return;
+		}
+
+		focusedPanelId = mainPanel.id;
+		app.chat.selectExchange(exchangeId);
+		await scrollToNode(exchangeId);
+	}
+
 	export function showDocument(folderId: string, fileId: string) {
 		sidePanel = createDocumentPanel(folderId, fileId);
 		focusedPanelId = sidePanel.id;

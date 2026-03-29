@@ -252,6 +252,21 @@ describe('ChatView', () => {
 			expect(screen.getByText('Side response 1')).toBeInTheDocument();
 		});
 
+		it('revealExchange opens the side panel for a side-chat result', async () => {
+			const { tree } = buildTreeWithSideChat();
+			resetState(tree);
+			const view = render(ChatView);
+
+			await view.component.revealExchange(
+				Object.values(tree.exchanges).find((exchange) => exchange.prompt.text === 'Side prompt 1')!
+					.id
+			);
+			await tick();
+
+			expect(screen.getByText('From this message')).toBeInTheDocument();
+			expect(screen.getByText('Side prompt 1')).toBeInTheDocument();
+		});
+
 		it('close button closes side panel', async () => {
 			const { tree } = buildTreeWithSideChat();
 			resetState(tree);

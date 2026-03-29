@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
 	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
 	import { toast } from 'svelte-sonner';
@@ -103,9 +104,10 @@
 		app.documents.addDocumentToChat(folderId, fileId);
 	}
 
-	function handleSearchSelect(result: { chatIndex: number; exchangeId: string }) {
-		app.chat.selectChat(result.chatIndex);
-		app.chat.selectExchange(result.exchangeId);
+	async function handleSearchSelect(result: { chatIndex: number; exchangeId: string }) {
+		selectChat(result.chatIndex);
+		await tick();
+		chatViewRef?.revealExchange(result.exchangeId);
 	}
 
 	const fileFeedback = {

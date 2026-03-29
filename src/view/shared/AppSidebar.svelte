@@ -143,6 +143,11 @@
 		const id = onNewFolder();
 		expandedFolders = { ...expandedFolders, [id]: true };
 		newlyCreatedFolderId = id;
+		tick().then(() => {
+			if (newlyCreatedFolderId === id) {
+				newlyCreatedFolderId = null;
+			}
+		});
 	}
 
 	let indexedChats = $derived(chats.map((c, i) => ({ chat: c, index: i })));

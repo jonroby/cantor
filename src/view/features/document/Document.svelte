@@ -154,7 +154,7 @@
 	let draft = $state('');
 	let error: string | null = $state(null);
 
-	let dirty = $derived(!!draft && draft !== content);
+	let dirty = $derived(editing && draft !== content);
 
 	function renderKatex(tex: string, displayMode: boolean): string {
 		try {
