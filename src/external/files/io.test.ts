@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { findRootId, deduplicateName, validateChatUpload } from './io';
+import { deduplicateName, validateChatUpload } from './io';
 import * as domain from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildValidUploadData() {
 	let tree = domain.tree.buildEmptyTree();
-	const r1 = domain.tree.addExchangeResult(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
-	tree = { rootId: r1.rootId, exchanges: r1.exchanges };
+	const r1 = domain.tree.addExchange(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
+	tree = r1.tree;
 	const exchanges = domain.tree.updateExchangeResponse(tree.exchanges, r1.id, 'response');
 	return {
 		id: 'chat-1',
@@ -16,35 +16,6 @@ function buildValidUploadData() {
 		activeExchangeId: r1.id
 	};
 }
-
-// ── findRootId ───────────────────────────────────────────────────────────────
-
-describe('findRootId', () => {
-	it('returns the id of the exchange with null parentId', () => {
-		const data = buildValidUploadData();
-		expect(findRootId(data.exchanges)).not.toBeNull();
-	});
-
-	it('returns null for empty exchanges', () => {
-		expect(findRootId({})).toBeNull();
-	});
-
-	it('returns null when no exchange has null parentId', () => {
-		const exchanges: domain.tree.ExchangeMap = {
-			a: {
-				id: 'a',
-				parentId: 'b',
-				childIds: [],
-				prompt: { text: 'x', tokenCount: 0 },
-				response: null,
-				model: 'm',
-				provider: 'claude',
-				createdAt: 0
-			}
-		};
-		expect(findRootId(exchanges)).toBeNull();
-	});
-});
 
 // ── deduplicateName ──────────────────────────────────────────────────────────
 

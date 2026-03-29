@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import ChatMessage from './ChatMessage.svelte';
-import * as app from '@/app';
+import type { ChatCardData } from './chat-card';
 
 vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text,
@@ -25,14 +25,7 @@ vi.mock('@/view/assets/provider-logos', () => ({
 	PROVIDER_LOGOS: {}
 }));
 
-vi.mock('@/app', async () => {
-	const { createAppMock } = await import('@/tests/mocks/app');
-	return createAppMock();
-});
-
-function makeNodeData(
-	overrides: Partial<app.chat.ExchangeCardData> = {}
-): app.chat.ExchangeCardData {
+function makeNodeData(overrides: Partial<ChatCardData> = {}): ChatCardData {
 	return {
 		prompt: 'Hello world',
 		response: 'Hi there',
@@ -47,8 +40,6 @@ function makeNodeData(
 		canPromote: false,
 		canQuickAsk: true,
 		canQuickAdd: false,
-		onMeasure: vi.fn(),
-		onSelect: vi.fn(),
 		onCopy: vi.fn(),
 		onToggleSideChildren: vi.fn(),
 		onPromote: vi.fn(),

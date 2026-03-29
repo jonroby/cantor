@@ -47,11 +47,10 @@
 	}
 
 	let activeExchanges = $derived(activeChat.exchanges);
+	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
 	let usedTokens = $derived(
-		activeExchanges && activeExchangeId
-			? app.chat.getUsedTokens(activeExchanges, activeExchangeId)
-			: 0
+		activeExchangeId ? app.chat.getUsedTokens(activeTree, activeExchangeId) : 0
 	);
 	let activeNodeStreaming = $derived.by(() => {
 		const id = activeExchangeId;
@@ -61,9 +60,7 @@
 	let submitDisabledReason = $derived(
 		!providerState.activeModel
 			? 'Select a model first.'
-			: activeExchangeId &&
-				  activeExchanges &&
-				  !app.chat.canSubmitPrompt(activeExchanges, activeExchangeId)
+			: activeExchangeId && !app.chat.canSubmitPrompt(activeTree, activeExchangeId)
 				? 'Choose a side-chat tip or main-chain node to continue.'
 				: null
 	);
@@ -124,12 +121,14 @@
 			docSection
 		].join('\n');
 
-		const chatHistory = app.chat.getMainChat(activeChat).flatMap((exchange) => [
-			{ role: 'user', content: exchange.prompt.text } as app.chat.Message,
-			...(exchange.response?.text
-				? ([{ role: 'assistant', content: exchange.response.text }] as app.chat.Message[])
-				: [])
-		]);
+		const chatHistory = app.chat
+			.getMainChat(activeTree)
+			.flatMap((exchange) => [
+				{ role: 'user', content: exchange.prompt.text } as app.chat.Message,
+				...(exchange.response?.text
+					? ([{ role: 'assistant', content: exchange.response.text }] as app.chat.Message[])
+					: [])
+			]);
 
 		return [
 			...chatHistory,

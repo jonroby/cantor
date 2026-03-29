@@ -28,9 +28,13 @@ function makeStore(): StreamStore {
 
 function buildTreeWithExchange(): { tree: domain.tree.ChatTree; exchangeId: string } {
 	const empty = domain.tree.buildEmptyTree();
-	const result = domain.tree.addExchangeResult(empty, 'ignored', 'Hello', MODEL, PROVIDER);
-	const exchanges = domain.tree.updateExchangeResponse(result.exchanges, result.id, 'Hi there');
-	return { tree: { rootId: result.rootId, exchanges }, exchangeId: result.id };
+	const result = domain.tree.addExchange(empty, 'ignored', 'Hello', MODEL, PROVIDER);
+	const exchanges = domain.tree.updateExchangeResponse(
+		result.tree.exchanges,
+		result.id,
+		'Hi there'
+	);
+	return { tree: { rootId: result.tree.rootId, exchanges }, exchangeId: result.id };
 }
 
 function makeDeps(tree: domain.tree.ChatTree): StreamDeps {

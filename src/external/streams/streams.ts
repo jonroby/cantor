@@ -47,7 +47,13 @@ export function startStream(
 	}
 ): void {
 	const { exchangeId, chatId, model, tree, liveDocContent } = params;
-	const history = domain.tree.getHistory(tree, exchangeId);
+	const history = domain.tree.getPath(tree, exchangeId).flatMap((exchange) => {
+		const messages: domain.tree.Message[] = [{ role: 'user', content: exchange.prompt.text }];
+		if (exchange.response) {
+			messages.push({ role: 'assistant', content: exchange.response.text });
+		}
+		return messages;
+	});
 
 	if (liveDocContent !== undefined) {
 		const docMessage: domain.tree.Message = {

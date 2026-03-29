@@ -35,12 +35,12 @@ const STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
 const LEGACY_VAULT_KEY = 'byok_vault';
 
-function buildChat(name: string): domain.tree.Chat {
+function buildChat(name: string): state.chats.ChatRecord {
 	let tree = domain.tree.buildEmptyTree();
-	const r = domain.tree.addExchangeResult(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
+	const r = domain.tree.addExchange(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
 	tree = {
-		rootId: r.rootId,
-		exchanges: domain.tree.updateExchangeResponse(r.exchanges, r.id, 'world')
+		rootId: r.tree.rootId,
+		exchanges: domain.tree.updateExchangeResponse(r.tree.exchanges, r.id, 'world')
 	};
 	return {
 		id: crypto.randomUUID(),

@@ -1,6 +1,5 @@
 import * as domain from '@/domain';
-
-export const findRootId = domain.tree.findRootId;
+import type * as state from '@/state';
 
 export function deduplicateName(name: string, existingNames: string[]): string {
 	if (!existingNames.includes(name)) return name;
@@ -11,7 +10,14 @@ export function deduplicateName(name: string, existingNames: string[]): string {
 	return `${base} (${i})${ext}`;
 }
 
-export function validateChatUpload(data: unknown): domain.tree.Chat {
+function deriveRootId(exchanges: domain.tree.ExchangeMap): string | null {
+	for (const exchange of Object.values(exchanges)) {
+		if (exchange.parentId === null) return exchange.id;
+	}
+	return null;
+}
+
+export function validateChatUpload(data: unknown): state.chats.ChatRecord {
 	if (typeof data !== 'object' || data === null || Array.isArray(data)) {
 		throw new Error('Upload must be a JSON object.');
 	}
@@ -53,7 +59,7 @@ export function validateChatUpload(data: unknown): domain.tree.Chat {
 		}
 	}
 
-	const rootId = domain.tree.findRootId(exchanges);
+	const rootId = deriveRootId(exchanges);
 	const tree = { rootId, exchanges };
 	try {
 		domain.tree.validateChatTree(tree);

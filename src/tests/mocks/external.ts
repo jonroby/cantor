@@ -12,7 +12,6 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 	const base = {
 		files: {
 			deduplicateName: mockFn<typeof external.files.deduplicateName>((name) => name),
-			findRootId: mockFn<typeof external.files.findRootId>(),
 			validateChatUpload: mockFn<typeof external.files.validateChatUpload>(
 				(value) => value as ReturnType<typeof external.files.validateChatUpload>
 			)

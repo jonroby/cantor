@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteSet } from 'svelte/reactivity';
 	import Input from '@/view/components/custom/input.svelte';
 	import type * as app from '@/app';
 
@@ -58,7 +59,7 @@
 	}
 
 	function buildTrigrams(text: string): Set<string> {
-		const result = new Set<string>();
+		const result = new SvelteSet<string>();
 		for (let index = 0; index <= text.length - 3; index += 1) {
 			result.add(text.slice(index, index + 3));
 		}
@@ -123,7 +124,7 @@
 	}
 
 	function getDefaultItems(): SearchResult[] {
-		return [...new Set(getIndices())].flatMap((chatIndex) =>
+		return [...new SvelteSet(getIndices())].flatMap((chatIndex) =>
 			getSearchableExchanges(chats[chatIndex]).map((exchange) => ({
 				exchangeId: exchange.id,
 				chatIndex,
@@ -137,7 +138,7 @@
 		const searchQuery = buildSearchQuery(query);
 		if (searchQuery.normalized.length === 0) return [];
 
-		return [...new Set(getIndices())]
+		return [...new SvelteSet(getIndices())]
 			.flatMap((chatIndex) =>
 				getSearchableExchanges(chats[chatIndex]).flatMap((exchange) => {
 					const score = Math.max(

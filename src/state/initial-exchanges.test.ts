@@ -12,7 +12,7 @@ describe('buildInitialExchanges', () => {
 
 	it('root exchange has no parent', () => {
 		const tree = buildInitialExchanges();
-		const root = domain.tree.getRootExchange(tree);
+		const root = tree.rootId ? domain.tree.getExchange(tree, tree.rootId) : null;
 		expect(root).not.toBeNull();
 		expect(root!.parentId).toBeNull();
 	});
@@ -26,7 +26,7 @@ describe('buildInitialExchanges', () => {
 
 	it('root has side chats (multiple children)', () => {
 		const tree = buildInitialExchanges();
-		const children = domain.tree.getChildExchanges(tree.exchanges, tree.rootId!);
+		const children = domain.tree.getChildren(tree, tree.rootId!);
 		expect(children.length).toBeGreaterThan(1);
 	});
 

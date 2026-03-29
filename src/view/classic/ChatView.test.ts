@@ -54,12 +54,12 @@ function addExchange(
 	prompt: string,
 	response: string
 ): domain.tree.ChatTree {
-	const result = domain.tree.addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
-	result.exchanges[result.id] = {
-		...result.exchanges[result.id],
+	const result = domain.tree.addExchange(tree, parentId, prompt, MODEL, PROVIDER);
+	result.tree.exchanges[result.id] = {
+		...result.tree.exchanges[result.id],
 		response: { text: response, tokenCount: 10 }
 	};
-	return result;
+	return result.tree;
 }
 
 /**
@@ -68,8 +68,8 @@ function addExchange(
  */
 function buildVisibleTree(n: number): domain.tree.ChatTree {
 	let tree = domain.tree.buildEmptyTree();
-	const root = domain.tree.addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
-	tree = root;
+	const root = domain.tree.addExchange(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
+	tree = root.tree;
 	tree.exchanges[root.id] = {
 		...tree.exchanges[root.id],
 		response: { text: 'Root response', tokenCount: 10 }
@@ -91,8 +91,8 @@ function buildVisibleTree(n: number): domain.tree.ChatTree {
 function buildTreeWithSideChat(): { tree: domain.tree.ChatTree; sideChatParentId: string } {
 	let tree = domain.tree.buildEmptyTree();
 	// Root (hidden)
-	const root = domain.tree.addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
-	tree = root;
+	const root = domain.tree.addExchange(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
+	tree = root.tree;
 	tree.exchanges[root.id] = {
 		...tree.exchanges[root.id],
 		response: { text: 'Root response', tokenCount: 10 }
@@ -113,7 +113,7 @@ function buildTreeWithSideChat(): { tree: domain.tree.ChatTree; sideChatParentId
 
 function resetState(tree?: domain.tree.ChatTree) {
 	const t = tree ?? domain.tree.buildEmptyTree();
-	const chat: domain.tree.Chat = {
+	const chat: state.chats.ChatRecord = {
 		id: crypto.randomUUID(),
 		name: 'Test Chat',
 		rootId: t.rootId,
@@ -280,7 +280,10 @@ describe('ChatView', () => {
 			await tick();
 
 			const exchanges = state.chats.getActiveExchanges();
-			const sideChatChildren = domain.tree.getChildExchanges(exchanges, sideChatParentId);
+			const sideChatChildren = domain.tree.getChildren(
+				{ rootId: state.chats.getActiveChat().rootId, exchanges },
+				sideChatParentId
+			);
 			expect(sideChatChildren.length).toBe(2);
 		});
 
@@ -302,8 +305,8 @@ describe('ChatView', () => {
 	describe('side chat navigation', () => {
 		it('shows the side chat counter in the side panel', async () => {
 			let tree = domain.tree.buildEmptyTree();
-			const root = domain.tree.addExchangeResult(tree, 'unused', 'Root', MODEL, PROVIDER);
-			tree = root;
+			const root = domain.tree.addExchange(tree, 'unused', 'Root', MODEL, PROVIDER);
+			tree = root.tree;
 			tree.exchanges[root.id] = {
 				...tree.exchanges[root.id],
 				response: { text: 'Root resp', tokenCount: 10 }

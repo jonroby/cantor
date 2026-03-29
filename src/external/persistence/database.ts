@@ -1,5 +1,4 @@
 import * as state from '@/state';
-import type * as domain from '@/domain';
 
 const STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
@@ -7,7 +6,10 @@ const LEGACY_VAULT_KEY = 'byok_vault';
 
 // --- Invariant checks ---
 
-function assertNoDuplicateNames(chats: domain.tree.Chat[], folders: state.documents.ChatFolder[]) {
+function assertNoDuplicateNames(
+	chats: state.chats.ChatRecord[],
+	folders: state.documents.ChatFolder[]
+) {
 	const chatNames: string[] = [];
 	for (const chat of chats) {
 		if (chatNames.includes(chat.name)) throw new Error(`Duplicate chat name "${chat.name}"`);

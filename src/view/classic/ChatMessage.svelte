@@ -1,11 +1,11 @@
-	<script lang="ts">
+<script lang="ts">
 	import DOMPurify from 'dompurify';
 	import Button from '@/view/components/custom/button.svelte';
 	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/shared/katex';
-	import * as app from '@/app';
 	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
+	import type { ChatCardData } from './chat-card';
 
-	let { data }: { data: app.chat.ExchangeCardData } = $props();
+	let { data }: { data: ChatCardData } = $props();
 
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
 	let responseBlocks = $derived(

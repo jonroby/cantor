@@ -2,51 +2,34 @@ export interface NamedItem {
 	name: string;
 }
 
-export interface NamedFile extends NamedItem {}
+export type NamedFile = NamedItem;
 
 export interface NamedFolder extends NamedItem {
 	files?: NamedFile[];
 }
 
-export function enforceUniqueName(name: string, existing: string[]): string {
-	if (!existing.includes(name)) return name;
-	let i = 2;
-	while (existing.includes(`${name} (${i})`)) i++;
-	return `${name} (${i})`;
+export function isUniqueName(name: string, existing: string[]): boolean {
+	return !existing.includes(name);
 }
 
-export function enforceUniqueNames(chats: NamedItem[], folders: NamedFolder[]): boolean {
-	let changed = false;
-
+export function hasDuplicateNames(chats: NamedItem[], folders: NamedFolder[]): boolean {
 	const chatNames: string[] = [];
 	for (const chat of chats) {
-		const uniqueName = enforceUniqueName(chat.name, chatNames);
-		if (uniqueName !== chat.name) {
-			chat.name = uniqueName;
-			changed = true;
-		}
-		chatNames.push(uniqueName);
+		if (!isUniqueName(chat.name, chatNames)) return true;
+		chatNames.push(chat.name);
 	}
 
 	const folderNames: string[] = [];
 	for (const folder of folders) {
-		const uniqueName = enforceUniqueName(folder.name, folderNames);
-		if (uniqueName !== folder.name) {
-			folder.name = uniqueName;
-			changed = true;
-		}
-		folderNames.push(uniqueName);
+		if (!isUniqueName(folder.name, folderNames)) return true;
+		folderNames.push(folder.name);
 
 		const fileNames: string[] = [];
 		for (const file of folder.files ?? []) {
-			const uniqueFileName = enforceUniqueName(file.name, fileNames);
-			if (uniqueFileName !== file.name) {
-				file.name = uniqueFileName;
-				changed = true;
-			}
-			fileNames.push(uniqueFileName);
+			if (!isUniqueName(file.name, fileNames)) return true;
+			fileNames.push(file.name);
 		}
 	}
 
-	return changed;
+	return false;
 }

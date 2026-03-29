@@ -17,7 +17,7 @@ vi.mock('@/state', async () => {
 	const actual = await vi.importActual<typeof import('@/state')>('@/state');
 	const importedDomain = await vi.importActual<typeof import('@/domain')>('@/domain');
 	const empty = importedDomain.tree.buildEmptyTree();
-	const result = importedDomain.tree.addExchangeResult(
+	const result = importedDomain.tree.addExchange(
 		empty,
 		'unused',
 		'hello',
@@ -25,11 +25,11 @@ vi.mock('@/state', async () => {
 		'claude'
 	);
 	const exchanges = importedDomain.tree.updateExchangeResponse(
-		result.exchanges,
+		result.tree.exchanges,
 		result.id,
 		'world'
 	);
-	const tree = { rootId: result.rootId, exchanges };
+	const tree = { rootId: result.tree.rootId, exchanges };
 	const chatState = {
 		chats: [
 			{
@@ -78,7 +78,9 @@ vi.mock('@/external', async () => {
 	return createExternalMock({
 		files: {
 			validateChatUpload: vi.fn(
-				(data) => data as ReturnType<typeof domain.tree.buildEmptyTree> & domain.tree.Chat
+				(data) =>
+					data as ReturnType<typeof domain.tree.buildEmptyTree> &
+						import('@/state/chats.svelte').ChatRecord
 			),
 			deduplicateName: vi.fn((name: string, existingNames: string[]) => {
 				if (!existingNames.includes(name)) return name;
@@ -151,16 +153,10 @@ function createFeedback(): TransferFeedback {
 
 function buildValidUploadData() {
 	let tree = domain.tree.buildEmptyTree();
-	const result = domain.tree.addExchangeResult(
-		tree,
-		'unused',
-		'hello',
-		'claude-sonnet-4-6',
-		'claude'
-	);
+	const result = domain.tree.addExchange(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
 	tree = {
-		rootId: result.rootId,
-		exchanges: domain.tree.updateExchangeResponse(result.exchanges, result.id, 'response')
+		rootId: result.tree.rootId,
+		exchanges: domain.tree.updateExchangeResponse(result.tree.exchanges, result.id, 'response')
 	};
 
 	return {

@@ -31,14 +31,14 @@ function buildTreeWithExchanges(n: number): domain.tree.ChatTree {
 	let tree = domain.tree.buildEmptyTree();
 	let parentId = 'unused';
 	for (let i = 0; i < n; i++) {
-		const result = domain.tree.addExchangeResult(tree, parentId, `prompt-${i}`, MODEL, PROVIDER);
-		tree = { rootId: result.rootId, exchanges: result.exchanges };
+		const result = domain.tree.addExchange(tree, parentId, `prompt-${i}`, MODEL, PROVIDER);
+		tree = result.tree;
 		parentId = result.id;
 	}
 	return tree;
 }
 
-function makeChat(name: string, tree?: domain.tree.ChatTree): domain.tree.Chat {
+function makeChat(name: string, tree?: domain.tree.ChatTree): import('./chats.svelte').ChatRecord {
 	const t = tree ?? buildTreeWithExchanges(2);
 	return {
 		id: crypto.randomUUID(),
@@ -51,7 +51,7 @@ function makeChat(name: string, tree?: domain.tree.ChatTree): domain.tree.Chat {
 
 function resetState() {
 	const tree = buildTreeWithExchanges(1);
-	const chat: domain.tree.Chat = {
+	const chat: import('./chats.svelte').ChatRecord = {
 		id: 'test-chat-1',
 		name: 'Chat 1',
 		rootId: tree.rootId,
@@ -459,7 +459,7 @@ describe('chats state', () => {
 	describe('hydrate', () => {
 		it('restores chats from parsed data', () => {
 			const tree = buildTreeWithExchanges(2);
-			const chats: domain.tree.Chat[] = [
+			const chats: import('./chats.svelte').ChatRecord[] = [
 				{
 					id: 'h1',
 					name: 'Hydrated',
@@ -488,7 +488,7 @@ describe('chats state', () => {
 
 		it('clamps activeChatIndex to valid range', () => {
 			const tree = buildTreeWithExchanges(2);
-			const chats: domain.tree.Chat[] = [
+			const chats: import('./chats.svelte').ChatRecord[] = [
 				{
 					id: 'h1',
 					name: 'H1',
@@ -503,7 +503,7 @@ describe('chats state', () => {
 
 		it('clamps negative activeChatIndex to 0', () => {
 			const tree = buildTreeWithExchanges(2);
-			const chats: domain.tree.Chat[] = [
+			const chats: import('./chats.svelte').ChatRecord[] = [
 				{
 					id: 'h1',
 					name: 'H1',

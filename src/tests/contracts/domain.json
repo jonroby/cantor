@@ -6,37 +6,28 @@
 		"PROVIDERS": true
 	},
 	"constraints": {
-		"enforceUniqueName": true,
-		"enforceUniqueNames": true
+		"hasDuplicateNames": true,
+		"isUniqueName": true
 	},
 	"tree": {
-		"addDocumentExchangeResult": true,
 		"addExchange": true,
-		"addExchangeResult": true,
 		"buildEmptyTree": true,
-		"canAcceptNewChat": true,
-		"canCreateSideChats": true,
-		"canPromoteSideChatToMainChat": true,
 		"ChatTreeOperationError": true,
-		"copyPath": true,
-		"deleteExchangeWithMode": true,
-		"deleteExchangeWithModeResult": true,
-		"findRootId": true,
-		"findSideChatParent": true,
-		"getChildExchanges": true,
-		"getDescendantExchanges": true,
-		"getHistory": true,
-		"getMainChatHistory": true,
+		"getChildren": true,
+		"getExchange": true,
+		"getMainChat": true,
 		"getMainChatTail": true,
-		"getPathTokenTotal": true,
-		"getRootExchange": true,
+		"getPath": true,
 		"promoteSideChatToMainChat": true,
 		"removeExchange": true,
 		"removeExchangeSubtree": true,
-		"removeMainChatChild": true,
-		"removeSideChatChildren": true,
 		"updateExchangeResponse": true,
 		"updateExchangeTokens": true,
-		"validateChatTree": true
+		"validateChatTree": true,
+		"constraints": {
+			"canAcceptNewChat": true,
+			"canCreateSideChats": true,
+			"canPromoteSideChatToMainChat": true
+		}
 	}
 }

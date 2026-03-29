@@ -1,7 +1,6 @@
 {
 	"files": {
 		"deduplicateName": true,
-		"findRootId": true,
 		"validateChatUpload": true
 	},
 	"persistence": {

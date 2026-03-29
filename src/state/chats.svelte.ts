@@ -1,7 +1,14 @@
 import * as domain from '@/domain';
+import { SvelteMap } from 'svelte/reactivity';
 import { buildInitialExchanges } from '@/state/initial-exchanges';
 
-function makeDefaultChat(): domain.tree.Chat {
+export interface ChatRecord extends domain.tree.ChatTree {
+	id: string;
+	name: string;
+	activeExchangeId: string | null;
+}
+
+function makeDefaultChat(): ChatRecord {
 	const tree = buildInitialExchanges();
 	return {
 		id: crypto.randomUUID(),
@@ -13,11 +20,11 @@ function makeDefaultChat(): domain.tree.Chat {
 }
 
 export const chatState = $state({
-	chats: [makeDefaultChat()] as domain.tree.Chat[],
+	chats: [makeDefaultChat()] as ChatRecord[],
 	activeChatIndex: 0
 });
 
-export function getActiveChat(): domain.tree.Chat {
+export function getActiveChat(): ChatRecord {
 	return chatState.chats[chatState.activeChatIndex] ?? chatState.chats[0];
 }
 
@@ -34,7 +41,7 @@ export function getActiveExchangeId(): string | null {
 	return getActiveChat().activeExchangeId;
 }
 
-export function getChatById(chatId: string): domain.tree.Chat | undefined {
+export function getChatById(chatId: string): ChatRecord | undefined {
 	return chatState.chats.find((c) => c.id === chatId);
 }
 
@@ -87,7 +94,7 @@ function nextChatName(): string {
 
 export function newChat(): number {
 	const tree = domain.tree.buildEmptyTree();
-	const chat: domain.tree.Chat = {
+	const chat: ChatRecord = {
 		id: crypto.randomUUID(),
 		name: nextChatName(),
 		rootId: tree.rootId,
@@ -127,28 +134,61 @@ export function copyToNewChat(exchangeId: string) {
 	const activeChat = chatState.chats[chatState.activeChatIndex];
 	if (!activeChat) return;
 
-	const result = domain.tree.copyPath(
+	const path = domain.tree.getPath(
 		{ rootId: activeChat.rootId, exchanges: activeChat.exchanges },
 		exchangeId
 	);
+	const idMap = new SvelteMap<string, string>();
+	for (const exchange of path) {
+		idMap.set(exchange.id, crypto.randomUUID());
+	}
+
+	const copiedExchanges: domain.tree.ExchangeMap = {};
+	let copiedRootId: string | null = null;
+	for (const exchange of path) {
+		const copiedId = idMap.get(exchange.id)!;
+		const copiedParentId =
+			exchange.parentId === null ? null : (idMap.get(exchange.parentId) ?? null);
+
+		copiedExchanges[copiedId] = {
+			id: copiedId,
+			parentId: copiedParentId,
+			childIds: [],
+			prompt: { ...exchange.prompt },
+			response: exchange.response ? { ...exchange.response } : null,
+			model: exchange.model,
+			provider: exchange.provider,
+			createdAt: Date.now(),
+			label: exchange.label
+		};
+
+		if (copiedParentId === null) {
+			copiedRootId = copiedId;
+		} else {
+			copiedExchanges[copiedParentId] = {
+				...copiedExchanges[copiedParentId]!,
+				childIds: [...copiedExchanges[copiedParentId]!.childIds, copiedId]
+			};
+		}
+	}
 
 	const copiedTree: domain.tree.ChatTree = {
-		rootId: result.rootId,
-		exchanges: result.copiedExchanges
+		rootId: copiedRootId,
+		exchanges: copiedExchanges
 	};
 	const name = nextCopyName();
-	const copiedChat: domain.tree.Chat = {
+	const copiedChat: ChatRecord = {
 		id: crypto.randomUUID(),
 		name,
-		rootId: result.rootId,
-		exchanges: result.copiedExchanges,
+		rootId: copiedTree.rootId,
+		exchanges: copiedTree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(copiedTree)
 	};
 	chatState.chats = [...chatState.chats, copiedChat];
 	chatState.activeChatIndex = chatState.chats.length - 1;
 }
 
-export function hydrate(parsed: { chats?: domain.tree.Chat[]; activeChatIndex?: number }) {
+export function hydrate(parsed: { chats?: ChatRecord[]; activeChatIndex?: number }) {
 	if (parsed.chats?.length) {
 		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
 			chatState.chats = parsed.chats;

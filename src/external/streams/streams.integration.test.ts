@@ -57,11 +57,11 @@ function buildConversation(prompts: string[]): {
 	let parentId = 'unused';
 	const exchangeIds: string[] = [];
 	for (const prompt of prompts) {
-		const result = domain.tree.addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
+		const result = domain.tree.addExchange(tree, parentId, prompt, MODEL, PROVIDER);
 		tree = {
-			rootId: result.rootId,
+			rootId: result.tree.rootId,
 			exchanges: domain.tree.updateExchangeResponse(
-				result.exchanges,
+				result.tree.exchanges,
 				result.id,
 				`reply to ${prompt}`
 			)
@@ -78,9 +78,9 @@ function appendPendingExchange(
 	parentId: string,
 	prompt: string
 ): { tree: domain.tree.ChatTree; exchangeId: string } {
-	const result = domain.tree.addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
+	const result = domain.tree.addExchange(tree, parentId, prompt, MODEL, PROVIDER);
 	return {
-		tree: { rootId: result.rootId, exchanges: result.exchanges },
+		tree: result.tree,
 		exchangeId: result.id
 	};
 }

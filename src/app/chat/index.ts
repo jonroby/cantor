@@ -1,7 +1,6 @@
 import * as domain from '@/domain';
 import * as state from '@/state';
 import * as external from '@/external';
-import type { ExchangeCardData } from './types';
 
 export interface ChatTransferFeedback {
 	success?: (message: string) => void;
@@ -18,6 +17,8 @@ export interface ChatActionDeps {
 	isStreaming: (exchangeId: string) => boolean;
 }
 
+export type DeleteMode = 'exchange' | 'exchangeAndMainChat' | 'exchangeAndSideChats';
+
 const defaultDeps: ChatActionDeps = {
 	replaceActiveTree: state.chats.replaceActiveTree,
 	setActiveExchangeId: state.chats.setActiveExchangeId,
@@ -25,8 +26,6 @@ const defaultDeps: ChatActionDeps = {
 	cancelStreamsForExchanges: external.streams.cancelStreamsForExchanges,
 	isStreaming: external.streams.isStreaming
 };
-
-export * from './types';
 
 export const getChats = () => state.chats.chatState.chats;
 export const getActiveChatIndex = () => state.chats.chatState.activeChatIndex;
@@ -55,28 +54,15 @@ export const isStreaming = external.streams.isStreaming;
 export const stopStream = external.streams.cancelStream;
 export const stopChatStreams = external.streams.cancelStreamsForChat;
 
-export function getMainChat(chat: domain.tree.Chat): domain.tree.Exchange[] {
-	const tree = { rootId: chat.rootId, exchanges: chat.exchanges };
-	const root = domain.tree.getRootExchange(tree);
-	if (!root) return [];
-
-	const path: domain.tree.Exchange[] = [root];
-	let currentId: string | null = root.id;
-	while (currentId) {
-		const children = domain.tree.getChildExchanges(tree.exchanges, currentId);
-		if (children.length === 0) break;
-		const mainChild = children[0]!;
-		path.push(mainChild);
-		currentId = mainChild.id;
-	}
-	return path;
+export function getMainChat(tree: domain.tree.ChatTree): domain.tree.Exchange[] {
+	return domain.tree.getMainChat(tree);
 }
 
 export function getSideChats(
-	activeExchanges: domain.tree.ExchangeMap,
+	tree: domain.tree.ChatTree,
 	parentExchangeId: string
 ): domain.tree.Exchange[][] {
-	const children = domain.tree.getChildExchanges(activeExchanges, parentExchangeId);
+	const children = domain.tree.getChildren(tree, parentExchangeId);
 	if (children.length <= 1) return [];
 
 	const sideChats: domain.tree.Exchange[][] = [];
@@ -85,117 +71,43 @@ export function getSideChats(
 		let current: domain.tree.Exchange | undefined = children[i];
 		while (current) {
 			sideChat.push(current);
-			current = domain.tree.getChildExchanges(activeExchanges, current.id)[0];
+			current = domain.tree.getChildren(tree, current.id)[0];
 		}
 		sideChats.push(sideChat);
 	}
 	return sideChats;
 }
 
-export function canSubmitPrompt(
-	activeExchanges: domain.tree.ExchangeMap,
-	activeExchangeId: string
-): boolean {
-	return domain.tree.canAcceptNewChat(activeExchanges, activeExchangeId);
+export function canSubmitPrompt(tree: domain.tree.ChatTree, activeExchangeId: string): boolean {
+	return domain.tree.constraints.canAcceptNewChat(tree, activeExchangeId);
 }
 
-export function getUsedTokens(
-	activeExchanges: domain.tree.ExchangeMap,
-	activeExchangeId: string
-): number {
-	return domain.tree.getPathTokenTotal(activeExchanges, activeExchangeId);
-}
-
-export function hasSideChats(
-	activeExchanges: domain.tree.ExchangeMap,
-	exchangeId: string
-): boolean {
-	return domain.tree.getChildExchanges(activeExchanges, exchangeId).length > 1;
-}
-
-export function getExchangeCardData(
-	exchangeId: string,
-	activeExchanges: domain.tree.ExchangeMap,
-	activeExchangeId: string | null,
-	callbacks: {
-		onMeasure?: (exchangeId: string, height: number) => void;
-		onSelect: (exchangeId: string) => void;
-		onCopy: (exchangeId: string) => void;
-		onToggleSideChildren: (exchangeId: string) => void;
-		onPromote: (exchangeId: string) => void;
-		onDelete: (exchangeId: string) => void;
-		onQuickAsk?: (exchangeId: string, sourceText: string) => void;
-		onQuickAdd?: (sourceText: string) => void;
-	},
-	deps: Pick<ChatActionDeps, 'isStreaming'> = defaultDeps
-): ExchangeCardData | null {
-	const exchange = activeExchanges[exchangeId];
-	if (!exchange) return null;
-
-	const children = domain.tree.getChildExchanges(activeExchanges, exchangeId);
-	const sideChildrenCount = children.length > 1 ? children.length - 1 : 0;
-	const hasSideChildren =
-		domain.tree.canCreateSideChats(activeExchanges, exchangeId) && sideChildrenCount > 0;
-	const isSideRoot = exchange.parentId
-		? (domain.tree.getChildExchanges(activeExchanges, exchange.parentId)[0]?.id ?? null) !==
-			exchangeId
-		: false;
-
-	return {
-		prompt: exchange.prompt.text,
-		response: exchange.response?.text ?? '',
-		model: exchange.model,
-		provider:
-			(exchange.provider as domain.models.Provider) ||
-			external.providers.catalog.getProviderForModelId(exchange.model) ||
-			null,
-		label: exchange.label,
-		isActive: activeExchangeId === exchangeId,
-		isStreaming: deps.isStreaming(exchangeId),
-		hasSideChildren,
-		sideChildrenCount,
-		isSideRoot,
-		canCreateSideChat: domain.tree.canCreateSideChats(activeExchanges, exchangeId),
-		canPromote: domain.tree.canPromoteSideChatToMainChat(
-			{ rootId: domain.tree.findRootId(activeExchanges), exchanges: activeExchanges },
-			exchangeId
-		),
-		canQuickAsk: domain.tree.canAcceptNewChat(activeExchanges, exchangeId),
-		canQuickAdd: !!callbacks.onQuickAdd,
-		onMeasure: (height: number) => callbacks.onMeasure?.(exchangeId, height),
-		onSelect: () => callbacks.onSelect(exchangeId),
-		onCopy: () => callbacks.onCopy(exchangeId),
-		onToggleSideChildren: () => callbacks.onToggleSideChildren(exchangeId),
-		onPromote: () => callbacks.onPromote(exchangeId),
-		onDelete: () => callbacks.onDelete(exchangeId),
-		onQuickAsk: (sourceText: string) => callbacks.onQuickAsk?.(exchangeId, sourceText),
-		onQuickAdd: (sourceText: string) => callbacks.onQuickAdd?.(sourceText)
-	};
-}
-
-export function getDeleteMode(
-	activeExchanges: domain.tree.ExchangeMap,
-	exchangeId: string
-): domain.tree.DeleteMode {
-	return hasSideChats(activeExchanges, exchangeId) ? 'exchangeAndSideChats' : 'exchange';
+export function getUsedTokens(tree: domain.tree.ChatTree, activeExchangeId: string): number {
+	return domain.tree
+		.getPath(tree, activeExchangeId)
+		.reduce(
+			(total, exchange) =>
+				total + exchange.prompt.tokenCount + (exchange.response?.tokenCount ?? 0),
+			0
+		);
 }
 
 export function deleteExchange(
-	activeExchanges: domain.tree.ExchangeMap,
+	tree: domain.tree.ChatTree,
 	deleteTargetId: string,
-	deleteMode: domain.tree.DeleteMode,
+	deleteMode: DeleteMode,
 	activeExchangeId: string | null,
 	onResetMeasuredHeights?: () => void,
 	deps: Omit<ChatActionDeps, 'isStreaming'> = defaultDeps
 ): { error: string | null } {
 	try {
-		const tree = { rootId: domain.tree.findRootId(activeExchanges), exchanges: activeExchanges };
-		const result = domain.tree.deleteExchangeWithModeResult(tree, deleteTargetId, deleteMode);
-		deps.cancelStreamsForExchanges(result.removedExchangeIds);
+		const removedExchangeIds = getRemovedExchangeIds(tree, deleteTargetId, deleteMode);
+		const result = deleteTree(tree, deleteTargetId, deleteMode);
+		deps.cancelStreamsForExchanges(removedExchangeIds);
 		onResetMeasuredHeights?.();
-		deps.replaceActiveTree(result);
-		if (deleteTargetId === activeExchangeId || !result.exchanges[activeExchangeId ?? '']) {
-			deps.setActiveExchangeId(domain.tree.getMainChatTail(result));
+		deps.replaceActiveTree(result.tree);
+		if (deleteTargetId === activeExchangeId || !result.tree.exchanges[activeExchangeId ?? '']) {
+			deps.setActiveExchangeId(domain.tree.getMainChatTail(result.tree));
 		}
 		return { error: null };
 	} catch (error) {
@@ -203,25 +115,87 @@ export function deleteExchange(
 	}
 }
 
+function getDescendantIds(tree: domain.tree.ChatTree, exchangeId: string): string[] {
+	const children = domain.tree.getChildren(tree, exchangeId);
+	const ids: string[] = [];
+	for (const child of children) {
+		ids.push(child.id, ...getDescendantIds(tree, child.id));
+	}
+	return ids;
+}
+
+function getRemovedExchangeIds(
+	tree: domain.tree.ChatTree,
+	deleteTargetId: string,
+	deleteMode: DeleteMode
+): string[] {
+	const children = domain.tree.getChildren(tree, deleteTargetId);
+	switch (deleteMode) {
+		case 'exchange':
+			return [deleteTargetId];
+		case 'exchangeAndMainChat': {
+			const mainChild = children[0];
+			return mainChild
+				? [deleteTargetId, mainChild.id, ...getDescendantIds(tree, mainChild.id)]
+				: [deleteTargetId];
+		}
+		case 'exchangeAndSideChats': {
+			const sideChildren = children.slice(1);
+			return [
+				deleteTargetId,
+				...sideChildren.flatMap((child) => [child.id, ...getDescendantIds(tree, child.id)])
+			];
+		}
+	}
+}
+
+function deleteTree(
+	tree: domain.tree.ChatTree,
+	deleteTargetId: string,
+	deleteMode: DeleteMode
+): domain.tree.DeleteResult {
+	switch (deleteMode) {
+		case 'exchange':
+			return domain.tree.removeExchange(tree, deleteTargetId);
+		case 'exchangeAndMainChat': {
+			const mainChild = domain.tree.getChildren(tree, deleteTargetId)[0];
+			const withoutMain = mainChild
+				? domain.tree.removeExchangeSubtree(tree, mainChild.id).tree
+				: tree;
+			return domain.tree.removeExchange(withoutMain, deleteTargetId);
+		}
+		case 'exchangeAndSideChats': {
+			const sideChildren = domain.tree.getChildren(tree, deleteTargetId).slice(1);
+			const withoutSideChats = sideChildren.reduce(
+				(currentTree, child) => domain.tree.removeExchangeSubtree(currentTree, child.id).tree,
+				tree
+			);
+			return domain.tree.removeExchange(withoutSideChats, deleteTargetId);
+		}
+	}
+}
+
 export function promoteExchange(
-	activeExchanges: domain.tree.ExchangeMap,
+	tree: domain.tree.ChatTree,
 	exchangeId: string,
 	onResetMeasuredHeights?: () => void,
 	deps: Omit<ChatActionDeps, 'isStreaming'> = defaultDeps
 ): { error: string | null } {
 	try {
-		const tree = { rootId: domain.tree.findRootId(activeExchanges), exchanges: activeExchanges };
 		const result = domain.tree.promoteSideChatToMainChat(tree, exchangeId);
 		deps.setActiveExchangeId(exchangeId);
 		onResetMeasuredHeights?.();
-		deps.replaceActiveTree(result);
+		deps.replaceActiveTree(result.tree);
 		return { error: null };
 	} catch (error) {
 		return { error: error instanceof Error ? error.message : 'Unable to promote exchange.' };
 	}
 }
 
-export function copyChat(exchangeId: string, deps: Pick<ChatActionDeps, 'copyToNewChat'> = defaultDeps) {
+export function copyChat(
+	exchangeId: string,
+	deps: Pick<ChatActionDeps, 'copyToNewChat'> = defaultDeps
+) {
 	deps.copyToNewChat(exchangeId);
 }
 
@@ -236,24 +210,18 @@ export function submitPrompt(
 ): { id: string; parentId: string; hasSideChildren: boolean } {
 	const parentId = activeExchangeId ?? domain.tree.getMainChatTail(tree) ?? '';
 	const hasSideChildren =
-		activeExchangeId !== null && domain.tree.getChildExchanges(tree.exchanges, activeExchangeId).length > 0;
+		activeExchangeId !== null && domain.tree.getChildren(tree, activeExchangeId).length > 0;
 
-	const created = domain.tree.addExchangeResult(
-		tree,
-		parentId,
-		prompt,
-		model.modelId,
-		model.provider
-	);
+	const created = domain.tree.addExchange(tree, parentId, prompt, model.modelId, model.provider);
 
-	deps.replaceActiveTree(created);
+	deps.replaceActiveTree(created.tree);
 	deps.setActiveExchangeId(created.id);
 
 	external.streams.startStream({
 		exchangeId: created.id,
 		chatId,
 		model,
-		tree: created,
+		tree: created.tree,
 		liveDocContent
 	});
 
@@ -287,15 +255,21 @@ export function addDocumentToChat(
 	deps: Omit<ChatActionDeps, 'isStreaming'> = defaultDeps
 ): string {
 	const parentId = activeExchangeId ?? domain.tree.getMainChatTail(tree) ?? '';
-	const result = domain.tree.addDocumentExchangeResult(
-		tree,
-		parentId,
-		content,
-		`${fileName} was added to chat`
-	);
-	deps.replaceActiveTree(result);
-	deps.setActiveExchangeId(result.id);
-	return result.id;
+	const created = domain.tree.addExchange(tree, parentId, content, '', 'ollama');
+	const nextTree = {
+		rootId: created.tree.rootId,
+		exchanges: {
+			...created.tree.exchanges,
+			[created.id]: {
+				...created.tree.exchanges[created.id]!,
+				response: { text: '', tokenCount: 0 },
+				label: `${fileName} was added to chat`
+			}
+		}
+	};
+	deps.replaceActiveTree(nextTree);
+	deps.setActiveExchangeId(created.id);
+	return created.id;
 }
 
 export function exportState() {
@@ -356,7 +330,6 @@ export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void
 	input.click();
 }
 
-export type Chat = domain.tree.Chat;
+export type Chat = state.chats.ChatRecord;
 export type Exchange = domain.tree.Exchange;
-export type DeleteMode = domain.tree.DeleteMode;
 export type Message = domain.tree.Message;

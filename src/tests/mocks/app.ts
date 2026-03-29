@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 import type * as app from '@/app';
-import type * as domain from '@/domain';
 import type * as state from '@/state';
 import appContract from '@/tests/contracts/app.json';
 
@@ -61,7 +60,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 					exchanges: {},
 					activeExchangeId: null
 				}
-			] as domain.tree.Chat[],
+			] as state.chats.ChatRecord[],
 			activeChatIndex: 0
 		},
 		deleteChat: vi.fn(),
@@ -112,19 +111,17 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 				() => appStateBacking.chatState.activeChatIndex
 			),
 			getActiveExchangeId: mockFn<typeof app.chat.getActiveExchangeId>(() => {
-				const activeChat = appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex];
+				const activeChat =
+					appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex];
 				return activeChat?.activeExchangeId ?? null;
 			}),
 			getChat: mockFn<typeof app.chat.getChat>(() => {
 				return appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]!;
 			}),
 			getChats: mockFn<typeof app.chat.getChats>(() => appStateBacking.chatState.chats),
-			getDeleteMode: mockFn<typeof app.chat.getDeleteMode>(),
-			getExchangeCardData: mockFn<typeof app.chat.getExchangeCardData>(),
 			getMainChat: mockFn<typeof app.chat.getMainChat>(() => []),
 			getSideChats: mockFn<typeof app.chat.getSideChats>(() => []),
 			getUsedTokens: mockFn<typeof app.chat.getUsedTokens>(() => 0),
-			hasSideChats: mockFn<typeof app.chat.hasSideChats>(() => false),
 			importChat: mockFn<typeof app.chat.importChat>(),
 			isStreaming: mockFn<typeof app.chat.isStreaming>(() => false),
 			promoteExchange: mockFn<typeof app.chat.promoteExchange>(),

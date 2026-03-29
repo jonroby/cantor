@@ -1,10 +1,10 @@
-import type * as domain from '@/domain';
+import type * as app from '@/app';
 
-export interface ExchangeCardData {
+export interface ChatCardData {
 	prompt: string;
 	response: string;
 	model?: string;
-	provider?: domain.models.Provider | null;
+	provider?: app.providers.Provider | null;
 	label?: string;
 	isActive: boolean;
 	isStreaming: boolean;
@@ -15,8 +15,6 @@ export interface ExchangeCardData {
 	canPromote: boolean;
 	canQuickAsk: boolean;
 	canQuickAdd: boolean;
-	onMeasure: (height: number) => void;
-	onSelect: () => void;
 	onCopy: () => void;
 	onToggleSideChildren: () => void;
 	onPromote: () => void;
