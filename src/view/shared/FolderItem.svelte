@@ -8,7 +8,7 @@
 	import DocItem from './DocItem.svelte';
 
 	interface Props {
-		folder: app.runtime.ChatFolder;
+		folder: app.documents.ChatFolder;
 		expanded: boolean;
 		isDragOver: boolean;
 		startEditing?: boolean;

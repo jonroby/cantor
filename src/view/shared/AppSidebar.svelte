@@ -21,7 +21,7 @@
 		onRenameChat: (index: number, name: string) => boolean;
 		onDownloadChat: (index: number) => void;
 		onUploadChat: () => void;
-		folders: app.runtime.ChatFolder[];
+		folders: app.documents.ChatFolder[];
 		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
 		onDownloadFolder: (folderId: string) => void;
@@ -134,7 +134,7 @@
 
 	// Delete targets
 	let deleteChatTarget: { index: number; name: string } | null = $state(null);
-	let deleteFolderTarget: app.runtime.ChatFolder | null = $state(null);
+	let deleteFolderTarget: app.documents.ChatFolder | null = $state(null);
 	let deleteDocTarget: { folderId: string; fileId: string; fileName: string } | null = $state(null);
 
 	// New folder

@@ -6,7 +6,7 @@
 	interface Props {
 		activeModel: app.providers.ActiveModel | null;
 		ollamaUrl: string;
-		ollamaStatus: app.runtime.OllamaStatus;
+		ollamaStatus: app.providers.OllamaStatus;
 		ollamaModels: string[];
 		onConnectOllama: (url: string) => Promise<void>;
 		onSelectModel: (model: app.providers.ActiveModel) => void;

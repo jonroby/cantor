@@ -24,9 +24,9 @@ const GENERAL_RULES = {
 
 const APPROVED_PUBLIC_NAMESPACES = {
 	app: new Set([
+		'bootstrap',
 		'chat',
 		'search',
-		'runtime',
 		'content',
 		'documents',
 		'providers',

@@ -31,14 +31,12 @@ vi.mock('@/view/components/shadcn/ui/sidebar/index.js', async () => ({
 vi.mock('@/app', async () => {
 	const { createAppMock } = await import('@/tests/mocks');
 	return createAppMock({
-		runtime: {
-			loadFromStorage: vi.fn(),
-			saveToStorage: vi.fn(),
-			cancelStreamsForChat: vi.fn()
+		bootstrap: {
+			initialize: vi.fn(() => ({ restoredDocument: null, hadDuplicateRenames: false })),
+			save: vi.fn()
 		},
-		providers: {
-			init: vi.fn(),
-			autoConnectOllama: vi.fn()
+		chat: {
+			cancelStreamsForChat: vi.fn()
 		},
 		files: {
 			downloadChat: vi.fn(),
@@ -70,26 +68,24 @@ describe('App', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		vi.restoreAllMocks();
-		app.runtime.chatState.chats = [
-			{
-				id: 'chat-1',
-				name: 'Chat 1',
-				rootId: null,
-				exchanges: {},
-				activeExchangeId: null
-			}
-		];
-		app.runtime.chatState.activeChatIndex = 0;
-		app.runtime.docState.folders = [];
+		const chats = app.chat.getChats();
+		chats.length = 0;
+		chats.push({
+			id: 'chat-1',
+			name: 'Chat 1',
+			rootId: null,
+			exchanges: {},
+			activeExchangeId: null
+		});
+		const folders = app.documents.getFolders();
+		folders.length = 0;
 		routerState.route = 'chat';
 	});
 
 	it('loads persisted state and initializes providers on mount', () => {
 		render(App);
 
-		expect(app.runtime.loadFromStorage).toHaveBeenCalledOnce();
-		expect(app.providers.init).toHaveBeenCalledOnce();
-		expect(app.providers.autoConnectOllama).toHaveBeenCalledOnce();
+		expect(app.bootstrap.initialize).toHaveBeenCalledOnce();
 		expect(screen.getByTestId('chat-view-mock')).toBeInTheDocument();
 	});
 
@@ -111,63 +107,64 @@ describe('App', () => {
 
 	describe('gracefully renames duplicates on load', () => {
 		it('renames duplicate chat names', () => {
-			vi.mocked(app.runtime.loadFromStorage).mockImplementation(() => {
-				app.runtime.chatState.chats = [
+			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
+				const chats = app.chat.getChats();
+				chats.length = 0;
+				chats.push(
 					{ id: '1', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null },
-					{ id: '2', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null }
-				];
-				throw new Error('Duplicate chat name "Foo"');
+					{ id: '2', name: 'Foo (2)', rootId: null, exchanges: {}, activeExchangeId: null }
+				);
+				return { restoredDocument: null, hadDuplicateRenames: true };
 			});
 			const warningSpy = vi.spyOn(toast, 'warning');
 
 			render(App);
 
-			expect(app.runtime.chatState.chats[0].name).toBe('Foo');
-			expect(app.runtime.chatState.chats[1].name).toBe('Foo (2)');
+			expect(app.chat.getChats()[0].name).toBe('Foo');
+			expect(app.chat.getChats()[1].name).toBe('Foo (2)');
 			expect(warningSpy).toHaveBeenCalled();
-			expect(app.runtime.saveToStorage).toHaveBeenCalledOnce();
+			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 
 		it('renames duplicate folder names', () => {
-			vi.mocked(app.runtime.loadFromStorage).mockImplementation(() => {
-				app.runtime.docState.folders = [
-					{ id: 'f1', name: 'Docs' },
-					{ id: 'f2', name: 'Docs' }
-				];
-				throw new Error('Duplicate folder name "Docs"');
+			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
+				const folders = app.documents.getFolders();
+				folders.length = 0;
+				folders.push({ id: 'f1', name: 'Docs' }, { id: 'f2', name: 'Docs (2)' });
+				return { restoredDocument: null, hadDuplicateRenames: true };
 			});
 			const warningSpy = vi.spyOn(toast, 'warning');
 
 			render(App);
 
-			expect(app.runtime.docState.folders[0].name).toBe('Docs');
-			expect(app.runtime.docState.folders[1].name).toBe('Docs (2)');
+			expect(app.documents.getFolders()[0].name).toBe('Docs');
+			expect(app.documents.getFolders()[1].name).toBe('Docs (2)');
 			expect(warningSpy).toHaveBeenCalled();
-			expect(app.runtime.saveToStorage).toHaveBeenCalledOnce();
+			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 
 		it('renames duplicate file names within a folder', () => {
-			vi.mocked(app.runtime.loadFromStorage).mockImplementation(() => {
-				app.runtime.docState.folders = [
-					{
-						id: 'f1',
-						name: 'Docs',
-						files: [
-							{ id: 'd1', name: 'readme.md', content: '' },
-							{ id: 'd2', name: 'readme.md', content: '' }
-						]
-					}
-				];
-				throw new Error('Duplicate file name "readme.md"');
+			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
+				const folders = app.documents.getFolders();
+				folders.length = 0;
+				folders.push({
+					id: 'f1',
+					name: 'Docs',
+					files: [
+						{ id: 'd1', name: 'readme.md', content: '' },
+						{ id: 'd2', name: 'readme.md (2)', content: '' }
+					]
+				});
+				return { restoredDocument: null, hadDuplicateRenames: true };
 			});
 			const warningSpy = vi.spyOn(toast, 'warning');
 
 			render(App);
 
-			expect(app.runtime.docState.folders[0].files![0].name).toBe('readme.md');
-			expect(app.runtime.docState.folders[0].files![1].name).toBe('readme.md (2)');
+			expect(app.documents.getFolders()[0].files![0].name).toBe('readme.md');
+			expect(app.documents.getFolders()[0].files![1].name).toBe('readme.md (2)');
 			expect(warningSpy).toHaveBeenCalled();
-			expect(app.runtime.saveToStorage).toHaveBeenCalledOnce();
+			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 
 		it('does not show a toast when no duplicates exist', () => {

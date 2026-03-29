@@ -137,12 +137,28 @@ Generic pure helpers belong in `lib`.
 
 These parts are already in place:
 
-- top-level source areas exist
-- root public barrels exist
-- cross-area imports are checked programmatically
-- namespace-style cross-area imports are enforced
-- approved public submodules are whitelisted
-- `view -> app only` is enforced mechanically
+- [x] top-level source areas exist
+- [x] root public barrels exist
+- [x] cross-area imports are checked programmatically
+- [x] namespace-style cross-area imports are enforced
+- [x] approved public submodules are whitelisted
+- [x] `view -> app only` is enforced mechanically
+- [x] public API contract snapshots exist under `src/tests/contracts`
+- [x] canonical mock factories exist under `src/tests/mocks`
+- [x] `external` has no `svelte` filenames
+- [x] non-component `svelte` test filenames were cleaned up where possible
+
+## Current Constraints
+
+- [x] Some runtime modules must remain `.svelte.ts` because they use Svelte runes.
+
+Current required rune-backed files:
+
+- `src/state/chats.svelte.ts`
+- `src/state/documents.svelte.ts`
+- `src/state/providers.svelte.ts`
+- `src/view/routes/router.svelte.ts`
+- `src/view/components/shadcn/ui/sidebar/context.svelte.ts`
 
 ## Current Problems
 
@@ -217,6 +233,12 @@ Priority:
 - `src/app/providers/index.ts`
 - `src/app/files/index.ts`
 
+Status:
+
+- [ ] not done
+- [ ] `app.runtime` still needs to be audited and reduced
+- [ ] root `app` surface still needs semantic cleanup, even though structural barrel rules are in place
+
 ### Step 2. Remove `app.runtime` as a lower-layer facade
 
 Replace broad `app.runtime.*` forwarding with feature-oriented exports in:
@@ -232,6 +254,10 @@ The goal is to eliminate exports like:
 - `app.runtime.docState`
 - `app.runtime.chatState`
 - `app.runtime.providerState`
+
+Status:
+
+- [ ] not done
 
 ### Step 3. Move view call sites off `app.runtime.*`
 
@@ -249,6 +275,10 @@ Examples of the intended direction:
 
 Exact names can be decided during refactor, but they should be app-shaped and grouped by feature.
 
+Status:
+
+- [ ] not done
+
 ### Step 4. Remove flat compatibility exports from `src/app/index.ts`
 
 Once view and tests stop relying on them:
@@ -256,7 +286,99 @@ Once view and tests stop relying on them:
 - remove root-level flat exports
 - keep root-level namespaces only
 
+Status:
+
+- [ ] partially done structurally
+- [ ] not done semantically
+
 ### Step 5. Tighten the checker for `app`
+
+Status:
+
+- [ ] not done
+
+## Next Session Start Here
+
+When resuming, start fresh with an `app`-only semantic audit.
+
+Do not start by moving files blindly.
+
+Start with:
+
+1. Audit the current public `app` surface.
+2. List every export in:
+   - `src/app/index.ts`
+   - `src/app/runtime/index.ts`
+   - `src/app/chat/index.ts`
+   - `src/app/documents/index.ts`
+   - `src/app/providers/index.ts`
+   - `src/app/files/index.ts`
+3. Classify each export as:
+   - app-shaped
+   - thin-but-acceptable
+   - bad lower-layer forwarding
+4. Identify all current `app.runtime.*` usages in `src/view/**` and tests.
+5. Replace the worst `app.runtime` pass-throughs first:
+   - `chatState`
+   - `docState`
+   - `providerState`
+   - `loadFromStorage`
+   - `saveToStorage`
+6. Move those usages onto feature-oriented `app.*` APIs.
+7. Only after that, remove or shrink `app.runtime`.
+
+The immediate target is not “finish all of app.”
+
+The immediate target is:
+
+- make `app.runtime` visibly smaller
+- reduce direct exposure of `state` and `external` through `app`
+- keep the repo green after each small step
+
+## Completed So Far
+
+### Structural Boundaries
+
+- [x] Root barrels are namespace-only for:
+  - `src/domain`
+  - `src/lib`
+  - `src/state`
+  - `src/external`
+  - `src/app`
+  - `src/view`
+- [x] Cross-area imports must go through root barrels
+- [x] Cross-area imports must use namespace imports
+- [x] Approved public submodules are explicit and checked
+- [x] `view -> app only` is enforced
+
+### Public API Contracts And Mocks
+
+- [x] `scripts/check-public-api-contracts.mjs` exists
+- [x] `check:contracts` is wired into `package.json`
+- [x] contract snapshots exist for each public barrel
+- [x] canonical mock factories exist under `src/tests/mocks`
+- [x] several handwritten root-barrel mocks were migrated onto the canonical mock factories
+
+### Naming Cleanup
+
+- [x] `external` no longer contains any `svelte` filenames
+- [x] non-component `.svelte.test.ts` filenames under `src` were renamed
+- [x] non-rune helper filenames like `is-mobile.ts` no longer carry `svelte`
+- [x] rune-backed modules that require `.svelte.ts` were identified explicitly
+
+## Future Enforcement / Todo
+
+- [ ] Strict namespace checks with AST guarantees instead of regex/string matching
+- [ ] Strict whitelist of allowed node/module imports per top-level area or folder
+- [ ] Strong consistency guarantees between public APIs and test contract/mock modules
+- [ ] Dead code elimination pass
+- [ ] Agents/skills file for every major module or area
+
+## Open Question
+
+- [ ] Whether every single function should have a comment
+  - Current judgment: probably not.
+  - Better rule: comments on non-obvious functions and non-obvious blocks, not blanket comments everywhere.
 
 Add checks so `src/app/**` is discouraged from:
 

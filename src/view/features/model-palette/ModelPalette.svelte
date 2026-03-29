@@ -12,7 +12,7 @@
 		activeModel: app.providers.ActiveModel | null;
 		onSelectModel: (model: app.providers.ActiveModel) => void;
 		ollamaUrl: string;
-		ollamaStatus: app.runtime.OllamaStatus;
+		ollamaStatus: app.providers.OllamaStatus;
 		ollamaModels: string[];
 		onConnectOllama: (url: string) => Promise<void>;
 		apiKeys: Record<string, string>;
@@ -20,14 +20,14 @@
 		onUnlockKeys: (password: string) => Promise<void>;
 		onSaveKey: (provider: string, apiKey: string, password: string) => Promise<void>;
 		onForgetKey: (provider: string) => void;
-		webllmStatus: app.runtime.WebLLMStatus;
+		webllmStatus: app.providers.WebLLMStatus;
 		webllmProgress: number;
 		webllmProgressText: string;
-		webllmModels: app.runtime.WebLLMModelEntry[];
+		webllmModels: app.providers.WebLLMModelEntry[];
 		webllmError: string | null;
-		webllmContextSize: app.runtime.WebLLMContextSize;
-		webllmContextOptions: ReadonlyArray<{ label: string; value: app.runtime.WebLLMContextSize }>;
-		onWebLLMContextSizeChange: (size: app.runtime.WebLLMContextSize) => void;
+		webllmContextSize: app.providers.WebLLMContextSize;
+		webllmContextOptions: ReadonlyArray<{ label: string; value: app.providers.WebLLMContextSize }>;
+		onWebLLMContextSizeChange: (size: app.providers.WebLLMContextSize) => void;
 		onLoadWebLLMModel: (modelId: string) => Promise<void>;
 		onDeleteWebLLMCache: (modelId: string) => Promise<void>;
 		onDeleteAllWebLLMCaches: () => Promise<void>;

@@ -4,14 +4,14 @@
 
 	interface Props {
 		activeModel: app.providers.ActiveModel | null;
-		webllmStatus: app.runtime.WebLLMStatus;
+		webllmStatus: app.providers.WebLLMStatus;
 		webllmProgress: number;
 		webllmProgressText: string;
-		webllmModels: app.runtime.WebLLMModelEntry[];
+		webllmModels: app.providers.WebLLMModelEntry[];
 		webllmError: string | null;
-		webllmContextSize: app.runtime.WebLLMContextSize;
-		webllmContextOptions: ReadonlyArray<{ label: string; value: app.runtime.WebLLMContextSize }>;
-		onWebLLMContextSizeChange: (size: app.runtime.WebLLMContextSize) => void;
+		webllmContextSize: app.providers.WebLLMContextSize;
+		webllmContextOptions: ReadonlyArray<{ label: string; value: app.providers.WebLLMContextSize }>;
+		onWebLLMContextSizeChange: (size: app.providers.WebLLMContextSize) => void;
 		onLoadWebLLMModel: (modelId: string) => Promise<void>;
 		onDeleteWebLLMCache: (modelId: string) => Promise<void>;
 		onDeleteAllWebLLMCaches: () => Promise<void>;
