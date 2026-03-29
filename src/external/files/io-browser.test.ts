@@ -42,7 +42,7 @@ vi.mock('@/state', async () => {
 		],
 		activeChatIndex: 0
 	};
-	const docState = {
+	const documentState = {
 		folders: [
 			{
 				id: 'folder-1',
@@ -54,14 +54,14 @@ vi.mock('@/state', async () => {
 	return {
 		...actual,
 		chatState,
-		docState,
+		documentState,
 		chats: {
 			...actual.chats,
 			chatState
 		},
 		documents: {
 			...actual.documents,
-			docState
+			documentState
 		}
 	};
 });
@@ -209,13 +209,13 @@ beforeEach(() => {
 	] as typeof state.chats.chatState.chats;
 	state.chats.chatState.activeChatIndex = 0;
 
-	state.documents.docState.folders = [
+	state.documents.documentState.folders = [
 		{
 			id: 'folder-1',
 			name: 'Test Folder',
 			files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
 		}
-	] as typeof state.documents.docState.folders;
+	] as typeof state.documents.documentState.folders;
 });
 
 describe('app import/export actions', () => {
@@ -331,7 +331,7 @@ describe('app import/export actions', () => {
 
 			expect(feedback.success).not.toHaveBeenCalled();
 			expect(feedback.error).not.toHaveBeenCalled();
-			expect(state.documents.docState.folders[0].files).toHaveLength(1);
+			expect(state.documents.documentState.folders[0].files).toHaveLength(1);
 		});
 
 		it('imports a valid markdown file', async () => {
@@ -348,8 +348,8 @@ describe('app import/export actions', () => {
 				expect(feedback.success).toHaveBeenCalled();
 			});
 
-			expect(state.documents.docState.folders[0].files).toHaveLength(2);
-			expect(state.documents.docState.folders[0].files?.[1]).toMatchObject({
+			expect(state.documents.documentState.folders[0].files).toHaveLength(2);
+			expect(state.documents.documentState.folders[0].files?.[1]).toMatchObject({
 				name: 'doc (1).md',
 				content: '# Test'
 			});
@@ -370,14 +370,14 @@ describe('app import/export actions', () => {
 				expect(feedback.error).toHaveBeenCalledWith(expect.stringContaining('Invalid markdown'));
 			});
 
-			expect(state.documents.docState.folders[0].files).toHaveLength(1);
+			expect(state.documents.documentState.folders[0].files).toHaveLength(1);
 		});
 
 		it('creates the files array when the target folder has none', async () => {
 			const feedback = createFeedback();
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{ id: 'folder-1', name: 'Test Folder' }
-			] as typeof state.documents.docState.folders;
+			] as typeof state.documents.documentState.folders;
 			app.documents.importDocument('folder-1', feedback);
 
 			const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
@@ -389,8 +389,8 @@ describe('app import/export actions', () => {
 				expect(feedback.success).toHaveBeenCalled();
 			});
 
-			expect(state.documents.docState.folders[0].files).toHaveLength(1);
-			expect(state.documents.docState.folders[0].files?.[0]?.name).toBe('doc.md');
+			expect(state.documents.documentState.folders[0].files).toHaveLength(1);
+			expect(state.documents.documentState.folders[0].files?.[0]?.name).toBe('doc.md');
 		});
 
 		it('reports an error when uploading into a missing folder', async () => {
@@ -420,9 +420,9 @@ describe('app import/export actions', () => {
 
 		it('shows error for empty folder', async () => {
 			const feedback = createFeedback();
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{ id: 'empty-folder', name: 'Empty', files: [] }
-			] as typeof state.documents.docState.folders;
+			] as typeof state.documents.documentState.folders;
 
 			await app.documents.exportFolder('empty-folder', feedback);
 
@@ -431,9 +431,9 @@ describe('app import/export actions', () => {
 
 		it('shows error for folder with no files property', async () => {
 			const feedback = createFeedback();
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{ id: 'no-files', name: 'NoFiles' }
-			] as typeof state.documents.docState.folders;
+			] as typeof state.documents.documentState.folders;
 
 			await app.documents.exportFolder('no-files', feedback);
 
@@ -484,10 +484,10 @@ describe('app import/export actions', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(state.documents.docState.folders.length).toBe(2);
+				expect(state.documents.documentState.folders.length).toBe(2);
 			});
 
-			expect(state.documents.docState.folders[1]).toMatchObject({
+			expect(state.documents.documentState.folders[1]).toMatchObject({
 				name: 'MyFolder'
 			});
 		});
@@ -502,22 +502,22 @@ describe('app import/export actions', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(state.documents.docState.folders.length).toBe(2);
+				expect(state.documents.documentState.folders.length).toBe(2);
 			});
 
-			expect(state.documents.docState.folders[1]?.name).toBe('Uploaded Folder');
+			expect(state.documents.documentState.folders[1]?.name).toBe('Uploaded Folder');
 		});
 
 		it('deduplicates the created folder name when the uploaded directory already exists', async () => {
 			const feedback = createFeedback();
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{
 					id: 'folder-1',
 					name: 'Test Folder',
 					files: [{ id: 'doc-1', name: 'doc.md', content: '# Existing' }]
 				},
 				{ id: 'folder-2', name: 'MyFolder', files: [] }
-			] as typeof state.documents.docState.folders;
+			] as typeof state.documents.documentState.folders;
 
 			app.documents.importFolder(feedback);
 
@@ -528,10 +528,10 @@ describe('app import/export actions', () => {
 			lastCreatedInput.onchange!();
 
 			await vi.waitFor(() => {
-				expect(state.documents.docState.folders.length).toBe(3);
+				expect(state.documents.documentState.folders.length).toBe(3);
 			});
 
-			expect(state.documents.docState.folders[2]).toMatchObject({
+			expect(state.documents.documentState.folders[2]).toMatchObject({
 				name: 'MyFolder (1)'
 			});
 		});
@@ -552,9 +552,9 @@ describe('app import/export actions', () => {
 				expect(feedback.success).toHaveBeenCalledWith('Uploaded 2 files');
 			});
 
-			expect(state.documents.docState.folders[1]?.name).toBe('Batch');
+			expect(state.documents.documentState.folders[1]?.name).toBe('Batch');
 			expect(
-				state.documents.docState.folders[1]?.files?.map((file: { name: string }) => file.name)
+				state.documents.documentState.folders[1]?.files?.map((file: { name: string }) => file.name)
 			).toEqual(['doc.md', 'doc (1).md']);
 		});
 
@@ -621,9 +621,9 @@ describe('app import/export actions', () => {
 				expect(feedback.success).toHaveBeenCalledWith('Uploaded 2 files');
 			});
 
-			expect(state.documents.docState.folders[0].files).toHaveLength(3);
+			expect(state.documents.documentState.folders[0].files).toHaveLength(3);
 			expect(
-				state.documents.docState.folders[0].files?.map((file: { name: string }) => file.name)
+				state.documents.documentState.folders[0].files?.map((file: { name: string }) => file.name)
 			).toEqual(['doc.md', 'doc (1).md', 'doc (2).md']);
 		});
 

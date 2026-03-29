@@ -140,8 +140,8 @@ describe('ChatView', () => {
 			configurable: true
 		});
 		resetState();
-		state.documents.docState.folders = [];
-		state.documents.docState.openDocs = [];
+		state.documents.documentState.folders = [];
+		state.documents.documentState.openDocuments = [];
 	});
 
 	describe('empty chat', () => {
@@ -393,18 +393,18 @@ describe('ChatView', () => {
 
 	describe('document panel', () => {
 		function setupDocPanel() {
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{
 					id: 'folder-1',
 					name: 'Docs',
 					files: [{ id: 'file-1', name: 'notes.md', content: '# My Notes' }]
 				}
 			];
-			state.documents.docState.openDocs = [
+			state.documents.documentState.openDocuments = [
 				{
 					id: 'doc-1',
 					content: '# My Notes',
-					docKey: { folderId: 'folder-1', fileId: 'file-1' }
+					documentKey: { folderId: 'folder-1', fileId: 'file-1' }
 				}
 			];
 		}

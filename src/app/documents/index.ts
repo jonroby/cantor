@@ -3,16 +3,16 @@ import * as lib from '@/lib';
 import JSZip from 'jszip';
 import { addDocumentToChat as appendDocumentToChat } from '@/app/chat';
 
-export const getState = () => state.documents.docState;
+export const getState = () => state.documents.documentState;
 export const createFolder = state.documents.newFolder;
-export const closeDocument = state.documents.closeDoc;
+export const closeDocument = state.documents.closeDocument;
 export const deleteFolder = state.documents.deleteFolder;
 
 export interface DocumentCommandDeps {
 	getActiveChat: typeof state.chats.getActiveChat;
 	getFolders: () => state.documents.ChatFolder[];
-	newDocInFolder: typeof state.documents.newDocInFolder;
-	selectDoc: typeof state.documents.selectDoc;
+	createDocumentInFolder: typeof state.documents.createDocumentInFolder;
+	selectDocument: typeof state.documents.selectDocument;
 	appendDocumentToChat: typeof appendDocumentToChat;
 }
 
@@ -34,9 +34,9 @@ function deduplicateImportedName(name: string, existingNames: string[]): string 
 
 const defaultDeps: DocumentCommandDeps = {
 	getActiveChat: state.chats.getActiveChat,
-	getFolders: () => state.documents.docState.folders,
-	newDocInFolder: state.documents.newDocInFolder,
-	selectDoc: state.documents.selectDoc,
+	getFolders: () => state.documents.documentState.folders,
+	createDocumentInFolder: state.documents.createDocumentInFolder,
+	selectDocument: state.documents.selectDocument,
 	appendDocumentToChat
 };
 
@@ -49,7 +49,7 @@ export function openDocument(
 	const file = folder?.files?.find((candidate) => candidate.id === fileId);
 	if (!file) return false;
 
-	deps.selectDoc(folderId, fileId);
+	deps.selectDocument(folderId, fileId);
 	return true;
 }
 
@@ -57,10 +57,10 @@ export function createDocument(
 	folderId: string,
 	deps: DocumentCommandDeps = defaultDeps
 ): { folderId: string; fileId: string } | null {
-	const fileId = deps.newDocInFolder(folderId);
+	const fileId = deps.createDocumentInFolder(folderId);
 	if (!fileId) return null;
 
-	deps.selectDoc(folderId, fileId);
+	deps.selectDocument(folderId, fileId);
 	return { folderId, fileId };
 }
 
@@ -91,21 +91,21 @@ export function renameFolder(folderId: string, name: string): string | null {
 	}
 	return candidate;
 }
-export const deleteDocument = state.documents.deleteDocFromFolder;
+export const deleteDocument = state.documents.deleteDocumentFromFolder;
 export function renameDocument(folderId: string, fileId: string, name: string): string | null {
 	const trimmed = name.trim();
 	if (!trimmed) return null;
 
 	let candidate = trimmed;
 	let i = 1;
-	while (!state.documents.renameDocInFolder(folderId, fileId, candidate)) {
+	while (!state.documents.renameDocumentInFolder(folderId, fileId, candidate)) {
 		candidate = `${trimmed} (${i})`;
 		i++;
 	}
 	return candidate;
 }
-export const moveDocument = state.documents.moveDocToFolder;
-export const updateDocumentContent = state.documents.updateDocContent;
+export const moveDocument = state.documents.moveDocumentToFolder;
+export const updateDocumentContent = state.documents.updateDocumentContent;
 export const validateDocumentMarkdown = lib.validateMd.validate;
 
 export function importDocument(
@@ -118,7 +118,9 @@ export function importDocument(
 	input.onchange = () => {
 		const file = input.files?.[0];
 		if (!file) return;
-		const folder = state.documents.docState.folders.find((candidate) => candidate.id === folderId);
+		const folder = state.documents.documentState.folders.find(
+			(candidate) => candidate.id === folderId
+		);
 		if (!folder) {
 			feedback.error?.('Folder not found');
 			return;
@@ -133,15 +135,16 @@ export function importDocument(
 			}
 			const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
 			const name = deduplicateImportedName(file.name, existingNames);
-			const document: state.documents.DocFile = {
+			const documentFile: state.documents.DocumentFile = {
 				id: crypto.randomUUID(),
 				name,
 				content: reader.result
 			};
-			state.documents.docState.folders = state.documents.docState.folders.map((candidate) =>
-				candidate.id === folderId
-					? { ...candidate, files: [...(candidate.files ?? []), document] }
-					: candidate
+			state.documents.documentState.folders = state.documents.documentState.folders.map(
+				(candidate) =>
+					candidate.id === folderId
+						? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
+						: candidate
 			);
 			feedback.success?.(`Uploaded ${file.name}`);
 		};
@@ -154,7 +157,9 @@ export async function exportFolder(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	const folder = state.documents.docState.folders.find((candidate) => candidate.id === folderId);
+	const folder = state.documents.documentState.folders.find(
+		(candidate) => candidate.id === folderId
+	);
 	if (!folder || !folder.files?.length) {
 		feedback.error?.('Folder is empty');
 		return;
@@ -179,7 +184,9 @@ function importDocumentsIntoFolder(
 	mdFiles: File[],
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	const folder = state.documents.docState.folders.find((candidate) => candidate.id === folderId);
+	const folder = state.documents.documentState.folders.find(
+		(candidate) => candidate.id === folderId
+	);
 	if (!folder) {
 		feedback.error?.('Folder not found');
 		return;
@@ -199,15 +206,16 @@ function importDocumentsIntoFolder(
 			} else {
 				const name = deduplicateImportedName(file.name, existingNames);
 				existingNames.push(name);
-				const document: state.documents.DocFile = {
+				const documentFile: state.documents.DocumentFile = {
 					id: crypto.randomUUID(),
 					name,
 					content: reader.result
 				};
-				state.documents.docState.folders = state.documents.docState.folders.map((candidate) =>
-					candidate.id === folderId
-						? { ...candidate, files: [...(candidate.files ?? []), document] }
-						: candidate
+				state.documents.documentState.folders = state.documents.documentState.folders.map(
+					(candidate) =>
+						candidate.id === folderId
+							? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
+							: candidate
 				);
 				imported++;
 			}
@@ -238,12 +246,12 @@ export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK)
 		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
 		const folderName = deduplicateImportedName(
 			dirName,
-			state.documents.docState.folders.map((folder) => folder.name)
+			state.documents.documentState.folders.map((folder) => folder.name)
 		);
 
 		const folderId = crypto.randomUUID();
 		const folder: state.documents.ChatFolder = { id: folderId, name: folderName, files: [] };
-		state.documents.docState.folders = [...state.documents.docState.folders, folder];
+		state.documents.documentState.folders = [...state.documents.documentState.folders, folder];
 
 		importDocumentsIntoFolder(folderId, mdFiles, feedback);
 	};
@@ -276,7 +284,7 @@ export function getDocument(
 	folders: state.documents.ChatFolder[],
 	folderId: string,
 	fileId: string
-): { folder: state.documents.ChatFolder; file: state.documents.DocFile } | null {
+): { folder: state.documents.ChatFolder; file: state.documents.DocumentFile } | null {
 	const folder = folders.find((candidate) => candidate.id === folderId);
 	const file = folder?.files?.find((candidate) => candidate.id === fileId);
 	if (!folder || !file) return null;
@@ -284,5 +292,5 @@ export function getDocument(
 }
 
 export type ChatFolder = state.documents.ChatFolder;
-export type DocFile = state.documents.DocFile;
-export type OpenDoc = state.documents.OpenDoc;
+export type DocumentFile = state.documents.DocumentFile;
+export type OpenDocument = state.documents.OpenDocument;

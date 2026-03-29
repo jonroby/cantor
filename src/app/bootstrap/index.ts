@@ -28,7 +28,7 @@ function repairDuplicateNames() {
 	}
 
 	const folderNames: string[] = [];
-	for (const folder of state.documents.docState.folders) {
+	for (const folder of state.documents.documentState.folders) {
 		const uniqueName = nextUniqueName(folder.name, folderNames);
 		if (uniqueName !== folder.name) {
 			folder.name = uniqueName;
@@ -54,7 +54,7 @@ function restoreOpenDocument(): RestoredDocument | null {
 	const openDocument = external.persistence.getPersistedLayout().openDocument;
 	if (!openDocument) return null;
 
-	const folder = state.documents.docState.folders.find(
+	const folder = state.documents.documentState.folders.find(
 		(candidate) => candidate.id === openDocument.folderId
 	);
 	const file = folder?.files?.find((candidate) => candidate.id === openDocument.fileId);
@@ -63,7 +63,7 @@ function restoreOpenDocument(): RestoredDocument | null {
 		return null;
 	}
 
-	state.documents.selectDoc(openDocument.folderId, openDocument.fileId);
+	state.documents.selectDocument(openDocument.folderId, openDocument.fileId);
 	return openDocument;
 }
 

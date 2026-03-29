@@ -104,9 +104,7 @@
 	function longestCommonSubsequence(a: string[], b: string[]): LCSMatch[] {
 		const m = a.length;
 		const n = b.length;
-		const dp: number[][] = Array.from({ length: m + 1 }, () =>
-			Array(n + 1).fill(0) as number[]
-		);
+		const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0) as number[]);
 
 		for (let i = m - 1; i >= 0; i--) {
 			for (let j = n - 1; j >= 0; j--) {
@@ -136,9 +134,7 @@
 		return matches;
 	}
 
-	let pendingDiff = $derived(
-		pendingContent !== null ? diffLines(content, pendingContent) : null
-	);
+	let pendingDiff = $derived(pendingContent !== null ? diffLines(content, pendingContent) : null);
 	let contentEl: HTMLDivElement | null = $state(null);
 
 	$effect(() => {

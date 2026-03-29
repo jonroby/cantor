@@ -31,20 +31,20 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			setActiveExchangeId: mockFn<typeof state.chats.setActiveExchangeId>()
 		},
 		documents: {
-			closeDoc: mockFn<typeof state.documents.closeDoc>(),
-			deleteDocFromFolder: mockFn<typeof state.documents.deleteDocFromFolder>(),
+			closeDocument: mockFn<typeof state.documents.closeDocument>(),
+			deleteDocumentFromFolder: mockFn<typeof state.documents.deleteDocumentFromFolder>(),
 			deleteFolder: mockFn<typeof state.documents.deleteFolder>(),
-			docState: {
+			documentState: {
 				folders: [],
-				openDocs: []
+				openDocuments: []
 			},
-			moveDocToFolder: mockFn<typeof state.documents.moveDocToFolder>(),
-			newDocInFolder: mockFn<typeof state.documents.newDocInFolder>(),
+			moveDocumentToFolder: mockFn<typeof state.documents.moveDocumentToFolder>(),
+			createDocumentInFolder: mockFn<typeof state.documents.createDocumentInFolder>(),
 			newFolder: mockFn<typeof state.documents.newFolder>(),
-			renameDocInFolder: mockFn<typeof state.documents.renameDocInFolder>(),
+			renameDocumentInFolder: mockFn<typeof state.documents.renameDocumentInFolder>(),
 			renameFolder: mockFn<typeof state.documents.renameFolder>(),
-			selectDoc: mockFn<typeof state.documents.selectDoc>(),
-			updateDocContent: mockFn<typeof state.documents.updateDocContent>()
+			selectDocument: mockFn<typeof state.documents.selectDocument>(),
+			updateDocumentContent: mockFn<typeof state.documents.updateDocumentContent>()
 		},
 		providers: {
 			providerState: {

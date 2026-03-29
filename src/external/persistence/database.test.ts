@@ -56,8 +56,8 @@ function resetState() {
 	const chat = buildChat('Chat 1');
 	state.chats.chatState.chats = [chat];
 	state.chats.chatState.activeChatIndex = 0;
-	state.documents.docState.folders = [];
-	state.documents.docState.openDocs = [];
+	state.documents.documentState.folders = [];
+	state.documents.documentState.openDocuments = [];
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -91,16 +91,16 @@ describe('database', () => {
 		});
 
 		it('persists and restores folders', () => {
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{ id: 'f1', name: 'Docs', files: [{ id: 'd1', name: 'test.md', content: '# Hi' }] }
 			];
 			saveToStorage();
 
-			state.documents.docState.folders = [];
+			state.documents.documentState.folders = [];
 			loadFromStorage();
-			expect(state.documents.docState.folders.length).toBe(1);
-			expect(state.documents.docState.folders[0].name).toBe('Docs');
-			expect(state.documents.docState.folders[0].files![0].content).toBe('# Hi');
+			expect(state.documents.documentState.folders.length).toBe(1);
+			expect(state.documents.documentState.folders[0].name).toBe('Docs');
+			expect(state.documents.documentState.folders[0].files![0].content).toBe('# Hi');
 		});
 
 		it('does nothing when storage is empty', () => {
@@ -127,7 +127,7 @@ describe('database', () => {
 
 		it('throws when two folders have the same name', () => {
 			store[STORAGE_KEY] = 'unchanged';
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{ id: 'f1', name: 'Docs' },
 				{ id: 'f2', name: 'Docs' }
 			];
@@ -137,7 +137,7 @@ describe('database', () => {
 
 		it('throws when two files in the same folder have the same name', () => {
 			store[STORAGE_KEY] = 'unchanged';
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{
 					id: 'f1',
 					name: 'Docs',
@@ -152,7 +152,7 @@ describe('database', () => {
 		});
 
 		it('allows the same file name in different folders', () => {
-			state.documents.docState.folders = [
+			state.documents.documentState.folders = [
 				{ id: 'f1', name: 'A', files: [{ id: 'd1', name: 'readme.md', content: '' }] },
 				{ id: 'f2', name: 'B', files: [{ id: 'd2', name: 'readme.md', content: '' }] }
 			];

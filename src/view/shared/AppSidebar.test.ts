@@ -30,13 +30,13 @@ function renderSidebar() {
 		onDeleteFolder: vi.fn(),
 		onDownloadFolder: vi.fn(),
 		onRenameFolder: vi.fn(() => 'Folder 1'),
-		onUploadDoc: vi.fn(),
+		onUploadDocument: vi.fn(),
 		onUploadFolder: vi.fn(),
 		onUploadNewFolder: vi.fn(),
-		onSelectDoc: vi.fn(),
-		onDeleteDoc: vi.fn(),
-		onRenameDoc: vi.fn(() => 'Document 1.md'),
-		onMoveDoc: vi.fn(() => true)
+		onSelectDocument: vi.fn(),
+		onDeleteDocument: vi.fn(),
+		onRenameDocument: vi.fn(() => 'Document 1.md'),
+		onMoveDocument: vi.fn(() => true)
 	};
 	return { ...render(AppSidebarHarness, { props }), props };
 }
@@ -58,8 +58,8 @@ describe('AppSidebar', () => {
 			{ id: 'chat-1', name: 'Chat 1', rootId: null, exchanges: {}, activeExchangeId: null }
 		];
 		state.chats.chatState.activeChatIndex = 0;
-		state.documents.docState.folders = [];
-		state.documents.docState.openDocs = [];
+		state.documents.documentState.folders = [];
+		state.documents.documentState.openDocuments = [];
 		const storage = new Map<string, string>();
 		vi.stubGlobal('localStorage', {
 			getItem: vi.fn((key: string) => storage.get(key) ?? null),
@@ -127,12 +127,13 @@ describe('AppSidebar', () => {
 		await user.click(screen.getByText('New folder'));
 		await user.click(screen.getByText('New folder'));
 
-		expect(state.documents.docState.folders.map((folder: { name: string }) => folder.name)).toEqual(
-			['New Folder', 'New Folder 2']
-		);
 		expect(
-			new Set(state.documents.docState.folders.map((folder: { name: string }) => folder.name)).size
-		).toBe(state.documents.docState.folders.length);
+			state.documents.documentState.folders.map((folder: { name: string }) => folder.name)
+		).toEqual(['New Folder', 'New Folder 2']);
+		expect(
+			new Set(state.documents.documentState.folders.map((folder: { name: string }) => folder.name))
+				.size
+		).toBe(state.documents.documentState.folders.length);
 	});
 
 	it('toggles the theme and persists the choice', async () => {
@@ -166,13 +167,13 @@ describe('AppSidebar', () => {
 			onDeleteFolder: vi.fn(),
 			onDownloadFolder: vi.fn(),
 			onRenameFolder: vi.fn(() => 'Docs (1)'),
-			onUploadDoc: vi.fn(),
+			onUploadDocument: vi.fn(),
 			onUploadFolder: vi.fn(),
 			onUploadNewFolder: vi.fn(),
-			onSelectDoc: vi.fn(),
-			onDeleteDoc: vi.fn(),
-			onRenameDoc: vi.fn(() => 'Document 1.md'),
-			onMoveDoc: vi.fn(() => true)
+			onSelectDocument: vi.fn(),
+			onDeleteDocument: vi.fn(),
+			onRenameDocument: vi.fn(() => 'Document 1.md'),
+			onMoveDocument: vi.fn(() => true)
 		};
 		render(AppSidebarHarness, { props });
 
@@ -206,13 +207,13 @@ describe('AppSidebar', () => {
 			onDeleteFolder: vi.fn(),
 			onDownloadFolder: vi.fn(),
 			onRenameFolder: vi.fn(() => 'Folder 1'),
-			onUploadDoc: vi.fn(),
+			onUploadDocument: vi.fn(),
 			onUploadFolder: vi.fn(),
 			onUploadNewFolder: vi.fn(),
-			onSelectDoc: vi.fn(),
-			onDeleteDoc: vi.fn(),
-			onRenameDoc: vi.fn(() => 'Document 1.md'),
-			onMoveDoc: vi.fn(() => true)
+			onSelectDocument: vi.fn(),
+			onDeleteDocument: vi.fn(),
+			onRenameDocument: vi.fn(() => 'Document 1.md'),
+			onMoveDocument: vi.fn(() => true)
 		};
 		render(AppSidebarHarness, { props });
 
@@ -254,13 +255,13 @@ describe('AppSidebar', () => {
 			onDeleteFolder: vi.fn(),
 			onDownloadFolder: vi.fn(),
 			onRenameFolder: vi.fn(() => 'Folder 1'),
-			onUploadDoc: vi.fn(),
+			onUploadDocument: vi.fn(),
 			onUploadFolder: vi.fn(),
 			onUploadNewFolder: vi.fn(),
-			onSelectDoc: vi.fn(),
-			onDeleteDoc: vi.fn(),
-			onRenameDoc: vi.fn(() => 'a.md (1)'),
-			onMoveDoc: vi.fn(() => true)
+			onSelectDocument: vi.fn(),
+			onDeleteDocument: vi.fn(),
+			onRenameDocument: vi.fn(() => 'a.md (1)'),
+			onMoveDocument: vi.fn(() => true)
 		};
 		render(AppSidebarHarness, { props });
 
@@ -271,8 +272,8 @@ describe('AppSidebar', () => {
 		await fireEvent.input(input, { target: { value: 'a.md' } });
 		await fireEvent.blur(input);
 
-		expect(props.onRenameDoc).toHaveBeenCalledOnce();
-		expect(props.onRenameDoc).toHaveBeenCalledWith('folder-1', 'doc-2', 'a.md');
+		expect(props.onRenameDocument).toHaveBeenCalledOnce();
+		expect(props.onRenameDocument).toHaveBeenCalledWith('folder-1', 'doc-2', 'a.md');
 		expect(toast.warning).toHaveBeenCalledWith('Renamed to "a.md (1)" to avoid duplicate');
 	});
 });

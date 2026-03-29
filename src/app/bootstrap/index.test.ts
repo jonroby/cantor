@@ -16,11 +16,11 @@ vi.mock('@/state', async () => {
 	const { createStateMock } = await import('@/tests/mocks/state');
 	return createStateMock({
 		documents: {
-			docState: {
+			documentState: {
 				folders: [],
-				openDocs: []
+				openDocuments: []
 			},
-			selectDoc: vi.fn()
+			selectDocument: vi.fn()
 		}
 	});
 });
@@ -37,11 +37,11 @@ import { clearOpenDocument, initialize, rememberOpenDocument } from './index';
 describe('app/bootstrap', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		state.documents.docState.folders = [];
+		state.documents.documentState.folders = [];
 	});
 
 	it('restores the last open document when it still exists', () => {
-		state.documents.docState.folders = [
+		state.documents.documentState.folders = [
 			{
 				id: 'folder-1',
 				name: 'Docs',
@@ -56,7 +56,7 @@ describe('app/bootstrap', () => {
 			restoredDocument: { folderId: 'folder-1', fileId: 'file-1' },
 			hadDuplicateRenames: false
 		});
-		expect(state.documents.selectDoc).toHaveBeenCalledWith('folder-1', 'file-1');
+		expect(state.documents.selectDocument).toHaveBeenCalledWith('folder-1', 'file-1');
 		expect(providers.initialize).toHaveBeenCalledOnce();
 	});
 

@@ -46,7 +46,7 @@
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
 	let commandStreaming = $state(false);
-	let pendingDocContent: string | null = $state(null);
+	let pendingDocumentContent: string | null = $state(null);
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
 		mainChatPath.length > 0 ? mainChatPath[mainChatPath.length - 1]!.id : null
@@ -63,24 +63,26 @@
 	let sidePanelParentExchange = $derived(
 		sidePanelParentId && activeExchanges ? activeExchanges[sidePanelParentId] : null
 	);
-	let docContent = $derived(
+	let documentContent = $derived(
 		sidePanel !== null && sidePanel.content.type === 'document' ? sidePanel.content : null
 	);
-	let activeDocFile = $derived.by(() => {
-		if (!docContent) return null;
-		const folder = app.documents.getState().folders.find((f) => f.id === docContent.folderId);
-		const file = folder?.files?.find((f) => f.id === docContent.fileId);
+	let activeDocumentFile = $derived.by(() => {
+		if (!documentContent) return null;
+		const folder = app.documents.getState().folders.find((f) => f.id === documentContent.folderId);
+		const file = folder?.files?.find((f) => f.id === documentContent.fileId);
 		return file ?? null;
 	});
-	let activeDocIndex = $derived.by(() => {
-		if (!docContent) return -1;
+	let activeDocumentIndex = $derived.by(() => {
+		if (!documentContent) return -1;
 		return app.documents
 			.getState()
-			.openDocs.findIndex(
-				(d) => d.docKey?.folderId === docContent.folderId && d.docKey?.fileId === docContent.fileId
+			.openDocuments.findIndex(
+				(d) =>
+					d.documentKey?.folderId === documentContent.folderId &&
+					d.documentKey?.fileId === documentContent.fileId
 			);
 	});
-	let isDocPanel = $derived(sidePanel !== null && sidePanel.content.type === 'document');
+	let isDocumentPanel = $derived(sidePanel !== null && sidePanel.content.type === 'document');
 
 	function getMainChatPath(): app.chat.Exchange[] {
 		return app.chat.getMainChat(activeTree);
@@ -108,7 +110,7 @@
 				app.chat.selectExchange(sidePanelParentId);
 			}
 		}
-		if (!isDocPanel) {
+		if (!isDocumentPanel) {
 			tick().then(() => chatInputRef?.focus());
 		}
 	}
@@ -150,8 +152,8 @@
 	}
 
 	function addCurrentDocToChat() {
-		if (!docContent) return;
-		app.documents.addDocumentToChat(docContent.folderId, docContent.fileId);
+		if (!documentContent) return;
+		app.documents.addDocumentToChat(documentContent.folderId, documentContent.fileId);
 	}
 
 	function prevSideChat() {
@@ -328,12 +330,12 @@
 			onQuickAdd: () => {}
 		};
 
-		if (isDocPanel && activeDocIndex >= 0) {
+		if (isDocumentPanel && activeDocumentIndex >= 0) {
 			data.canQuickAdd = true;
 			data.onQuickAdd = (sourceText: string) => {
-				const current = activeDocFile?.content ?? '';
+				const current = activeDocumentFile?.content ?? '';
 				const appended = current ? `${current}\n\n${sourceText}` : sourceText;
-				app.documents.updateDocumentContent(activeDocIndex, appended);
+				app.documents.updateDocumentContent(activeDocumentIndex, appended);
 			};
 		}
 
@@ -467,31 +469,32 @@
 			onclick={focusSide}
 		>
 			{#if sidePanelOpen}
-				{#if isDocPanel && activeDocFile}
+				{#if isDocumentPanel && activeDocumentFile}
 					<div class="chatview-doc-wrap">
 						<Document
-							title={activeDocFile.name}
-							content={activeDocFile.content}
+							title={activeDocumentFile.name}
+							content={activeDocumentFile.content}
 							{commandStreaming}
 							commandModel={providerState.activeModel?.modelId}
 							commandProvider={providerState.activeModel?.provider}
-							pendingContent={pendingDocContent}
+							pendingContent={pendingDocumentContent}
 							onContentChange={(c) => {
-								if (activeDocIndex >= 0) app.documents.updateDocumentContent(activeDocIndex, c);
+								if (activeDocumentIndex >= 0)
+									app.documents.updateDocumentContent(activeDocumentIndex, c);
 							}}
 							onAcceptPending={() => {
-								if (pendingDocContent !== null && activeDocIndex >= 0) {
-									app.documents.updateDocumentContent(activeDocIndex, pendingDocContent);
+								if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
+									app.documents.updateDocumentContent(activeDocumentIndex, pendingDocumentContent);
 								}
-								pendingDocContent = null;
+								pendingDocumentContent = null;
 							}}
 							onRejectPending={() => {
-								pendingDocContent = null;
+								pendingDocumentContent = null;
 							}}
 							onClose={() => {
-								pendingDocContent = null;
-								if (activeDocIndex >= 0) {
-									app.documents.closeDocument(activeDocIndex);
+								pendingDocumentContent = null;
+								if (activeDocumentIndex >= 0) {
+									app.documents.closeDocument(activeDocumentIndex);
 								}
 								app.bootstrap.clearOpenDocument();
 								closeSidePanel();
@@ -499,7 +502,7 @@
 							onAddToChat={addCurrentDocToChat}
 						/>
 					</div>
-				{:else if !isDocPanel}
+				{:else if !isDocumentPanel}
 					{#if sideChats.length > 0}
 						{@const isNewSideChat = sideChatIndex >= sideChats.length}
 						<div class="chatview-side-header">
@@ -648,12 +651,12 @@
 				bind:this={chatInputRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
-				commandMode={isDocPanel && focusedPane === 'side'}
+				commandMode={isDocumentPanel && focusedPane === 'side'}
 				bind:commandStreaming
-				commandPending={pendingDocContent !== null}
-				liveDocContent={activeDocFile?.content}
+				commandPending={pendingDocumentContent !== null}
+				liveDocumentContent={activeDocumentFile?.content}
 				onCommandResponse={(text) => {
-					pendingDocContent = text;
+					pendingDocumentContent = text;
 				}}
 			/>
 		</div>

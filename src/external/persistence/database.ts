@@ -58,22 +58,22 @@ export function loadFromStorage() {
 	}
 	state.chats.hydrate(parsed);
 	if (parsed.folders?.length) {
-		state.documents.docState.folders = parsed.folders;
+		state.documents.documentState.folders = parsed.folders;
 	}
 	if (parsed.layout) {
 		_layout = parsed.layout;
 	}
-	assertValidNames(state.chats.chatState.chats, state.documents.docState.folders);
+	assertValidNames(state.chats.chatState.chats, state.documents.documentState.folders);
 }
 
 export function saveToStorage() {
-	assertValidNames(state.chats.chatState.chats, state.documents.docState.folders);
+	assertValidNames(state.chats.chatState.chats, state.documents.documentState.folders);
 	localStorage.setItem(
 		STORAGE_KEY,
 		JSON.stringify({
 			chats: state.chats.chatState.chats,
 			activeChatIndex: state.chats.chatState.activeChatIndex,
-			folders: state.documents.docState.folders,
+			folders: state.documents.documentState.folders,
 			layout: _layout
 		})
 	);

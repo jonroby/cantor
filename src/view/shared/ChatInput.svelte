@@ -10,7 +10,7 @@
 		commandMode?: boolean;
 		commandStreaming?: boolean;
 		commandPending?: boolean;
-		liveDocContent?: string;
+		liveDocumentContent?: string;
 		onCommandResponse?: (text: string) => void;
 	}
 
@@ -20,7 +20,7 @@
 		commandMode = false,
 		commandStreaming = $bindable(false),
 		commandPending = false,
-		liveDocContent,
+		liveDocumentContent,
 		onCommandResponse
 	}: Props = $props();
 
@@ -92,7 +92,7 @@
 				activeExchangeId,
 				prompt,
 				providerState.activeModel,
-				liveDocContent
+				liveDocumentContent
 			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
@@ -109,8 +109,8 @@
 	}
 
 	function buildCommandMessages(prompt: string): app.chat.Message[] {
-		const docSection = liveDocContent
-			? `\n\n<current_document>\n${liveDocContent}\n</current_document>`
+		const documentSection = liveDocumentContent
+			? `\n\n<current_document>\n${liveDocumentContent}\n</current_document>`
 			: '\n\nThe document is currently empty.';
 
 		const systemPrompt = [
@@ -118,7 +118,7 @@
 			'You have access to the chat history above for context.',
 			'Respond with the COMPLETE updated document content. Do NOT wrap it in code fences or backticks.',
 			'Do NOT add any preamble, explanation, or commentary — your entire response becomes the document.',
-			docSection
+			documentSection
 		].join('\n');
 
 		const chatHistory = app.chat

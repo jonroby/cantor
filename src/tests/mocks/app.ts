@@ -64,28 +64,28 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			activeChatIndex: 0
 		},
 		deleteChat: vi.fn(),
-		deleteDocFromFolder: vi.fn(),
+		deleteDocumentFromFolder: vi.fn(),
 		deleteFolder: vi.fn(),
-		docState: {
+		documentState: {
 			folders: [] as state.documents.ChatFolder[],
-			openDocs: [] as state.documents.OpenDoc[]
+			openDocuments: [] as state.documents.OpenDocument[]
 		},
 		getActiveChat: vi.fn(),
 		getActiveExchangeId: vi.fn(),
 		isStreaming: vi.fn(() => false),
 		loadFromStorage: vi.fn(),
-		moveDocToFolder: vi.fn(),
+		moveDocumentToFolder: vi.fn(),
 		newChat: vi.fn(),
 		newFolder: vi.fn(),
 		providerState: providerStateBacking,
 		renameChat: vi.fn(),
-		renameDocInFolder: vi.fn(),
+		renameDocumentInFolder: vi.fn(),
 		renameFolder: vi.fn(),
 		saveToStorage: vi.fn(),
 		selectChat: vi.fn(),
 		selectModel: vi.fn(),
 		setActiveExchangeId: vi.fn(),
-		updateDocContent: vi.fn()
+		updateDocumentContent: vi.fn()
 	};
 
 	const base = {
@@ -142,7 +142,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			deleteFolder: mockFn<typeof app.documents.deleteFolder>(),
 			exportFolder: mockFn<typeof app.documents.exportFolder>(),
 			getDocument: mockFn<typeof app.documents.getDocument>(),
-			getState: mockFn<typeof app.documents.getState>(() => appStateBacking.docState),
+			getState: mockFn<typeof app.documents.getState>(() => appStateBacking.documentState),
 			importDocument: mockFn<typeof app.documents.importDocument>(),
 			importFolder: mockFn<typeof app.documents.importFolder>(),
 			importFolderIntoFolder: mockFn<typeof app.documents.importFolderIntoFolder>(),

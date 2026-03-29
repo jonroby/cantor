@@ -145,8 +145,8 @@
 			<span class="gradient-text">CANTOR</span>
 		</h1>
 		<p class="hero-subtitle">
-			Copy conversations. Explore side chats. Visualize your thinking on a canvas. One interface
-			for Claude, Gemini, Ollama, OpenAI, and WebLLM.
+			Copy conversations. Explore side chats. Visualize your thinking on a canvas. One interface for
+			Claude, Gemini, Ollama, OpenAI, and WebLLM.
 		</p>
 		<div class="hero-actions">
 			<button class="cta-primary" onclick={goToApp}>

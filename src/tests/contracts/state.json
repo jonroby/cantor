@@ -17,17 +17,17 @@
 		"setActiveExchangeId": true
 	},
 	"documents": {
-		"closeDoc": true,
-		"deleteDocFromFolder": true,
+		"closeDocument": true,
+		"deleteDocumentFromFolder": true,
 		"deleteFolder": true,
-		"docState": true,
-		"moveDocToFolder": true,
-		"newDocInFolder": true,
+		"documentState": true,
+		"moveDocumentToFolder": true,
+		"createDocumentInFolder": true,
 		"newFolder": true,
-		"renameDocInFolder": true,
+		"renameDocumentInFolder": true,
 		"renameFolder": true,
-		"selectDoc": true,
-		"updateDocContent": true
+		"selectDocument": true,
+		"updateDocumentContent": true
 	},
 	"providers": {
 		"providerState": true,

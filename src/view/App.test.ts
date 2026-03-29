@@ -36,7 +36,7 @@ vi.mock('@/app', async () => {
 		}[],
 		activeChatIndex: 0
 	};
-	const documentState = { folders: [], openDocs: [] };
+	const documentState = { folders: [], openDocuments: [] };
 	return createAppMock({
 		bootstrap: {
 			clearOpenDocument: vi.fn(),

@@ -94,7 +94,7 @@
 		resetUIState();
 	}
 
-	function addDocToChat(folderId: string, fileId: string) {
+	function addDocumentToChat(folderId: string, fileId: string) {
 		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
 		const file = folder?.files?.find((f) => f.id === fileId);
 		if (!file) return;
@@ -134,26 +134,26 @@
 			onDeleteFolder={app.documents.deleteFolder}
 			onDownloadFolder={(folderId) => app.documents.exportFolder(folderId, fileFeedback)}
 			onRenameFolder={app.documents.renameFolder}
-			onNewDoc={(folderId) => {
+			onNewDocument={(folderId) => {
 				const document = app.documents.createDocument(folderId);
 				if (document) {
 					app.bootstrap.rememberOpenDocument(document.folderId, document.fileId);
 					chatViewRef?.showDocument(document.folderId, document.fileId);
 				}
 			}}
-			onUploadDoc={(folderId) => app.documents.importDocument(folderId, fileFeedback)}
+			onUploadDocument={(folderId) => app.documents.importDocument(folderId, fileFeedback)}
 			onUploadFolder={(folderId) => app.documents.importFolderIntoFolder(folderId, fileFeedback)}
 			onUploadNewFolder={() => app.documents.importFolder(fileFeedback)}
-			onSelectDoc={(folderId, fileId) => {
+			onSelectDocument={(folderId, fileId) => {
 				if (app.documents.openDocument(folderId, fileId)) {
 					app.bootstrap.rememberOpenDocument(folderId, fileId);
 					chatViewRef?.showDocument(folderId, fileId);
 				}
 			}}
-			onAddDocToChat={addDocToChat}
-			onDeleteDoc={app.documents.deleteDocument}
-			onRenameDoc={app.documents.renameDocument}
-			onMoveDoc={app.documents.moveDocument}
+			onAddDocumentToChat={addDocumentToChat}
+			onDeleteDocument={app.documents.deleteDocument}
+			onRenameDocument={app.documents.renameDocument}
+			onMoveDocument={app.documents.moveDocument}
 		/>
 		<SidebarPrimitive.Inset>
 			<ChatView bind:this={chatViewRef} />

@@ -271,7 +271,7 @@ export function submitPrompt(
 	activeExchangeId: string | null,
 	prompt: string,
 	model: domain.models.ActiveModel,
-	liveDocContent?: string,
+	liveDocumentContent?: string,
 	deps: Omit<ChatActionDeps, 'isStreaming'> = defaultDeps
 ): { id: string; parentId: string; hasSideChildren: boolean } {
 	const parentId = activeExchangeId ?? domain.tree.getMainChatTail(tree) ?? '';
@@ -286,13 +286,13 @@ export function submitPrompt(
 		}
 		return messages;
 	});
-	if (liveDocContent !== undefined) {
+	if (liveDocumentContent !== undefined) {
 		history.splice(
 			history.length - 1,
 			0,
 			{
 				role: 'user',
-				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocContent}`
+				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocumentContent}`
 			},
 			{ role: 'assistant', content: 'Understood, I have the document.' }
 		);
@@ -360,7 +360,7 @@ export function exportState() {
 		{
 			chats: state.chats.chatState.chats,
 			activeChatIndex: state.chats.chatState.activeChatIndex,
-			folders: state.documents.docState.folders
+			folders: state.documents.documentState.folders
 		},
 		null,
 		2

@@ -43,8 +43,8 @@ function createDeps(overrides: Partial<DocumentCommandDeps> = {}): DocumentComma
 			activeExchangeId: 'root-1'
 		}),
 		getFolders: () => [],
-		newDocInFolder: vi.fn(() => null),
-		selectDoc: vi.fn(),
+		createDocumentInFolder: vi.fn(() => null),
+		selectDocument: vi.fn(),
 		appendDocumentToChat: vi.fn(() => 'exchange-1'),
 		...overrides
 	};
@@ -56,32 +56,32 @@ describe('document app actions', () => {
 	});
 
 	it('opens an existing document', () => {
-		const selectDoc = vi.fn();
+		const selectDocument = vi.fn();
 		const deps = createDeps({
 			getFolders: () => [
 				{ id: 'folder-1', name: 'Docs', files: [{ id: 'file-1', name: 'a.md', content: '' }] }
 			],
-			selectDoc
+			selectDocument
 		});
 
 		expect(openDocument('folder-1', 'file-1', deps)).toBe(true);
-		expect(selectDoc).toHaveBeenCalledWith('folder-1', 'file-1');
+		expect(selectDocument).toHaveBeenCalledWith('folder-1', 'file-1');
 	});
 
 	it('creates a document and selects it', () => {
-		const newDocInFolder = vi.fn(() => 'file-2');
-		const selectDoc = vi.fn();
+		const createDocumentInFolder = vi.fn(() => 'file-2');
+		const selectDocument = vi.fn();
 		const deps = createDeps({
-			newDocInFolder,
-			selectDoc
+			createDocumentInFolder,
+			selectDocument
 		});
 
 		expect(createDocument('folder-1', deps)).toEqual({
 			folderId: 'folder-1',
 			fileId: 'file-2'
 		});
-		expect(newDocInFolder).toHaveBeenCalledWith('folder-1');
-		expect(selectDoc).toHaveBeenCalledWith('folder-1', 'file-2');
+		expect(createDocumentInFolder).toHaveBeenCalledWith('folder-1');
+		expect(selectDocument).toHaveBeenCalledWith('folder-1', 'file-2');
 	});
 
 	it('adds a folder document to the active chat', () => {
