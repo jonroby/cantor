@@ -3,7 +3,7 @@ import type { StreamChunk } from './stream';
 
 export async function* streamClaudeChat(
 	model: string,
-	messages: domain.Message[],
+	messages: domain.tree.Message[],
 	apiKey: string,
 	signal: AbortSignal
 ): AsyncGenerator<StreamChunk> {

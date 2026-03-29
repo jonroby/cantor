@@ -1,4 +1,5 @@
 import * as domain from '@/domain';
+import * as catalog from './catalog';
 import { streamOllamaChat } from './ollama';
 import { streamWebLLMChat } from './webllm';
 import { streamClaudeChat } from './claude';
@@ -11,17 +12,22 @@ export type StreamChunk =
 	| { type: 'done'; promptTokens: number; responseTokens: number };
 
 export function getProviderStream(
-	model: domain.ActiveModel,
-	history: domain.Message[],
+	model: domain.models.ActiveModel,
+	history: domain.tree.Message[],
 	signal: AbortSignal
 ) {
-	const key = state.providerState.apiKeys[model.provider] ?? '';
+	const key = state.providers.providerState.apiKeys[model.provider] ?? '';
 	if (model.provider === 'webllm') return streamWebLLMChat(history, signal);
 	if (model.provider === 'ollama')
-		return streamOllamaChat(model.modelId, history, signal, state.providerState.ollamaUrl);
+		return streamOllamaChat(
+			model.modelId,
+			history,
+			signal,
+			state.providers.providerState.ollamaUrl
+		);
 	if (model.provider === 'claude') return streamClaudeChat(model.modelId, history, key, signal);
 	if (model.provider === 'gemini') return streamGeminiChat(model.modelId, history, key, signal);
 	const config =
-		domain.PROVIDER_CONFIG[model.provider as Exclude<domain.Provider, 'ollama' | 'webllm'>];
+		catalog.PROVIDER_CONFIG[model.provider as Exclude<domain.models.Provider, 'ollama' | 'webllm'>];
 	return streamOpenAICompatChat(config.baseUrl, model.modelId, history, key, signal);
 }

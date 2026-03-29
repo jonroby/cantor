@@ -34,17 +34,23 @@ import {
 	type ChatActionDeps
 } from './chat-actions';
 
-import { addExchangeResult, buildEmptyTree, updateExchangeResponse, type ChatTree } from '@/domain';
+import * as domain from '@/domain';
 
 /** Convenience: update response on a ChatTree, returning a new ChatTree */
-function setResponse(tree: ChatTree, exchangeId: string, text: string): ChatTree {
-	return { ...tree, exchanges: updateExchangeResponse(tree.exchanges, exchangeId, text) };
+function setResponse(
+	tree: domain.tree.ChatTree,
+	exchangeId: string,
+	text: string
+): domain.tree.ChatTree {
+	return {
+		...tree,
+		exchanges: domain.tree.updateExchangeResponse(tree.exchanges, exchangeId, text)
+	};
 }
-import type { Provider } from '@/domain';
 
 // ── Constants & helpers ──────────────────────────────────────────────────────
 
-const PROVIDER: Provider = 'claude';
+const PROVIDER: domain.models.Provider = 'claude';
 const MODEL = 'claude-sonnet-4-6';
 
 function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
@@ -71,51 +77,62 @@ function mockCallbacks() {
 }
 
 /** root → child → leaf (linear chain) */
-function buildLinearTree(): { tree: ChatTree; rootId: string; childId: string; leafId: string } {
-	let tree = buildEmptyTree();
-	const root = addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
+function buildLinearTree(): {
+	tree: domain.tree.ChatTree;
+	rootId: string;
+	childId: string;
+	leafId: string;
+} {
+	let tree = domain.tree.buildEmptyTree();
+	const root = domain.tree.addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
 	tree = root;
 	tree = setResponse(tree, root.id, 'root response');
-	const child = addExchangeResult(tree, root.id, 'child prompt', MODEL, PROVIDER);
+	const child = domain.tree.addExchangeResult(tree, root.id, 'child prompt', MODEL, PROVIDER);
 	tree = child;
 	tree = setResponse(tree, child.id, 'child response');
-	const leaf = addExchangeResult(tree, child.id, 'leaf prompt', MODEL, PROVIDER);
+	const leaf = domain.tree.addExchangeResult(tree, child.id, 'leaf prompt', MODEL, PROVIDER);
 	return { tree: leaf, rootId: root.id, childId: child.id, leafId: leaf.id };
 }
 
 /** root → main + side (side branch off root) */
 function buildTreeWithSideChat(): {
-	tree: ChatTree;
+	tree: domain.tree.ChatTree;
 	rootId: string;
 	mainId: string;
 	sideId: string;
 } {
-	let tree = buildEmptyTree();
-	const root = addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
+	let tree = domain.tree.buildEmptyTree();
+	const root = domain.tree.addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
 	tree = root;
 	tree = setResponse(tree, root.id, 'root response');
-	const main = addExchangeResult(tree, root.id, 'main prompt', MODEL, PROVIDER);
+	const main = domain.tree.addExchangeResult(tree, root.id, 'main prompt', MODEL, PROVIDER);
 	tree = main;
-	const side = addExchangeResult(tree, root.id, 'side prompt', MODEL, PROVIDER);
+	const side = domain.tree.addExchangeResult(tree, root.id, 'side prompt', MODEL, PROVIDER);
 	return { tree: side, rootId: root.id, mainId: main.id, sideId: side.id };
 }
 
 /** root → main + side → side-child */
 function buildTreeWithSideDescendant(): {
-	tree: ChatTree;
+	tree: domain.tree.ChatTree;
 	rootId: string;
 	sideId: string;
 	sideChildId: string;
 } {
-	let tree = buildEmptyTree();
-	const root = addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
+	let tree = domain.tree.buildEmptyTree();
+	const root = domain.tree.addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
 	tree = root;
 	tree = setResponse(tree, root.id, 'root response');
-	const main = addExchangeResult(tree, root.id, 'main prompt', MODEL, PROVIDER);
+	const main = domain.tree.addExchangeResult(tree, root.id, 'main prompt', MODEL, PROVIDER);
 	tree = main;
-	const side = addExchangeResult(tree, root.id, 'side prompt', MODEL, PROVIDER);
+	const side = domain.tree.addExchangeResult(tree, root.id, 'side prompt', MODEL, PROVIDER);
 	tree = side;
-	const sideChild = addExchangeResult(tree, side.id, 'side child prompt', MODEL, PROVIDER);
+	const sideChild = domain.tree.addExchangeResult(
+		tree,
+		side.id,
+		'side child prompt',
+		MODEL,
+		PROVIDER
+	);
 	return { tree: sideChild, rootId: root.id, sideId: side.id, sideChildId: sideChild.id };
 }
 
@@ -177,16 +194,16 @@ describe('getExchangeNodeData', () => {
 
 	it('hasSideChildren is true when a node has side children', () => {
 		// Build: root → child, child has a response, then child → grandchild1 + grandchild2
-		let tree = buildEmptyTree();
-		const root = addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
+		let tree = domain.tree.buildEmptyTree();
+		const root = domain.tree.addExchangeResult(tree, 'ignored', 'root prompt', MODEL, PROVIDER);
 		tree = root;
 		tree = setResponse(tree, root.id, 'root resp');
-		const child = addExchangeResult(tree, root.id, 'child prompt', MODEL, PROVIDER);
+		const child = domain.tree.addExchangeResult(tree, root.id, 'child prompt', MODEL, PROVIDER);
 		tree = child;
 		tree = setResponse(tree, child.id, 'child resp');
-		const gc1 = addExchangeResult(tree, child.id, 'gc1 prompt', MODEL, PROVIDER);
+		const gc1 = domain.tree.addExchangeResult(tree, child.id, 'gc1 prompt', MODEL, PROVIDER);
 		tree = gc1;
-		const gc2 = addExchangeResult(tree, child.id, 'gc2 prompt', MODEL, PROVIDER);
+		const gc2 = domain.tree.addExchangeResult(tree, child.id, 'gc2 prompt', MODEL, PROVIDER);
 		tree = gc2;
 
 		const result = getExchangeNodeData(child.id, tree.exchanges, null, mockCallbacks(), mockDeps());
@@ -339,15 +356,15 @@ describe('getExchangeNodeData', () => {
 	});
 
 	it('canCreateSideChat is false for a side root (even with children)', () => {
-		let t = buildEmptyTree();
-		const root = addExchangeResult(t, 'ignored', 'root', MODEL, PROVIDER);
+		let t = domain.tree.buildEmptyTree();
+		const root = domain.tree.addExchangeResult(t, 'ignored', 'root', MODEL, PROVIDER);
 		t = setResponse(root, root.id, 'resp');
-		const main = addExchangeResult(t, root.id, 'main', MODEL, PROVIDER);
+		const main = domain.tree.addExchangeResult(t, root.id, 'main', MODEL, PROVIDER);
 		t = main;
-		const side = addExchangeResult(t, root.id, 'side', MODEL, PROVIDER);
+		const side = domain.tree.addExchangeResult(t, root.id, 'side', MODEL, PROVIDER);
 		t = side;
 		t = setResponse(t, side.id, 'side resp');
-		const sideChild = addExchangeResult(t, side.id, 'side child', MODEL, PROVIDER);
+		const sideChild = domain.tree.addExchangeResult(t, side.id, 'side child', MODEL, PROVIDER);
 		t = sideChild;
 
 		const result = getExchangeNodeData(side.id, t.exchanges, null, mockCallbacks(), mockDeps());

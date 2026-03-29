@@ -7,7 +7,7 @@ const LEGACY_VAULT_KEY = 'byok_vault';
 
 // --- Invariant checks ---
 
-function assertNoDuplicateNames(chats: domain.Chat[], folders: state.ChatFolder[]) {
+function assertNoDuplicateNames(chats: domain.tree.Chat[], folders: state.documents.ChatFolder[]) {
 	const chatNames: string[] = [];
 	for (const chat of chats) {
 		if (chatNames.includes(chat.name)) throw new Error(`Duplicate chat name "${chat.name}"`);
@@ -54,24 +54,24 @@ export function loadFromStorage() {
 	} catch {
 		return;
 	}
-	state.hydrate(parsed);
+	state.chats.hydrate(parsed);
 	if (parsed.folders?.length) {
-		state.docState.folders = parsed.folders;
+		state.documents.docState.folders = parsed.folders;
 	}
 	if (parsed.layout) {
 		_layout = parsed.layout;
 	}
-	assertNoDuplicateNames(state.chatState.chats, state.docState.folders);
+	assertNoDuplicateNames(state.chats.chatState.chats, state.documents.docState.folders);
 }
 
 export function saveToStorage() {
-	assertNoDuplicateNames(state.chatState.chats, state.docState.folders);
+	assertNoDuplicateNames(state.chats.chatState.chats, state.documents.docState.folders);
 	localStorage.setItem(
 		STORAGE_KEY,
 		JSON.stringify({
-			chats: state.chatState.chats,
-			activeChatIndex: state.chatState.activeChatIndex,
-			folders: state.docState.folders,
+			chats: state.chats.chatState.chats,
+			activeChatIndex: state.chats.chatState.activeChatIndex,
+			folders: state.documents.docState.folders,
 			layout: _layout
 		})
 	);

@@ -5,8 +5,7 @@ import userEvent from '@testing-library/user-event';
 import AppSidebarHarness from '../../../tests/fixtures/AppSidebarHarness.svelte';
 import AppSidebarStateHarness from '../../../tests/fixtures/AppSidebarStateHarness.svelte';
 import { toast } from 'svelte-sonner';
-import { chatState } from '@/state';
-import { docState } from '@/state';
+import * as state from '@/state';
 
 vi.mock('svelte-sonner', () => ({
 	toast: {
@@ -55,12 +54,12 @@ function getRowActionsButton(label: string): HTMLButtonElement {
 describe('AppSidebar', () => {
 	beforeEach(() => {
 		document.documentElement.className = 'dark';
-		chatState.chats = [
+		state.chats.chatState.chats = [
 			{ id: 'chat-1', name: 'Chat 1', rootId: null, exchanges: {}, activeExchangeId: null }
 		];
-		chatState.activeChatIndex = 0;
-		docState.folders = [];
-		docState.openDocs = [];
+		state.chats.chatState.activeChatIndex = 0;
+		state.documents.docState.folders = [];
+		state.documents.docState.openDocs = [];
 		const storage = new Map<string, string>();
 		vi.stubGlobal('localStorage', {
 			getItem: vi.fn((key: string) => storage.get(key) ?? null),
@@ -128,10 +127,12 @@ describe('AppSidebar', () => {
 		await user.click(screen.getByText('New folder'));
 		await user.click(screen.getByText('New folder'));
 
-		expect(docState.folders.map((folder) => folder.name)).toEqual(['New Folder', 'New Folder 2']);
-		expect(new Set(docState.folders.map((folder) => folder.name)).size).toBe(
-			docState.folders.length
+		expect(state.documents.docState.folders.map((folder: { name: string }) => folder.name)).toEqual(
+			['New Folder', 'New Folder 2']
 		);
+		expect(
+			new Set(state.documents.docState.folders.map((folder: { name: string }) => folder.name)).size
+		).toBe(state.documents.docState.folders.length);
 	});
 
 	it('toggles the theme and persists the choice', async () => {

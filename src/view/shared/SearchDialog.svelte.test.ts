@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import SearchDialog from './SearchDialog.svelte';
-import type { SearchResult } from '@/domain';
+import type * as domain from '@/domain';
 
-const ITEMS: SearchResult[] = [
+const ITEMS: domain.search.SearchResult[] = [
 	{
 		exchangeId: 'exchange-1',
 		chatIndex: 0,

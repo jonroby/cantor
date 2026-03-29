@@ -4,52 +4,27 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ChatView from './ChatView.svelte';
-import { chatState, getActiveExchanges } from '@/state';
-import { docState } from '@/state';
-import { providerState } from '@/state';
-import {
-	buildEmptyTree,
-	addExchangeResult,
-	getMainChatTail,
-	getChildExchanges,
-	type ChatTree,
-	type Chat
-} from '@/domain';
-import type { Provider } from '@/domain';
+import * as state from '@/state';
+import * as domain from '@/domain';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@/external', () => ({
-	streams: {
-		startStream: vi.fn(),
-		cancelStream: vi.fn(),
-		cancelAllStreams: vi.fn(),
-		cancelStreamsForExchanges: vi.fn(),
-		cancelStreamsForChat: vi.fn(),
-		isStreaming: vi.fn(() => false),
-		isAnyStreaming: vi.fn(() => false),
-		getProviderStream: vi.fn()
-	},
-	providers: {
-		DEFAULT_OLLAMA_URL: 'http://localhost:11434',
-		fetchAvailableModels: vi.fn(),
-		fetchModelContextLength: vi.fn(),
-		getWebLLMModels: vi.fn(() => []),
-		loadWebLLMModel: vi.fn(),
-		deleteModelCache: vi.fn(),
-		deleteAllModelCaches: vi.fn(),
-		clearProviderKey: vi.fn(),
-		loadAllApiKeys: vi.fn(),
-		migrateVault: vi.fn(),
-		saveApiKey: vi.fn(),
-		storedProviders: vi.fn(() => [])
-	},
-	persistence: {
-		getPersistedLayout: vi.fn(() => ({})),
-		saveToStorage: vi.fn(),
-		setPersistedLayout: vi.fn()
-	}
-}));
+vi.mock('@/external', async () => {
+	const { createExternalMock } = await import('@/tests/mocks');
+	return createExternalMock({
+		providers: {
+			webllm: {
+				getWebLLMModels: vi.fn(() => [])
+			},
+			vault: {
+				storedProviders: vi.fn(() => [])
+			}
+		},
+		persistence: {
+			getPersistedLayout: vi.fn(() => ({}))
+		}
+	});
+});
 
 vi.mock('@/view/shared/katex', () => ({
 	renderRichText: (text: string) => text
@@ -57,18 +32,13 @@ vi.mock('@/view/shared/katex', () => ({
 
 vi.mock('@/lib', async (importOriginal) => ({
 	...(await importOriginal<typeof import('@/lib')>()),
-	mapDocument: (text: string) => (text ? [{ source: text, html: text }] : []),
-	marked: { lexer: () => [], parser: () => '', parse: (t: string) => t },
-	validate: () => []
-}));
-
-vi.mock('dompurify', () => ({
-	default: { sanitize: (html: string) => html }
-}));
-
-vi.mock('@/domain', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/domain')>()),
-	PROVIDER_LOGOS: {}
+	documentMap: {
+		mapDocument: (text: string) => (text ? [{ source: text, html: text }] : []),
+		marked: { lexer: () => [], parser: () => '', parse: (t: string) => t }
+	},
+	validateMd: {
+		validate: () => []
+	}
 }));
 
 vi.mock('@/app', async (importOriginal) => ({
@@ -100,10 +70,15 @@ vi.mock('marked', () => ({
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const MODEL = 'claude-sonnet-4-5';
-const PROVIDER: Provider = 'claude';
+const PROVIDER: domain.models.Provider = 'claude';
 
-function addExchange(tree: ChatTree, parentId: string, prompt: string, response: string): ChatTree {
-	const result = addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
+function addExchange(
+	tree: domain.tree.ChatTree,
+	parentId: string,
+	prompt: string,
+	response: string
+): domain.tree.ChatTree {
+	const result = domain.tree.addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
 	result.exchanges[result.id] = {
 		...result.exchanges[result.id],
 		response: { text: response, tokenCount: 10 }
@@ -115,9 +90,9 @@ function addExchange(tree: ChatTree, parentId: string, prompt: string, response:
  * Builds a tree with visible exchanges.
  * Root is visible. N additional exchanges appear in the main path.
  */
-function buildVisibleTree(n: number): ChatTree {
-	let tree = buildEmptyTree();
-	const root = addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
+function buildVisibleTree(n: number): domain.tree.ChatTree {
+	let tree = domain.tree.buildEmptyTree();
+	const root = domain.tree.addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
 	tree = root;
 	tree.exchanges[root.id] = {
 		...tree.exchanges[root.id],
@@ -127,7 +102,7 @@ function buildVisibleTree(n: number): ChatTree {
 	let parentId = root.id;
 	for (let i = 0; i < n; i++) {
 		tree = addExchange(tree, parentId, `Prompt ${i + 1}`, `Response ${i + 1}`);
-		parentId = getMainChatTail(tree)!;
+		parentId = domain.tree.getMainChatTail(tree)!;
 	}
 	return tree;
 }
@@ -137,10 +112,10 @@ function buildVisibleTree(n: number): ChatTree {
  * Structure: root (visible) → e1 (visible) → e2 (visible, main)
  *                                           → side1 (visible, side branch)
  */
-function buildTreeWithBranch(): { tree: ChatTree; branchParentId: string } {
-	let tree = buildEmptyTree();
+function buildTreeWithBranch(): { tree: domain.tree.ChatTree; branchParentId: string } {
+	let tree = domain.tree.buildEmptyTree();
 	// Root (hidden)
-	const root = addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
+	const root = domain.tree.addExchangeResult(tree, 'unused', 'Root prompt', MODEL, PROVIDER);
 	tree = root;
 	tree.exchanges[root.id] = {
 		...tree.exchanges[root.id],
@@ -149,7 +124,7 @@ function buildTreeWithBranch(): { tree: ChatTree; branchParentId: string } {
 
 	// First visible exchange (branch parent)
 	tree = addExchange(tree, root.id, 'Main prompt 1', 'Main response 1');
-	const e1Id = getMainChatTail(tree)!;
+	const e1Id = domain.tree.getMainChatTail(tree)!;
 
 	// Main path child
 	tree = addExchange(tree, e1Id, 'Main prompt 2', 'Main response 2');
@@ -160,19 +135,19 @@ function buildTreeWithBranch(): { tree: ChatTree; branchParentId: string } {
 	return { tree, branchParentId: e1Id };
 }
 
-function resetState(tree?: ChatTree) {
-	const t = tree ?? buildEmptyTree();
-	const chat: Chat = {
+function resetState(tree?: domain.tree.ChatTree) {
+	const t = tree ?? domain.tree.buildEmptyTree();
+	const chat: domain.tree.Chat = {
 		id: crypto.randomUUID(),
 		name: 'Test Chat',
 		rootId: t.rootId,
 		exchanges: t.exchanges,
-		activeExchangeId: getMainChatTail(t)
+		activeExchangeId: domain.tree.getMainChatTail(t)
 	};
-	chatState.chats = [chat];
-	chatState.activeChatIndex = 0;
-	providerState.activeModel = { provider: PROVIDER, modelId: MODEL };
-	providerState.contextLength = 128000;
+	state.chats.chatState.chats = [chat];
+	state.chats.chatState.activeChatIndex = 0;
+	state.providers.providerState.activeModel = { provider: PROVIDER, modelId: MODEL };
+	state.providers.providerState.contextLength = 128000;
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -189,8 +164,8 @@ describe('ChatView', () => {
 			configurable: true
 		});
 		resetState();
-		docState.folders = [];
-		docState.openDocs = [];
+		state.documents.docState.folders = [];
+		state.documents.docState.openDocs = [];
 	});
 
 	describe('empty chat', () => {
@@ -242,7 +217,7 @@ describe('ChatView', () => {
 		});
 
 		it('send button disabled without a model', () => {
-			providerState.activeModel = null;
+			state.providers.providerState.activeModel = null;
 			render(ChatView);
 			expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
 			expect(screen.getByText('Select a model first.')).toBeInTheDocument();
@@ -329,8 +304,8 @@ describe('ChatView', () => {
 			await userEvent.click(screen.getByRole('button', { name: 'Send message' }));
 			await tick();
 
-			const exchanges = getActiveExchanges();
-			const branchChildren = getChildExchanges(exchanges, branchParentId);
+			const exchanges = state.chats.getActiveExchanges();
+			const branchChildren = domain.tree.getChildExchanges(exchanges, branchParentId);
 			expect(branchChildren.length).toBe(2);
 		});
 
@@ -351,8 +326,8 @@ describe('ChatView', () => {
 
 	describe('branch navigation', () => {
 		it('shows branch counter in side panel', async () => {
-			let tree = buildEmptyTree();
-			const root = addExchangeResult(tree, 'unused', 'Root', MODEL, PROVIDER);
+			let tree = domain.tree.buildEmptyTree();
+			const root = domain.tree.addExchangeResult(tree, 'unused', 'Root', MODEL, PROVIDER);
 			tree = root;
 			tree.exchanges[root.id] = {
 				...tree.exchanges[root.id],
@@ -361,7 +336,7 @@ describe('ChatView', () => {
 
 			// Visible exchange
 			tree = addExchange(tree, root.id, 'Main', 'Main resp');
-			const e1Id = getMainChatTail(tree)!;
+			const e1Id = domain.tree.getMainChatTail(tree)!;
 
 			// Main path continuation
 			tree = addExchange(tree, e1Id, 'Main 2', 'Main resp 2');
@@ -398,7 +373,7 @@ describe('ChatView', () => {
 			resetState(buildVisibleTree(2));
 			render(ChatView);
 
-			const beforeCount = Object.keys(getActiveExchanges()).length;
+			const beforeCount = Object.keys(state.chats.getActiveExchanges()).length;
 
 			const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
 			await userEvent.click(deleteButtons[0]);
@@ -407,7 +382,7 @@ describe('ChatView', () => {
 			await userEvent.click(screen.getByText('Confirm delete'));
 			await tick();
 
-			const afterCount = Object.keys(getActiveExchanges()).length;
+			const afterCount = Object.keys(state.chats.getActiveExchanges()).length;
 			expect(afterCount).toBeLessThan(beforeCount);
 		});
 
@@ -415,7 +390,7 @@ describe('ChatView', () => {
 			resetState(buildVisibleTree(2));
 			render(ChatView);
 
-			const beforeCount = Object.keys(getActiveExchanges()).length;
+			const beforeCount = Object.keys(state.chats.getActiveExchanges()).length;
 
 			const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
 			await userEvent.click(deleteButtons[0]);
@@ -425,7 +400,7 @@ describe('ChatView', () => {
 			await tick();
 
 			expect(screen.queryByText('Delete exchange')).not.toBeInTheDocument();
-			expect(Object.keys(getActiveExchanges()).length).toBe(beforeCount);
+			expect(Object.keys(state.chats.getActiveExchanges()).length).toBe(beforeCount);
 		});
 	});
 
@@ -440,14 +415,14 @@ describe('ChatView', () => {
 
 	describe('document panel', () => {
 		function setupDocPanel() {
-			docState.folders = [
+			state.documents.docState.folders = [
 				{
 					id: 'folder-1',
 					name: 'Docs',
 					files: [{ id: 'file-1', name: 'notes.md', content: '# My Notes' }]
 				}
 			];
-			docState.openDocs = [
+			state.documents.docState.openDocs = [
 				{
 					id: 'doc-1',
 					content: '# My Notes',

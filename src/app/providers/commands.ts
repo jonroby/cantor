@@ -7,11 +7,11 @@ export function autoConnectOllama() {
 
 async function _autoConnectOllama() {
 	try {
-		const models = await external.providers.fetchAvailableModels(
-			external.providers.DEFAULT_OLLAMA_URL
+		const models = await external.providers.ollama.fetchAvailableModels(
+			external.providers.ollama.DEFAULT_OLLAMA_URL
 		);
 		if (models.length > 0) {
-			state.providers.providerState.ollamaUrl = external.providers.DEFAULT_OLLAMA_URL;
+			state.providers.providerState.ollamaUrl = external.providers.ollama.DEFAULT_OLLAMA_URL;
 			state.providers.providerState.ollamaModels = models;
 			state.providers.providerState.ollamaStatus = 'connected';
 			state.providers.providerState.activeModel = { provider: 'ollama', modelId: models[0] };
@@ -24,7 +24,7 @@ async function _autoConnectOllama() {
 export async function connectOllama(url: string) {
 	state.providers.providerState.ollamaStatus = 'connecting';
 	try {
-		const models = await external.providers.fetchAvailableModels(url);
+		const models = await external.providers.ollama.fetchAvailableModels(url);
 		state.providers.providerState.ollamaUrl = url;
 		state.providers.providerState.ollamaModels = models;
 		state.providers.providerState.ollamaStatus = 'connected';
@@ -54,7 +54,7 @@ export async function loadWebLLMModel_(modelId: string) {
 	state.providers.providerState.webllmProgressText = '';
 	state.providers.providerState.webllmError = null;
 	try {
-		await external.providers.loadWebLLMModel(
+		await external.providers.webllm.loadWebLLMModel(
 			modelId,
 			state.providers.providerState.webllmContextSize,
 			(report) => {
@@ -73,7 +73,7 @@ export async function loadWebLLMModel_(modelId: string) {
 }
 
 export async function deleteWebLLMCache(modelId: string) {
-	await external.providers.deleteModelCache(modelId);
+	await external.providers.webllm.deleteModelCache(modelId);
 	if (
 		state.providers.providerState.activeModel?.provider === 'webllm' &&
 		state.providers.providerState.activeModel.modelId === modelId
@@ -84,7 +84,7 @@ export async function deleteWebLLMCache(modelId: string) {
 }
 
 export async function deleteAllWebLLMCaches() {
-	await external.providers.deleteAllModelCaches();
+	await external.providers.webllm.deleteAllModelCaches();
 	if (state.providers.providerState.activeModel?.provider === 'webllm') {
 		state.providers.providerState.activeModel = null;
 	}
@@ -92,24 +92,24 @@ export async function deleteAllWebLLMCaches() {
 }
 
 export async function unlockKeys(password: string) {
-	state.providers.providerState.apiKeys = await external.providers.loadAllApiKeys(password);
+	state.providers.providerState.apiKeys = await external.providers.vault.loadAllApiKeys(password);
 }
 
 export async function saveKey(provider: string, apiKey: string, password: string) {
-	await external.providers.saveApiKey(provider, apiKey, password);
+	await external.providers.vault.saveApiKey(provider, apiKey, password);
 	state.providers.providerState.apiKeys = {
 		...state.providers.providerState.apiKeys,
 		[provider]: apiKey
 	};
-	state.providers.providerState.vaultProviders = external.providers.storedProviders();
+	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 }
 
 export function forgetKey(provider: string) {
-	external.providers.clearProviderKey(provider);
+	external.providers.vault.clearProviderKey(provider);
 	const { [provider]: _, ...rest } = state.providers.providerState.apiKeys;
 	void _;
 	state.providers.providerState.apiKeys = rest;
-	state.providers.providerState.vaultProviders = external.providers.storedProviders();
+	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 	if (state.providers.providerState.activeModel?.provider === provider) {
 		state.providers.providerState.activeModel = null;
 	}
@@ -120,7 +120,7 @@ export async function fetchOllamaContextLength() {
 		const modelId = state.providers.providerState.activeModel.modelId;
 		const url = state.providers.providerState.ollamaUrl;
 		try {
-			const length = await external.providers.fetchModelContextLength(modelId, url);
+			const length = await external.providers.ollama.fetchModelContextLength(modelId, url);
 			if (
 				state.providers.providerState.activeModel?.provider === 'ollama' &&
 				state.providers.providerState.activeModel.modelId === modelId &&

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createActor, type SnapshotFrom } from 'xstate';
 import { streamMachine, type StreamMachineInput } from './stream.machine';
 import type { StreamChunk } from '@/external/providers/stream';
-import type { Message } from '@/domain';
+import type * as domain from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -10,7 +10,7 @@ function makeInput(chunks: StreamChunk[] = [], opts?: { throwError?: string }): 
 	return {
 		exchangeId: 'test-exchange',
 		model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
-		history: [{ role: 'user', content: 'hello' }] as Message[],
+		history: [{ role: 'user', content: 'hello' }] as domain.tree.Message[],
 		getStream: async function* (_model, _history, _signal) {
 			for (const chunk of chunks) {
 				yield chunk;
@@ -88,7 +88,7 @@ describe('streamMachine', () => {
 		const input: StreamMachineInput = {
 			exchangeId: 'test',
 			model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
-			history: [{ role: 'user', content: 'hello' }] as Message[],
+			history: [{ role: 'user', content: 'hello' }] as domain.tree.Message[],
 			getStream: async function* (_model, _history, signal) {
 				yield { type: 'delta' as const, delta: 'partial' };
 				// Wait indefinitely so we can cancel
@@ -122,7 +122,7 @@ describe('streamMachine', () => {
 		const input: StreamMachineInput = {
 			exchangeId: 'test',
 			model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
-			history: [{ role: 'user', content: 'hello' }] as Message[],
+			history: [{ role: 'user', content: 'hello' }] as domain.tree.Message[],
 			// eslint-disable-next-line require-yield
 			getStream: async function* (_model, _history, signal) {
 				await new Promise((_resolve, reject) => {
@@ -152,7 +152,7 @@ describe('streamMachine', () => {
 		const input: StreamMachineInput = {
 			exchangeId: 'test-exchange',
 			model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
-			history: [{ role: 'user', content: 'hello' }] as Message[],
+			history: [{ role: 'user', content: 'hello' }] as domain.tree.Message[],
 			// eslint-disable-next-line require-yield
 			getStream: async function* () {
 				throw 'boom';

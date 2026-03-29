@@ -21,17 +21,19 @@ vi.mock('./openai-compat', () => ({
 }));
 
 vi.mock('@/state', () => ({
-	providerState: {
-		apiKeys: {
-			claude: 'claude-key',
-			gemini: 'gemini-key',
-			openai: 'openai-key'
-		},
-		ollamaUrl: 'http://localhost:11434'
+	providers: {
+		providerState: {
+			apiKeys: {
+				claude: 'claude-key',
+				gemini: 'gemini-key',
+				openai: 'openai-key'
+			},
+			ollamaUrl: 'http://localhost:11434'
+		}
 	}
 }));
 
-import type { Message } from '@/domain';
+import type * as domain from '@/domain';
 import { getProviderStream } from './stream';
 import { streamOllamaChat } from './ollama';
 import { streamWebLLMChat } from './webllm';
@@ -39,7 +41,7 @@ import { streamClaudeChat } from './claude';
 import { streamGeminiChat } from './gemini';
 import { streamOpenAICompatChat } from './openai-compat';
 
-const HISTORY: Message[] = [{ role: 'user', content: 'Hello' }];
+const HISTORY: domain.tree.Message[] = [{ role: 'user', content: 'Hello' }];
 
 describe('provider stream dispatch', () => {
 	beforeEach(() => {

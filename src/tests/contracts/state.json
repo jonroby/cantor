@@ -1,0 +1,42 @@
+{
+	"chats": {
+		"chatState": true,
+		"copyToNewChat": true,
+		"deleteChat": true,
+		"getActiveChat": true,
+		"getActiveExchangeId": true,
+		"getActiveExchanges": true,
+		"getActiveTree": true,
+		"getChatById": true,
+		"getExchangesByChatId": true,
+		"getTreeByChatId": true,
+		"hydrate": true,
+		"newChat": true,
+		"renameChat": true,
+		"replaceActiveExchanges": true,
+		"replaceActiveTree": true,
+		"replaceExchangesByChatId": true,
+		"replaceTreeByChatId": true,
+		"selectChat": true,
+		"setActiveExchangeId": true
+	},
+	"documents": {
+		"closeDoc": true,
+		"deleteDocFromFolder": true,
+		"deleteFolder": true,
+		"docState": true,
+		"moveDocToFolder": true,
+		"newDocInFolder": true,
+		"newFolder": true,
+		"renameDocInFolder": true,
+		"renameFolder": true,
+		"selectDoc": true,
+		"updateDocContent": true
+	},
+	"providers": {
+		"providerState": true,
+		"selectModel": true,
+		"updateContextLength": true,
+		"WEBLLM_CONTEXT_OPTIONS": true
+	}
+}

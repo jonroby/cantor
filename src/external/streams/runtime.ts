@@ -21,8 +21,8 @@ const store: StreamStore = {
 };
 
 const deps: StreamDeps = {
-	getTreeByChatId: state.getTreeByChatId,
-	replaceTreeByChatId: state.replaceTreeByChatId,
+	getTreeByChatId: state.chats.getTreeByChatId,
+	replaceTreeByChatId: state.chats.replaceTreeByChatId,
 	getProviderStream
 };
 
@@ -37,8 +37,8 @@ export function isAnyStreaming(): boolean {
 export function startStream(params: {
 	exchangeId: string;
 	chatId: string;
-	model: domain.ActiveModel;
-	tree: domain.ChatTree;
+	model: domain.models.ActiveModel;
+	tree: domain.tree.ChatTree;
 	liveDocContent?: string;
 }): void {
 	_startStream(store, deps, params);

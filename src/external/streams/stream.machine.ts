@@ -3,15 +3,15 @@ import type { StreamChunk } from '@/external/providers/stream';
 import type * as domain from '@/domain';
 
 type StreamFactory = (
-	model: domain.ActiveModel,
-	history: domain.Message[],
+	model: domain.models.ActiveModel,
+	history: domain.tree.Message[],
 	signal: AbortSignal
 ) => AsyncGenerator<StreamChunk>;
 
 export interface StreamMachineInput {
 	exchangeId: string;
-	model: domain.ActiveModel;
-	history: domain.Message[];
+	model: domain.models.ActiveModel;
+	history: domain.tree.Message[];
 	getStream: StreamFactory;
 }
 
@@ -22,8 +22,8 @@ export type StreamMachineEvent =
 	| { type: 'CANCEL' };
 
 interface CallbackInput {
-	model: domain.ActiveModel;
-	history: domain.Message[];
+	model: domain.models.ActiveModel;
+	history: domain.tree.Message[];
 	getStream: StreamFactory;
 }
 
@@ -66,8 +66,8 @@ export const streamMachine = setup({
 			promptTokens: number;
 			responseTokens: number;
 			error: string | null;
-			model: domain.ActiveModel;
-			history: domain.Message[];
+			model: domain.models.ActiveModel;
+			history: domain.tree.Message[];
 			getStream: StreamFactory;
 		},
 		events: {} as StreamMachineEvent,

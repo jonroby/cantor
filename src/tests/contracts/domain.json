@@ -1,0 +1,43 @@
+{
+	"models": {
+		"isKeyBasedProvider": true,
+		"KEY_BASED_PROVIDERS": true,
+		"LOCAL_PROVIDERS": true,
+		"PROVIDERS": true
+	},
+	"search": {
+		"getDefaultItems": true,
+		"groupResults": true,
+		"searchChats": true
+	},
+	"tree": {
+		"addDocumentExchangeResult": true,
+		"addExchange": true,
+		"addExchangeResult": true,
+		"buildEmptyTree": true,
+		"canAcceptNewChat": true,
+		"canCreateSideChats": true,
+		"canPromoteSideChatToMainChat": true,
+		"ChatTreeOperationError": true,
+		"copyPath": true,
+		"deleteExchangeWithMode": true,
+		"deleteExchangeWithModeResult": true,
+		"findRootId": true,
+		"findSideChatParent": true,
+		"getChildExchanges": true,
+		"getDescendantExchanges": true,
+		"getHistory": true,
+		"getMainChatHistory": true,
+		"getMainChatTail": true,
+		"getPathTokenTotal": true,
+		"getRootExchange": true,
+		"promoteSideChatToMainChat": true,
+		"removeExchange": true,
+		"removeExchangeSubtree": true,
+		"removeMainChatChild": true,
+		"removeSideChatChildren": true,
+		"updateExchangeResponse": true,
+		"updateExchangeTokens": true,
+		"validateChatTree": true
+	}
+}

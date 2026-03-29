@@ -3,10 +3,10 @@ import type * as domain from '@/domain';
 import * as lib from '@/lib';
 import type { StreamChunk } from './stream';
 
-export const WEBLLM_CONTEXT_OPTIONS = lib.WEBLLM_CONTEXT_OPTIONS;
-export type WebLLMContextSize = lib.WebLLMContextSize;
-export type WebLLMModelEntry = lib.WebLLMModelEntry;
-export type WebLLMStatus = lib.WebLLMStatus;
+export const WEBLLM_CONTEXT_OPTIONS = lib.providerDefaults.WEBLLM_CONTEXT_OPTIONS;
+export type WebLLMContextSize = lib.providerDefaults.WebLLMContextSize;
+export type WebLLMModelEntry = lib.providerTypes.WebLLMModelEntry;
+export type WebLLMStatus = lib.providerTypes.WebLLMStatus;
 
 async function loadWebLLMLib() {
 	return import('@mlc-ai/web-llm');
@@ -140,7 +140,7 @@ export async function deleteAllModelCaches(): Promise<void> {
 
 /** Stream a chat completion from the loaded WebLLM engine. */
 export async function* streamWebLLMChat(
-	messages: domain.Message[],
+	messages: domain.tree.Message[],
 	signal: AbortSignal
 ): AsyncGenerator<StreamChunk> {
 	if (!engine) throw new Error('WebLLM engine not loaded');

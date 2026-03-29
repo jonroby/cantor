@@ -20,51 +20,43 @@ import {
 	copyToNewChat,
 	hydrate
 } from './chats.svelte';
-import {
-	buildEmptyTree,
-	addExchangeResult,
-	getMainChatTail,
-	validateChatTree,
-	type Chat,
-	type ChatTree
-} from '@/domain';
-import type { Provider } from '@/domain';
+import * as domain from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const PROVIDER: Provider = 'claude';
+const PROVIDER: domain.models.Provider = 'claude';
 const MODEL = 'claude-sonnet-4-6';
 
-function buildTreeWithExchanges(n: number): ChatTree {
-	let tree = buildEmptyTree();
+function buildTreeWithExchanges(n: number): domain.tree.ChatTree {
+	let tree = domain.tree.buildEmptyTree();
 	let parentId = 'unused';
 	for (let i = 0; i < n; i++) {
-		const result = addExchangeResult(tree, parentId, `prompt-${i}`, MODEL, PROVIDER);
+		const result = domain.tree.addExchangeResult(tree, parentId, `prompt-${i}`, MODEL, PROVIDER);
 		tree = { rootId: result.rootId, exchanges: result.exchanges };
 		parentId = result.id;
 	}
 	return tree;
 }
 
-function makeChat(name: string, tree?: ChatTree): Chat {
+function makeChat(name: string, tree?: domain.tree.ChatTree): domain.tree.Chat {
 	const t = tree ?? buildTreeWithExchanges(2);
 	return {
 		id: crypto.randomUUID(),
 		name,
 		rootId: t.rootId,
 		exchanges: t.exchanges,
-		activeExchangeId: getMainChatTail(t)
+		activeExchangeId: domain.tree.getMainChatTail(t)
 	};
 }
 
 function resetState() {
 	const tree = buildTreeWithExchanges(1);
-	const chat: Chat = {
+	const chat: domain.tree.Chat = {
 		id: 'test-chat-1',
 		name: 'Chat 1',
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
-		activeExchangeId: getMainChatTail(tree)
+		activeExchangeId: domain.tree.getMainChatTail(tree)
 	};
 	chatState.chats = [chat];
 	chatState.activeChatIndex = 0;
@@ -192,7 +184,7 @@ describe('chats state', () => {
 
 		it('does nothing for nonexistent chat id', () => {
 			const beforeRootId = chatState.chats[0].rootId;
-			replaceTreeByChatId('nope', buildEmptyTree());
+			replaceTreeByChatId('nope', domain.tree.buildEmptyTree());
 			expect(chatState.chats[0].rootId).toBe(beforeRootId);
 		});
 
@@ -400,12 +392,12 @@ describe('chats state', () => {
 					name: 'Source',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree)
 				}
 			];
 			chatState.activeChatIndex = 0;
 
-			const tail = getMainChatTail(tree)!;
+			const tail = domain.tree.getMainChatTail(tree)!;
 			copyToNewChat(tail);
 
 			expect(chatState.chats.length).toBe(2);
@@ -421,17 +413,17 @@ describe('chats state', () => {
 					name: 'Source',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree)
 				}
 			];
 			chatState.activeChatIndex = 0;
 
-			const tail = getMainChatTail(tree)!;
+			const tail = domain.tree.getMainChatTail(tree)!;
 			copyToNewChat(tail);
 
 			const copiedTree = getTreeByChatId(chatState.chats[1].id);
 			expect(copiedTree).toBeDefined();
-			expect(() => validateChatTree(copiedTree!)).not.toThrow();
+			expect(() => domain.tree.validateChatTree(copiedTree!)).not.toThrow();
 		});
 
 		it('does nothing if no active chat', () => {
@@ -449,14 +441,14 @@ describe('chats state', () => {
 					name: 'Source',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree)
 				},
 				makeChat('Copy Path (1)'),
 				makeChat('Copy Path (2)')
 			];
 			chatState.activeChatIndex = 0;
 
-			copyToNewChat(getMainChatTail(tree)!);
+			copyToNewChat(domain.tree.getMainChatTail(tree)!);
 
 			expect(chatState.chats.at(-1)?.name).toBe('Copy Path (3)');
 			const names = chatState.chats.map((chat) => chat.name);
@@ -467,13 +459,13 @@ describe('chats state', () => {
 	describe('hydrate', () => {
 		it('restores chats from parsed data', () => {
 			const tree = buildTreeWithExchanges(2);
-			const chats: Chat[] = [
+			const chats: domain.tree.Chat[] = [
 				{
 					id: 'h1',
 					name: 'Hydrated',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree)
 				}
 			];
 			hydrate({ chats, activeChatIndex: 0 });
@@ -496,13 +488,13 @@ describe('chats state', () => {
 
 		it('clamps activeChatIndex to valid range', () => {
 			const tree = buildTreeWithExchanges(2);
-			const chats: Chat[] = [
+			const chats: domain.tree.Chat[] = [
 				{
 					id: 'h1',
 					name: 'H1',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree)
 				}
 			];
 			hydrate({ chats, activeChatIndex: 99 });
@@ -511,13 +503,13 @@ describe('chats state', () => {
 
 		it('clamps negative activeChatIndex to 0', () => {
 			const tree = buildTreeWithExchanges(2);
-			const chats: Chat[] = [
+			const chats: domain.tree.Chat[] = [
 				{
 					id: 'h1',
 					name: 'H1',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree)
 				}
 			];
 			hydrate({ chats, activeChatIndex: -3 });

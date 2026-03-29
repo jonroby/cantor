@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { findRootId, deduplicateName, validateChatUpload } from './io';
-import { addExchangeResult, buildEmptyTree, updateExchangeResponse } from '@/domain';
-import type { ExchangeMap } from '@/domain';
+import * as domain from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildValidUploadData() {
-	let tree = buildEmptyTree();
-	const r1 = addExchangeResult(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
+	let tree = domain.tree.buildEmptyTree();
+	const r1 = domain.tree.addExchangeResult(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
 	tree = { rootId: r1.rootId, exchanges: r1.exchanges };
-	const exchanges = updateExchangeResponse(tree.exchanges, r1.id, 'response');
+	const exchanges = domain.tree.updateExchangeResponse(tree.exchanges, r1.id, 'response');
 	return {
 		id: 'chat-1',
 		name: 'Test Chat',
@@ -31,7 +30,7 @@ describe('findRootId', () => {
 	});
 
 	it('returns null when no exchange has null parentId', () => {
-		const exchanges: ExchangeMap = {
+		const exchanges: domain.tree.ExchangeMap = {
 			a: {
 				id: 'a',
 				parentId: 'b',

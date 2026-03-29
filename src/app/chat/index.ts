@@ -12,13 +12,13 @@ export {
 	submitPrompt as performSubmitPrompt
 } from './commands';
 
-export const getChildExchanges = domain.getChildExchanges;
-export const getRootExchange = domain.getRootExchange;
-export const canAcceptNewChat = domain.canAcceptNewChat;
-export const getMainChatHistory = domain.getMainChatHistory;
-export const getPathTokenTotal = domain.getPathTokenTotal;
+export const getChildExchanges = domain.tree.getChildExchanges;
+export const getRootExchange = domain.tree.getRootExchange;
+export const canAcceptNewChat = domain.tree.canAcceptNewChat;
+export const getMainChatHistory = domain.tree.getMainChatHistory;
+export const getPathTokenTotal = domain.tree.getPathTokenTotal;
 
-export type Chat = domain.Chat;
-export type Exchange = domain.Exchange;
-export type DeleteMode = domain.DeleteMode;
-export type Message = domain.Message;
+export type Chat = domain.tree.Chat;
+export type Exchange = domain.tree.Exchange;
+export type DeleteMode = domain.tree.DeleteMode;
+export type Message = domain.tree.Message;

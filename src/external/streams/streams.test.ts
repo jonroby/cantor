@@ -11,9 +11,7 @@ import {
 	type StreamStore,
 	type StreamDeps
 } from './streams';
-
-import type { ChatTree } from '@/domain';
-import { buildEmptyTree, addExchangeResult, updateExchangeResponse } from '@/domain';
+import * as domain from '@/domain';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,20 +26,22 @@ function makeStore(): StreamStore {
 	};
 }
 
-function buildTreeWithExchange(): { tree: ChatTree; exchangeId: string } {
-	const empty = buildEmptyTree();
-	const result = addExchangeResult(empty, 'ignored', 'Hello', MODEL, PROVIDER);
-	const exchanges = updateExchangeResponse(result.exchanges, result.id, 'Hi there');
+function buildTreeWithExchange(): { tree: domain.tree.ChatTree; exchangeId: string } {
+	const empty = domain.tree.buildEmptyTree();
+	const result = domain.tree.addExchangeResult(empty, 'ignored', 'Hello', MODEL, PROVIDER);
+	const exchanges = domain.tree.updateExchangeResponse(result.exchanges, result.id, 'Hi there');
 	return { tree: { rootId: result.rootId, exchanges }, exchangeId: result.id };
 }
 
-function makeDeps(tree: ChatTree): StreamDeps {
+function makeDeps(tree: domain.tree.ChatTree): StreamDeps {
 	let currentTree = tree;
 	return {
 		getTreeByChatId: vi.fn().mockImplementation(() => currentTree),
-		replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
-			currentTree = nextTree;
-		}),
+		replaceTreeByChatId: vi
+			.fn()
+			.mockImplementation((_chatId: string, nextTree: domain.tree.ChatTree) => {
+				currentTree = nextTree;
+			}),
 		getProviderStream: vi.fn().mockImplementation(async function* () {
 			await new Promise((r) => setTimeout(r, 50));
 			yield { type: 'delta', delta: 'Hello ' };
@@ -51,13 +51,15 @@ function makeDeps(tree: ChatTree): StreamDeps {
 	};
 }
 
-function makeSlowDeps(tree: ChatTree): StreamDeps {
+function makeSlowDeps(tree: domain.tree.ChatTree): StreamDeps {
 	let currentTree = tree;
 	return {
 		getTreeByChatId: vi.fn().mockImplementation(() => currentTree),
-		replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
-			currentTree = nextTree;
-		}),
+		replaceTreeByChatId: vi
+			.fn()
+			.mockImplementation((_chatId: string, nextTree: domain.tree.ChatTree) => {
+				currentTree = nextTree;
+			}),
 		getProviderStream: vi.fn().mockImplementation(async function* (
 			_model: unknown,
 			_history: unknown,
@@ -205,7 +207,7 @@ describe('streams', () => {
 
 			// The last replaceTreeByChatId call should contain the token update
 			const calls = vi.mocked(deps.replaceTreeByChatId).mock.calls;
-			const lastTree = calls.at(-1)?.[1] as ChatTree;
+			const lastTree = calls.at(-1)?.[1] as domain.tree.ChatTree;
 			expect(lastTree.exchanges[exchangeId]?.prompt.tokenCount).toBe(10);
 			expect(lastTree.exchanges[exchangeId]?.response?.tokenCount).toBe(20);
 		});
@@ -242,9 +244,11 @@ describe('streams', () => {
 			let currentTree = tree;
 			const deps: StreamDeps = {
 				getTreeByChatId: vi.fn().mockImplementation(() => currentTree),
-				replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
-					currentTree = nextTree;
-				}),
+				replaceTreeByChatId: vi
+					.fn()
+					.mockImplementation((_chatId: string, nextTree: domain.tree.ChatTree) => {
+						currentTree = nextTree;
+					}),
 				getProviderStream: vi.fn().mockImplementation(
 					// eslint-disable-next-line require-yield
 					async function* () {
@@ -268,7 +272,7 @@ describe('streams', () => {
 
 		it('cleans up without crashing when the tree disappears before token persistence', async () => {
 			const { tree, exchangeId } = buildTreeWithExchange();
-			let currentTree: ChatTree | undefined = tree;
+			let currentTree: domain.tree.ChatTree | undefined = tree;
 			let readCount = 0;
 			const deps: StreamDeps = {
 				getTreeByChatId: vi.fn().mockImplementation(() => {
@@ -278,9 +282,11 @@ describe('streams', () => {
 					}
 					return currentTree;
 				}),
-				replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
-					currentTree = nextTree;
-				}),
+				replaceTreeByChatId: vi
+					.fn()
+					.mockImplementation((_chatId: string, nextTree: domain.tree.ChatTree) => {
+						currentTree = nextTree;
+					}),
 				getProviderStream: vi.fn().mockImplementation(async function* () {
 					yield { type: 'delta', delta: 'Hello' };
 					yield { type: 'done', promptTokens: 5, responseTokens: 10 };
@@ -301,7 +307,7 @@ describe('streams', () => {
 
 		it('cleans up without crashing when the tree disappears before error persistence', async () => {
 			const { tree, exchangeId } = buildTreeWithExchange();
-			let currentTree: ChatTree | undefined = tree;
+			let currentTree: domain.tree.ChatTree | undefined = tree;
 			let readCount = 0;
 			const deps: StreamDeps = {
 				getTreeByChatId: vi.fn().mockImplementation(() => {
@@ -311,9 +317,11 @@ describe('streams', () => {
 					}
 					return currentTree;
 				}),
-				replaceTreeByChatId: vi.fn().mockImplementation((_chatId: string, nextTree: ChatTree) => {
-					currentTree = nextTree;
-				}),
+				replaceTreeByChatId: vi
+					.fn()
+					.mockImplementation((_chatId: string, nextTree: domain.tree.ChatTree) => {
+						currentTree = nextTree;
+					}),
 				// eslint-disable-next-line require-yield
 				getProviderStream: vi.fn().mockImplementation(async function* () {
 					throw new Error('API error');

@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import OllamaTab from './OllamaTab.svelte';
-import type { ActiveModel, OllamaStatus } from '@/domain';
+import type * as domain from '@/domain';
 
 function renderTab(overrides: Partial<Parameters<typeof OllamaTab>[1]> = {}) {
 	const props = {
-		activeModel: null as ActiveModel | null,
+		activeModel: null as domain.models.ActiveModel | null,
 		ollamaUrl: 'http://localhost:11434',
-		ollamaStatus: 'disconnected' as OllamaStatus,
+		ollamaStatus: 'disconnected' as domain.models.OllamaStatus,
 		ollamaModels: [] as string[],
 		onConnectOllama: vi.fn(),
 		onSelectModel: vi.fn(),

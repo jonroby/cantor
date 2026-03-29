@@ -3,16 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import FrontierTab from './FrontierTab.svelte';
-import type { ActiveModel } from '@/domain';
-
-vi.mock('@/domain', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/domain')>()),
-	PROVIDER_LOGOS: {}
-}));
+import type * as domain from '@/domain';
 
 function renderTab(overrides: Partial<Parameters<typeof FrontierTab>[1]> = {}) {
 	const props = {
-		activeModel: null as ActiveModel | null,
+		activeModel: null as domain.models.ActiveModel | null,
 		apiKeys: {} as Record<string, string>,
 		vaultProviders: [] as string[],
 		onSelectProvider: vi.fn(),

@@ -4,15 +4,13 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ModelPalette from './ModelPalette.svelte';
-import type { ActiveModel } from '@/domain';
-import type { WebLLMContextSize } from '@/external';
+import type * as domain from '@/domain';
+import type * as external from '@/external';
 
-vi.mock('@/domain', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/domain')>()),
-	PROVIDER_LOGOS: {}
-}));
-
-const CONTEXT_OPTIONS: ReadonlyArray<{ label: string; value: WebLLMContextSize }> = [
+const CONTEXT_OPTIONS: ReadonlyArray<{
+	label: string;
+	value: external.providers.webllm.WebLLMContextSize;
+}> = [
 	{ label: '4K', value: 4_096 },
 	{ label: '8K', value: 8_192 },
 	{ label: '16K', value: 16_384 }
@@ -22,7 +20,7 @@ function renderPalette(overrides: Partial<Parameters<typeof ModelPalette>[1]> = 
 	const props = {
 		open: true,
 		onClose: vi.fn(),
-		activeModel: null as ActiveModel | null,
+		activeModel: null as domain.models.ActiveModel | null,
 		onSelectModel: vi.fn(),
 		ollamaUrl: 'http://localhost:11434',
 		ollamaStatus: 'disconnected' as const,
@@ -38,7 +36,7 @@ function renderPalette(overrides: Partial<Parameters<typeof ModelPalette>[1]> = 
 		webllmProgressText: '',
 		webllmModels: [],
 		webllmError: null,
-		webllmContextSize: 4_096 as WebLLMContextSize,
+		webllmContextSize: 4_096 as external.providers.webllm.WebLLMContextSize,
 		webllmContextOptions: CONTEXT_OPTIONS,
 		onWebLLMContextSizeChange: vi.fn(),
 		onLoadWebLLMModel: vi.fn(),

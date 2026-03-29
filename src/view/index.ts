@@ -1,2 +1,2 @@
-export * from './classic';
-export * from './shared';
+export * as classic from './classic';
+export * as shared from './shared';

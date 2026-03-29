@@ -69,6 +69,15 @@ Prefer:
 
 The namespace should tell the reader what kind of boundary they are crossing.
 
+`external` submodules are explicit and finite:
+
+- `persistence`
+- `files`
+- `providers`
+- `streams`
+
+Adding a new top-level `external` submodule should be a deliberate architecture change, not a workaround.
+
 ## Current Examples
 
 Likely examples in this repo:

@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ApiKeyFlow from './ApiKeyFlow.svelte';
-import type { ActiveModel } from '@/domain';
+import type * as domain from '@/domain';
 
 function renderFlow(overrides: Partial<Parameters<typeof ApiKeyFlow>[1]> = {}) {
 	const props = {
@@ -12,7 +12,10 @@ function renderFlow(overrides: Partial<Parameters<typeof ApiKeyFlow>[1]> = {}) {
 		onUnlockKeys: vi.fn(),
 		onSaveKey: vi.fn(),
 		onSelectModel: vi.fn(),
-		pendingModel: { provider: 'claude', modelId: 'claude-sonnet-4-6' } as ActiveModel | null,
+		pendingModel: {
+			provider: 'claude',
+			modelId: 'claude-sonnet-4-6'
+		} as domain.models.ActiveModel | null,
 		onBack: vi.fn(),
 		onDone: vi.fn(),
 		...overrides

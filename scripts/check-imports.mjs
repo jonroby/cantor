@@ -22,6 +22,21 @@ const GENERAL_RULES = {
 	requirePublicBarrelsAcrossAreas: true
 };
 
+const APPROVED_PUBLIC_NAMESPACES = {
+	app: new Set([
+		'chat',
+		'search',
+		'runtime',
+		'content',
+		'documents',
+		'providers',
+		'files',
+		'types'
+	]),
+	external: new Set(['persistence', 'files', 'providers', 'streams']),
+	state: new Set(['chats', 'documents', 'providers'])
+};
+
 const AREA_RULES = {
 	domain: {
 		allowedCrossAreaImports: new Set(),
@@ -103,6 +118,16 @@ function escapeForRegExp(value) {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function namespaceAliases(code) {
+	const aliases = [];
+	const pattern =
+		/^\s*import\s+(?:type\s+)?\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s*['"](@\/(?:domain|lib|state|external|app|view))['"]/gm;
+	for (const match of code.matchAll(pattern)) {
+		aliases.push({ alias: match[1], spec: match[2] });
+	}
+	return aliases;
+}
+
 function isDeclaredPackage(spec) {
 	if (declaredPackages.has(spec)) return true;
 	const [scopeOrName, maybeName] = spec.split('/');
@@ -172,6 +197,24 @@ for (const file of walk(SRC_DIR)) {
 
 		if (!isDeclaredPackage(spec)) {
 			violations.push(`${relPath}: package "${spec}" is not declared in package.json`);
+		}
+	}
+
+	for (const { alias, spec } of namespaceAliases(code)) {
+		const target = parseInternalSpec(spec);
+		if (!target) continue;
+		const approved = APPROVED_PUBLIC_NAMESPACES[target.area];
+		if (!approved) continue;
+
+		const memberPattern = new RegExp(`\\b${escapeForRegExp(alias)}\\.([A-Za-z_$][\\w$]*)`, 'g');
+		for (const match of code.matchAll(memberPattern)) {
+			const member = match[1];
+			if (!approved.has(member)) {
+				violations.push(
+					`${relPath}: ${spec} may only expose approved namespaces ` +
+						`(${[...approved].map((name) => `"${name}"`).join(', ')}); found "${alias}.${member}"`
+				);
+			}
 		}
 	}
 }

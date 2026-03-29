@@ -3,16 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import WebLLMTab from './WebLLMTab.svelte';
-import type { ActiveModel } from '@/domain';
-import type { WebLLMModelEntry, WebLLMContextSize } from '@/external';
+import type * as domain from '@/domain';
+import type * as external from '@/external';
 
-const CONTEXT_OPTIONS: ReadonlyArray<{ label: string; value: WebLLMContextSize }> = [
+const CONTEXT_OPTIONS: ReadonlyArray<{
+	label: string;
+	value: external.providers.webllm.WebLLMContextSize;
+}> = [
 	{ label: '4K', value: 4_096 },
 	{ label: '8K', value: 8_192 },
 	{ label: '16K', value: 16_384 }
 ];
 
-function makeModels(n: number): WebLLMModelEntry[] {
+function makeModels(n: number): external.providers.webllm.WebLLMModelEntry[] {
 	return Array.from({ length: n }, (_, i) => ({
 		id: `model-${i}`,
 		label: `model-${i}`,
@@ -22,13 +25,13 @@ function makeModels(n: number): WebLLMModelEntry[] {
 
 function renderTab(overrides: Partial<Parameters<typeof WebLLMTab>[1]> = {}) {
 	const props = {
-		activeModel: null as ActiveModel | null,
+		activeModel: null as domain.models.ActiveModel | null,
 		webllmStatus: 'idle' as const,
 		webllmProgress: 0,
 		webllmProgressText: '',
 		webllmModels: makeModels(5),
 		webllmError: null as string | null,
-		webllmContextSize: 4_096 as WebLLMContextSize,
+		webllmContextSize: 4_096 as external.providers.webllm.WebLLMContextSize,
 		webllmContextOptions: CONTEXT_OPTIONS,
 		onWebLLMContextSizeChange: vi.fn(),
 		onLoadWebLLMModel: vi.fn(),
@@ -131,7 +134,7 @@ describe('WebLLMTab', () => {
 
 	describe('search', () => {
 		it('filters models by search query', async () => {
-			const models: WebLLMModelEntry[] = [
+			const models: external.providers.webllm.WebLLMModelEntry[] = [
 				{ id: 'Llama-3-8B', label: 'Llama-3-8B', vramMB: 512 },
 				{ id: 'Phi-3-mini', label: 'Phi-3-mini', vramMB: 256 },
 				{ id: 'Llama-2-7B', label: 'Llama-2-7B', vramMB: 1024 }

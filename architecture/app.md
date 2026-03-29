@@ -72,6 +72,19 @@ Do not prefer flat named imports from `@/app` in normal source files.
 
 The point is to keep ownership visible at the call site.
 
+`app` submodules are explicit and finite:
+
+- `chat`
+- `search`
+- `runtime`
+- `content`
+- `documents`
+- `providers`
+- `files`
+- `types`
+
+Adding a new top-level `app` submodule should be a deliberate architecture change, not an ad hoc convenience.
+
 ## Typical Flow
 
 1. Read current state

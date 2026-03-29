@@ -9,14 +9,7 @@ import {
 	type StreamStore,
 	type StreamDeps
 } from './streams';
-
-import type { ChatTree } from '@/domain';
-import {
-	buildEmptyTree,
-	addExchangeResult,
-	updateExchangeResponse,
-	validateChatTree
-} from '@/domain';
+import * as domain from '@/domain';
 import type { StreamChunk } from '@/external/providers/stream';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,12 +26,12 @@ function makeStore(): StreamStore {
 }
 
 /** Simulates a mini chat state: multiple chats keyed by ID, with read/write access. */
-function makeChatState(initial: Record<string, ChatTree>) {
-	const chats = new Map<string, ChatTree>(Object.entries(initial));
+function makeChatState(initial: Record<string, domain.tree.ChatTree>) {
+	const chats = new Map<string, domain.tree.ChatTree>(Object.entries(initial));
 	return {
 		chats,
 		get: (chatId: string) => chats.get(chatId),
-		set: (chatId: string, tree: ChatTree) => chats.set(chatId, tree),
+		set: (chatId: string, tree: domain.tree.ChatTree) => chats.set(chatId, tree),
 		delete: (chatId: string) => chats.delete(chatId)
 	};
 }
@@ -51,20 +44,27 @@ function makeDeps(
 		getTreeByChatId: vi.fn().mockImplementation((id: string) => chatState.get(id)),
 		replaceTreeByChatId: vi
 			.fn()
-			.mockImplementation((id: string, tree: ChatTree) => chatState.set(id, tree)),
+			.mockImplementation((id: string, tree: domain.tree.ChatTree) => chatState.set(id, tree)),
 		getProviderStream: streamFn
 	};
 }
 
-function buildConversation(prompts: string[]): { tree: ChatTree; exchangeIds: string[] } {
-	let tree = buildEmptyTree();
+function buildConversation(prompts: string[]): {
+	tree: domain.tree.ChatTree;
+	exchangeIds: string[];
+} {
+	let tree = domain.tree.buildEmptyTree();
 	let parentId = 'unused';
 	const exchangeIds: string[] = [];
 	for (const prompt of prompts) {
-		const result = addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
+		const result = domain.tree.addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
 		tree = {
 			rootId: result.rootId,
-			exchanges: updateExchangeResponse(result.exchanges, result.id, `reply to ${prompt}`)
+			exchanges: domain.tree.updateExchangeResponse(
+				result.exchanges,
+				result.id,
+				`reply to ${prompt}`
+			)
 		};
 		parentId = result.id;
 		exchangeIds.push(result.id);
@@ -74,11 +74,11 @@ function buildConversation(prompts: string[]): { tree: ChatTree; exchangeIds: st
 
 /** Add one more exchange (no response yet — ready to stream into). */
 function appendPendingExchange(
-	tree: ChatTree,
+	tree: domain.tree.ChatTree,
 	parentId: string,
 	prompt: string
-): { tree: ChatTree; exchangeId: string } {
-	const result = addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
+): { tree: domain.tree.ChatTree; exchangeId: string } {
+	const result = domain.tree.addExchangeResult(tree, parentId, prompt, MODEL, PROVIDER);
 	return {
 		tree: { rootId: result.rootId, exchanges: result.exchanges },
 		exchangeId: result.id
@@ -196,7 +196,7 @@ describe('streams integration', () => {
 
 			await waitForIdle(store);
 
-			expect(() => validateChatTree(chatState.get('chat-1')!)).not.toThrow();
+			expect(() => domain.tree.validateChatTree(chatState.get('chat-1')!)).not.toThrow();
 		});
 	});
 

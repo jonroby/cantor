@@ -7,9 +7,8 @@ import {
 	migrateVaultStorage,
 	clearVaultStorage
 } from './database.svelte';
-import { chatState } from '@/state';
-import { docState } from '@/state';
-import { addExchangeResult, buildEmptyTree, updateExchangeResponse, type Chat } from '@/domain';
+import * as state from '@/state';
+import * as domain from '@/domain';
 
 // ── localStorage mock ────────────────────────────────────────────────────────
 
@@ -36,10 +35,13 @@ const STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
 const LEGACY_VAULT_KEY = 'byok_vault';
 
-function buildChat(name: string): Chat {
-	let tree = buildEmptyTree();
-	const r = addExchangeResult(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
-	tree = { rootId: r.rootId, exchanges: updateExchangeResponse(r.exchanges, r.id, 'world') };
+function buildChat(name: string): domain.tree.Chat {
+	let tree = domain.tree.buildEmptyTree();
+	const r = domain.tree.addExchangeResult(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
+	tree = {
+		rootId: r.rootId,
+		exchanges: domain.tree.updateExchangeResponse(r.exchanges, r.id, 'world')
+	};
 	return {
 		id: crypto.randomUUID(),
 		name,
@@ -52,10 +54,10 @@ function buildChat(name: string): Chat {
 function resetState() {
 	store = {};
 	const chat = buildChat('Chat 1');
-	chatState.chats = [chat];
-	chatState.activeChatIndex = 0;
-	docState.folders = [];
-	docState.openDocs = [];
+	state.chats.chatState.chats = [chat];
+	state.chats.chatState.activeChatIndex = 0;
+	state.documents.docState.folders = [];
+	state.documents.docState.openDocs = [];
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -67,65 +69,65 @@ describe('database', () => {
 
 	describe('saveToStorage / loadFromStorage round-trip', () => {
 		it('persists and restores chats', () => {
-			const originalName = chatState.chats[0].name;
+			const originalName = state.chats.chatState.chats[0].name;
 			saveToStorage();
 
 			// Corrupt state
-			chatState.chats[0].name = 'Corrupted';
-			expect(chatState.chats[0].name).toBe('Corrupted');
+			state.chats.chatState.chats[0].name = 'Corrupted';
+			expect(state.chats.chatState.chats[0].name).toBe('Corrupted');
 
 			loadFromStorage();
-			expect(chatState.chats[0].name).toBe(originalName);
+			expect(state.chats.chatState.chats[0].name).toBe(originalName);
 		});
 
 		it('persists and restores activeChatIndex', () => {
-			chatState.chats = [buildChat('A'), buildChat('B')];
-			chatState.activeChatIndex = 1;
+			state.chats.chatState.chats = [buildChat('A'), buildChat('B')];
+			state.chats.chatState.activeChatIndex = 1;
 			saveToStorage();
 
-			chatState.activeChatIndex = 0;
+			state.chats.chatState.activeChatIndex = 0;
 			loadFromStorage();
-			expect(chatState.activeChatIndex).toBe(1);
+			expect(state.chats.chatState.activeChatIndex).toBe(1);
 		});
 
 		it('persists and restores folders', () => {
-			docState.folders = [
+			state.documents.docState.folders = [
 				{ id: 'f1', name: 'Docs', files: [{ id: 'd1', name: 'test.md', content: '# Hi' }] }
 			];
 			saveToStorage();
 
-			docState.folders = [];
+			state.documents.docState.folders = [];
 			loadFromStorage();
-			expect(docState.folders.length).toBe(1);
-			expect(docState.folders[0].name).toBe('Docs');
-			expect(docState.folders[0].files![0].content).toBe('# Hi');
+			expect(state.documents.docState.folders.length).toBe(1);
+			expect(state.documents.docState.folders[0].name).toBe('Docs');
+			expect(state.documents.docState.folders[0].files![0].content).toBe('# Hi');
 		});
 
 		it('does nothing when storage is empty', () => {
-			const before = chatState.chats[0].name;
+			const before = state.chats.chatState.chats[0].name;
 			loadFromStorage();
-			expect(chatState.chats[0].name).toBe(before);
+			expect(state.chats.chatState.chats[0].name).toBe(before);
 		});
 
 		it('ignores invalid JSON in storage', () => {
 			store[STORAGE_KEY] = 'not json {{{';
-			const before = chatState.chats[0].name;
+			const before = state.chats.chatState.chats[0].name;
 			loadFromStorage();
-			expect(chatState.chats[0].name).toBe(before);
+			expect(state.chats.chatState.chats[0].name).toBe(before);
 		});
 	});
 
 	describe('saveToStorage rejects duplicate names', () => {
 		it('throws when two chats have the same name', () => {
 			store[STORAGE_KEY] = 'unchanged';
-			chatState.chats = [buildChat('Foo'), buildChat('Foo')];
+			state.chats.chatState.chats = [buildChat('Foo'), buildChat('Foo')];
 			expect(() => saveToStorage()).toThrow('Duplicate chat name');
 			expect(store[STORAGE_KEY]).toBe('unchanged');
 		});
 
 		it('throws when two folders have the same name', () => {
 			store[STORAGE_KEY] = 'unchanged';
-			docState.folders = [
+			state.documents.docState.folders = [
 				{ id: 'f1', name: 'Docs' },
 				{ id: 'f2', name: 'Docs' }
 			];
@@ -135,7 +137,7 @@ describe('database', () => {
 
 		it('throws when two files in the same folder have the same name', () => {
 			store[STORAGE_KEY] = 'unchanged';
-			docState.folders = [
+			state.documents.docState.folders = [
 				{
 					id: 'f1',
 					name: 'Docs',
@@ -150,7 +152,7 @@ describe('database', () => {
 		});
 
 		it('allows the same file name in different folders', () => {
-			docState.folders = [
+			state.documents.docState.folders = [
 				{ id: 'f1', name: 'A', files: [{ id: 'd1', name: 'readme.md', content: '' }] },
 				{ id: 'f2', name: 'B', files: [{ id: 'd2', name: 'readme.md', content: '' }] }
 			];

@@ -8,7 +8,7 @@ import type { StreamChunk } from './stream';
 export async function* streamOpenAICompatChat(
 	baseUrl: string,
 	model: string,
-	messages: domain.Message[],
+	messages: domain.tree.Message[],
 	apiKey: string,
 	signal: AbortSignal
 ): AsyncGenerator<StreamChunk> {

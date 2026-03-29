@@ -42,7 +42,7 @@ export function getExchangeNodeData(
 		model: exchange.model,
 		provider:
 			(exchange.provider as domain.models.Provider) ||
-			domain.models.getProviderForModelId(exchange.model) ||
+			external.providers.catalog.getProviderForModelId(exchange.model) ||
 			null,
 		label: exchange.label,
 		isActive: activeExchangeId === exchangeId,

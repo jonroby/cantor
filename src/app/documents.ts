@@ -9,26 +9,26 @@ interface RestoreResult {
 }
 
 export interface DocumentActionDeps {
-	getActiveChat: typeof state.getActiveChat;
-	getFolders: () => state.ChatFolder[];
-	newDocInFolder: typeof state.newDocInFolder;
-	selectDoc: typeof state.selectDoc;
-	closeDoc: typeof state.closeDoc;
-	getPersistedLayout: typeof external.getPersistedLayout;
-	setPersistedLayout: typeof external.setPersistedLayout;
-	saveToStorage: typeof external.saveToStorage;
+	getActiveChat: typeof state.chats.getActiveChat;
+	getFolders: () => state.documents.ChatFolder[];
+	newDocInFolder: typeof state.documents.newDocInFolder;
+	selectDoc: typeof state.documents.selectDoc;
+	closeDoc: typeof state.documents.closeDoc;
+	getPersistedLayout: typeof external.persistence.getPersistedLayout;
+	setPersistedLayout: typeof external.persistence.setPersistedLayout;
+	saveToStorage: typeof external.persistence.saveToStorage;
 	performAddDocToChat: typeof performAddDocToChat;
 }
 
 const defaultDeps: DocumentActionDeps = {
-	getActiveChat: state.getActiveChat,
+	getActiveChat: state.chats.getActiveChat,
 	getFolders: () => state.documents.docState.folders,
-	newDocInFolder: state.newDocInFolder,
-	selectDoc: state.selectDoc,
-	closeDoc: state.closeDoc,
-	getPersistedLayout: external.getPersistedLayout,
-	setPersistedLayout: external.setPersistedLayout,
-	saveToStorage: external.saveToStorage,
+	newDocInFolder: state.documents.newDocInFolder,
+	selectDoc: state.documents.selectDoc,
+	closeDoc: state.documents.closeDoc,
+	getPersistedLayout: external.persistence.getPersistedLayout,
+	setPersistedLayout: external.persistence.setPersistedLayout,
+	saveToStorage: external.persistence.saveToStorage,
 	performAddDocToChat
 };
 

@@ -91,6 +91,7 @@ Cross-area imports must:
 
 - go through that root barrel
 - use a namespace import
+- use only approved public submodules for organizational areas
 
 Examples:
 
@@ -113,6 +114,16 @@ Many private helpers inside a module are fine.
 Many flat named imports across areas are not.
 
 Use the shortest namespace chain that still preserves ownership clarity.
+
+Approved public submodules are explicit, not open-ended.
+
+Examples:
+
+- `app` may expose only `chat`, `search`, `runtime`, `content`, `documents`, `providers`, `files`, and `types`
+- `external` may expose only `persistence`, `files`, `providers`, and `streams`
+- `state` may expose only `chats`, `documents`, and `providers`
+
+If a new public submodule is needed, it should be added intentionally in both the barrel and the checker.
 
 ## Ownership
 
