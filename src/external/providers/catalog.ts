@@ -94,8 +94,8 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'deepseek-chat', label: 'DeepSeek Chat (V3.2)', contextLength: 128_000 },
-			{ id: 'deepseek-reasoner', label: 'DeepSeek Reasoner (V3.2)', contextLength: 128_000 }
+			{ id: 'deepseek-chat', label: 'DeepSeek Chat V3.2', contextLength: 128_000 },
+			{ id: 'deepseek-reasoner', label: 'DeepSeek Reasoner V3.2', contextLength: 128_000 }
 		]
 	},
 	mistral: {
@@ -105,10 +105,12 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'mistral-large-latest', label: 'Mistral Large', contextLength: 128_000 },
-			{ id: 'mistral-small-latest', label: 'Mistral Small', contextLength: 128_000 },
+			{ id: 'mistral-large-latest', label: 'Mistral Large 3', contextLength: 256_000 },
+			{ id: 'mistral-small-latest', label: 'Mistral Small 4', contextLength: 256_000 },
+			{ id: 'mistral-medium-latest', label: 'Mistral Medium 3.1', contextLength: 256_000 },
 			{ id: 'codestral-latest', label: 'Codestral', contextLength: 256_000 },
-			{ id: 'mistral-nemo', label: 'Mistral Nemo', contextLength: 128_000 }
+			{ id: 'magistral-medium-latest', label: 'Magistral Medium', contextLength: 40_000 },
+			{ id: 'magistral-small-latest', label: 'Magistral Small', contextLength: 40_000 }
 		]
 	},
 	groq: {

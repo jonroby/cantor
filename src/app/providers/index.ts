@@ -187,12 +187,14 @@ function getRemoteProviders(): State['providers'] {
 				provider === 'claude' ||
 				provider === 'gemini' ||
 				provider === 'openai' ||
-				provider === 'deepseek',
+				provider === 'deepseek' ||
+				provider === 'mistral',
 			note:
 				provider === 'claude' ||
 				provider === 'gemini' ||
 				provider === 'openai' ||
-				provider === 'deepseek'
+				provider === 'deepseek' ||
+				provider === 'mistral'
 					? undefined
 					: 'Soon'
 		}))
