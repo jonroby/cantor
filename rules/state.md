@@ -23,7 +23,6 @@ It should be dumb compared to `app`.
 ## Current Truth
 
 - `state.chats` should expose chats/trees, not raw exchange-map bag helpers
-- `copyToNewChat` no longer belongs in state
 - `state.providers` should stay mostly raw provider runtime state
 
 ## Red Flags

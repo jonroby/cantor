@@ -4,7 +4,7 @@
 
 These rules are for reviewing changes quickly and consistently.
 
-They are stricter and more local than `ARCHITECTURE.md`.
+They are stricter and more local than `architecture/ARCHITECTURE.md`.
 
 ## Current Layer Truth
 

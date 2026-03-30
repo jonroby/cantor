@@ -22,9 +22,8 @@ It should stay generic enough to justify cross-layer reuse.
 ## Current Truth
 
 - `rename` belongs here
-- `validate-md` belongs here for now
+- `validate-md` belongs here
 - provider defaults/types remain here because `state` may import only `domain` and `lib`
-- frontend rendering helpers like old `document-map` and `diff` should stay out
 
 ## Red Flags
 

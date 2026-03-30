@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Svelte 5 + Vite single-page app for exploring branching chat conversations. Supports Claude, Ollama, Gemini, OpenAI-compatible, and WebLLM models. Browser-only state. Two views over the same data: Classic View (linear chat) and Canvas View (node graph).
+Svelte 5 + Vite single-page app. An LLM interface for power users. Browser-only state.
 
-See `ARCHITECTURE.md` for the full architecture, layer rules, data model, and branching concepts.
+Read `rules/` before modifying `src/`. Start with `rules/root.md`, then the rule file for the layer you are changing.
 
 ## Tooling
 
@@ -20,6 +20,29 @@ Always use `bun`.
 
 Do not use `npm`, `pnpm`, or `yarn` unless explicitly asked.
 
+## Architecture
+
+```text
+src/
+├── domain/    app-specific business rules (pure)
+├── lib/       generic pure support code
+├── state/     app runtime state
+├── external/  persistence and outside-world boundaries
+├── app/       orchestration
+└── view/      UI and presentation logic
+```
+
+Dependencies flow one way:
+
+- `domain` and `lib` import nothing else
+- `state` and `external` may import `domain` and `lib`
+- `app` may import `domain`, `lib`, `state`, and `external`
+- `view` may import only `app`
+
+Cross-area imports must go through root barrels as namespace imports (e.g. `import * as app from '@/app'`). No deep imports across area boundaries.
+
+`bun run check:imports` enforces dependency rules. `bun run check:contracts` enforces approved public submodules.
+
 ## Coding Philosophy
 
 - Make impossible states impossible. But if the trade-off for call-site friction or performance isn't worth it, write imperative code.
@@ -32,9 +55,7 @@ Do not use `npm`, `pnpm`, or `yarn` unless explicitly asked.
 ## Temporary Rules
 
 - Do not worry about data migration. No migration steps when changing persisted data shapes.
-- Do not inspect, read, modify, or reason about Canvas View code (`src/view/canvas/`). Treat it as if it doesn't exist.
 
 ## Working Rules
 
-- Use custom CSS tooltips (not Floating UI) inside the Canvas View — the CSS transform breaks Floating UI positioning.
-- Do not confuse copies (new chats from a copied path) with side chats (sibling branches). See `ARCHITECTURE.md`.
+- Do not confuse copies (new chats from a copied path) with side chats (sibling branches).

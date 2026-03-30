@@ -22,7 +22,6 @@ It is not a generic utility bucket.
 
 ## Current Truth
 
-- `domain.tree` was reduced heavily
 - `domain.tree.constraints` owns `canDoX`-style checks
 - `domain.constraints` is checks-only
 

@@ -21,7 +21,7 @@
 
 ## Current Truth
 
-- non-canvas active code should use `side chat`, not `branch`
+- active code should use `side chat`, not `branch`
 - visual structure should not be changed casually
 - frontend-owned helpers like KaTeX block rendering should stay in `view`
 
