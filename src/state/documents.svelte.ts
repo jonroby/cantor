@@ -16,7 +16,7 @@ export interface OpenDocument {
 	documentKey: { folderId: string; fileId: string } | null;
 }
 
-const DEFAULT_DOCUMENT_CONTENT = `# Superset Svelte
+const DEFAULT_DOCUMENT_CONTENT = `# Cantor
 
 Welcome to the documentation.
 

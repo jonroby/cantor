@@ -7,7 +7,7 @@ export default defineConfig({
 	plugins: [tailwindcss(), svelte(), devtoolsJson()],
 	resolve: {
 		alias: {
-			'@': '/Users/jonroby/ai/superset-svelte/src'
+			'@': '/Users/jonroby/ai/cantor/src'
 		},
 		conditions: process.env.VITEST ? ['browser'] : undefined
 	},

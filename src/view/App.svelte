@@ -116,7 +116,7 @@
 </script>
 
 <svelte:head>
-	<title>Superset Svelte</title>
+	<title>Cantor</title>
 </svelte:head>
 
 {#if routerState.route === 'landing'}

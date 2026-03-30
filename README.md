@@ -1,4 +1,4 @@
-# Superset Svelte
+# Cantor
 
 A branching chat app with two views for exploring conversations. Built with Svelte 5 + Vite.
 
