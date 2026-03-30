@@ -38,9 +38,9 @@
 		onSaveCredential,
 		onLockCredential,
 		onClearCredential,
-		onSetContextSize,
-		onRemoveCachedModel,
-		onClearCachedModels
+		onSetContextSize: _onSetContextSize,
+		onRemoveCachedModel: _onRemoveCachedModel,
+		onClearCachedModels: _onClearCachedModels
 	}: Props = $props();
 
 	let credentialFlow: CredentialFlow | null = $state(null);
@@ -49,7 +49,6 @@
 	let confirmPasswordInput = $state('');
 	let credentialError: string | null = $state(null);
 	let isSubmitting = $state(false);
-	let webllmSearchQuery = $state('');
 
 	const activeModel = $derived(providerState.activeModel);
 	const enabledRemoteProviders = $derived(
@@ -81,7 +80,6 @@
 	$effect(() => {
 		if (open) {
 			activeTab = defaultTab;
-			webllmSearchQuery = '';
 		}
 	});
 
@@ -91,22 +89,7 @@
 		passwordInput = '';
 		confirmPasswordInput = '';
 		credentialError = null;
-		webllmSearchQuery = '';
 		onClose();
-	}
-
-	function getActiveTabLabel(): string {
-		if (!activeModel) return 'Frontier';
-		if (activeModel.provider === 'ollama') return 'Ollama';
-		if (activeModel.provider === 'webllm') return 'WebLLM';
-		return 'Frontier';
-	}
-
-	function getActiveModelLabel(): string {
-		if (!activeModel) return 'No model selected';
-		const provider = providerState.providers.find((item) => item.id === activeModel.provider);
-		const model = provider?.models.find((item) => item.id === activeModel.modelId);
-		return model?.label ?? activeModel.modelId;
 	}
 
 	function getWebLLMMemoryHint(): string {
@@ -116,26 +99,27 @@
 		return 'More memory';
 	}
 
-	const filteredWebLLMModels = $derived.by(() => {
-		const models = webllmProvider?.models ?? [];
-		const query = webllmSearchQuery.trim().toLowerCase();
-		if (!query) return models.slice(0, 20);
-		return models.filter((model) => model.id.toLowerCase().includes(query));
-	});
-
 	function beginAuth(provider: app.providers.ProviderEntry) {
 		credentialError = null;
 		credentialInput = '';
 		passwordInput = '';
 		confirmPasswordInput = '';
 		const firstEnabled = provider.models.find((m) => m.enabled);
-		const defaultModel = firstEnabled
-			? { provider: provider.id, modelId: firstEnabled.id }
-			: null;
+		const defaultModel = firstEnabled ? { provider: provider.id, modelId: firstEnabled.id } : null;
 		if (provider.credentialState === 'locked') {
-			credentialFlow = { provider, mode: 'unlock', pendingModel: defaultModel, returnToPalette: true };
+			credentialFlow = {
+				provider,
+				mode: 'unlock',
+				pendingModel: defaultModel,
+				returnToPalette: true
+			};
 		} else if (provider.credentialState === 'missing') {
-			credentialFlow = { provider, mode: 'save', pendingModel: defaultModel, returnToPalette: true };
+			credentialFlow = {
+				provider,
+				mode: 'save',
+				pendingModel: defaultModel,
+				returnToPalette: true
+			};
 		}
 	}
 
@@ -149,7 +133,12 @@
 			credentialInput = '';
 			passwordInput = '';
 			confirmPasswordInput = '';
-			credentialFlow = { provider, mode: 'unlock', pendingModel: selection, returnToPalette: false };
+			credentialFlow = {
+				provider,
+				mode: 'unlock',
+				pendingModel: selection,
+				returnToPalette: false
+			};
 			return;
 		}
 		if (provider.credentialState === 'missing') {
@@ -329,10 +318,7 @@
 													Log out
 												</button>
 											{:else}
-												<button
-													class="palette-auth-btn"
-													onclick={() => beginAuth(provider)}
-												>
+												<button class="palette-auth-btn" onclick={() => beginAuth(provider)}>
 													{provider.credentialState === 'locked' ? 'Log in' : 'Add key'}
 												</button>
 											{/if}
@@ -400,7 +386,8 @@
 											<span class="palette-provider-auth">
 												<button
 													class="palette-auth-btn"
-													onclick={() => onConnect(ollamaProvider.id, ollamaProvider.connection?.value)}
+													onclick={() =>
+														onConnect(ollamaProvider.id, ollamaProvider.connection?.value)}
 													disabled={ollamaProvider.connection.status === 'connecting'}
 												>
 													{ollamaProvider.connection.status === 'connecting'
@@ -476,7 +463,7 @@
 							</div>
 
 							<div class="palette-model-grid">
-								{#each (webllmProvider.models.slice(0, 20)) as model (model.id)}
+								{#each webllmProvider.models.slice(0, 20) as model (model.id)}
 									<button class="palette-model-row disabled" disabled>
 										<span>{model.id}</span>
 										<div class="palette-model-meta">
@@ -517,33 +504,6 @@
 		overflow: hidden;
 	}
 
-	.palette-current-model {
-		padding: 0.75rem 1.5rem;
-		border-bottom: 1px solid hsl(var(--border));
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.8125rem;
-	}
-
-	.palette-current-label {
-		color: hsl(var(--muted-foreground));
-	}
-
-	.palette-current-provider {
-		font-weight: 600;
-		color: hsl(var(--foreground));
-		text-transform: lowercase;
-	}
-
-	.palette-current-separator {
-		color: hsl(var(--muted-foreground));
-	}
-
-	.palette-current-name {
-		color: hsl(var(--foreground));
-	}
-
 	.palette-tabs {
 		display: flex;
 		border-bottom: 1px solid hsl(var(--border));
@@ -578,18 +538,6 @@
 	.palette-tab.active {
 		color: hsl(var(--foreground));
 		border-bottom-color: hsl(var(--primary));
-	}
-
-	.palette-tab-icon {
-		height: 1.375rem;
-		width: 1.375rem;
-		object-fit: contain;
-		border-radius: 2px;
-	}
-
-	.palette-tab-icon-webllm {
-		height: 2rem;
-		width: 2rem;
 	}
 
 	.palette-scroll {

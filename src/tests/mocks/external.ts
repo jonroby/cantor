@@ -59,6 +59,9 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 			stream: {
 				getProviderStream: mockFn<typeof external.providers.stream.getProviderStream>()
 			},
+			validate: {
+				validateApiKey: mockFn<typeof external.providers.validate.validateApiKey>(async () => {})
+			},
 			vault: {
 				clearProviderKey: mockFn<typeof external.providers.vault.clearProviderKey>(),
 				clearVault: mockFn<typeof external.providers.vault.clearVault>(),

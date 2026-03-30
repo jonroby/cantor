@@ -11,7 +11,7 @@
 		sideOffset = 0,
 		side = 'top',
 		children,
-		arrowClasses,
+		arrowClasses: _arrowClasses,
 		portalProps,
 		...restProps
 	}: TooltipPrimitive.ContentProps & {

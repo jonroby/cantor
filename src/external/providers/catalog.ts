@@ -52,7 +52,11 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			{ id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro', contextLength: 1_000_000 },
 			{ id: 'gemini-3-pro-preview', label: 'Gemini 3 Pro', contextLength: 1_000_000 },
 			{ id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash', contextLength: 1_000_000 },
-			{ id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash-Lite', contextLength: 1_000_000 },
+			{
+				id: 'gemini-3.1-flash-lite-preview',
+				label: 'Gemini 3.1 Flash-Lite',
+				contextLength: 1_000_000
+			},
 			{ id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', contextLength: 1_000_000 },
 			{ id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', contextLength: 1_000_000 }
 		]

@@ -164,14 +164,20 @@
 	<Sidebar.Header class="p-0">
 		{#if sidebar.state === 'expanded'}
 			<div class="h-14 px-3 flex items-center">
-				<div class="flex items-center gap-2 flex-1">
+				<div class="gap-2 flex flex-1 items-center">
 					<img src={powersetLogo} alt="Cantor" width="18" height="20" />
 					<span class="text-sm font-semibold text-sidebar-foreground">Cantor</span>
 					<Tooltip.Root>
 						<Tooltip.Trigger>
-							<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600">Alpha</span>
+							<span
+								class="font-semibold px-1.5 py-0.5 bg-blue-500/15 text-blue-600 rounded-full text-[10px]"
+								>Alpha</span
+							>
 						</Tooltip.Trigger>
-						<Tooltip.Content side="bottom" class="bg-neutral-900 text-white text-xs border-none max-w-[200px]">
+						<Tooltip.Content
+							side="bottom"
+							class="bg-neutral-900 text-white text-xs max-w-[200px] border-none"
+						>
 							Some features are still being refined.
 						</Tooltip.Content>
 					</Tooltip.Root>
