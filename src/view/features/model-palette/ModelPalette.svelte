@@ -48,13 +48,14 @@
 	let webllmSearchQuery = $state('');
 
 	const activeModel = $derived(providerState.activeModel);
-	const claudeProvider = $derived(
-		providerState.providers.find((provider) => provider.id === 'claude') ?? null
-	);
-	const frontierProviders = $derived(
+	const enabledRemoteProviders = $derived(
 		providerState.providers.filter(
-			(provider) =>
-				provider.kind === 'remote' && provider.id !== 'ollama' && provider.id !== 'webllm'
+			(provider) => provider.kind === 'remote' && provider.models.some((m) => m.enabled)
+		)
+	);
+	const comingSoonProviders = $derived(
+		providerState.providers.filter(
+			(provider) => provider.kind === 'remote' && !provider.models.some((m) => m.enabled)
 		)
 	);
 	const ollamaProvider = $derived(
@@ -267,52 +268,52 @@
 				<div class="palette-scroll">
 					{#if activeTab === 'frontier'}
 						<div class="palette-providers-grid">
-							{#if claudeProvider}
+							{#each enabledRemoteProviders as provider (provider.id)}
 								<div class="palette-provider-group">
 									<div class="palette-provider-title">
-										{#if PROVIDER_LOGOS[claudeProvider.id]}
+										{#if PROVIDER_LOGOS[provider.id]}
 											<img
-												src={PROVIDER_LOGOS[claudeProvider.id]}
-												alt={claudeProvider.name}
+												src={PROVIDER_LOGOS[provider.id]}
+												alt={provider.name}
 												class="palette-provider-logo"
 											/>
 										{/if}
-										<span class="palette-provider-name">{claudeProvider.name}</span>
+										<span class="palette-provider-name">{provider.name}</span>
 									</div>
 
 									<div class="palette-provider-models">
-										{#each claudeProvider.models as model (model.id)}
+										{#each provider.models as model (model.id)}
 											<button
 												class="palette-model-row"
-												class:active={activeModel?.provider === claudeProvider.id &&
+												class:active={activeModel?.provider === provider.id &&
 													activeModel?.modelId === model.id}
 												disabled={!model.enabled}
-												onclick={() => beginModelSelection(claudeProvider, model.id)}
+												onclick={() => beginModelSelection(provider, model.id)}
 											>
 												<span>{model.label}</span>
 												<div class="palette-model-meta">
-													{#if activeModel?.provider === claudeProvider.id && activeModel?.modelId === model.id}
+													{#if activeModel?.provider === provider.id && activeModel?.modelId === model.id}
 														<span class="palette-active-dot"></span>
 													{/if}
-													{#if getCredentialBadge(claudeProvider)}
-														<span class="palette-badge">{getCredentialBadge(claudeProvider)}</span>
+													{#if getCredentialBadge(provider)}
+														<span class="palette-badge">{getCredentialBadge(provider)}</span>
 													{/if}
 												</div>
 											</button>
 										{/each}
-										{#if claudeProvider.credentialState === 'ready'}
+										{#if provider.credentialState === 'ready'}
 											<button
 												class="palette-forget-key"
-												onclick={() => onClearCredential(claudeProvider.id)}
+												onclick={() => onClearCredential(provider.id)}
 											>
 												Forget saved credential
 											</button>
 										{/if}
 									</div>
 								</div>
-							{/if}
+							{/each}
 
-							{#each frontierProviders.filter((provider) => provider.id !== 'claude') as provider (provider.id)}
+							{#each comingSoonProviders as provider (provider.id)}
 								<div class="palette-provider-group">
 									<div class="palette-provider-title">
 										{#if PROVIDER_LOGOS[provider.id]}
