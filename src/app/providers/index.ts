@@ -293,6 +293,12 @@ export async function unlockCredentials(password: string) {
 }
 
 export async function saveCredential(provider: string, credential: string, password: string) {
+	if (domain.models.isKeyBasedProvider(provider as domain.models.Provider)) {
+		await external.providers.validate.validateApiKey(
+			provider as domain.models.KeyBasedProvider,
+			credential
+		);
+	}
 	await saveKey(provider, credential, password);
 }
 

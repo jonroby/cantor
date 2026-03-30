@@ -63,7 +63,7 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 	},
 	moonshot: {
 		config: {
-			name: 'Moonshot (Kimi)',
+			name: 'Kimi',
 			baseUrl: 'https://api.moonshot.cn/v1/chat/completions',
 			keyPlaceholder: 'sk-...'
 		},

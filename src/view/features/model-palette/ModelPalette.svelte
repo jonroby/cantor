@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './palette.css';
 	import * as app from '@/app';
+	import { toast } from 'svelte-sonner';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button, Input } from '@/view/components/custom';
 
@@ -105,13 +106,6 @@
 		return model?.label ?? activeModel.modelId;
 	}
 
-	function getCredentialBadge(provider: app.providers.ProviderEntry): string | undefined {
-		if (provider.credentialState === 'ready' || provider.credentialState === 'not-required') {
-			return undefined;
-		}
-		return provider.credentialState === 'locked' ? 'locked' : 'add key';
-	}
-
 	function getWebLLMMemoryHint(): string {
 		if (!webllmProvider?.context) return '';
 		if (webllmProvider.context.value <= 4096) return 'Low memory';
@@ -126,21 +120,43 @@
 		return models.filter((model) => model.id.toLowerCase().includes(query));
 	});
 
+	function beginAuth(provider: app.providers.ProviderEntry) {
+		credentialError = null;
+		credentialInput = '';
+		passwordInput = '';
+		confirmPasswordInput = '';
+		if (provider.credentialState === 'locked') {
+			credentialFlow = { provider, mode: 'unlock', pendingModel: null };
+		} else if (provider.credentialState === 'missing') {
+			credentialFlow = { provider, mode: 'save', pendingModel: null };
+		}
+	}
+
 	async function beginModelSelection(provider: app.providers.ProviderEntry, modelId: string) {
 		const model = provider.models.find((item) => item.id === modelId);
 		if (!model?.enabled) return;
 
 		const selection = { provider: provider.id, modelId };
 		if (provider.credentialState === 'locked') {
+			credentialError = null;
+			credentialInput = '';
+			passwordInput = '';
+			confirmPasswordInput = '';
 			credentialFlow = { provider, mode: 'unlock', pendingModel: selection };
 			return;
 		}
 		if (provider.credentialState === 'missing') {
+			credentialError = null;
+			credentialInput = '';
+			passwordInput = '';
+			confirmPasswordInput = '';
 			credentialFlow = { provider, mode: 'save', pendingModel: selection };
 			return;
 		}
 
 		await onSelectModel(selection);
+		const modelEntry = provider.models.find((m) => m.id === modelId);
+		toast.success(`${modelEntry?.label ?? modelId} selected`);
 		handleClose();
 	}
 
@@ -168,6 +184,12 @@
 			}
 			if (credentialFlow.pendingModel) {
 				await onSelectModel(credentialFlow.pendingModel);
+				const modelEntry = credentialFlow.provider.models.find(
+					(m) => m.id === credentialFlow!.pendingModel!.modelId
+				);
+				toast.success(`${modelEntry?.label ?? credentialFlow.pendingModel.modelId} selected`);
+			} else {
+				toast.success('Logged in');
 			}
 			handleClose();
 		} catch (error) {
@@ -222,9 +244,27 @@
 						Back
 					</Button>
 					<Button onclick={submitCredentialFlow} disabled={isSubmitting || !passwordInput}>
-						{credentialFlow.mode === 'unlock' ? 'Unlock' : 'Save & Use'}
+						{#if isSubmitting}
+							Validating...
+						{:else}
+							{credentialFlow.mode === 'unlock' ? 'Unlock' : 'Save & Use'}
+						{/if}
 					</Button>
 				</div>
+
+				{#if credentialFlow.mode === 'unlock'}
+					<button
+						class="palette-forget-key"
+						onclick={() => {
+							if (credentialFlow) {
+								onClearCredential(credentialFlow.provider.id);
+								credentialFlow = null;
+							}
+						}}
+					>
+						Forget saved key
+					</button>
+				{/if}
 			</div>
 		{:else}
 			<div class="palette-content">
@@ -279,36 +319,40 @@
 											/>
 										{/if}
 										<span class="palette-provider-name">{provider.name}</span>
+										<span class="palette-provider-auth">
+											{#if provider.credentialState === 'ready'}
+												<button
+													class="palette-auth-btn"
+													onclick={() => onClearCredential(provider.id)}
+												>
+													Log out
+												</button>
+											{:else}
+												<button
+													class="palette-auth-btn"
+													onclick={() => beginAuth(provider)}
+												>
+													{provider.credentialState === 'locked' ? 'Log in' : 'Add key'}
+												</button>
+											{/if}
+										</span>
 									</div>
 
 									<div class="palette-provider-models">
 										{#each provider.models as model (model.id)}
+											{@const loggedIn = provider.credentialState === 'ready'}
 											<button
 												class="palette-model-row"
-												class:active={activeModel?.provider === provider.id &&
+												class:active={loggedIn &&
+													activeModel?.provider === provider.id &&
 													activeModel?.modelId === model.id}
-												disabled={!model.enabled}
+												class:disabled={!loggedIn}
+												disabled={!model.enabled || !loggedIn}
 												onclick={() => beginModelSelection(provider, model.id)}
 											>
 												<span>{model.label}</span>
-												<div class="palette-model-meta">
-													{#if activeModel?.provider === provider.id && activeModel?.modelId === model.id}
-														<span class="palette-active-dot"></span>
-													{/if}
-													{#if getCredentialBadge(provider)}
-														<span class="palette-badge">{getCredentialBadge(provider)}</span>
-													{/if}
-												</div>
 											</button>
 										{/each}
-										{#if provider.credentialState === 'ready'}
-											<button
-												class="palette-forget-key"
-												onclick={() => onClearCredential(provider.id)}
-											>
-												Forget saved credential
-											</button>
-										{/if}
 									</div>
 								</div>
 							{/each}
@@ -324,7 +368,7 @@
 											/>
 										{/if}
 										<span class="palette-provider-name">{provider.name}</span>
-										<span class="palette-soon-badge">soon</span>
+										<span class="palette-soon-badge">Coming Soon</span>
 									</div>
 
 									<div class="palette-provider-models">
