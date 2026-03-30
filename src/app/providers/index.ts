@@ -247,10 +247,28 @@ function getLocalProviders(): State['providers'] {
 	];
 }
 
+export function resolveModelLabel(
+	provider: domain.models.Provider | null | undefined,
+	modelId: string | undefined
+): string | undefined {
+	if (!provider || !modelId) return modelId;
+	if (provider === 'ollama' || provider === 'webllm') return modelId;
+	const models = external.providers.catalog.PROVIDER_MODELS[provider];
+	const entry = models.find((m) => m.id === modelId);
+	return entry?.label ?? modelId;
+}
+
+function getActiveModelLabel(model: domain.models.ActiveModel | null): string | null {
+	if (!model) return null;
+	return resolveModelLabel(model.provider, model.modelId) ?? null;
+}
+
 export function getState(): State {
+	const activeModel = state.providers.providerState.activeModel;
 	return {
-		activeModel: state.providers.providerState.activeModel,
-		contextLength: getContextLength(state.providers.providerState.activeModel),
+		activeModel,
+		activeModelLabel: getActiveModelLabel(activeModel),
+		contextLength: getContextLength(activeModel),
 		providers: [...getRemoteProviders(), ...getLocalProviders()]
 	};
 }

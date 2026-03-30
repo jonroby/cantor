@@ -10,6 +10,7 @@ type AppMock = PublicApiMock<typeof app, typeof appContract>;
 export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 	const providerStateBacking: ReturnType<typeof app.providers.getState> = {
 		activeModel: null,
+		activeModelLabel: null,
 		contextLength: null,
 		providers: [
 			{

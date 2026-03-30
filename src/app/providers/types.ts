@@ -46,6 +46,7 @@ export interface ProviderEntry {
 
 export interface State {
 	activeModel: ActiveModel | null;
+	activeModelLabel: string | null;
 	contextLength: number | null;
 	providers: ProviderEntry[];
 }

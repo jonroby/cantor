@@ -9,6 +9,7 @@ import type * as app from '@/app';
 function renderPalette(overrides: Partial<Parameters<typeof ModelPalette>[1]> = {}) {
 	const state: app.providers.State = {
 		activeModel: null,
+		activeModelLabel: null,
 		contextLength: null,
 		providers: [
 			{
@@ -95,6 +96,7 @@ describe('ModelPalette', () => {
 			const { container } = renderPalette({
 				state: {
 					activeModel: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
+					activeModelLabel: 'Claude Sonnet 4.6',
 					contextLength: 1_000_000,
 					providers: [
 						{
@@ -145,6 +147,7 @@ describe('ModelPalette', () => {
 			const { props } = renderPalette({
 				state: {
 					activeModel: null,
+					activeModelLabel: null,
 					contextLength: null,
 					providers: [
 						{
@@ -169,6 +172,7 @@ describe('ModelPalette', () => {
 			renderPalette({
 				state: {
 					activeModel: null,
+					activeModelLabel: null,
 					contextLength: null,
 					providers: [
 						{
@@ -190,6 +194,7 @@ describe('ModelPalette', () => {
 			renderPalette({
 				state: {
 					activeModel: null,
+					activeModelLabel: null,
 					contextLength: null,
 					providers: [
 						{

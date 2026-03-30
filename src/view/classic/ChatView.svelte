@@ -310,7 +310,7 @@
 		const data: ChatCardData = {
 			prompt: exchange.prompt.text,
 			response: exchange.response?.text ?? '',
-			model: exchange.model,
+			model: app.providers.resolveModelLabel(exchange.provider, exchange.model),
 			provider: exchange.provider,
 			label: exchange.label,
 			isActive: activeExchangeId === exchangeId,

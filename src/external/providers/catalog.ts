@@ -34,12 +34,12 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'gpt-5.4', label: 'GPT-5.4', contextLength: 1_000_000 },
-			{ id: 'gpt-5.4-mini', label: 'GPT-5.4 mini', contextLength: 400_000 },
-			{ id: 'gpt-5.4-nano', label: 'GPT-5.4 nano', contextLength: 400_000 },
-			{ id: 'o3', label: 'o3', contextLength: 200_000 },
-			{ id: 'o4-mini', label: 'o4 mini', contextLength: 200_000 },
-			{ id: 'gpt-4o', label: 'GPT-4o', contextLength: 128_000 }
+			{ id: 'gpt-5.4', label: 'ChatGPT 5.4', contextLength: 1_000_000 },
+			{ id: 'gpt-5.4-mini', label: 'ChatGPT 5.4 mini', contextLength: 400_000 },
+			{ id: 'gpt-5.4-nano', label: 'ChatGPT 5.4 nano', contextLength: 400_000 },
+			{ id: 'o3', label: 'OpenAI o3', contextLength: 200_000 },
+			{ id: 'o4-mini', label: 'OpenAI o4 mini', contextLength: 200_000 },
+			{ id: 'gpt-4o', label: 'ChatGPT 4o', contextLength: 128_000 }
 		]
 	},
 	gemini: {
@@ -52,11 +52,7 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			{ id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro', contextLength: 1_000_000 },
 			{ id: 'gemini-3-pro-preview', label: 'Gemini 3 Pro', contextLength: 1_000_000 },
 			{ id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash', contextLength: 1_000_000 },
-			{
-				id: 'gemini-3.1-flash-lite-preview',
-				label: 'Gemini 3.1 Flash-Lite',
-				contextLength: 1_000_000
-			},
+			{ id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash-Lite', contextLength: 1_000_000 },
 			{ id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', contextLength: 1_000_000 },
 			{ id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', contextLength: 1_000_000 }
 		]
@@ -84,7 +80,7 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			{ id: 'qwen-max', label: 'Qwen Max', contextLength: 32_768 },
 			{ id: 'qwen-plus', label: 'Qwen Plus', contextLength: 131_072 },
 			{ id: 'qwen-turbo', label: 'Qwen Turbo', contextLength: 1_000_000 },
-			{ id: 'qwen2.5-72b-instruct', label: 'Qwen2.5 72B Instruct', contextLength: 131_072 }
+			{ id: 'qwen2.5-72b-instruct', label: 'Qwen 2.5 72B Instruct', contextLength: 131_072 }
 		]
 	},
 	deepseek: {

@@ -183,7 +183,8 @@
 	inputMessage={commandPending ? 'Accept or reject pending changes first.' : null}
 	{submitDisabledReason}
 	streaming={commandStreaming || activeNodeStreaming}
-	activeModelId={providerState.activeModel?.modelId ?? null}
+	activeModelLabel={providerState.activeModelLabel}
+	activeProvider={providerState.activeModel?.provider ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
 	onSubmit={submitPrompt}
