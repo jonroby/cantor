@@ -227,7 +227,7 @@
 
 				{#if credentialFlow.mode === 'save'}
 					<div class="palette-field">
-						<label class="palette-label" for="credential-input">Credential</label>
+						<label class="palette-label" for="credential-input">API Key</label>
 						<Input id="credential-input" type="password" bind:value={credentialInput} />
 					</div>
 				{/if}
@@ -258,7 +258,7 @@
 						{#if isSubmitting}
 							Validating...
 						{:else}
-							{credentialFlow.mode === 'unlock' ? 'Unlock' : 'Save & Use'}
+							{credentialFlow.mode === 'unlock' ? 'Unlock' : 'Save'}
 						{/if}
 					</Button>
 				</div>
@@ -292,9 +292,6 @@
 						class:active={activeTab === 'ollama'}
 						onclick={() => (activeTab = 'ollama')}
 					>
-						{#if PROVIDER_LOGOS.ollama}
-							<img src={PROVIDER_LOGOS.ollama} alt="Ollama" class="palette-tab-icon" />
-						{/if}
 						Ollama
 					</button>
 					<button
@@ -302,9 +299,6 @@
 						class:active={activeTab === 'webllm'}
 						onclick={() => (activeTab = 'webllm')}
 					>
-						{#if PROVIDER_LOGOS.webllm}
-							<img src={PROVIDER_LOGOS.webllm} alt="WebLLM" class="palette-tab-icon" />
-						{/if}
 						WebLLM
 					</button>
 				</div>
@@ -392,56 +386,64 @@
 					{:else if activeTab === 'ollama'}
 						{#if ollamaProvider}
 							<div class="palette-tab-content">
-								{#if ollamaProvider.connection}
-									<div class="palette-ollama-connect">
-										<Input
-											value={ollamaProvider.connection.value}
-											class="palette-connect-input"
-											placeholder="localhost:11434"
-										/>
-										<Button
-											size="sm"
-											variant={ollamaProvider.connection.status === 'connected'
-												? 'secondary'
-												: 'default'}
-											class="palette-connect-btn"
-											onclick={() => onConnect(ollamaProvider.id, ollamaProvider.connection?.value)}
-											disabled={ollamaProvider.connection.status === 'connecting'}
-										>
-											{ollamaProvider.connection.status === 'connecting'
-												? 'Connecting...'
-												: ollamaProvider.connection.status === 'connected'
-													? 'Reconnect'
-													: 'Connect'}
-										</Button>
-										{#if ollamaProvider.connection.status === 'error'}
-											<span class="palette-connect-error">Failed</span>
+								<div class="palette-provider-group">
+									<div class="palette-provider-title">
+										{#if PROVIDER_LOGOS[ollamaProvider.id]}
+											<img
+												src={PROVIDER_LOGOS[ollamaProvider.id]}
+												alt={ollamaProvider.name}
+												class="palette-provider-logo"
+											/>
+										{/if}
+										<span class="palette-provider-name">{ollamaProvider.name}</span>
+										{#if ollamaProvider.connection}
+											<span class="palette-provider-auth">
+												<button
+													class="palette-auth-btn"
+													onclick={() => onConnect(ollamaProvider.id, ollamaProvider.connection?.value)}
+													disabled={ollamaProvider.connection.status === 'connecting'}
+												>
+													{ollamaProvider.connection.status === 'connecting'
+														? 'Connecting...'
+														: ollamaProvider.connection.status === 'connected'
+															? 'Reconnect'
+															: 'Connect'}
+												</button>
+											</span>
 										{/if}
 									</div>
-								{/if}
 
-								{#if ollamaProvider.connection?.status === 'connected' && ollamaProvider.models.length === 0}
-									<p class="palette-hint">No models found.</p>
-								{/if}
-								{#if ollamaProvider.connection?.status === 'connected' && ollamaProvider.models.length > 0}
-									<div class="palette-model-grid">
-										{#each ollamaProvider.models as model (model.id)}
-											<button
-												class="palette-model-row"
-												class:active={activeModel?.provider === 'ollama' &&
-													activeModel?.modelId === model.id}
-												onclick={() => beginModelSelection(ollamaProvider, model.id)}
-											>
-												<span>{model.label}</span>
-												<div class="palette-model-meta">
-													{#if activeModel?.provider === 'ollama' && activeModel?.modelId === model.id}
-														<span class="palette-active-dot"></span>
-													{/if}
-												</div>
-											</button>
-										{/each}
-									</div>
-								{/if}
+									{#if ollamaProvider.connection}
+										<div class="palette-ollama-connect">
+											<Input
+												value={ollamaProvider.connection.value}
+												class="palette-connect-input"
+												placeholder="localhost:11434"
+											/>
+											{#if ollamaProvider.connection.status === 'error'}
+												<span class="palette-connect-error">Failed</span>
+											{/if}
+										</div>
+									{/if}
+
+									{#if ollamaProvider.connection?.status === 'connected' && ollamaProvider.models.length === 0}
+										<p class="palette-hint">No models found.</p>
+									{/if}
+									{#if ollamaProvider.connection?.status === 'connected' && ollamaProvider.models.length > 0}
+										<div class="palette-provider-models">
+											{#each ollamaProvider.models as model (model.id)}
+												<button
+													class="palette-model-row"
+													class:active={activeModel?.provider === 'ollama' &&
+														activeModel?.modelId === model.id}
+													onclick={() => beginModelSelection(ollamaProvider, model.id)}
+												>
+													<span>{model.label}</span>
+												</button>
+											{/each}
+										</div>
+									{/if}
+								</div>
 							</div>
 						{/if}
 					{:else if webllmProvider}
@@ -552,8 +554,10 @@
 	.palette-tab {
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: 0.375rem;
-		padding: 0.625rem 1rem;
+		flex: 1;
+		padding: 0.875rem 1rem;
 		font-size: 0.8125rem;
 		font-weight: 500;
 		color: hsl(var(--muted-foreground));
@@ -577,10 +581,15 @@
 	}
 
 	.palette-tab-icon {
-		height: 0.875rem;
-		width: 0.875rem;
+		height: 1.375rem;
+		width: 1.375rem;
 		object-fit: contain;
 		border-radius: 2px;
+	}
+
+	.palette-tab-icon-webllm {
+		height: 2rem;
+		width: 2rem;
 	}
 
 	.palette-scroll {

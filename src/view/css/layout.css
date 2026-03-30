@@ -448,6 +448,16 @@
 	color: hsl(var(--muted-foreground));
 }
 
+.model-chip-cta {
+	background: hsl(var(--foreground)) !important;
+	color: hsl(var(--background)) !important;
+	border-color: hsl(var(--foreground)) !important;
+}
+
+.model-chip-cta:hover {
+	opacity: 0.85;
+}
+
 .composer-divider {
 	width: 1px;
 	height: 1rem;

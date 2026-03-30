@@ -91,12 +91,12 @@
 			{/if}
 		</div>
 		<div class="composer-footer">
-			<Button class="model-chip" variant="outline" size="sm" onclick={onOpenPalette}>
+			<Button class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'} variant="outline" size="sm" onclick={onOpenPalette}>
 				{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
 					<img
 						src={PROVIDER_LOGOS[activeProvider]}
 						alt=""
-						style="height: 1.15rem; width: 1.15rem; object-fit: contain;"
+						style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
 					/>
 				{/if}
 				{activeModelLabel ?? 'Choose model'}
