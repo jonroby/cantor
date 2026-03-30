@@ -94,9 +94,8 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'deepseek-chat', label: 'DeepSeek Chat', contextLength: 64_000 },
-			{ id: 'deepseek-reasoner', label: 'DeepSeek Reasoner', contextLength: 64_000 },
-			{ id: 'deepseek-v3', label: 'DeepSeek V3', contextLength: 64_000 }
+			{ id: 'deepseek-chat', label: 'DeepSeek Chat (V3.2)', contextLength: 128_000 },
+			{ id: 'deepseek-reasoner', label: 'DeepSeek Reasoner (V3.2)', contextLength: 128_000 }
 		]
 	},
 	mistral: {

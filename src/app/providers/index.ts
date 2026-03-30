@@ -183,9 +183,18 @@ function getRemoteProviders(): State['providers'] {
 		models: external.providers.catalog.PROVIDER_MODELS[provider].map((model) => ({
 			id: model.id,
 			label: model.label,
-			enabled: provider === 'claude' || provider === 'gemini' || provider === 'openai',
+			enabled:
+				provider === 'claude' ||
+				provider === 'gemini' ||
+				provider === 'openai' ||
+				provider === 'deepseek',
 			note:
-				provider === 'claude' || provider === 'gemini' || provider === 'openai' ? undefined : 'Soon'
+				provider === 'claude' ||
+				provider === 'gemini' ||
+				provider === 'openai' ||
+				provider === 'deepseek'
+					? undefined
+					: 'Soon'
 		}))
 	}));
 }
