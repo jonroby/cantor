@@ -1,4 +1,4 @@
-import * as providers from '../providers/index';
+import * as providers from '@/app/providers';
 import * as external from '@/external';
 import * as state from '@/state';
 import * as lib from '@/lib';

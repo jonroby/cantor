@@ -1,8 +1,8 @@
 import * as state from '@/state';
 import * as lib from '@/lib';
 import * as external from '@/external';
+import * as chat from '@/app/chat';
 import JSZip from 'jszip';
-import { addDocumentToChat as appendDocumentToChat } from '@/app/chat';
 
 export const getState = () => state.documents.documentState;
 export const createFolder = state.documents.newFolder;
@@ -14,7 +14,7 @@ export interface DocumentCommandDeps {
 	getFolders: () => state.documents.ChatFolder[];
 	createDocumentInFolder: typeof state.documents.createDocumentInFolder;
 	selectDocument: typeof state.documents.selectDocument;
-	appendDocumentToChat: typeof appendDocumentToChat;
+	appendDocumentToChat: typeof chat.addDocumentToChat;
 }
 
 export interface DocumentTransferFeedback {
@@ -40,7 +40,7 @@ const defaultDeps: DocumentCommandDeps = {
 	getFolders: () => state.documents.documentState.folders,
 	createDocumentInFolder: state.documents.createDocumentInFolder,
 	selectDocument: state.documents.selectDocument,
-	appendDocumentToChat
+	appendDocumentToChat: chat.addDocumentToChat
 };
 
 export function openDocument(
@@ -101,7 +101,7 @@ export function importDocument(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	void external.files.pickFile('.md').then(async (file) => {
+	void external.io.pickFile('.md').then(async (file) => {
 		if (!file) return;
 		const folder = state.documents.documentState.folders.find(
 			(candidate) => candidate.id === folderId
@@ -149,7 +149,7 @@ export async function exportFolder(
 		zip.file(file.name, file.content);
 	}
 	const blob = await zip.generateAsync({ type: 'blob' });
-	external.files.downloadBlob(blob, `${folder.name}.zip`);
+	external.io.downloadBlob(blob, `${folder.name}.zip`);
 }
 
 async function importDocumentsIntoFolder(
@@ -197,7 +197,7 @@ async function importDocumentsIntoFolder(
 }
 
 export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK) {
-	void external.files.pickDirectory().then((files) => {
+	void external.io.pickDirectory().then((files) => {
 		if (files.length === 0) return;
 		const mdFiles = files.filter((file) => file.name.endsWith('.md'));
 		if (mdFiles.length === 0) {
@@ -223,7 +223,7 @@ export function importFolderIntoFolder(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	void external.files.pickDirectory().then((files) => {
+	void external.io.pickDirectory().then((files) => {
 		if (files.length === 0) return;
 		const mdFiles = files.filter((file) => file.name.endsWith('.md'));
 		if (mdFiles.length === 0) {

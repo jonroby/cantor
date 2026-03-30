@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
-	import Input from '@/view/components/custom/input.svelte';
+	import { Input } from '@/view/components/custom';
 	import type * as app from '@/app';
 
 	interface Snippet {

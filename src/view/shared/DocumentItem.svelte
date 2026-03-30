@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
-	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu/index.js';
+	import * as Sidebar from '@/view/components/shadcn/ui/sidebar';
+	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 
 	interface Props {

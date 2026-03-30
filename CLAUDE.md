@@ -39,7 +39,9 @@ Dependencies flow one way:
 - `app` may import `domain`, `lib`, `state`, and `external`
 - `view` may import only `app`
 
-Cross-area imports must go through root barrels as namespace imports (e.g. `import * as app from '@/app'`). No deep imports across area boundaries.
+Cross-area imports must go through root barrels as namespace imports. Always use `import * as app from '@/app'`, never destructured or deep imports. No exceptions.
+
+Within an area, cross-submodule and subfolder imports must go through the target submodule's public entrypoint. Import `@/app/chat`, not `../chat/index`, `./chat/index`, `./chat/utils`, or `@/app/chat/index`.
 
 `bun run check:imports` enforces dependency rules. `bun run check:contracts` enforces approved public submodules.
 

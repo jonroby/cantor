@@ -26,7 +26,7 @@ vi.mock('@/external', async () => {
 	});
 });
 
-vi.mock('@/view/shared/katex', () => ({
+vi.mock('@/view/lib/katex', () => ({
 	renderRichText: (text: string) => text,
 	renderMarkdownKatexBlocks: (text: string) => (text ? [{ source: text, html: text }] : [])
 }));
@@ -37,6 +37,12 @@ vi.mock('katex', () => ({
 
 vi.mock('marked', () => ({
 	Marked: class {
+		lexer(md: string) {
+			return md ? [{ type: 'paragraph', raw: md }] : [];
+		}
+		parser(tokens: Array<{ raw: string }>) {
+			return tokens.map((token) => token.raw).join('');
+		}
 		parse(md: string) {
 			return md;
 		}

@@ -15,11 +15,7 @@ async function hydrateWebLLMModels() {
 	state.providers.providerState.webllmModels = await external.providers.webllm.getWebLLMModels();
 }
 
-function autoConnectOllama() {
-	return _autoConnectOllama();
-}
-
-async function _autoConnectOllama() {
+async function autoConnectOllama() {
 	try {
 		const models = await external.providers.ollama.fetchAvailableModels(
 			external.providers.ollama.DEFAULT_OLLAMA_URL

@@ -27,7 +27,7 @@
 ## Current Truth
 
 - `external.streams` should take prepared history, not assemble chat semantics
-- `external.files` should return neutral validated shapes, not state records
+- `external.io` should return neutral validated shapes, not state records
 - persistence may enforce constraints at the boundary
 
 ## Red Flags

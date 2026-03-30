@@ -4,7 +4,7 @@
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
 	import * as app from '@/app';
-	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
+	import { PROVIDER_LOGOS } from '@/view/assets';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
 
 	interface Props {

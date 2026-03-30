@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Button } from '@/view/components/shadcn/ui/button/index.js';
-	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
+	import { Button } from '@/view/components/shadcn/ui/button';
+	import * as Tooltip from '@/view/components/shadcn/ui/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
 	import { cn } from '@/view/components/shadcn/utils';

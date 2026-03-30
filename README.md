@@ -64,7 +64,7 @@ What each command does:
 - `bun run check:imports`
   - Enforces the architecture import rules.
   - Catches cross-layer imports that bypass the approved dependency direction.
-  - Catches deep imports that should go through a public barrel instead.
+  - Catches deep imports that should go through a public barrel instead, including imports between submodules in the same area.
   - Example: importing `@/state/chats.svelte` from another area when only `@/state` is allowed.
 - `bun run check:contracts`
   - Verifies the frozen public API contract files are present and consistent with the matching mock structure.

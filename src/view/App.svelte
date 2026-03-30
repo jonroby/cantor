@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
-	import Toaster from '@/view/components/shadcn/ui/sonner/sonner.svelte';
+	import { Toaster } from '@/view/components/shadcn/ui/sonner';
 	import { toast } from 'svelte-sonner';
-	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar/index.js';
+	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar';
 	import { AppSidebar, SearchDialog } from '@/view/shared';
-	import { routerState } from '@/view/routes/router.svelte';
+	import { LandingPage, routerState } from '@/view/routes';
 	import { ChatView } from '@/view/classic';
-	import LandingPage from '@/view/routes/LandingPage.svelte';
 	import * as app from '@/app';
 
 	let searchQuery = $state('');

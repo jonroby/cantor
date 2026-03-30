@@ -1,9 +1,8 @@
 <script lang="ts">
 	import './palette.css';
 	import * as app from '@/app';
-	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
-	import Button from '@/view/components/custom/button.svelte';
-	import Input from '@/view/components/custom/input.svelte';
+	import { PROVIDER_LOGOS } from '@/view/assets';
+	import { Button, Input } from '@/view/components/custom';
 
 	interface Props {
 		open: boolean;

@@ -1,7 +1,7 @@
 import { createActor, type Actor, type SnapshotFrom } from 'xstate';
 import { streamMachine, type StreamMachineInput } from './stream.machine';
 import * as domain from '@/domain';
-import type { StreamChunk } from '@/external/providers/stream';
+import type * as providers from '@/external/providers';
 
 type StreamActor = Actor<typeof streamMachine>;
 
@@ -18,7 +18,7 @@ export interface StreamDeps {
 		model: domain.models.ActiveModel,
 		history: domain.tree.Message[],
 		signal: AbortSignal
-	) => AsyncGenerator<StreamChunk>;
+	) => AsyncGenerator<providers.stream.StreamChunk>;
 }
 
 export function isStreaming(store: StreamStore, exchangeId: string): boolean {

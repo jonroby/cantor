@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import ChatMessage from '../ChatMessage.svelte';
 import type { ChatCardData } from '../chat-card';
 
-vi.mock('@/view/shared/katex', () => ({
+vi.mock('@/view/lib/katex', () => ({
 	renderRichText: (text: string) => text,
 	renderMarkdownKatexBlocks: vi.fn((text: string) =>
 		text

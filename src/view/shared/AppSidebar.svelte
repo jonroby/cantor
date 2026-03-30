@@ -2,9 +2,8 @@
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import * as app from '@/app';
-	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
-	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
-	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.svelte.js';
+	import * as Sidebar from '@/view/components/shadcn/ui/sidebar';
+	import * as Tooltip from '@/view/components/shadcn/ui/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
 	import ChatItem from './ChatItem.svelte';
@@ -62,7 +61,7 @@
 		onMoveDocument
 	}: Props = $props();
 
-	const sidebar = useSidebar();
+	const sidebar = Sidebar.useSidebar();
 
 	// Folder expansion
 	let expandedFolders: Record<string, boolean> = $state({});

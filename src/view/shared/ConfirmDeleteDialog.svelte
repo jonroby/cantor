@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as AlertDialog from '@/view/components/shadcn/ui/alert-dialog/index.js';
+	import * as AlertDialog from '@/view/components/shadcn/ui/alert-dialog';
 
 	interface Props {
 		open: boolean;

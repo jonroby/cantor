@@ -6,6 +6,8 @@ import ts from 'typescript';
 import {
 	ROOT,
 	SRC_DIR,
+	SOURCE_EXTENSIONS,
+	resolveModulePath,
 	walk,
 	relative,
 	readSourceFile,
@@ -29,7 +31,7 @@ const AREA_ORDER = ['domain', 'lib', 'state', 'external', 'app', 'view'];
 
 const APPROVED_PUBLIC_NAMESPACES = {
 	app: new Set(['bootstrap', 'chat', 'documents', 'providers']),
-	external: new Set(['persistence', 'files', 'providers', 'streams']),
+	external: new Set(['persistence', 'io', 'providers', 'streams']),
 	state: new Set(['chats', 'documents', 'providers'])
 };
 
@@ -66,6 +68,63 @@ function parseInternalSpec(spec) {
 	return { area: match[1], isRoot: match[2] == null };
 }
 
+function internalTargetPath(fromFile, spec) {
+	if (spec.startsWith('@/')) {
+		const basePath = path.join(SRC_DIR, spec.slice(2));
+		for (const extension of SOURCE_EXTENSIONS) {
+			const candidate = `${basePath}${extension}`;
+			if (fs.existsSync(candidate)) return candidate;
+		}
+
+		for (const extension of SOURCE_EXTENSIONS) {
+			const candidate = path.join(basePath, `index${extension}`);
+			if (fs.existsSync(candidate)) return candidate;
+		}
+
+		return null;
+	}
+
+	if (spec.startsWith('.')) {
+		try {
+			return resolveModulePath(fromFile, spec);
+		} catch {
+			return null;
+		}
+	}
+	return null;
+}
+
+function publicModuleRoot(filePath) {
+	const relPath = relative(filePath);
+	const area = areaFor(relPath);
+	if (!area) return filePath;
+
+	const areaDir = path.join(SRC_DIR, area);
+	let currentDir = path.dirname(filePath);
+
+	while (currentDir !== areaDir && currentDir.startsWith(areaDir)) {
+		for (const extension of SOURCE_EXTENSIONS) {
+			if (fs.existsSync(path.join(currentDir, `index${extension}`))) return currentDir;
+		}
+		currentDir = path.dirname(currentDir);
+	}
+
+	return filePath;
+}
+
+function stripSourceExtension(filePath) {
+	for (const extension of SOURCE_EXTENSIONS) {
+		if (filePath.endsWith(extension)) return filePath.slice(0, -extension.length);
+	}
+	return filePath;
+}
+
+function publicModuleSpec(moduleRoot) {
+	const relPath = relative(moduleRoot).replace(/^src\//, '');
+	if (fs.existsSync(moduleRoot) && fs.statSync(moduleRoot).isDirectory()) return `@/${relPath}`;
+	return `@/${stripSourceExtension(relPath)}`;
+}
+
 function hasNamespaceImport(sourceFile, spec) {
 	return getNamespaceImports(sourceFile).some((entry) => entry.spec === spec);
 }
@@ -94,6 +153,29 @@ function collectRuleViolations(sourceFile, area, relPath) {
 	return violations;
 }
 
+function getRuntimeImportSpecs(sourceFile) {
+	const specs = [];
+
+	visit(sourceFile, (node) => {
+		if (ts.isImportDeclaration(node)) {
+			const spec = getStringLiteralValue(node.moduleSpecifier);
+			if (spec) specs.push(spec);
+			return;
+		}
+
+		if (
+			ts.isCallExpression(node) &&
+			node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+			node.arguments.length === 1
+		) {
+			const spec = getStringLiteralValue(node.arguments[0]);
+			if (spec) specs.push(spec);
+		}
+	});
+
+	return specs;
+}
+
 const violations = [];
 
 for (const file of walk(SRC_DIR)) {
@@ -101,9 +183,29 @@ for (const file of walk(SRC_DIR)) {
 	if (relPath.endsWith('.test.ts')) continue;
 	const area = areaFor(relPath);
 	if (!area) continue;
+	const sourceModule = publicModuleRoot(file);
 
 	const sourceFile = readSourceFile(file);
 	violations.push(...collectRuleViolations(sourceFile, area, relPath));
+
+	for (const spec of getRuntimeImportSpecs(sourceFile)) {
+		const shouldCheckSameArea = spec.startsWith('@/') || spec.startsWith('.');
+		const internalTarget = shouldCheckSameArea ? internalTargetPath(file, spec) : null;
+		if (internalTarget) {
+			const targetArea = areaFor(relative(internalTarget));
+			if (targetArea === area) {
+				const targetModule = publicModuleRoot(internalTarget);
+				if (targetModule !== sourceModule) {
+					const expectedSpec = publicModuleSpec(targetModule);
+					if (spec !== expectedSpec) {
+						violations.push(
+							`${relPath}: same-area import "${spec}" must use the public entrypoint "${expectedSpec}"`
+						);
+					}
+				}
+			}
+		}
+	}
 
 	for (const spec of getImportLikeSpecs(sourceFile)) {
 		if (spec.startsWith('.')) continue;

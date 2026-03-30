@@ -1,8 +1,6 @@
 import * as external from '@/external';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import * as domain from '@/domain';
-import { PROVIDER_LOGOS } from '../logos';
-
 describe('models', () => {
 	it('declares unique provider ids with no overlap between local and key-based providers', () => {
 		expect(new Set(domain.models.PROVIDERS).size).toBe(domain.models.PROVIDERS.length);
@@ -95,11 +93,5 @@ describe('models', () => {
 		expect(domain.models.isKeyBasedProvider(models[1]!.provider)).toBe(false);
 		expectTypeOf<domain.models.KeyBasedActiveModel>().toMatchTypeOf<domain.models.ActiveModel>();
 		expectTypeOf<domain.models.LocalActiveModel>().toMatchTypeOf<domain.models.ActiveModel>();
-	});
-
-	it('defines a logo for every provider', () => {
-		for (const provider of domain.models.PROVIDERS satisfies readonly domain.models.Provider[]) {
-			expect(PROVIDER_LOGOS[provider]).toBeTruthy();
-		}
 	});
 });

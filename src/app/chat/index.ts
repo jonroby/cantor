@@ -361,23 +361,23 @@ export function exportState() {
 		2
 	);
 	const blob = new Blob([payload], { type: 'application/json' });
-	external.files.downloadBlob(blob, `chat-tree-${Date.now()}.json`);
+	external.io.downloadBlob(blob, `chat-tree-${Date.now()}.json`);
 }
 
 export function exportChat(index: number) {
 	const chat = state.chats.chatState.chats[index];
 	const payload = JSON.stringify(chat, null, 2);
 	const blob = new Blob([payload], { type: 'application/json' });
-	external.files.downloadBlob(blob, `${chat.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`);
+	external.io.downloadBlob(blob, `${chat.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`);
 }
 
 export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void {
-	void external.files.pickFile('.json').then(async (file) => {
+	void external.io.pickFile('.json').then(async (file) => {
 		if (!file) return;
 		try {
 			const text = await file.text();
 			const data = JSON.parse(text);
-			const upload = external.files.validateChatUpload(data);
+			const upload = external.io.validateChatUpload(data);
 			const baseName = file.name.replace(/\.json$/i, '');
 			const existingNames = state.chats.chatState.chats.map((chat) => chat.name);
 			const chat: state.chats.ChatRecord = {

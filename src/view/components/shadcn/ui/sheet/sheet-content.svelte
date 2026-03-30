@@ -7,7 +7,7 @@
 	import type { Snippet } from 'svelte';
 	import SheetPortal from './sheet-portal.svelte';
 	import SheetOverlay from './sheet-overlay.svelte';
-	import { Button } from '@/view/components/shadcn/ui/button/index.js';
+	import { Button } from '@/view/components/shadcn/ui/button';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { Cancel01Icon } from '@hugeicons/core-free-icons';
 	import { cn, type WithoutChildrenOrChild } from '@/view/components/shadcn/utils';

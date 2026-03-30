@@ -2,8 +2,8 @@
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import * as app from '@/app';
-	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
-	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu/index.js';
+	import * as Sidebar from '@/view/components/shadcn/ui/sidebar';
+	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 	import DocumentItem from './DocumentItem.svelte';
 

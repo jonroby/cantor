@@ -1,6 +1,5 @@
 <script lang="ts">
-	import Button from '@/view/components/custom/button.svelte';
-	import Input from '@/view/components/custom/input.svelte';
+	import { Button, Input } from '@/view/components/custom';
 
 	interface Props {
 		composerValue: string;

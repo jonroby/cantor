@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
+	import * as Tooltip from '@/view/components/shadcn/ui/tooltip';
 	import { cn, type WithElementRef } from '@/view/components/shadcn/utils';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import {

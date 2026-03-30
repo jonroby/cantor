@@ -1,10 +1,4 @@
-import {
-	getVaultStore,
-	setVaultStore,
-	migrateVaultStorage,
-	clearVaultStorage,
-	type VaultRecord
-} from '@/external/persistence/database';
+import * as persistence from '@/external/persistence';
 
 function base64ToBytes(b64: string): Uint8Array {
 	return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -31,7 +25,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
 	);
 }
 
-async function encryptValue(value: string, password: string): Promise<VaultRecord> {
+async function encryptValue(value: string, password: string): Promise<persistence.VaultRecord> {
 	const salt = crypto.getRandomValues(new Uint8Array(16));
 	const iv = crypto.getRandomValues(new Uint8Array(12));
 	const key = await deriveKey(password, salt);
@@ -47,7 +41,7 @@ async function encryptValue(value: string, password: string): Promise<VaultRecor
 	};
 }
 
-async function decryptRecord(record: VaultRecord, password: string): Promise<string> {
+async function decryptRecord(record: persistence.VaultRecord, password: string): Promise<string> {
 	const key = await deriveKey(password, base64ToBytes(record.salt));
 	let decrypted: ArrayBuffer;
 	try {
@@ -63,7 +57,7 @@ async function decryptRecord(record: VaultRecord, password: string): Promise<str
 }
 
 export function migrateVault(): void {
-	migrateVaultStorage();
+	persistence.migrateVaultStorage();
 }
 
 export async function saveApiKey(
@@ -71,20 +65,20 @@ export async function saveApiKey(
 	apiKey: string,
 	password: string
 ): Promise<void> {
-	const store = getVaultStore();
+	const store = persistence.getVaultStore();
 	store[provider] = await encryptValue(apiKey, password);
-	setVaultStore(store);
+	persistence.setVaultStore(store);
 }
 
 export async function loadApiKey(provider: string, password: string): Promise<string> {
-	const store = getVaultStore();
+	const store = persistence.getVaultStore();
 	const record = store[provider];
 	if (!record) throw new Error(`No saved key found for ${provider}.`);
 	return decryptRecord(record, password);
 }
 
 export async function loadAllApiKeys(password: string): Promise<Record<string, string>> {
-	const store = getVaultStore();
+	const store = persistence.getVaultStore();
 	const result: Record<string, string> = {};
 	for (const [provider, record] of Object.entries(store)) {
 		result[provider] = await decryptRecord(record, password);
@@ -93,25 +87,25 @@ export async function loadAllApiKeys(password: string): Promise<Record<string, s
 }
 
 export function hasVault(): boolean {
-	const store = getVaultStore();
+	const store = persistence.getVaultStore();
 	return Object.keys(store).length > 0;
 }
 
 export function hasProviderKey(provider: string): boolean {
-	const store = getVaultStore();
+	const store = persistence.getVaultStore();
 	return provider in store;
 }
 
 export function storedProviders(): string[] {
-	return Object.keys(getVaultStore());
+	return Object.keys(persistence.getVaultStore());
 }
 
 export function clearVault(): void {
-	clearVaultStorage();
+	persistence.clearVaultStorage();
 }
 
 export function clearProviderKey(provider: string): void {
-	const store = getVaultStore();
+	const store = persistence.getVaultStore();
 	delete store[provider];
-	setVaultStore(store);
+	persistence.setVaultStore(store);
 }

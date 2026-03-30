@@ -1,5 +1,4 @@
 import * as domain from '@/domain';
-import { buildInitialExchanges } from '@/state/initial-exchanges';
 
 export interface ChatRecord extends domain.tree.ChatTree {
 	id: string;
@@ -8,7 +7,7 @@ export interface ChatRecord extends domain.tree.ChatTree {
 }
 
 function makeDefaultChat(): ChatRecord {
-	const tree = buildInitialExchanges();
+	const tree = domain.tree.buildEmptyTree();
 	return {
 		id: crypto.randomUUID(),
 		name: 'Chat 1',

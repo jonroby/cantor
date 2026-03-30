@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { type Shape, type DrawingTool, type Point, generateShapeId } from './drawing-types';
+	import {
+		type Shape,
+		type DrawingTool,
+		type Point,
+		generateShapeId
+	} from '@/view/features/drawing-board/drawing-types';
 
 	interface Props {
 		shapes: Shape[];

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import Button from '@/view/components/custom/button.svelte';
+	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
 	import { ChatInput } from '@/view/shared';
 	import {
@@ -13,7 +13,7 @@
 	} from './panel';
 	import type { Panel } from './panel';
 	import type { ChatCardData } from './chat-card';
-	import Document from '@/view/features/document/Document.svelte';
+	import { Document } from '@/view/features/document';
 	import * as app from '@/app';
 
 	// ── Panel state ─────────────────────────────────────────────────────────

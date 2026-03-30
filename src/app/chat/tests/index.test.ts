@@ -1,23 +1,95 @@
-import * as chat from '../index';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
+import * as domain from '@/domain';
+
+vi.mock('jszip', () => {
+	const mockFile = vi.fn();
+	const mockGenerateAsync = vi.fn().mockResolvedValue(new Blob(['zip-content']));
+	class MockJSZip {
+		file = mockFile;
+		generateAsync = mockGenerateAsync;
+	}
+	return {
+		default: MockJSZip
+	};
+});
 
 vi.mock('@/state', async () => {
-	const { createStateMock } = await import('@/tests/mocks/state');
-	return createStateMock({
+	const actual = await vi.importActual<typeof import('@/state')>('@/state');
+	const importedDomain = await vi.importActual<typeof import('@/domain')>('@/domain');
+	const empty = importedDomain.tree.buildEmptyTree();
+	const result = importedDomain.tree.addExchange(
+		empty,
+		'unused',
+		'hello',
+		'claude-sonnet-4-6',
+		'claude'
+	);
+	const exchanges = importedDomain.tree.updateExchangeResponse(
+		result.tree.exchanges,
+		result.id,
+		'world'
+	);
+	const tree = { rootId: result.tree.rootId, exchanges };
+	const chatState = {
+		chats: [
+			{
+				id: 'chat-1',
+				name: 'Test Chat',
+				rootId: tree.rootId,
+				exchanges: tree.exchanges,
+				activeExchangeId: importedDomain.tree.getMainChatTail(tree)
+			}
+		],
+		activeChatIndex: 0
+	};
+	const documentState = {
+		folders: [
+			{
+				id: 'folder-1',
+				name: 'Test Folder',
+				files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
+			}
+		]
+	};
+	return {
+		...actual,
+		chatState,
+		documentState,
 		chats: {
-			addChat: vi.fn(),
-			getActiveChat: vi.fn(),
-			replaceActiveTree: vi.fn(),
-			setActiveExchangeId: vi.fn(),
-			getTreeByChatId: vi.fn(),
-			replaceTreeByChatId: vi.fn()
+			...actual.chats,
+			chatState
+		},
+		documents: {
+			...actual.documents,
+			documentState
 		}
-	});
+	};
 });
+
+vi.mock('@/lib', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/lib')>()),
+	validateMd: {
+		validate: vi.fn().mockReturnValue([])
+	}
+}));
 
 vi.mock('@/external', async () => {
 	const { createExternalMock } = await import('@/tests/mocks/external');
 	return createExternalMock({
+		io: {
+			validateChatUpload: vi.fn(
+				(data) =>
+					({
+						id: (data as ReturnType<typeof buildValidUploadData>).id,
+						name: (data as ReturnType<typeof buildValidUploadData>).name,
+						tree: {
+							rootId: (data as ReturnType<typeof buildValidUploadData>).rootId,
+							exchanges: (data as ReturnType<typeof buildValidUploadData>).exchanges
+						},
+						activeExchangeId: (data as ReturnType<typeof buildValidUploadData>).activeExchangeId
+					}) as ReturnType<typeof import('@/external').io.validateChatUpload>
+			)
+		},
 		streams: {
 			isStreaming: vi.fn(() => false),
 			cancelStreamsForExchanges: vi.fn(),
@@ -26,9 +98,25 @@ vi.mock('@/external', async () => {
 			cancelAllStreams: vi.fn(),
 			cancelStreamsForChat: vi.fn(),
 			isAnyStreaming: vi.fn(() => false)
+		},
+		providers: {
+			webllm: {
+				getWebLLMModels: vi.fn(async () => [])
+			},
+			vault: {
+				storedProviders: vi.fn(() => [])
+			}
+		},
+		persistence: {
+			getPersistedLayout: vi.fn(() => ({}))
 		}
 	});
 });
+
+import * as chat from '../index';
+import * as state from '@/state';
+import * as app from '@/app';
+import * as external from '@/external';
 
 import {
 	deleteExchange,
@@ -40,9 +128,8 @@ import {
 	type ChatActionDeps
 } from '../index';
 
-import * as domain from '@/domain';
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Convenience: update response on a ChatTree, returning a new ChatTree */
 function setResponse(
 	tree: domain.tree.ChatTree,
 	exchangeId: string,
@@ -53,8 +140,6 @@ function setResponse(
 		exchanges: domain.tree.updateExchangeResponse(tree.exchanges, exchangeId, text)
 	};
 }
-
-// ── Constants & helpers ──────────────────────────────────────────────────────
 
 const PROVIDER: domain.models.Provider = 'claude';
 const MODEL = 'claude-sonnet-4-6';
@@ -77,7 +162,6 @@ function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
 	};
 }
 
-/** root → child → leaf (linear chain) */
 function buildLinearTree(): {
 	tree: domain.tree.ChatTree;
 	rootId: string;
@@ -95,7 +179,6 @@ function buildLinearTree(): {
 	return { tree: leaf.tree, rootId: root.id, childId: child.id, leafId: leaf.id };
 }
 
-/** root → main + side chat */
 function buildTreeWithSideChat(): {
 	tree: domain.tree.ChatTree;
 	rootId: string;
@@ -112,21 +195,68 @@ function buildTreeWithSideChat(): {
 	return { tree: side.tree, rootId: root.id, mainId: main.id, sideId: side.id };
 }
 
-describe('addDocumentToChat', () => {
-	it('adds a labeled document exchange and activates it', () => {
-		const { tree, leafId } = buildLinearTree();
-		const deps = mockDeps();
+// ── Transfer helpers ────────────────────────────────────────────────────────
 
-		const addedId = addDocumentToChat(tree, leafId, '# Notes', 'notes.md', deps);
-		const nextTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]?.[0];
+let nextPickedFile: File | null;
+let downloads: Array<{ blob: Blob; filename: string }>;
 
-		expect(addedId).toBeTruthy();
-		expect(deps.replaceActiveTree).toHaveBeenCalledOnce();
-		expect(deps.setActiveExchangeId).toHaveBeenCalledWith(addedId);
-		expect(nextTree?.exchanges[addedId]?.prompt.text).toBe('# Notes');
-		expect(nextTree?.exchanges[addedId]?.label).toBe('notes.md was added to chat');
+type TransferFeedback = {
+	success: Mock;
+	error: Mock;
+};
+
+function createFeedback(): TransferFeedback {
+	return {
+		success: vi.fn(),
+		error: vi.fn()
+	};
+}
+
+async function flushAsyncWork() {
+	await Promise.resolve();
+	await Promise.resolve();
+}
+
+function buildValidUploadData() {
+	let tree = domain.tree.buildEmptyTree();
+	const result = domain.tree.addExchange(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
+	tree = {
+		rootId: result.tree.rootId,
+		exchanges: domain.tree.updateExchangeResponse(result.tree.exchanges, result.id, 'response')
+	};
+
+	return {
+		id: 'uploaded-id',
+		name: 'Uploaded Chat',
+		rootId: tree.rootId,
+		activeExchangeId: result.id,
+		exchanges: tree.exchanges
+	};
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	nextPickedFile = null;
+	downloads = [];
+	vi.mocked(external.io.pickFile).mockImplementation(async () => nextPickedFile);
+	vi.mocked(external.io.downloadBlob).mockImplementation((blob, filename) => {
+		downloads.push({ blob, filename });
 	});
+
+	const defaultData = buildValidUploadData();
+	state.chats.chatState.chats = [
+		{
+			id: 'chat-1',
+			name: 'Test Chat',
+			rootId: defaultData.rootId,
+			activeExchangeId: defaultData.activeExchangeId,
+			exchanges: defaultData.exchanges
+		}
+	] as typeof state.chats.chatState.chats;
+	state.chats.chatState.activeChatIndex = 0;
 });
+
+// ── Public API ──────────────────────────────────────────────────────────────
 
 describe('public API', () => {
 	it('exposes the expected public API', () => {
@@ -160,7 +290,25 @@ describe('public API', () => {
 	});
 });
 
-// ── deleteExchange ───────────────────────────────────────────────────────────
+// ── addDocumentToChat ───────────────────────────────────────────────────────
+
+describe('addDocumentToChat', () => {
+	it('adds a labeled document exchange and activates it', () => {
+		const { tree, leafId } = buildLinearTree();
+		const deps = mockDeps();
+
+		const addedId = addDocumentToChat(tree, leafId, '# Notes', 'notes.md', deps);
+		const nextTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]?.[0];
+
+		expect(addedId).toBeTruthy();
+		expect(deps.replaceActiveTree).toHaveBeenCalledOnce();
+		expect(deps.setActiveExchangeId).toHaveBeenCalledWith(addedId);
+		expect(nextTree?.exchanges[addedId]?.prompt.text).toBe('# Notes');
+		expect(nextTree?.exchanges[addedId]?.label).toBe('notes.md was added to chat');
+	});
+});
+
+// ── deleteExchange ──────────────────────────────────────────────────────────
 
 describe('deleteExchange', () => {
 	it('deletes exchange, cancels streams, replaces tree, returns no error', () => {
@@ -183,7 +331,6 @@ describe('deleteExchange', () => {
 		const { tree, leafId, childId } = buildLinearTree();
 		const deps = mockDeps();
 		deleteExchange(tree, leafId, 'exchange', childId, undefined, deps);
-		// childId still exists in the tree after deleting leafId, so no redirect
 		expect(deps.setActiveExchangeId).not.toHaveBeenCalled();
 	});
 
@@ -201,7 +348,7 @@ describe('deleteExchange', () => {
 	});
 });
 
-// ── promoteExchange ──────────────────────────────────────────────────────────
+// ── promoteExchange ─────────────────────────────────────────────────────────
 
 describe('promoteExchange', () => {
 	it('promotes side chat, updates state, returns no error', () => {
@@ -265,7 +412,7 @@ describe('copyChat', () => {
 	});
 });
 
-// ── submitPrompt ─────────────────────────────────────────────────────────────
+// ── submitPrompt ────────────────────────────────────────────────────────────
 
 describe('submitPrompt', () => {
 	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
@@ -308,5 +455,93 @@ describe('quickAsk', () => {
 		expect(createdTree.exchanges[createdExchangeId]?.prompt.text).toBe(
 			'Can you explain more:\n\nSelected paragraph'
 		);
+	});
+});
+
+// ── exportState ─────────────────────────────────────────────────────────────
+
+describe('chat.exportState', () => {
+	it('creates a JSON blob and triggers download', () => {
+		app.chat.exportState();
+
+		expect(external.io.downloadBlob).toHaveBeenCalledOnce();
+		expect(downloads[0]?.filename).toMatch(/^chat-tree-\d+\.json$/);
+	});
+});
+
+// ── exportChat ──────────────────────────────────────────────────────────────
+
+describe('chat.exportChat', () => {
+	it('downloads a single chat as JSON', () => {
+		app.chat.exportChat(0);
+
+		expect(external.io.downloadBlob).toHaveBeenCalledOnce();
+		expect(downloads[0]?.filename).toBe('Test Chat.json');
+	});
+
+	it('strips invalid filename characters', () => {
+		state.chats.chatState.chats[0].name = 'Chat/With:Bad*Chars?';
+		app.chat.exportChat(0);
+
+		expect(downloads[0]?.filename).toBe('ChatWithBadChars.json');
+	});
+});
+
+// ── importChat ──────────────────────────────────────────────────────────────
+
+describe('chat.importChat', () => {
+	it('imports a valid chat file', async () => {
+		const feedback = createFeedback();
+		const fileContent = JSON.stringify(buildValidUploadData());
+		const file = new File([fileContent], 'Imported Chat.json', { type: 'application/json' });
+		nextPickedFile = file;
+		app.chat.importChat(feedback);
+		await vi.waitFor(() => {
+			expect(feedback.success).toHaveBeenCalled();
+		});
+
+		expect(state.chats.chatState.chats.length).toBe(2);
+		expect(state.chats.chatState.activeChatIndex).toBe(1);
+		expect(state.chats.chatState.chats[1].name).toBe('Imported Chat');
+		expect(state.chats.chatState.chats[1].id).not.toBe('uploaded-id');
+		expect(state.chats.chatState.chats[1].activeExchangeId).toBeDefined();
+	});
+
+	it('deduplicates imported chat names based on the filename', async () => {
+		const feedback = createFeedback();
+		state.chats.chatState.chats[0].name = 'Imported Chat';
+
+		const file = new File([JSON.stringify(buildValidUploadData())], 'Imported Chat.json', {
+			type: 'application/json'
+		});
+		nextPickedFile = file;
+		app.chat.importChat(feedback);
+		await vi.waitFor(() => {
+			expect(feedback.success).toHaveBeenCalled();
+		});
+
+		expect(state.chats.chatState.chats[1].name).toBe('Imported Chat (1)');
+	});
+
+	it('shows error toast for invalid JSON', async () => {
+		const feedback = createFeedback();
+
+		const file = new File(['not json'], 'bad.json', { type: 'application/json' });
+		nextPickedFile = file;
+		app.chat.importChat(feedback);
+
+		await vi.waitFor(() => {
+			expect(feedback.error).toHaveBeenCalled();
+		});
+	});
+
+	it('does nothing when no file selected', async () => {
+		const feedback = createFeedback();
+		nextPickedFile = null;
+		app.chat.importChat(feedback);
+		await flushAsyncWork();
+
+		expect(feedback.success).not.toHaveBeenCalled();
+		expect(feedback.error).not.toHaveBeenCalled();
 	});
 });

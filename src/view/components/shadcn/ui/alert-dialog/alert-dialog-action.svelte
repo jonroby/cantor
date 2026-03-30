@@ -4,7 +4,7 @@
 		buttonVariants,
 		type ButtonVariant,
 		type ButtonSize
-	} from '@/view/components/shadcn/ui/button/index.js';
+	} from '@/view/components/shadcn/ui/button';
 	import { cn } from '@/view/components/shadcn/utils';
 
 	let {

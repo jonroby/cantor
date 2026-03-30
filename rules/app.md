@@ -19,8 +19,6 @@ It should expose app-shaped APIs, not forward lower layers.
 
 ## Bad
 
-- re-exporting raw state objects
-- re-exporting external functions directly
 - exposing low-level transport or persistence concerns
 - reintroducing deleted namespaces:
   - `search`
@@ -35,7 +33,6 @@ It should expose app-shaped APIs, not forward lower layers.
 
 ## Red Flags
 
-- `app` exports that look identical to `state.*` or `external.*`
 - view-model shaping that belongs in `view`
 - product semantics pushed down into `state` or `external`
 - large dependency injection bags for simple cases

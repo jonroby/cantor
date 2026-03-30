@@ -1,12 +1,12 @@
 import { setup, assign, fromCallback } from 'xstate';
-import type { StreamChunk } from '@/external/providers/stream';
 import type * as domain from '@/domain';
+import type * as providers from '@/external/providers';
 
 type StreamFactory = (
 	model: domain.models.ActiveModel,
 	history: domain.tree.Message[],
 	signal: AbortSignal
-) => AsyncGenerator<StreamChunk>;
+) => AsyncGenerator<providers.stream.StreamChunk>;
 
 export interface StreamMachineInput {
 	exchangeId: string;

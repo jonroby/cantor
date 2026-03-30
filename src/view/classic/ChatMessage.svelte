@@ -1,8 +1,8 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
-	import Button from '@/view/components/custom/button.svelte';
-	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/shared/katex';
-	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
+	import { PROVIDER_LOGOS } from '@/view/assets';
+	import { Button } from '@/view/components/custom';
+	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/lib/katex';
 	import type { ChatCardData } from './chat-card';
 
 	let { data }: { data: ChatCardData } = $props();
