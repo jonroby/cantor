@@ -1,0 +1,13 @@
+{
+	"providerDefaults": {
+		"DEFAULT_OLLAMA_URL": true,
+		"WEBLLM_CONTEXT_OPTIONS": true
+	},
+	"providerTypes": {},
+	"rename": {
+		"renameWithDedup": true
+	},
+	"validateMd": {
+		"validate": true
+	}
+}

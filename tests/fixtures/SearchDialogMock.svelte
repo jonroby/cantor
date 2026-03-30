@@ -1,15 +1,40 @@
 <script lang="ts">
-	import type { SearchResult } from '@/domain/search';
+	interface SearchResult {
+		exchangeId: string;
+		chatIndex: number;
+		prompt: string;
+		snippets: { text: string; matchStart: number; matchEnd: number }[];
+	}
 
 	let {
-		searchItems,
+		chats,
+		activeChatIndex,
+		searchQuery,
+		searchAllChats,
 		onSelect,
 		onClose
 	}: {
-		searchItems: SearchResult[];
+		chats: unknown[];
+		activeChatIndex: number;
+		searchQuery: string;
+		searchAllChats: boolean;
 		onSelect: (result: SearchResult) => void;
 		onClose: () => void;
 	} = $props();
+
+	let searchItems = $derived.by(() => {
+		void searchAllChats;
+		return chats.length
+			? [
+					{
+						exchangeId: 'exchange-1',
+						chatIndex: activeChatIndex,
+						prompt: searchQuery || 'Result',
+						snippets: []
+					}
+				]
+			: [];
+	});
 </script>
 
 <div data-testid="search-dialog-mock">

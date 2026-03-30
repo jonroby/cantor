@@ -1,11 +1,11 @@
 <script lang="ts">
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu/index.js';
-	import type { Chat } from '@/domain/tree';
+	import * as app from '@/app';
 	import InlineRenameInput from './InlineRenameInput.svelte';
 
 	interface Props {
-		chat: Chat;
+		chat: app.chat.Chat;
 		isActive: boolean;
 		isEditing: boolean;
 		editingName: string;

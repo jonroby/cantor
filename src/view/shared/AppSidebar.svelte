@@ -1,42 +1,40 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { renameWithDedup } from '@/domain/rename';
+	import * as app from '@/app';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as Tooltip from '@/view/components/shadcn/ui/tooltip/index.js';
 	import { useSidebar } from '@/view/components/shadcn/ui/sidebar/context.svelte.js';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import type { Chat } from '@/domain/tree';
-	import type { ChatFolder } from '@/state/documents.svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from './ConfirmDeleteDialog.svelte';
 	import powersetLogo from '@/assets/powerset-logo.svg';
 
 	interface Props {
-		chats: Chat[];
+		chats: app.chat.Chat[];
 		activeChatIndex: number;
 		onSelectChat: (index: number) => void;
 		onNewChat: () => number;
 		onDeleteChat: (index: number) => void;
-		onRenameChat: (index: number, name: string) => boolean;
+		onRenameChat: (index: number, name: string) => string | null;
 		onDownloadChat: (index: number) => void;
 		onUploadChat: () => void;
-		folders: ChatFolder[];
+		folders: app.documents.ChatFolder[];
 		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
 		onDownloadFolder: (folderId: string) => void;
-		onRenameFolder: (folderId: string, name: string) => boolean;
-		onNewDoc: (folderId: string) => void;
-		onUploadDoc: (folderId: string) => void;
+		onRenameFolder: (folderId: string, name: string) => string | null;
+		onNewDocument: (folderId: string) => void;
+		onUploadDocument: (folderId: string) => void;
 		onUploadFolder: (folderId: string) => void;
 		onUploadNewFolder: () => void;
-		onSelectDoc: (folderId: string, fileId: string) => void;
-		onAddDocToChat: (folderId: string, fileId: string) => void;
-		onDeleteDoc: (folderId: string, fileId: string) => void;
-		onRenameDoc: (folderId: string, fileId: string, name: string) => boolean;
-		onMoveDoc: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
+		onSelectDocument: (folderId: string, fileId: string) => void;
+		onAddDocumentToChat: (folderId: string, fileId: string) => void;
+		onDeleteDocument: (folderId: string, fileId: string) => void;
+		onRenameDocument: (folderId: string, fileId: string, name: string) => string | null;
+		onMoveDocument: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
 	}
 
 	let {
@@ -53,15 +51,15 @@
 		onDeleteFolder,
 		onDownloadFolder,
 		onRenameFolder,
-		onNewDoc,
-		onUploadDoc,
+		onNewDocument,
+		onUploadDocument,
 		onUploadFolder,
 		onUploadNewFolder,
-		onSelectDoc,
-		onAddDocToChat,
-		onDeleteDoc,
-		onRenameDoc,
-		onMoveDoc
+		onSelectDocument,
+		onAddDocumentToChat,
+		onDeleteDocument,
+		onRenameDocument,
+		onMoveDocument
 	}: Props = $props();
 
 	const sidebar = useSidebar();
@@ -85,7 +83,7 @@
 
 	function commitRenameChat(name: string) {
 		if (editingChatIndex !== null) {
-			const result = renameWithDedup(name, (c) => onRenameChat(editingChatIndex!, c));
+			const result = onRenameChat(editingChatIndex!, name);
 			if (result && result !== name.trim()) {
 				toast.warning(`Renamed to "${result}" to avoid duplicate`);
 			}
@@ -99,45 +97,44 @@
 		editingChatName = '';
 	}
 
-	// Doc rename state
-	let editingDocFileId: string | null = $state(null);
-	let editingDocFileName = $state('');
-	let editingDocFolderId: string | null = $state(null);
+	// Document rename state
+	let editingDocumentFileId: string | null = $state(null);
+	let editingDocumentFileName = $state('');
+	let editingDocumentFolderId: string | null = $state(null);
 
-	function startRenameDoc(folderId: string, fileId: string, fileName: string) {
-		editingDocFolderId = folderId;
-		editingDocFileId = fileId;
-		editingDocFileName = fileName;
+	function startRenameDocument(folderId: string, fileId: string, fileName: string) {
+		editingDocumentFolderId = folderId;
+		editingDocumentFileId = fileId;
+		editingDocumentFileName = fileName;
 	}
 
-	function commitRenameDoc(name: string) {
-		if (editingDocFolderId && editingDocFileId) {
-			const result = renameWithDedup(name, (c) =>
-				onRenameDoc(editingDocFolderId!, editingDocFileId!, c)
-			);
+	function commitRenameDocument(name: string) {
+		if (editingDocumentFolderId && editingDocumentFileId) {
+			const result = onRenameDocument(editingDocumentFolderId!, editingDocumentFileId!, name);
 			if (result && result !== name.trim()) {
 				toast.warning(`Renamed to "${result}" to avoid duplicate`);
 			}
 		}
-		editingDocFolderId = null;
-		editingDocFileId = null;
-		editingDocFileName = '';
+		editingDocumentFolderId = null;
+		editingDocumentFileId = null;
+		editingDocumentFileName = '';
 	}
 
-	function cancelRenameDoc() {
-		editingDocFolderId = null;
-		editingDocFileId = null;
-		editingDocFileName = '';
+	function cancelRenameDocument() {
+		editingDocumentFolderId = null;
+		editingDocumentFileId = null;
+		editingDocumentFileName = '';
 	}
 
 	// Drag-and-drop
-	let draggingDoc: { folderId: string; fileId: string } | null = $state(null);
+	let draggingDocument: { folderId: string; fileId: string } | null = $state(null);
 	let dragOverFolderId: string | null = $state(null);
 
 	// Delete targets
 	let deleteChatTarget: { index: number; name: string } | null = $state(null);
-	let deleteFolderTarget: ChatFolder | null = $state(null);
-	let deleteDocTarget: { folderId: string; fileId: string; fileName: string } | null = $state(null);
+	let deleteFolderTarget: app.documents.ChatFolder | null = $state(null);
+	let deleteDocumentTarget: { folderId: string; fileId: string; fileName: string } | null =
+		$state(null);
 
 	// New folder
 	let newlyCreatedFolderId: string | null = $state(null);
@@ -146,6 +143,11 @@
 		const id = onNewFolder();
 		expandedFolders = { ...expandedFolders, [id]: true };
 		newlyCreatedFolderId = id;
+		tick().then(() => {
+			if (newlyCreatedFolderId === id) {
+				newlyCreatedFolderId = null;
+			}
+		});
 	}
 
 	let indexedChats = $derived(chats.map((c, i) => ({ chat: c, index: i })));
@@ -382,41 +384,45 @@
 									expanded={!!expandedFolders[folder.id]}
 									isDragOver={dragOverFolderId === folder.id}
 									startEditing={newlyCreatedFolderId === folder.id}
-									{editingDocFileId}
-									bind:editingDocFileName
-									draggingDocFileId={draggingDoc?.fileId ?? null}
+									{editingDocumentFileId}
+									bind:editingDocumentFileName
+									draggingDocumentFileId={draggingDocument?.fileId ?? null}
 									onToggle={() => toggleFolder(folder.id)}
-									onNewDoc={() => onNewDoc(folder.id)}
-									onUploadDoc={() => onUploadDoc(folder.id)}
+									onNewDocument={() => onNewDocument(folder.id)}
+									onUploadDocument={() => onUploadDocument(folder.id)}
 									onUploadFolder={() => onUploadFolder(folder.id)}
 									onRenameFolder={(name) => onRenameFolder(folder.id, name)}
 									onDownloadFolder={() => onDownloadFolder(folder.id)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
-									onSelectDoc={(fileId) => onSelectDoc(folder.id, fileId)}
-									onAddDocToChat={(fileId) => onAddDocToChat(folder.id, fileId)}
-									onStartRenameDoc={(fileId, fileName) =>
-										startRenameDoc(folder.id, fileId, fileName)}
-									onCommitRenameDoc={commitRenameDoc}
-									onCancelRenameDoc={cancelRenameDoc}
-									onDeleteDoc={(fileId, fileName) =>
-										(deleteDocTarget = {
+									onSelectDocument={(fileId) => onSelectDocument(folder.id, fileId)}
+									onAddDocumentToChat={(fileId) => onAddDocumentToChat(folder.id, fileId)}
+									onStartRenameFile={(fileId, fileName) =>
+										startRenameDocument(folder.id, fileId, fileName)}
+									onCommitRenameFile={commitRenameDocument}
+									onCancelRenameFile={cancelRenameDocument}
+									onDeleteDocument={(fileId, fileName) =>
+										(deleteDocumentTarget = {
 											folderId: folder.id,
 											fileId,
 											fileName
 										})}
 									onDragStart={(fileId, e) => {
-										draggingDoc = { folderId: folder.id, fileId };
+										draggingDocument = { folderId: folder.id, fileId };
 										e.dataTransfer?.setData('text/plain', fileId);
 										if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
 									}}
 									onDragEnd={() => {
-										draggingDoc = null;
+										draggingDocument = null;
 										dragOverFolderId = null;
 									}}
 									onDrop={(e) => {
 										e.preventDefault();
-										if (draggingDoc && draggingDoc.folderId !== folder.id) {
-											const ok = onMoveDoc(draggingDoc.folderId, draggingDoc.fileId, folder.id);
+										if (draggingDocument && draggingDocument.folderId !== folder.id) {
+											const ok = onMoveDocument(
+												draggingDocument.folderId,
+												draggingDocument.fileId,
+												folder.id
+											);
 											if (ok) {
 												toast.success(`Moved to "${folder.name}"`);
 												expandedFolders = {
@@ -427,11 +433,11 @@
 												toast.error('A file with that name already exists in the target folder');
 											}
 										}
-										draggingDoc = null;
+										draggingDocument = null;
 										dragOverFolderId = null;
 									}}
 									onDragOver={(e) => {
-										if (!draggingDoc || draggingDoc.folderId === folder.id) return;
+										if (!draggingDocument || draggingDocument.folderId === folder.id) return;
 										e.preventDefault();
 										if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 										dragOverFolderId = folder.id;
@@ -522,15 +528,15 @@
 />
 
 <ConfirmDeleteDialog
-	open={!!deleteDocTarget}
+	open={!!deleteDocumentTarget}
 	title="Delete document"
-	description={`Are you sure you want to delete "${deleteDocTarget?.fileName}"?`}
+	description={`Are you sure you want to delete "${deleteDocumentTarget?.fileName}"?`}
 	onConfirm={() => {
-		if (deleteDocTarget) {
-			onDeleteDoc(deleteDocTarget.folderId, deleteDocTarget.fileId);
-			toast.success(`Deleted "${deleteDocTarget.fileName}"`);
+		if (deleteDocumentTarget) {
+			onDeleteDocument(deleteDocumentTarget.folderId, deleteDocumentTarget.fileId);
+			toast.success(`Deleted "${deleteDocumentTarget.fileName}"`);
 		}
-		deleteDocTarget = null;
+		deleteDocumentTarget = null;
 	}}
-	onCancel={() => (deleteDocTarget = null)}
+	onCancel={() => (deleteDocumentTarget = null)}
 />

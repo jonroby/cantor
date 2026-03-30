@@ -1,0 +1,33 @@
+{
+	"models": {
+		"isKeyBasedProvider": true,
+		"KEY_BASED_PROVIDERS": true,
+		"LOCAL_PROVIDERS": true,
+		"PROVIDERS": true
+	},
+	"constraints": {
+		"hasDuplicateNames": true,
+		"isUniqueName": true
+	},
+	"tree": {
+		"addExchange": true,
+		"buildEmptyTree": true,
+		"ChatTreeOperationError": true,
+		"getChildren": true,
+		"getExchange": true,
+		"getMainChat": true,
+		"getMainChatTail": true,
+		"getPath": true,
+		"promoteSideChatToMainChat": true,
+		"removeExchange": true,
+		"removeExchangeSubtree": true,
+		"updateExchangeResponse": true,
+		"updateExchangeTokens": true,
+		"validateChatTree": true,
+		"constraints": {
+			"canAcceptNewChat": true,
+			"canCreateSideChats": true,
+			"canPromoteSideChatToMainChat": true
+		}
+	}
+}

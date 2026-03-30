@@ -1,17 +1,16 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
 	import Button from '@/view/components/custom/button.svelte';
-	import { renderRichText } from '@/view/shared/katex';
-	import { mapDocument } from '@/domain/document-map/index';
-	import { PROVIDER_LOGOS } from '@/domain/models/logos';
-	import type { ExchangeNodeData } from '@/app/types';
+	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/shared/katex';
+	import { PROVIDER_LOGOS } from '@/view/assets/provider-logos';
+	import type { ChatCardData } from './chat-card';
 
-	let { data }: { data: ExchangeNodeData } = $props();
+	let { data }: { data: ChatCardData } = $props();
 
 	let promptHtml = $derived(DOMPurify.sanitize(renderRichText(data.prompt)));
 	let responseBlocks = $derived(
 		!data.isStreaming
-			? mapDocument(data.response).map((block) => ({
+			? renderMarkdownKatexBlocks(data.response).map((block) => ({
 					source: block.source,
 					html: DOMPurify.sanitize(block.html)
 				}))
@@ -277,7 +276,7 @@
 		{#if !data.isSideRoot}
 			{#if data.hasSideChildren}
 				<button
-					class="chatmsg-branch-badge"
+					class="chatmsg-side-chat-badge"
 					type="button"
 					onclick={(event: MouseEvent) => {
 						event.stopPropagation();
@@ -300,7 +299,7 @@
 					<span>{data.sideChildrenCount}</span>
 				</button>
 			{:else}
-				<span class="action-tip-wrap chatmsg-branch-action">
+				<span class="action-tip-wrap chatmsg-side-chat-action">
 					<Button
 						class="icon-chip"
 						variant="ghost"

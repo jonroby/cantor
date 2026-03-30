@@ -810,7 +810,7 @@
 	min-height: auto;
 }
 
-.chatview-branch-source {
+.chatview-side-chat-source {
 	position: relative;
 	border-left: 2px solid hsl(var(--primary));
 	padding-left: 0.75rem;
@@ -853,7 +853,7 @@
 	min-height: 1.9rem;
 }
 
-.chatmsg-branch-badge {
+.chatmsg-side-chat-badge {
 	display: flex;
 	align-items: center;
 	gap: 0.3rem;
@@ -869,7 +869,7 @@
 		color 120ms ease;
 }
 
-.chatmsg-branch-badge:hover {
+.chatmsg-side-chat-badge:hover {
 	background: hsl(var(--foreground) / 0.1);
 	color: hsl(var(--foreground));
 }
@@ -883,12 +883,12 @@
 }
 
 .chatmsg:hover .chatmsg-actions,
-.chatmsg:hover .chatmsg-branch-action {
+.chatmsg:hover .chatmsg-side-chat-action {
 	opacity: 1;
 	pointer-events: auto;
 }
 
-.chatmsg-branch-action {
+.chatmsg-side-chat-action {
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 150ms ease;

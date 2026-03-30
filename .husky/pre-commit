@@ -1,2 +1,4 @@
-bun run check
+bun run check:imports
+bun run check:contracts
+bun run typecheck
 bunx lint-staged

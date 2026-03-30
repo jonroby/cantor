@@ -1,34 +1,33 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { renameWithDedup } from '@/domain/rename';
+	import * as app from '@/app';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
 	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu/index.js';
-	import type { ChatFolder } from '@/state/documents.svelte';
 	import InlineRenameInput from './InlineRenameInput.svelte';
-	import DocItem from './DocItem.svelte';
+	import DocumentItem from './DocumentItem.svelte';
 
 	interface Props {
-		folder: ChatFolder;
+		folder: app.documents.ChatFolder;
 		expanded: boolean;
 		isDragOver: boolean;
 		startEditing?: boolean;
-		editingDocFileId: string | null;
-		editingDocFileName: string;
-		draggingDocFileId: string | null;
+		editingDocumentFileId: string | null;
+		editingDocumentFileName: string;
+		draggingDocumentFileId: string | null;
 		onToggle: () => void;
-		onNewDoc: () => void;
-		onUploadDoc: () => void;
+		onNewDocument: () => void;
+		onUploadDocument: () => void;
 		onUploadFolder: () => void;
-		onRenameFolder: (name: string) => boolean;
+		onRenameFolder: (name: string) => string | null;
 		onDownloadFolder: () => void;
 		onDeleteFolder: () => void;
-		onSelectDoc: (fileId: string) => void;
-		onAddDocToChat: (fileId: string) => void;
-		onStartRenameDoc: (fileId: string, fileName: string) => void;
-		onCommitRenameDoc: (name: string) => void;
-		onCancelRenameDoc: () => void;
-		onDeleteDoc: (fileId: string, fileName: string) => void;
+		onSelectDocument: (fileId: string) => void;
+		onAddDocumentToChat: (fileId: string) => void;
+		onStartRenameFile: (fileId: string, fileName: string) => void;
+		onCommitRenameFile: (name: string) => void;
+		onCancelRenameFile: () => void;
+		onDeleteDocument: (fileId: string, fileName: string) => void;
 		onDragStart: (fileId: string, e: DragEvent) => void;
 		onDragEnd: () => void;
 		onDrop: (e: DragEvent) => void;
@@ -41,22 +40,22 @@
 		expanded,
 		isDragOver,
 		startEditing = false,
-		editingDocFileId,
-		editingDocFileName = $bindable(),
-		draggingDocFileId,
+		editingDocumentFileId,
+		editingDocumentFileName = $bindable(),
+		draggingDocumentFileId,
 		onToggle,
-		onNewDoc,
-		onUploadDoc,
+		onNewDocument,
+		onUploadDocument,
 		onUploadFolder,
 		onRenameFolder,
 		onDownloadFolder,
 		onDeleteFolder,
-		onSelectDoc,
-		onAddDocToChat,
-		onStartRenameDoc,
-		onCommitRenameDoc,
-		onCancelRenameDoc,
-		onDeleteDoc,
+		onSelectDocument,
+		onAddDocumentToChat,
+		onStartRenameFile,
+		onCommitRenameFile,
+		onCancelRenameFile,
+		onDeleteDocument,
 		onDragStart,
 		onDragEnd,
 		onDrop,
@@ -86,7 +85,7 @@
 	}
 
 	function commitRenameFolder(name: string) {
-		const result = renameWithDedup(name, onRenameFolder);
+		const result = onRenameFolder(name);
 		if (result && result !== name.trim()) {
 			toast.warning(`Renamed to "${result}" to avoid duplicate`);
 		}
@@ -94,7 +93,7 @@
 		editingFolderName = '';
 	}
 
-	function downloadDoc(file: { name: string; content: string }) {
+	function downloadDocument(file: { name: string; content: string }) {
 		const blob = new Blob([file.content], { type: 'text/markdown;charset=utf-8' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
@@ -175,7 +174,7 @@
 				>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
-						onclick={onNewDoc}
+						onclick={onNewDocument}
 					>
 						<svg
 							width="14"
@@ -196,7 +195,7 @@
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
-						onclick={onUploadDoc}
+						onclick={onUploadDocument}
 					>
 						<svg
 							width="14"
@@ -302,18 +301,18 @@
 
 	{#if expanded}
 		{#each folder.files ?? [] as file (file.id)}
-			<DocItem
+			<DocumentItem
 				{file}
-				isEditing={editingDocFileId === file.id}
-				bind:editingName={editingDocFileName}
-				isDragging={draggingDocFileId === file.id}
-				onOpen={() => onSelectDoc(file.id)}
-				onAddToChat={() => onAddDocToChat(file.id)}
-				onStartRename={() => onStartRenameDoc(file.id, file.name)}
-				onCommitRename={onCommitRenameDoc}
-				onCancelRename={onCancelRenameDoc}
-				onDownload={() => downloadDoc(file)}
-				onDelete={() => onDeleteDoc(file.id, file.name)}
+				isEditing={editingDocumentFileId === file.id}
+				bind:editingName={editingDocumentFileName}
+				isDragging={draggingDocumentFileId === file.id}
+				onOpen={() => onSelectDocument(file.id)}
+				onAddToChat={() => onAddDocumentToChat(file.id)}
+				onStartRename={() => onStartRenameFile(file.id, file.name)}
+				onCommitRename={onCommitRenameFile}
+				onCancelRename={onCancelRenameFile}
+				onDownload={() => downloadDocument(file)}
+				onDelete={() => onDeleteDocument(file.id, file.name)}
 				onDragStart={(e) => onDragStart(file.id, e)}
 				{onDragEnd}
 			/>

@@ -1,0 +1,12 @@
+{
+	"classic": {
+		"ChatMessage": true,
+		"ChatView": true
+	},
+	"shared": {
+		"AppSidebar": true,
+		"ChatInput": true,
+		"Composer": true,
+		"SearchDialog": true
+	}
+}

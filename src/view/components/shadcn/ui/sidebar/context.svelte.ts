@@ -1,4 +1,4 @@
-import { IsMobile } from './is-mobile.svelte.js';
+import { IsMobile } from './is-mobile.js';
 import { getContext, setContext } from 'svelte';
 import { SIDEBAR_KEYBOARD_SHORTCUT } from './constants.js';
 

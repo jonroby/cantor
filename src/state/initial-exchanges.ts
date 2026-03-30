@@ -1,5 +1,4 @@
-import { type ChatTree, type Exchange } from '@/domain/tree';
-import type { Provider } from '@/domain/models';
+import type * as domain from '@/domain';
 
 function exchange(
 	id: string,
@@ -7,8 +6,13 @@ function exchange(
 	prompt: string,
 	response: string,
 	childIds: string[],
-	opts: { promptTokens?: number; responseTokens?: number; model?: string; provider?: Provider } = {}
-): Exchange {
+	opts: {
+		promptTokens?: number;
+		responseTokens?: number;
+		model?: string;
+		provider?: domain.models.Provider;
+	} = {}
+): domain.tree.Exchange {
 	return {
 		id,
 		parentId,
@@ -21,8 +25,8 @@ function exchange(
 	};
 }
 
-export function buildInitialExchanges(): ChatTree {
-	const exchanges: Record<string, Exchange> = {};
+export function buildInitialExchanges(): domain.tree.ChatTree {
+	const exchanges: Record<string, domain.tree.Exchange> = {};
 
 	// ── Exchange 1: Attention mechanism overview ──────────────────────────────
 	exchanges['1'] = exchange(

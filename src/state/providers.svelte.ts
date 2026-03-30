@@ -1,24 +1,16 @@
-import {
-	getModelContextLength,
-	isKeyBasedProvider,
-	type ActiveModel,
-	type OllamaStatus
-} from '@/domain/models';
-import { DEFAULT_OLLAMA_URL } from '@/state/services/providers/ollama';
-import {
-	WEBLLM_CONTEXT_OPTIONS,
-	type WebLLMStatus,
-	type WebLLMModelEntry,
-	type WebLLMContextSize
-} from '@/state/services/providers/webllm';
+import * as domain from '@/domain';
+import * as lib from '@/lib';
 
-export { WEBLLM_CONTEXT_OPTIONS };
-export type { WebLLMStatus, WebLLMModelEntry, WebLLMContextSize, ActiveModel, OllamaStatus };
+export type WebLLMStatus = lib.providerTypes.WebLLMStatus;
+export type WebLLMModelEntry = lib.providerTypes.WebLLMModelEntry;
+export type WebLLMContextSize = lib.providerDefaults.WebLLMContextSize;
+export type ActiveModel = domain.models.ActiveModel;
+export type OllamaStatus = domain.models.OllamaStatus;
 
 export const providerState = $state({
 	activeModel: null as ActiveModel | null,
 	contextLength: null as number | null,
-	ollamaUrl: DEFAULT_OLLAMA_URL,
+	ollamaUrl: lib.providerDefaults.DEFAULT_OLLAMA_URL,
 	ollamaStatus: 'disconnected' as OllamaStatus,
 	ollamaModels: [] as string[],
 	apiKeys: {} as Record<string, string>,
@@ -34,15 +26,4 @@ export const providerState = $state({
 
 export function selectModel(model: ActiveModel) {
 	providerState.activeModel = model;
-}
-
-export function updateContextLength() {
-	if (providerState.activeModel && isKeyBasedProvider(providerState.activeModel.provider)) {
-		providerState.contextLength = getModelContextLength(
-			providerState.activeModel.provider,
-			providerState.activeModel.modelId
-		);
-	} else {
-		providerState.contextLength = null;
-	}
 }

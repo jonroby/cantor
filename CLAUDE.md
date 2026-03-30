@@ -13,7 +13,7 @@ Always use `bun`.
 - `bun install` — dependencies
 - `bun run dev` — dev server
 - `bun run build` — production build
-- `bun run check` — Svelte/TypeScript checks
+- `bun run typecheck` — Svelte/TypeScript checks
 - `bun run lint` — formatting/lint validation
 - `bun run format` — auto-format
 - `bun run test` or `bun run test:unit` — tests
