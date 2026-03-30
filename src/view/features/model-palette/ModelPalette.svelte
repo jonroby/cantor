@@ -13,6 +13,7 @@
 		onSelectModel: (model: app.providers.ActiveModel) => Promise<void> | void;
 		onUnlockCredentials: (password: string) => Promise<void>;
 		onSaveCredential: (provider: string, credential: string, password: string) => Promise<void>;
+		onLockCredential: (provider: string) => void;
 		onClearCredential: (provider: string) => void;
 		onSetContextSize: (size: app.providers.ContextSize) => void;
 		onRemoveCachedModel: (provider: app.providers.Provider, modelId: string) => Promise<void>;
@@ -23,6 +24,7 @@
 		provider: app.providers.ProviderEntry;
 		mode: 'unlock' | 'save';
 		pendingModel: app.providers.ActiveModel | null;
+		returnToPalette: boolean;
 	};
 	type Tab = 'ollama' | 'frontier' | 'webllm';
 
@@ -34,6 +36,7 @@
 		onSelectModel,
 		onUnlockCredentials,
 		onSaveCredential,
+		onLockCredential,
 		onClearCredential,
 		onSetContextSize,
 		onRemoveCachedModel,
@@ -125,10 +128,14 @@
 		credentialInput = '';
 		passwordInput = '';
 		confirmPasswordInput = '';
+		const firstEnabled = provider.models.find((m) => m.enabled);
+		const defaultModel = firstEnabled
+			? { provider: provider.id, modelId: firstEnabled.id }
+			: null;
 		if (provider.credentialState === 'locked') {
-			credentialFlow = { provider, mode: 'unlock', pendingModel: null };
+			credentialFlow = { provider, mode: 'unlock', pendingModel: defaultModel, returnToPalette: true };
 		} else if (provider.credentialState === 'missing') {
-			credentialFlow = { provider, mode: 'save', pendingModel: null };
+			credentialFlow = { provider, mode: 'save', pendingModel: defaultModel, returnToPalette: true };
 		}
 	}
 
@@ -142,7 +149,7 @@
 			credentialInput = '';
 			passwordInput = '';
 			confirmPasswordInput = '';
-			credentialFlow = { provider, mode: 'unlock', pendingModel: selection };
+			credentialFlow = { provider, mode: 'unlock', pendingModel: selection, returnToPalette: false };
 			return;
 		}
 		if (provider.credentialState === 'missing') {
@@ -150,14 +157,13 @@
 			credentialInput = '';
 			passwordInput = '';
 			confirmPasswordInput = '';
-			credentialFlow = { provider, mode: 'save', pendingModel: selection };
+			credentialFlow = { provider, mode: 'save', pendingModel: selection, returnToPalette: false };
 			return;
 		}
 
 		await onSelectModel(selection);
 		const modelEntry = provider.models.find((m) => m.id === modelId);
 		toast.success(`${modelEntry?.label ?? modelId} selected`);
-		handleClose();
 	}
 
 	async function submitCredentialFlow() {
@@ -184,14 +190,19 @@
 			}
 			if (credentialFlow.pendingModel) {
 				await onSelectModel(credentialFlow.pendingModel);
-				const modelEntry = credentialFlow.provider.models.find(
-					(m) => m.id === credentialFlow!.pendingModel!.modelId
-				);
-				toast.success(`${modelEntry?.label ?? credentialFlow.pendingModel.modelId} selected`);
-			} else {
-				toast.success('Logged in');
 			}
-			handleClose();
+			if (credentialFlow.returnToPalette) {
+				toast.success('Logged in');
+				credentialFlow = null;
+			} else {
+				const modelEntry = credentialFlow.pendingModel
+					? credentialFlow.provider.models.find(
+							(m) => m.id === credentialFlow!.pendingModel!.modelId
+						)
+					: null;
+				toast.success(`${modelEntry?.label ?? 'Model'} selected`);
+				handleClose();
+			}
 		} catch (error) {
 			credentialError = error instanceof Error ? error.message : 'Action failed.';
 		} finally {
@@ -268,14 +279,14 @@
 			</div>
 		{:else}
 			<div class="palette-content">
-				<div class="palette-current-model">
-					<span class="palette-current-label">Current:</span>
-					<span class="palette-current-provider">{getActiveTabLabel()}</span>
-					<span class="palette-current-separator">/</span>
-					<span class="palette-current-name">{getActiveModelLabel()}</span>
-				</div>
-
 				<div class="palette-tabs">
+					<button
+						class="palette-tab"
+						class:active={activeTab === 'frontier'}
+						onclick={() => (activeTab = 'frontier')}
+					>
+						Frontier
+					</button>
 					<button
 						class="palette-tab"
 						class:active={activeTab === 'ollama'}
@@ -287,14 +298,7 @@
 						Ollama
 					</button>
 					<button
-						class="palette-tab"
-						class:active={activeTab === 'frontier'}
-						onclick={() => (activeTab = 'frontier')}
-					>
-						Frontier
-					</button>
-					<button
-						class="palette-tab"
+						class="palette-tab palette-tab-muted"
 						class:active={activeTab === 'webllm'}
 						onclick={() => (activeTab = 'webllm')}
 					>
@@ -323,7 +327,10 @@
 											{#if provider.credentialState === 'ready'}
 												<button
 													class="palette-auth-btn"
-													onclick={() => onClearCredential(provider.id)}
+													onclick={() => {
+														onLockCredential(provider.id);
+														toast.success(`Logged out of ${provider.name}`);
+													}}
 												>
 													Log out
 												</button>
@@ -385,16 +392,6 @@
 					{:else if activeTab === 'ollama'}
 						{#if ollamaProvider}
 							<div class="palette-tab-content">
-								<div class="palette-provider-title">
-									{#if PROVIDER_LOGOS[ollamaProvider.id]}
-										<img
-											src={PROVIDER_LOGOS[ollamaProvider.id]}
-											alt={ollamaProvider.name}
-											class="palette-provider-logo"
-										/>
-									{/if}
-									<span class="palette-provider-name">{ollamaProvider.name}</span>
-								</div>
 								{#if ollamaProvider.connection}
 									<div class="palette-ollama-connect">
 										<Input
@@ -448,17 +445,8 @@
 							</div>
 						{/if}
 					{:else if webllmProvider}
-						<div class="palette-tab-content">
-							<div class="palette-provider-title">
-								{#if PROVIDER_LOGOS[webllmProvider.id]}
-									<img
-										src={PROVIDER_LOGOS[webllmProvider.id]}
-										alt={webllmProvider.name}
-										class="palette-provider-logo"
-									/>
-								{/if}
-								<span class="palette-provider-name">{webllmProvider.name}</span>
-							</div>
+						<div class="palette-tab-content palette-disabled-overlay">
+							<p class="palette-hint" style="padding-top: 0.5rem;">Coming Soon</p>
 
 							{#if webllmProvider.context}
 								<div class="palette-webllm-context">
@@ -467,8 +455,7 @@
 										<button
 											class="palette-webllm-context-btn"
 											class:active={webllmProvider.context.value === option.value}
-											disabled={webllmProvider.loadState?.status === 'loading'}
-											onclick={() => onSetContextSize(option.value)}
+											disabled
 										>
 											{option.label}
 										</button>
@@ -477,77 +464,33 @@
 								</div>
 							{/if}
 
-							{#if webllmProvider.loadState?.status === 'loading'}
-								<div class="palette-webllm-loading">
-									<div class="palette-webllm-progress-bar">
-										<div
-											class="palette-webllm-progress-fill"
-											style={`width: ${webllmProvider.loadState.progress * 100}%`}
-										></div>
-									</div>
-									<p class="palette-hint">
-										{webllmProvider.loadState.text ||
-											`Loading... ${Math.round(webllmProvider.loadState.progress * 100)}%`}
-									</p>
-								</div>
-							{/if}
-
-							{#if webllmProvider.loadState?.error}
-								<p class="palette-error">{webllmProvider.loadState.error}</p>
-							{/if}
-
 							<div class="palette-webllm-search">
 								<Input
-									bind:value={webllmSearchQuery}
+									value=""
 									placeholder="Search models (e.g. Llama, Phi, Qwen, SmolLM...)"
 									class="palette-connect-input"
+									disabled
 								/>
 							</div>
 
 							<div class="palette-model-grid">
-								{#each filteredWebLLMModels as model (model.id)}
-									<button
-										class="palette-model-row"
-										class:active={activeModel?.provider === 'webllm' &&
-											activeModel?.modelId === model.id}
-										disabled={webllmProvider.loadState?.status === 'loading'}
-										onclick={() => beginModelSelection(webllmProvider, model.id)}
-									>
+								{#each (webllmProvider.models.slice(0, 20)) as model (model.id)}
+									<button class="palette-model-row disabled" disabled>
 										<span>{model.id}</span>
 										<div class="palette-model-meta">
 											{#if model.meta}
 												<span class="palette-vram">{model.meta}</span>
-											{/if}
-											{#if activeModel?.provider === 'webllm' && activeModel?.modelId === model.id}
-												<span class="palette-active-dot"></span>
 											{/if}
 										</div>
 									</button>
 								{/each}
 							</div>
 
-							{#if webllmSearchQuery && filteredWebLLMModels.length === 0}
-								<p class="palette-hint">No models match "{webllmSearchQuery}"</p>
-							{/if}
-							{#if !webllmSearchQuery}
+							{#if webllmProvider.models.length > 0}
 								<p class="palette-hint">
-									{webllmProvider.models.length} models available. Search to find more.
+									{webllmProvider.models.length} models available.
 								</p>
 							{/if}
-
-							<div class="palette-webllm-cache-actions">
-								{#if activeModel?.provider === 'webllm'}
-									<button
-										class="palette-forget-key"
-										onclick={() => onRemoveCachedModel('webllm', activeModel.modelId)}
-									>
-										Remove cached model ({activeModel.modelId})
-									</button>
-								{/if}
-								<button class="palette-forget-key" onclick={() => onClearCachedModels('webllm')}>
-									Clear all cached models
-								</button>
-							</div>
 						</div>
 					{/if}
 				</div>

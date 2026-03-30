@@ -64,6 +64,7 @@ function renderPalette(overrides: Partial<Parameters<typeof ModelPalette>[1]> = 
 		onSelectModel: vi.fn(),
 		onUnlockCredentials: vi.fn(),
 		onSaveCredential: vi.fn(),
+		onLockCredential: vi.fn(),
 		onClearCredential: vi.fn(),
 		onSetContextSize: vi.fn(),
 		onRemoveCachedModel: vi.fn(),

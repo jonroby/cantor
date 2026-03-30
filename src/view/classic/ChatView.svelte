@@ -777,7 +777,7 @@
 		padding: 0 12px;
 		gap: 8px;
 		border-bottom: 1px solid hsl(var(--border));
-		background: hsl(var(--card) / 0.97);
+		background: hsl(var(--background) / 0.97);
 		font-size: 13px;
 		font-weight: 600;
 		color: hsl(var(--muted-foreground));

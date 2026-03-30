@@ -87,6 +87,15 @@
 	color: hsl(var(--foreground));
 }
 
+.palette-tab-muted:not(.active) {
+	opacity: 0.5;
+}
+
+.palette-disabled-overlay {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
 .palette-soon-badge {
 	font-size: 10px;
 	background: hsl(var(--muted));
@@ -126,7 +135,7 @@
 	cursor: pointer;
 }
 
-.palette-model-row:hover:not(.disabled) {
+.palette-model-row:hover:not(.disabled):not(.active) {
 	background: hsl(var(--muted) / 0.5);
 }
 

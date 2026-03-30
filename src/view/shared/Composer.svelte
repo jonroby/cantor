@@ -96,10 +96,10 @@
 					<img
 						src={PROVIDER_LOGOS[activeProvider]}
 						alt=""
-						style="height: 0.875rem; width: 0.875rem; object-fit: contain;"
+						style="height: 1.15rem; width: 1.15rem; object-fit: contain;"
 					/>
 				{/if}
-				{activeModelLabel ?? 'Connect a model'}
+				{activeModelLabel ?? 'Choose model'}
 			</Button>
 			<div class="composer-divider"></div>
 			<span class="mode-indicator" class:mode-active={commandMode}>

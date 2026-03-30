@@ -114,15 +114,19 @@ async function saveKey(provider: string, apiKey: string, password: string) {
 	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 }
 
-function forgetKey(provider: string) {
-	external.providers.vault.clearProviderKey(provider);
+function lockKey(provider: string) {
 	const { [provider]: _removed, ...rest } = state.providers.providerState.apiKeys;
 	void _removed;
 	state.providers.providerState.apiKeys = rest;
-	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 	if (state.providers.providerState.activeModel?.provider === provider) {
 		state.providers.providerState.activeModel = null;
 	}
+}
+
+function forgetKey(provider: string) {
+	external.providers.vault.clearProviderKey(provider);
+	lockKey(provider);
+	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 }
 
 async function fetchOllamaContextLength() {
@@ -318,6 +322,10 @@ export async function saveCredential(provider: string, credential: string, passw
 		);
 	}
 	await saveKey(provider, credential, password);
+}
+
+export function lockCredential(provider: string) {
+	lockKey(provider);
 }
 
 export function clearCredential(provider: string) {

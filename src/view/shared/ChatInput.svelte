@@ -210,6 +210,7 @@
 	onConnect={app.providers.connect}
 	onUnlockCredentials={app.providers.unlockCredentials}
 	onSaveCredential={app.providers.saveCredential}
+	onLockCredential={app.providers.lockCredential}
 	onClearCredential={app.providers.clearCredential}
 	onSetContextSize={app.providers.setContextSize}
 	onRemoveCachedModel={app.providers.removeCachedModel}
