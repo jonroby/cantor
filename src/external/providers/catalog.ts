@@ -34,12 +34,12 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'gpt-4o', label: 'GPT-4o', contextLength: 128_000 },
-			{ id: 'gpt-4o-mini', label: 'GPT-4o mini', contextLength: 128_000 },
-			{ id: 'gpt-4-turbo', label: 'GPT-4 Turbo', contextLength: 128_000 },
-			{ id: 'o1', label: 'o1', contextLength: 200_000 },
-			{ id: 'o1-mini', label: 'o1 mini', contextLength: 128_000 },
-			{ id: 'o3-mini', label: 'o3 mini', contextLength: 200_000 }
+			{ id: 'gpt-5.4', label: 'GPT-5.4', contextLength: 1_000_000 },
+			{ id: 'gpt-5.4-mini', label: 'GPT-5.4 mini', contextLength: 400_000 },
+			{ id: 'gpt-5.4-nano', label: 'GPT-5.4 nano', contextLength: 400_000 },
+			{ id: 'o3', label: 'o3', contextLength: 200_000 },
+			{ id: 'o4-mini', label: 'o4 mini', contextLength: 200_000 },
+			{ id: 'gpt-4o', label: 'GPT-4o', contextLength: 128_000 }
 		]
 	},
 	gemini: {
