@@ -34,12 +34,12 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'gpt-4o', label: 'GPT-4o', contextLength: 128_000 },
-			{ id: 'gpt-4o-mini', label: 'GPT-4o mini', contextLength: 128_000 },
-			{ id: 'gpt-4-turbo', label: 'GPT-4 Turbo', contextLength: 128_000 },
-			{ id: 'o1', label: 'o1', contextLength: 200_000 },
-			{ id: 'o1-mini', label: 'o1 mini', contextLength: 128_000 },
-			{ id: 'o3-mini', label: 'o3 mini', contextLength: 200_000 }
+			{ id: 'gpt-5.4', label: 'ChatGPT 5.4', contextLength: 1_000_000 },
+			{ id: 'gpt-5.4-mini', label: 'ChatGPT 5.4 mini', contextLength: 400_000 },
+			{ id: 'gpt-5.4-nano', label: 'ChatGPT 5.4 nano', contextLength: 400_000 },
+			{ id: 'o3', label: 'OpenAI o3', contextLength: 200_000 },
+			{ id: 'o4-mini', label: 'OpenAI o4 mini', contextLength: 200_000 },
+			{ id: 'gpt-4o', label: 'ChatGPT 4o', contextLength: 128_000 }
 		]
 	},
 	gemini: {
@@ -49,15 +49,21 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'AIza...'
 		},
 		models: [
-			{ id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', contextLength: 1_000_000 },
-			{ id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite', contextLength: 1_000_000 },
-			{ id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', contextLength: 2_000_000 },
-			{ id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash', contextLength: 1_000_000 }
+			{ id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro', contextLength: 1_000_000 },
+			{ id: 'gemini-3-pro-preview', label: 'Gemini 3 Pro', contextLength: 1_000_000 },
+			{ id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash', contextLength: 1_000_000 },
+			{
+				id: 'gemini-3.1-flash-lite-preview',
+				label: 'Gemini 3.1 Flash-Lite',
+				contextLength: 1_000_000
+			},
+			{ id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', contextLength: 1_000_000 },
+			{ id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', contextLength: 1_000_000 }
 		]
 	},
 	moonshot: {
 		config: {
-			name: 'Moonshot (Kimi)',
+			name: 'Kimi',
 			baseUrl: 'https://api.moonshot.cn/v1/chat/completions',
 			keyPlaceholder: 'sk-...'
 		},
@@ -78,7 +84,7 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			{ id: 'qwen-max', label: 'Qwen Max', contextLength: 32_768 },
 			{ id: 'qwen-plus', label: 'Qwen Plus', contextLength: 131_072 },
 			{ id: 'qwen-turbo', label: 'Qwen Turbo', contextLength: 1_000_000 },
-			{ id: 'qwen2.5-72b-instruct', label: 'Qwen2.5 72B Instruct', contextLength: 131_072 }
+			{ id: 'qwen2.5-72b-instruct', label: 'Qwen 2.5 72B Instruct', contextLength: 131_072 }
 		]
 	},
 	deepseek: {
@@ -88,9 +94,8 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'deepseek-chat', label: 'DeepSeek Chat', contextLength: 64_000 },
-			{ id: 'deepseek-reasoner', label: 'DeepSeek Reasoner', contextLength: 64_000 },
-			{ id: 'deepseek-v3', label: 'DeepSeek V3', contextLength: 64_000 }
+			{ id: 'deepseek-chat', label: 'DeepSeek Chat V3.2', contextLength: 128_000 },
+			{ id: 'deepseek-reasoner', label: 'DeepSeek Reasoner V3.2', contextLength: 128_000 }
 		]
 	},
 	mistral: {
@@ -100,10 +105,12 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 			keyPlaceholder: 'sk-...'
 		},
 		models: [
-			{ id: 'mistral-large-latest', label: 'Mistral Large', contextLength: 128_000 },
-			{ id: 'mistral-small-latest', label: 'Mistral Small', contextLength: 128_000 },
+			{ id: 'mistral-large-latest', label: 'Mistral Large 3', contextLength: 256_000 },
+			{ id: 'mistral-small-latest', label: 'Mistral Small 4', contextLength: 256_000 },
+			{ id: 'mistral-medium-latest', label: 'Mistral Medium 3.1', contextLength: 256_000 },
 			{ id: 'codestral-latest', label: 'Codestral', contextLength: 256_000 },
-			{ id: 'mistral-nemo', label: 'Mistral Nemo', contextLength: 128_000 }
+			{ id: 'magistral-medium-latest', label: 'Magistral Medium', contextLength: 40_000 },
+			{ id: 'magistral-small-latest', label: 'Magistral Small', contextLength: 40_000 }
 		]
 	},
 	groq: {

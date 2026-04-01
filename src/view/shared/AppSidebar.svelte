@@ -164,7 +164,24 @@
 	<Sidebar.Header class="p-0">
 		{#if sidebar.state === 'expanded'}
 			<div class="h-14 px-3 flex items-center">
-				<span class="text-sm font-semibold text-sidebar-foreground flex-1">Cantor</span>
+				<div class="gap-2 flex flex-1 items-center">
+					<img src={powersetLogo} alt="Cantor" width="18" height="20" />
+					<span class="text-sm font-semibold text-sidebar-foreground">Cantor</span>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<span
+								class="font-semibold px-1.5 py-0.5 bg-blue-500/15 text-blue-600 rounded-full text-[10px]"
+								>Alpha</span
+							>
+						</Tooltip.Trigger>
+						<Tooltip.Content
+							side="bottom"
+							class="bg-neutral-900 text-white text-xs max-w-[200px] border-none"
+						>
+							Some features are still being refined.
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</div>
 				<button
 					class="rounded-lg hover:bg-sidebar-accent p-1 flex cursor-pointer items-center justify-center transition-colors"
 					onclick={() => sidebar.toggle()}

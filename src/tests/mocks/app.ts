@@ -10,6 +10,7 @@ type AppMock = PublicApiMock<typeof app, typeof appContract>;
 export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 	const providerStateBacking: ReturnType<typeof app.providers.getState> = {
 		activeModel: null,
+		activeModelLabel: null,
 		contextLength: null,
 		providers: [
 			{
@@ -159,7 +160,9 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			connect: mockFn<typeof app.providers.connect>(),
 			getState: mockFn<typeof app.providers.getState>(() => providerStateBacking),
 			initialize: mockFn<typeof app.providers.initialize>(),
+			lockCredential: mockFn<typeof app.providers.lockCredential>(),
 			removeCachedModel: mockFn<typeof app.providers.removeCachedModel>(),
+			resolveModelLabel: mockFn<typeof app.providers.resolveModelLabel>(() => undefined),
 			saveCredential: mockFn<typeof app.providers.saveCredential>(),
 			selectModel: mockFn<typeof app.providers.selectModel>(),
 			setContextSize: mockFn<typeof app.providers.setContextSize>(),

@@ -448,6 +448,16 @@
 	color: hsl(var(--muted-foreground));
 }
 
+.model-chip-cta {
+	background: hsl(var(--foreground)) !important;
+	color: hsl(var(--background)) !important;
+	border-color: hsl(var(--foreground)) !important;
+}
+
+.model-chip-cta:hover {
+	opacity: 0.85;
+}
+
 .composer-divider {
 	width: 1px;
 	height: 1rem;
@@ -686,7 +696,7 @@
 	justify-content: space-between;
 	padding: 0.75rem 1.25rem;
 	border-bottom: 1px solid hsl(var(--border));
-	background: hsl(var(--card) / 0.97);
+	background: hsl(var(--background) / 0.97);
 	backdrop-filter: blur(12px);
 }
 
@@ -741,7 +751,7 @@
 	gap: 8px;
 	padding: 0 12px;
 	border-bottom: 1px solid hsl(var(--border));
-	background: hsl(var(--card) / 0.97);
+	background: hsl(var(--background) / 0.97);
 	flex-shrink: 0;
 }
 
@@ -912,7 +922,7 @@
 	max-width: 85%;
 	padding: 0.75rem 1rem;
 	border-radius: 0.75rem;
-	background: hsl(var(--muted) / 0.7);
+	background: hsl(0 0% 92%);
 	font-size: 0.95rem;
 	line-height: 1.55;
 	word-break: break-word;

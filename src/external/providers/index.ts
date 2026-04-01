@@ -4,5 +4,6 @@ export * as gemini from './gemini';
 export * as ollama from './ollama';
 export * as openAiCompat from './openai-compat';
 export * as stream from './stream';
+export * as validate from './validate';
 export * as vault from './vault';
 export * as webllm from './webllm';

@@ -114,15 +114,19 @@ async function saveKey(provider: string, apiKey: string, password: string) {
 	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 }
 
-function forgetKey(provider: string) {
-	external.providers.vault.clearProviderKey(provider);
+function lockKey(provider: string) {
 	const { [provider]: _removed, ...rest } = state.providers.providerState.apiKeys;
 	void _removed;
 	state.providers.providerState.apiKeys = rest;
-	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 	if (state.providers.providerState.activeModel?.provider === provider) {
 		state.providers.providerState.activeModel = null;
 	}
+}
+
+function forgetKey(provider: string) {
+	external.providers.vault.clearProviderKey(provider);
+	lockKey(provider);
+	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 }
 
 async function fetchOllamaContextLength() {
@@ -183,8 +187,20 @@ function getRemoteProviders(): State['providers'] {
 		models: external.providers.catalog.PROVIDER_MODELS[provider].map((model) => ({
 			id: model.id,
 			label: model.label,
-			enabled: provider === 'claude',
-			note: provider === 'claude' ? undefined : 'Soon'
+			enabled:
+				provider === 'claude' ||
+				provider === 'gemini' ||
+				provider === 'openai' ||
+				provider === 'deepseek' ||
+				provider === 'mistral',
+			note:
+				provider === 'claude' ||
+				provider === 'gemini' ||
+				provider === 'openai' ||
+				provider === 'deepseek' ||
+				provider === 'mistral'
+					? undefined
+					: 'Soon'
 		}))
 	}));
 }
@@ -235,10 +251,28 @@ function getLocalProviders(): State['providers'] {
 	];
 }
 
+export function resolveModelLabel(
+	provider: domain.models.Provider | null | undefined,
+	modelId: string | undefined
+): string | undefined {
+	if (!provider || !modelId) return modelId;
+	if (provider === 'ollama' || provider === 'webllm') return modelId;
+	const models = external.providers.catalog.PROVIDER_MODELS[provider];
+	const entry = models.find((m) => m.id === modelId);
+	return entry?.label ?? modelId;
+}
+
+function getActiveModelLabel(model: domain.models.ActiveModel | null): string | null {
+	if (!model) return null;
+	return resolveModelLabel(model.provider, model.modelId) ?? null;
+}
+
 export function getState(): State {
+	const activeModel = state.providers.providerState.activeModel;
 	return {
-		activeModel: state.providers.providerState.activeModel,
-		contextLength: getContextLength(state.providers.providerState.activeModel),
+		activeModel,
+		activeModelLabel: getActiveModelLabel(activeModel),
+		contextLength: getContextLength(activeModel),
 		providers: [...getRemoteProviders(), ...getLocalProviders()]
 	};
 }
@@ -281,7 +315,17 @@ export async function unlockCredentials(password: string) {
 }
 
 export async function saveCredential(provider: string, credential: string, password: string) {
+	if (domain.models.isKeyBasedProvider(provider as domain.models.Provider)) {
+		await external.providers.validate.validateApiKey(
+			provider as domain.models.KeyBasedProvider,
+			credential
+		);
+	}
 	await saveKey(provider, credential, password);
+}
+
+export function lockCredential(provider: string) {
+	lockKey(provider);
 }
 
 export function clearCredential(provider: string) {

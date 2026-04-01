@@ -11,7 +11,8 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 		inputMessage: null,
 		submitDisabledReason: null,
 		streaming: false,
-		activeModelId: 'claude-sonnet-4-5',
+		activeModelLabel: 'Claude Sonnet 4.5',
+		activeProvider: 'claude',
 		usedTokens: 0,
 		contextLength: 128000,
 		onSubmit: vi.fn(),
@@ -63,12 +64,12 @@ describe('Composer', () => {
 	});
 
 	it('model chip shows model name', () => {
-		renderComposer({ activeModelId: 'claude-sonnet-4-5' });
+		renderComposer({ activeModelLabel: 'claude-sonnet-4-5' });
 		expect(screen.getByText('claude-sonnet-4-5')).toBeInTheDocument();
 	});
 
 	it('model chip shows "Connect a model" when no model', () => {
-		renderComposer({ activeModelId: null });
+		renderComposer({ activeModelLabel: null });
 		expect(screen.getByText('Connect a model')).toBeInTheDocument();
 	});
 

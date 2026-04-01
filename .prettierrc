@@ -10,6 +10,13 @@
 			"options": {
 				"parser": "svelte"
 			}
+		},
+		{
+			"files": "src/tests/contracts/*.json",
+			"options": {
+				"useTabs": false,
+				"tabWidth": 2
+			}
 		}
 	],
 	"tailwindStylesheet": "./src/view/css/layout.css"

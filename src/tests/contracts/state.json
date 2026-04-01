@@ -1,36 +1,36 @@
 {
-	"chats": {
-		"addChat": true,
-		"chatState": true,
-		"deleteChat": true,
-		"getActiveChat": true,
-		"getActiveExchangeId": true,
-		"getActiveTree": true,
-		"getChatById": true,
-		"getTreeByChatId": true,
-		"hydrate": true,
-		"newChat": true,
-		"renameChat": true,
-		"replaceActiveTree": true,
-		"replaceTreeByChatId": true,
-		"selectChat": true,
-		"setActiveExchangeId": true
-	},
-	"documents": {
-		"closeDocument": true,
-		"deleteDocumentFromFolder": true,
-		"deleteFolder": true,
-		"documentState": true,
-		"moveDocumentToFolder": true,
-		"createDocumentInFolder": true,
-		"newFolder": true,
-		"renameDocumentInFolder": true,
-		"renameFolder": true,
-		"selectDocument": true,
-		"updateDocumentContent": true
-	},
-	"providers": {
-		"providerState": true,
-		"selectModel": true
-	}
+  "chats": {
+    "addChat": true,
+    "chatState": true,
+    "deleteChat": true,
+    "getActiveChat": true,
+    "getActiveExchangeId": true,
+    "getActiveTree": true,
+    "getChatById": true,
+    "getTreeByChatId": true,
+    "hydrate": true,
+    "newChat": true,
+    "renameChat": true,
+    "replaceActiveTree": true,
+    "replaceTreeByChatId": true,
+    "selectChat": true,
+    "setActiveExchangeId": true
+  },
+  "documents": {
+    "closeDocument": true,
+    "createDocumentInFolder": true,
+    "deleteDocumentFromFolder": true,
+    "deleteFolder": true,
+    "documentState": true,
+    "moveDocumentToFolder": true,
+    "newFolder": true,
+    "renameDocumentInFolder": true,
+    "renameFolder": true,
+    "selectDocument": true,
+    "updateDocumentContent": true
+  },
+  "providers": {
+    "providerState": true,
+    "selectModel": true
+  }
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button, Input } from '@/view/components/custom';
+	import { PROVIDER_LOGOS } from '@/view/assets';
 
 	interface Props {
 		composerValue: string;
@@ -7,7 +8,8 @@
 		inputMessage: string | null;
 		submitDisabledReason: string | null;
 		streaming: boolean;
-		activeModelId: string | null;
+		activeModelLabel: string | null;
+		activeProvider: string | null;
 		usedTokens: number;
 		contextLength: number | null;
 		onSubmit: () => void;
@@ -21,7 +23,8 @@
 		inputMessage,
 		submitDisabledReason,
 		streaming,
-		activeModelId,
+		activeModelLabel,
+		activeProvider,
 		usedTokens,
 		contextLength,
 		onSubmit,
@@ -88,14 +91,26 @@
 			{/if}
 		</div>
 		<div class="composer-footer">
-			<Button class="model-chip" variant="outline" size="sm" onclick={onOpenPalette}>
-				{activeModelId ?? 'Connect a model'}
+			<Button
+				class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
+				variant="outline"
+				size="sm"
+				onclick={onOpenPalette}
+			>
+				{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
+					<img
+						src={PROVIDER_LOGOS[activeProvider]}
+						alt=""
+						style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
+					/>
+				{/if}
+				{activeModelLabel ?? 'Choose model'}
 			</Button>
 			<div class="composer-divider"></div>
 			<span class="mode-indicator" class:mode-active={commandMode}>
 				{commandMode ? 'Command' : 'Chat'}
 			</span>
-			{#if activeModelId}
+			{#if activeModelLabel}
 				<div class="composer-divider"></div>
 				<div class="context-meta">
 					<span>Context</span>
