@@ -7,29 +7,29 @@
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
 		onExpandSideChat: (exchangeId: string) => void;
-		commandMode?: boolean;
-		commandStreaming?: boolean;
-		commandPending?: boolean;
+		agentMode?: boolean;
+		agentStreaming?: boolean;
+		agentPending?: boolean;
 		liveDocumentContent?: string;
-		onCommandResponse?: (text: string) => void;
+		onAgentResponse?: (text: string) => void;
 	}
 
 	let {
 		onScrollToNode,
 		onExpandSideChat,
-		commandMode = false,
-		commandStreaming = $bindable(false),
-		commandPending = false,
+		agentMode = false,
+		agentStreaming = $bindable(false),
+		agentPending = false,
 		liveDocumentContent,
-		onCommandResponse
+		onAgentResponse
 	}: Props = $props();
 
 	let composerValue = $state('');
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
-	let commandHistory: app.chat.Message[] = $state([]);
-	let commandAbort: AbortController | null = $state(null);
+	let agentHistory: app.chat.Message[] = $state([]);
+	let agentAbort: AbortController | null = $state(null);
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
 
@@ -37,12 +37,12 @@
 		composerRef?.focus();
 	}
 
-	export function resetCommand() {
-		commandHistory = [];
-		commandStreaming = false;
-		if (commandAbort) {
-			commandAbort.abort();
-			commandAbort = null;
+	export function resetAgent() {
+		agentHistory = [];
+		agentStreaming = false;
+		if (agentAbort) {
+			agentAbort.abort();
+			agentAbort = null;
 		}
 	}
 
@@ -72,8 +72,8 @@
 	});
 
 	async function submitPrompt() {
-		if (commandMode) {
-			await submitCommand();
+		if (agentMode) {
+			await submitAgent();
 			return;
 		}
 
@@ -108,7 +108,7 @@
 		onScrollToNode(result.id);
 	}
 
-	function buildCommandMessages(prompt: string): app.chat.Message[] {
+	function buildAgentMessages(prompt: string): app.chat.Message[] {
 		const documentSection = liveDocumentContent
 			? `\n\n<current_document>\n${liveDocumentContent}\n</current_document>`
 			: '\n\nThe document is currently empty.';
@@ -134,23 +134,23 @@
 			...chatHistory,
 			{ role: 'user', content: systemPrompt },
 			{ role: 'assistant', content: 'Understood.' },
-			...commandHistory,
+			...agentHistory,
 			{ role: 'user', content: prompt }
 		];
 	}
 
-	async function submitCommand() {
+	async function submitAgent() {
 		const prompt = composerValue.trim();
 		if (!prompt || !providerState.activeModel) return;
 
 		operationError = null;
-		const messages = buildCommandMessages(prompt);
-		commandHistory = [...commandHistory, { role: 'user', content: prompt }];
+		const messages = buildAgentMessages(prompt);
+		agentHistory = [...agentHistory, { role: 'user', content: prompt }];
 		composerValue = '';
-		commandStreaming = true;
+		agentStreaming = true;
 
 		const abort = new AbortController();
-		commandAbort = abort;
+		agentAbort = abort;
 
 		let responseText = '';
 		try {
@@ -160,14 +160,14 @@
 					responseText += chunk.delta;
 				}
 			}
-			commandHistory = [...commandHistory, { role: 'assistant', content: responseText }];
-			onCommandResponse?.(responseText);
+			agentHistory = [...agentHistory, { role: 'assistant', content: responseText }];
+			onAgentResponse?.(responseText);
 		} catch (e) {
 			if (abort.signal.aborted) return;
-			operationError = e instanceof Error ? e.message : 'Command failed.';
+			operationError = e instanceof Error ? e.message : 'Agent failed.';
 		} finally {
-			commandStreaming = false;
-			commandAbort = null;
+			agentStreaming = false;
+			agentAbort = null;
 		}
 	}
 </script>
@@ -179,20 +179,20 @@
 <Composer
 	bind:this={composerRef}
 	bind:composerValue
-	{commandMode}
-	inputMessage={commandPending ? 'Accept or reject pending changes first.' : null}
+	{agentMode}
+	inputMessage={agentPending ? 'Accept or reject pending changes first.' : null}
 	{submitDisabledReason}
-	streaming={commandStreaming || activeNodeStreaming}
+	streaming={agentStreaming || activeNodeStreaming}
 	activeModelLabel={providerState.activeModelLabel}
 	activeProvider={providerState.activeModel?.provider ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
 	onSubmit={submitPrompt}
 	onStop={() => {
-		if (commandStreaming && commandAbort) {
-			commandAbort.abort();
-			commandStreaming = false;
-			commandAbort = null;
+		if (agentStreaming && agentAbort) {
+			agentAbort.abort();
+			agentStreaming = false;
+			agentAbort = null;
 		} else if (activeExchangeId) {
 			app.chat.stopStream(activeExchangeId);
 		}

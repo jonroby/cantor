@@ -4,7 +4,7 @@
 
 	interface Props {
 		composerValue: string;
-		commandMode: boolean;
+		agentMode: boolean;
 		inputMessage: string | null;
 		submitDisabledReason: string | null;
 		streaming: boolean;
@@ -19,7 +19,7 @@
 
 	let {
 		composerValue = $bindable(),
-		commandMode,
+		agentMode,
 		inputMessage,
 		submitDisabledReason,
 		streaming,
@@ -55,7 +55,7 @@
 					bind:this={inputRef}
 					bind:value={composerValue}
 					class="composer-input"
-					placeholder={commandMode ? 'Command...' : (submitDisabledReason ?? 'Chat...')}
+					placeholder={agentMode ? 'Agent...' : (submitDisabledReason ?? 'Chat...')}
 				/>
 			{/if}
 			{#if streaming}
@@ -107,8 +107,8 @@
 				{activeModelLabel ?? 'Choose model'}
 			</Button>
 			<div class="composer-divider"></div>
-			<span class="mode-indicator" class:mode-active={commandMode}>
-				{commandMode ? 'Command' : 'Chat'}
+			<span class="mode-indicator" class:mode-active={agentMode}>
+				{agentMode ? 'Agent' : 'Chat'}
 			</span>
 			{#if activeModelLabel}
 				<div class="composer-divider"></div>

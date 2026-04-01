@@ -7,7 +7,7 @@ import Composer from '../Composer.svelte';
 function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {}) {
 	const props = {
 		composerValue: '',
-		commandMode: false,
+		agentMode: false,
 		inputMessage: null,
 		submitDisabledReason: null,
 		streaming: false,

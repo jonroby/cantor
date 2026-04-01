@@ -45,7 +45,7 @@
 	let activeExchanges = $derived(activeChat.exchanges);
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
-	let commandStreaming = $state(false);
+	let agentStreaming = $state(false);
 	let pendingDocumentContent: string | null = $state(null);
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
@@ -147,7 +147,7 @@
 
 	function closeSidePanel() {
 		sidePanel = null;
-		chatInputRef?.resetCommand();
+		chatInputRef?.resetAgent();
 		focusPanel(mainPanel.id);
 	}
 
@@ -522,9 +522,9 @@
 						<Document
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
-							{commandStreaming}
-							commandModel={providerState.activeModel?.modelId}
-							commandProvider={providerState.activeModel?.provider}
+							{agentStreaming}
+							agentModel={providerState.activeModel?.modelId}
+							agentProvider={providerState.activeModel?.provider}
 							pendingContent={pendingDocumentContent}
 							onContentChange={(c) => {
 								if (activeDocumentIndex >= 0)
@@ -699,11 +699,11 @@
 				bind:this={chatInputRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
-				commandMode={isDocumentPanel && focusedPane === 'side'}
-				bind:commandStreaming
-				commandPending={pendingDocumentContent !== null}
+				agentMode={isDocumentPanel && focusedPane === 'side'}
+				bind:agentStreaming
+				agentPending={pendingDocumentContent !== null}
 				liveDocumentContent={activeDocumentFile?.content}
-				onCommandResponse={(text) => {
+				onAgentResponse={(text) => {
 					pendingDocumentContent = text;
 				}}
 			/>
