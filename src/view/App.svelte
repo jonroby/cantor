@@ -261,13 +261,12 @@
 
 	.panel-layout {
 		display: flex;
-		justify-content: center;
 		flex: 1;
 		min-height: 0;
 	}
 
 	.panel-slot {
-		flex: 0 0 50%;
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;

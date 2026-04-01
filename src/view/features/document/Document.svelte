@@ -476,8 +476,10 @@
 		></textarea>
 	{:else}
 		<div class="docs-content panel-body" bind:this={contentEl} onscroll={handleContentScroll}>
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
-			{@html renderedHtml}
+			<div class="docs-content-inner">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
+				{@html renderedHtml}
+			</div>
 			{#if agentStreaming}
 				<div class="docs-streaming">
 					<div class="chatmsg-response-header">
@@ -509,7 +511,6 @@
 
 <style>
 	.document {
-		background: hsl(var(--card, 0 0% 100%));
 		border: 1px solid hsl(var(--border, 0 0% 85%));
 		border-radius: 12px;
 		overflow: hidden;
@@ -667,7 +668,6 @@
 		font-size: 13px;
 		line-height: 1.6;
 		color: hsl(var(--foreground, 0 0% 9%));
-		background: hsl(var(--card, 0 0% 100%));
 		overflow-y: auto;
 		tab-size: 2;
 	}
@@ -682,6 +682,11 @@
 		font-size: 14px;
 		line-height: 1.7;
 		color: hsl(var(--foreground, 0 0% 9%));
+	}
+
+	.docs-content-inner {
+		max-width: 720px;
+		margin: 0 auto;
 	}
 
 	.docs-content:global(::-webkit-scrollbar) {
