@@ -22,7 +22,6 @@
 	let chatSidePanelOpen = $state(false);
 
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
-	let chatPanelIndex = $derived(panels.findIndex((p) => p.type === 'chat'));
 	let isSplit = $derived(panels.length === 2);
 
 	$effect(() => {
@@ -234,10 +233,7 @@
 					{/each}
 				</div>
 
-				<div
-					class="composer-anchor"
-					class:composer-left={isSplit || chatSidePanelOpen}
-				>
+				<div class="composer-anchor" class:composer-left={isSplit || chatSidePanelOpen}>
 					<Composer
 						bind:this={composerRef}
 						onScrollToNode={(nodeId) => chatViewRef?.scrollToNode(nodeId)}

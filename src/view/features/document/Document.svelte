@@ -469,11 +469,7 @@
 		</div>
 	{:else if editing}
 		<div class="docs-editor-wrap panel-body">
-			<textarea
-				class="docs-editor"
-				bind:value={draft}
-				onkeydown={handleKeydown}
-				spellcheck="false"
+			<textarea class="docs-editor" bind:value={draft} onkeydown={handleKeydown} spellcheck="false"
 			></textarea>
 		</div>
 	{:else}
