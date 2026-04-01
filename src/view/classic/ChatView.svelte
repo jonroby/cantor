@@ -3,7 +3,6 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
-	import { Composer } from '@/view/shared';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -15,6 +14,13 @@
 	import type { ChatCardData } from './chat-card';
 	import { Document } from '@/view/features/document';
 	import * as app from '@/app';
+
+	interface Props {
+		onClose?: () => void;
+		onFocusComposer?: () => void;
+	}
+
+	let { onClose, onFocusComposer }: Props = $props();
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());
@@ -38,7 +44,6 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
-	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
 
@@ -111,7 +116,7 @@
 			}
 		}
 		if (!isDocumentPanel) {
-			tick().then(() => composerRef?.focus());
+			tick().then(() => onFocusComposer?.());
 		}
 	}
 
@@ -142,12 +147,11 @@
 		} else {
 			app.chat.selectExchange(parentId);
 		}
-		tick().then(() => composerRef?.focus());
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function closeSidePanel() {
 		sidePanel = null;
-		composerRef?.resetAgent();
 		focusPanel(mainPanel.id);
 	}
 
@@ -175,7 +179,7 @@
 		if (!activeSideChat || activeSideChat.length === 0) return;
 		updateSideChatIndex(sideChats.length);
 		app.chat.selectExchange(sidePanelParentId);
-		tick().then(() => composerRef?.focus());
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function copyChat(exchangeId: string) {
@@ -342,7 +346,7 @@
 		return data;
 	}
 
-	async function scrollToNode(nodeId: string | null) {
+	export async function scrollToNode(nodeId: string | null) {
 		if (!nodeId) return;
 		await tick();
 		const isSideFocused = sidePanel !== null && focusedPanelId === sidePanel.id;
@@ -359,16 +363,16 @@
 		}
 	}
 
-	function expandSideChat(exchangeId: string) {
+	export function expandSideChat(exchangeId: string) {
 		trackLatestSideChat = true;
 		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === exchangeId) {
 			focusedPanelId = sidePanel.id;
-			tick().then(() => composerRef?.focus());
+			tick().then(() => onFocusComposer?.());
 			return;
 		}
 		sidePanel = createSideChatPanel(exchangeId, 0);
 		focusedPanelId = sidePanel.id;
-		tick().then(() => composerRef?.focus());
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function getExchangePath(exchangeId: string): app.chat.Exchange[] {
@@ -486,7 +490,23 @@
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
-			<div class="chatview-main-title">{activeChat.name}</div>
+			<div class="chatview-main-title">
+				{activeChat.name}
+				{#if onClose}
+					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
+							<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
+						</svg>
+					</button>
+				{/if}
+			</div>
 			<div class="chatview-main" bind:this={mainScrollContainer}>
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
@@ -688,25 +708,6 @@
 					</div>
 				{/if}
 			{/if}
-		</div>
-
-		<div
-			class="chatview-input-anchor"
-			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
-			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
-		>
-			<Composer
-				bind:this={composerRef}
-				onScrollToNode={scrollToNode}
-				onExpandSideChat={expandSideChat}
-				agentMode={isDocumentPanel && focusedPane === 'side'}
-				bind:agentStreaming
-				agentPending={pendingDocumentContent !== null}
-				liveDocumentContent={activeDocumentFile?.content}
-				onAgentResponse={(text) => {
-					pendingDocumentContent = text;
-				}}
-			/>
 		</div>
 	</div>
 </div>

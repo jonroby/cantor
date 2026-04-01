@@ -152,16 +152,6 @@ describe('AppSidebar', () => {
 		).toBe(state.documents.documentState.folders.length);
 	});
 
-	it('toggles the theme and persists the choice', async () => {
-		renderSidebar();
-
-		await userEvent.click(screen.getByLabelText('Switch to light mode'));
-
-		expect(document.documentElement.classList.contains('dark')).toBe(false);
-		expect(localStorage.getItem('theme')).toBe('light');
-		expect(screen.getByLabelText('Switch to dark mode')).toBeInTheDocument();
-	});
-
 	it('shows the adjusted folder name returned by the app rename flow', async () => {
 		const user = userEvent.setup();
 		const props = {

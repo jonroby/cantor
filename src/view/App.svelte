@@ -4,17 +4,24 @@
 	import { Toaster } from '@/view/components/shadcn/ui/sonner';
 	import { toast } from 'svelte-sonner';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar';
-	import { AppSidebar, SearchDialog } from '@/view/shared';
+	import { AppSidebar, SearchDialog, Composer } from '@/view/shared';
 	import { LandingPage, routerState } from '@/view/routes';
-	import { ChatView } from '@/view/classic';
+	import { ChatView, DocumentView } from '@/view/classic';
 	import * as app from '@/app';
+
+	type PanelEntry = { type: 'chat' } | { type: 'document'; folderId: string; fileId: string };
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
 	let searchOpen = $state(false);
 	let hasHydrated = $state(false);
+	let panels: PanelEntry[] = $state([{ type: 'chat' }]);
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
+	let composerRef: ReturnType<typeof Composer> | undefined = $state();
+
+	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
+	let isSplit = $derived(panels.length === 2);
 
 	$effect(() => {
 		if (hasHydrated) {
@@ -62,7 +69,7 @@
 			toast.warning('Some items had duplicate names and were automatically renamed.');
 		}
 		if (restoredDocument) {
-			chatViewRef?.showDocument(restoredDocument.folderId, restoredDocument.fileId);
+			openDocumentPanel(restoredDocument.folderId, restoredDocument.fileId);
 		}
 
 		hasHydrated = true;
@@ -78,14 +85,54 @@
 		chatViewRef?.resetUIState();
 	}
 
+	function focusComposer() {
+		composerRef?.focus();
+	}
+
+	function openDocumentPanel(folderId: string, fileId: string) {
+		const existingIndex = panels.findIndex(
+			(p) => p.type === 'document' && p.folderId === folderId && p.fileId === fileId
+		);
+		if (existingIndex >= 0) return;
+
+		const docPanel: PanelEntry = { type: 'document', folderId, fileId };
+
+		if (panels.length === 0) {
+			panels = [docPanel];
+		} else if (panels.length === 1) {
+			panels = [...panels, docPanel];
+		} else {
+			// Replace the second panel
+			panels = [panels[0], docPanel];
+		}
+	}
+
+	function closePanel(index: number) {
+		panels = panels.filter((_, i) => i !== index);
+	}
+
+	function ensureChatPanel() {
+		if (!hasChatPanel) {
+			if (panels.length === 0) {
+				panels = [{ type: 'chat' }];
+			} else if (panels.length === 1) {
+				panels = [{ type: 'chat' }, panels[0]];
+			} else {
+				panels = [{ type: 'chat' }, panels[1]];
+			}
+		}
+	}
+
 	function newChat(): number {
 		const index = app.chat.createChat();
+		ensureChatPanel();
 		resetUIState();
 		return index;
 	}
 
 	function selectChat(index: number) {
 		app.chat.selectChat(index);
+		ensureChatPanel();
 		resetUIState();
 	}
 
@@ -141,7 +188,7 @@
 				const document = app.documents.createDocument(folderId);
 				if (document) {
 					app.bootstrap.rememberOpenDocument(document.folderId, document.fileId);
-					chatViewRef?.showDocument(document.folderId, document.fileId);
+					openDocumentPanel(document.folderId, document.fileId);
 				}
 			}}
 			onUploadDocument={(folderId) => app.documents.importDocument(folderId, fileFeedback)}
@@ -150,7 +197,7 @@
 			onSelectDocument={(folderId, fileId) => {
 				if (app.documents.openDocument(folderId, fileId)) {
 					app.bootstrap.rememberOpenDocument(folderId, fileId);
-					chatViewRef?.showDocument(folderId, fileId);
+					openDocumentPanel(folderId, fileId);
 				}
 			}}
 			onAddDocumentToChat={addDocumentToChat}
@@ -159,7 +206,35 @@
 			onMoveDocument={app.documents.moveDocument}
 		/>
 		<SidebarPrimitive.Inset>
-			<ChatView bind:this={chatViewRef} />
+			<div class="app-shell">
+				<div class="panel-layout" class:panel-layout-split={isSplit}>
+					{#each panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : 'chat')}
+						<div class="panel-slot">
+							{#if panel.type === 'chat'}
+								<ChatView
+									bind:this={chatViewRef}
+									onClose={() => closePanel(index)}
+									onFocusComposer={focusComposer}
+								/>
+							{:else}
+								<DocumentView
+									folderId={panel.folderId}
+									fileId={panel.fileId}
+									onClose={() => closePanel(index)}
+								/>
+							{/if}
+						</div>
+					{/each}
+				</div>
+
+				<div class="composer-anchor">
+					<Composer
+						bind:this={composerRef}
+						onScrollToNode={(nodeId) => chatViewRef?.scrollToNode(nodeId)}
+						onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
+					/>
+				</div>
+			</div>
 
 			{#if searchOpen}
 				<SearchDialog
@@ -175,3 +250,48 @@
 	</SidebarPrimitive.Provider>
 {/if}
 <Toaster position="top-center" />
+
+<style>
+	.app-shell {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+	}
+
+	.panel-layout {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+	}
+
+	.panel-slot {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		min-width: 0;
+	}
+
+	.panel-layout-split .panel-slot:first-child {
+		border-right: 1px solid hsl(var(--border));
+	}
+
+	.composer-anchor {
+		position: absolute;
+		bottom: 1rem;
+		left: 0;
+		right: 0;
+		z-index: 25;
+	}
+
+	.composer-anchor :global(.composer) {
+		position: relative;
+		left: auto;
+		bottom: auto;
+		transform: none;
+		width: calc(100% - 3rem);
+		max-width: 720px;
+		margin: 0 auto;
+	}
+</style>
