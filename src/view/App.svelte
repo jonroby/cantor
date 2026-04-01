@@ -290,6 +290,9 @@
 		right: 0;
 		z-index: 25;
 		padding: 0 1rem;
+		transition:
+			left 250ms ease,
+			right 250ms ease;
 	}
 
 	.composer-anchor :global(.composer) {
