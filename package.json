@@ -17,6 +17,8 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "bun run test:unit -- --run",
+		"test:view": "vitest --run 'src/view'",
+		"test:core": "vitest --run --exclude 'src/view/**/*.test.ts'",
 		"prepare": "husky"
 	},
 	"devDependencies": {

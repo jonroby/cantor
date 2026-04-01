@@ -8,11 +8,13 @@ vi.mock('@/view/components/shadcn/ui/sonner/sonner.svelte', async () => ({
 
 vi.mock('@/view/shared', async () => ({
 	AppSidebar: (await import('../../../tests/fixtures/AppSidebarMock.svelte')).default,
-	SearchDialog: (await import('../../../tests/fixtures/SearchDialogMock.svelte')).default
+	SearchDialog: (await import('../../../tests/fixtures/SearchDialogMock.svelte')).default,
+	Composer: (await import('../../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
 
 vi.mock('@/view/classic', async () => ({
-	ChatView: (await import('../../../tests/fixtures/ChatViewMock.svelte')).default
+	ChatView: (await import('../../../tests/fixtures/ChatViewMock.svelte')).default,
+	DocumentView: (await import('../../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
 
 vi.mock('@/view/routes/LandingPage.svelte', async () => ({
