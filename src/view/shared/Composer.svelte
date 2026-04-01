@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Input } from '@/view/components/custom';
+	import { Button } from '@/view/components/custom';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { ArrowUp, Square } from 'lucide-svelte';
 
@@ -37,10 +37,29 @@
 		onOpenPalette
 	}: Props = $props();
 
-	let inputRef: ReturnType<typeof Input> | undefined = $state();
+	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
 	export function focus() {
-		inputRef?.focus();
+		textareaEl?.focus();
+	}
+
+	function autoResize() {
+		if (!textareaEl) return;
+		textareaEl.style.height = 'auto';
+		textareaEl.style.height = `${textareaEl.scrollHeight}px`;
+	}
+
+	function resetSize() {
+		if (!textareaEl) return;
+		textareaEl.style.height = 'auto';
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			onSubmit();
+			resetSize();
+		}
 	}
 </script>
 
@@ -49,6 +68,7 @@
 	onsubmit={(e: Event) => {
 		e.preventDefault();
 		onSubmit();
+		resetSize();
 	}}
 >
 	<div class="composer-shell">
@@ -56,12 +76,15 @@
 			{#if inputMessage}
 				<span class="composer-message">{inputMessage}</span>
 			{:else}
-				<Input
-					bind:this={inputRef}
+				<textarea
+					bind:this={textareaEl}
 					bind:value={composerValue}
-					class="composer-input"
+					class="composer-textarea"
 					placeholder={agentMode ? 'Agent...' : (submitDisabledReason ?? 'Chat...')}
-				/>
+					rows={1}
+					oninput={autoResize}
+					onkeydown={handleKeydown}
+				></textarea>
 			{/if}
 			{#if streaming}
 				<Button

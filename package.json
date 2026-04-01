@@ -72,6 +72,7 @@
 		"dompurify": "^3.3.3",
 		"jszip": "^3.10.1",
 		"katex": "^0.16.42",
+		"lucide-svelte": "^1.0.1",
 		"marked": "^17.0.5",
 		"remark-math": "^6.0.0",
 		"remark-parse": "^11.0.0",
