@@ -120,7 +120,7 @@
 						<img
 							src={PROVIDER_LOGOS[activeProvider]}
 							alt=""
-							style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
+							style="height: 1.15rem; width: 1.15rem; object-fit: contain;"
 						/>
 					{/if}
 					{activeModelLabel ?? 'Choose model'}

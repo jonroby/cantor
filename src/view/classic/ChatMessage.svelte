@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
+	import { GitFork, Trash2, Split, Code, Eye, ClipboardCopy } from 'lucide-svelte';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button } from '@/view/components/custom';
 	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/lib/katex';
@@ -124,43 +125,6 @@
 				{#if data.isStreaming}
 					<div class="streaming-dot"></div>
 				{/if}
-				{#if responseBlocks.length > 0}
-					<button
-						type="button"
-						class="chatmsg-source-toggle"
-						onclick={() => (showSource = !showSource)}
-						aria-label={showSource ? 'Show rendered' : 'Show source'}
-					>
-						{#if showSource}
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-							>
-								<path d="M1.5 7c0-2.5 2.5-5 5.5-5s5.5 2.5 5.5 5-2.5 5-5.5 5-5.5-2.5-5.5-5z" />
-								<circle cx="7" cy="7" r="2" />
-							</svg>
-						{:else}
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-							>
-								<path
-									d="M4.5 2.5l-2 3L4.5 8.5M9.5 2.5l2 3-2 3"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						{/if}
-					</button>
-				{/if}
 			</div>
 			{#if responseBlocks.length > 0}
 				{#if showSource}
@@ -195,6 +159,21 @@
 		<div class="chatmsg-actions">
 			<span class="action-tip-wrap">
 				<Button
+					class="icon-chip delete-chip"
+					variant="ghost"
+					size="icon"
+					onclick={(event: MouseEvent) => {
+						event.stopPropagation();
+						data.onDelete();
+					}}
+					ariaLabel="Delete"
+				>
+					<Trash2 size={15} />
+				</Button>
+				<span class="action-tip">Delete</span>
+			</span>
+			<span class="action-tip-wrap">
+				<Button
 					class="icon-chip"
 					variant="ghost"
 					size="icon"
@@ -204,14 +183,7 @@
 					}}
 					ariaLabel="Copy"
 				>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 14 14"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"><path d="M7 2v10M2 7h10" stroke-linecap="round" /></svg
-					>
+					<GitFork size={15} />
 				</Button>
 				<span class="action-tip">Copy</span>
 			</span>
@@ -245,33 +217,42 @@
 					<span class="action-tip">Promote</span>
 				</span>
 			{/if}
-			<span class="action-tip-wrap">
-				<Button
-					class="icon-chip delete-chip"
-					variant="ghost"
-					size="icon"
-					onclick={(event: MouseEvent) => {
-						event.stopPropagation();
-						data.onDelete();
-					}}
-					ariaLabel="Delete"
-				>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 14 14"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						><path
-							d="M3.5 4.5h7M5.5 4.5v6M8.5 4.5v6M4.5 4.5l.4-1.2A1 1 0 0 1 5.85 2.6h2.3a1 1 0 0 1 .95.7l.4 1.2M4.5 4.5v6.8c0 .39.31.7.7.7h3.6a.7.7 0 0 0 .7-.7V4.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/></svg
+			{#if responseBlocks.length > 0}
+				<span class="action-tip-wrap">
+					<Button
+						class="icon-chip"
+						variant="ghost"
+						size="icon"
+						onclick={(event: MouseEvent) => {
+							event.stopPropagation();
+							showSource = !showSource;
+						}}
+						ariaLabel={showSource ? 'Show rendered' : 'Show source'}
 					>
-				</Button>
-				<span class="action-tip">Delete</span>
-			</span>
+						{#if showSource}
+							<Eye size={15} />
+						{:else}
+							<Code size={15} />
+						{/if}
+					</Button>
+					<span class="action-tip">{showSource ? 'Rendered' : 'Source'}</span>
+				</span>
+				<span class="action-tip-wrap">
+					<Button
+						class="icon-chip"
+						variant="ghost"
+						size="icon"
+						onclick={(event: MouseEvent) => {
+							event.stopPropagation();
+							navigator.clipboard.writeText(data.response);
+						}}
+						ariaLabel="Copy text"
+					>
+						<ClipboardCopy size={15} />
+					</Button>
+					<span class="action-tip">Copy text</span>
+				</span>
+			{/if}
 		</div>
 		{#if !data.isSideRoot}
 			{#if data.hasSideChildren}
@@ -283,19 +264,7 @@
 						data.onToggleSideChildren();
 					}}
 				>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 14 14"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						><path
-							d="M3 3v8M3 7h4M7 7v4M7 7h4"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/></svg
-					>
+					<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
 					<span>{data.sideChildrenCount}</span>
 				</button>
 			{:else}
@@ -311,19 +280,7 @@
 						}}
 						ariaLabel="Side chat"
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							><path
-								d="M3 3v8M3 7h4M7 7v4M7 7h4"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/></svg
-						>
+						<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
 					</Button>
 					<span class="action-tip">Side chat</span>
 				</span>
