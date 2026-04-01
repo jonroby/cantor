@@ -2,6 +2,9 @@ import * as domain from '@/domain';
 import * as state from '@/state';
 import * as external from '@/external';
 import * as lib from '@/lib';
+import { selectExchanges, type ContextBudget } from './context';
+
+export type ContextStrategy = state.chats.ContextStrategy;
 
 export interface ChatTransferFeedback {
 	success?: (message: string) => void;
@@ -34,6 +37,10 @@ export const getChats = () => state.chats.chatState.chats;
 export const getActiveChatIndex = () => state.chats.chatState.activeChatIndex;
 export const getChat = () => state.chats.getActiveChat();
 export const getActiveExchangeId = () => state.chats.getActiveExchangeId();
+
+export const getContextStrategy = (): state.chats.ContextStrategy =>
+	state.chats.getActiveChat().contextStrategy;
+export const setContextStrategy = state.chats.setContextStrategy;
 
 export const createChat = state.chats.newChat;
 export const selectChat = state.chats.selectChat;
@@ -245,8 +252,15 @@ export function copyChat(
 		name,
 		rootId: copiedTree.rootId,
 		exchanges: copiedTree.exchanges,
-		activeExchangeId: domain.tree.getMainChatTail(copiedTree)
+		activeExchangeId: domain.tree.getMainChatTail(copiedTree),
+		contextStrategy: 'full'
 	});
+}
+
+export interface SubmitOptions {
+	liveDocumentContent?: string;
+	contextStrategy?: state.chats.ContextStrategy;
+	contextLength?: number | null;
 }
 
 export function submitPrompt(
@@ -255,7 +269,7 @@ export function submitPrompt(
 	activeExchangeId: string | null,
 	prompt: string,
 	model: domain.models.ActiveModel,
-	liveDocumentContent?: string,
+	options?: SubmitOptions,
 	deps: Omit<ChatActionDeps, 'isStreaming'> = defaultDeps
 ): { id: string; parentId: string; hasSideChildren: boolean } {
 	const parentId = activeExchangeId ?? domain.tree.getMainChatTail(tree) ?? '';
@@ -263,20 +277,29 @@ export function submitPrompt(
 		activeExchangeId !== null && domain.tree.getChildren(tree, activeExchangeId).length > 0;
 
 	const created = domain.tree.addExchange(tree, parentId, prompt, model.modelId, model.provider);
-	const history = domain.tree.getPath(created.tree, created.id).flatMap((exchange) => {
+
+	const fullPath = domain.tree.getPath(created.tree, created.id);
+	const budget: ContextBudget = {
+		contextLength: options?.contextLength ?? null,
+		strategy: options?.contextStrategy ?? 'full',
+		currentPrompt: prompt
+	};
+	const selectedPath = selectExchanges(fullPath, budget);
+
+	const history = selectedPath.flatMap((exchange) => {
 		const messages: domain.tree.Message[] = [{ role: 'user', content: exchange.prompt.text }];
 		if (exchange.response) {
 			messages.push({ role: 'assistant', content: exchange.response.text });
 		}
 		return messages;
 	});
-	if (liveDocumentContent !== undefined) {
+	if (options?.liveDocumentContent !== undefined) {
 		history.splice(
 			history.length - 1,
 			0,
 			{
 				role: 'user',
-				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocumentContent}`
+				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${options.liveDocumentContent}`
 			},
 			{ role: 'assistant', content: 'Understood, I have the document.' }
 		);
@@ -320,7 +343,7 @@ export function quickAsk(
 		exchangeId,
 		`Can you explain more:\n\n${sourceText}`,
 		model,
-		undefined,
+		{},
 		deps
 	);
 }
@@ -387,7 +410,8 @@ export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void
 					baseName,
 				rootId: upload.tree.rootId,
 				exchanges: upload.tree.exchanges,
-				activeExchangeId: upload.activeExchangeId
+				activeExchangeId: upload.activeExchangeId,
+				contextStrategy: 'full'
 			};
 			state.chats.chatState.chats = [...state.chats.chatState.chats, chat];
 			state.chats.chatState.activeChatIndex = state.chats.chatState.chats.length - 1;

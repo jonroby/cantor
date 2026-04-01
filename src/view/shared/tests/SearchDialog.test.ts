@@ -23,7 +23,8 @@ const CHATS: app.chat.Chat[] = [
 				prompt: { text: 'Find this exchange', tokenCount: 0 },
 				response: { text: 'matching snippet here', tokenCount: 0 }
 			}
-		}
+		},
+		contextStrategy: 'full'
 	}
 ];
 

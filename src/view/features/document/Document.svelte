@@ -10,9 +10,9 @@
 	interface Props {
 		title?: string;
 		content: string;
-		commandStreaming?: boolean;
-		commandModel?: string;
-		commandProvider?: app.providers.Provider | null;
+		agentStreaming?: boolean;
+		agentModel?: string;
+		agentProvider?: app.providers.Provider | null;
 		pendingContent?: string | null;
 		onContentChange?: (content: string) => void;
 		onAcceptPending?: () => void;
@@ -24,9 +24,9 @@
 	let {
 		title,
 		content,
-		commandStreaming = false,
-		commandModel,
-		commandProvider,
+		agentStreaming = false,
+		agentModel,
+		agentProvider,
 		pendingContent = null,
 		onContentChange,
 		onAcceptPending,
@@ -138,7 +138,7 @@
 	let contentEl: HTMLDivElement | null = $state(null);
 
 	$effect(() => {
-		if (commandStreaming && contentEl) {
+		if (agentStreaming && contentEl) {
 			tick().then(() => {
 				contentEl?.scrollTo({ top: contentEl.scrollHeight, behavior: 'smooth' });
 			});
@@ -469,18 +469,18 @@
 		<div class="docs-content panel-body" bind:this={contentEl}>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 			{@html renderedHtml}
-			{#if commandStreaming}
+			{#if agentStreaming}
 				<div class="docs-streaming">
 					<div class="chatmsg-response-header">
-						{#if commandProvider && PROVIDER_LOGOS[commandProvider]}
+						{#if agentProvider && PROVIDER_LOGOS[agentProvider]}
 							<img
-								src={PROVIDER_LOGOS[commandProvider]}
-								alt={commandProvider}
+								src={PROVIDER_LOGOS[agentProvider]}
+								alt={agentProvider}
 								class="chatmsg-provider-logo"
 							/>
 						{/if}
-						{#if commandModel}
-							<span class="chatmsg-model">{commandModel}</span>
+						{#if agentModel}
+							<span class="chatmsg-model">{agentModel}</span>
 						{/if}
 						<div class="streaming-dot"></div>
 					</div>

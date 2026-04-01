@@ -14,7 +14,8 @@
     "replaceActiveTree": true,
     "replaceTreeByChatId": true,
     "selectChat": true,
-    "setActiveExchangeId": true
+    "setActiveExchangeId": true,
+    "setContextStrategy": true
   },
   "documents": {
     "closeDocument": true,

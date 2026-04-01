@@ -45,6 +45,10 @@ Within an area, cross-submodule and subfolder imports must go through the target
 
 `bun run check:imports` enforces dependency rules. `bun run check:contracts` enforces approved public submodules.
 
+## Icons
+
+Use `lucide-svelte` for all icons. Do not use inline SVG paths or one-off SVGs for icons. Import named icons from `lucide-svelte` directly in view components.
+
 ## Coding Philosophy
 
 - Make impossible states impossible. But if the trade-off for call-site friction or performance isn't worth it, write imperative code.

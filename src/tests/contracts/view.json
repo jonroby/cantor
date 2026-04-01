@@ -5,8 +5,8 @@
   },
   "shared": {
     "AppSidebar": true,
-    "ChatInput": true,
     "Composer": true,
+    "ComposerInput": true,
     "SearchDialog": true
   }
 }

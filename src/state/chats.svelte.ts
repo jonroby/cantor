@@ -1,9 +1,12 @@
 import * as domain from '@/domain';
 
+export type ContextStrategy = 'full' | 'lru' | 'bm25';
+
 export interface ChatRecord extends domain.tree.ChatTree {
 	id: string;
 	name: string;
 	activeExchangeId: string | null;
+	contextStrategy: ContextStrategy;
 }
 
 function makeDefaultChat(): ChatRecord {
@@ -13,7 +16,8 @@ function makeDefaultChat(): ChatRecord {
 		name: 'Chat 1',
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
-		activeExchangeId: domain.tree.getMainChatTail(tree)
+		activeExchangeId: domain.tree.getMainChatTail(tree),
+		contextStrategy: 'full'
 	};
 }
 
@@ -86,7 +90,8 @@ export function newChat(): number {
 		name: nextChatName(),
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
-		activeExchangeId: domain.tree.getMainChatTail(tree)
+		activeExchangeId: domain.tree.getMainChatTail(tree),
+		contextStrategy: 'full'
 	};
 	return addChat(chat);
 }
@@ -101,6 +106,10 @@ export function deleteChat(index: number) {
 	chatState.activeChatIndex = Math.min(chatState.activeChatIndex, chatState.chats.length - 1);
 }
 
+export function setContextStrategy(strategy: ContextStrategy) {
+	chatState.chats[chatState.activeChatIndex].contextStrategy = strategy;
+}
+
 export function renameChat(index: number, name: string): boolean {
 	const conflict = chatState.chats.some((c, i) => i !== index && c.name === name);
 	if (conflict) return false;
@@ -108,10 +117,16 @@ export function renameChat(index: number, name: string): boolean {
 	return true;
 }
 
-export function hydrate(parsed: { chats?: ChatRecord[]; activeChatIndex?: number }) {
+export function hydrate(parsed: {
+	chats?: Omit<ChatRecord, 'contextStrategy'>[] | ChatRecord[];
+	activeChatIndex?: number;
+}) {
 	if (parsed.chats?.length) {
 		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
-			chatState.chats = parsed.chats;
+			chatState.chats = parsed.chats.map((c) => ({
+				...c,
+				contextStrategy: ('contextStrategy' in c ? c.contextStrategy : null) ?? 'full'
+			}));
 			if (typeof parsed.activeChatIndex === 'number') {
 				chatState.activeChatIndex = Math.min(
 					Math.max(parsed.activeChatIndex, 0),

@@ -59,7 +59,8 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 					name: 'Chat 1',
 					rootId: null,
 					exchanges: {},
-					activeExchangeId: null
+					activeExchangeId: null,
+					contextStrategy: 'full' as const
 				}
 			] as state.chats.ChatRecord[],
 			activeChatIndex: 0
@@ -119,6 +120,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 				return appStateBacking.chatState.chats[appStateBacking.chatState.activeChatIndex]!;
 			}),
 			getChats: mockFn<typeof app.chat.getChats>(() => appStateBacking.chatState.chats),
+			getContextStrategy: mockFn<typeof app.chat.getContextStrategy>(() => 'full'),
 			getMainChat: mockFn<typeof app.chat.getMainChat>(() => []),
 			getSideChats: mockFn<typeof app.chat.getSideChats>(() => []),
 			getUsedTokens: mockFn<typeof app.chat.getUsedTokens>(() => 0),
@@ -130,6 +132,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			renameChat: mockFn<typeof app.chat.renameChat>(),
 			selectChat: mockFn<typeof app.chat.selectChat>(),
 			selectExchange: mockFn<typeof app.chat.selectExchange>(),
+			setContextStrategy: mockFn<typeof app.chat.setContextStrategy>(),
 			stopChatStreams: mockFn<typeof app.chat.stopChatStreams>(),
 			stopStream: mockFn<typeof app.chat.stopStream>(),
 			submitPrompt: mockFn<typeof app.chat.submitPrompt>()

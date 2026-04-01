@@ -13,8 +13,8 @@ export function createViewMock(overrides?: DeepPartial<ViewMock>): ViewMock {
 		},
 		shared: {
 			AppSidebar: view.shared.AppSidebar,
-			ChatInput: view.shared.ChatInput,
 			Composer: view.shared.Composer,
+			ComposerInput: view.shared.ComposerInput,
 			SearchDialog: view.shared.SearchDialog
 		}
 	} satisfies ViewMock;

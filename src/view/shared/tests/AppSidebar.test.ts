@@ -17,7 +17,16 @@ vi.mock('svelte-sonner', () => ({
 
 function renderSidebar() {
 	const props = {
-		chats: [{ id: 'chat-1', name: 'Chat 1', rootId: null, exchanges: {}, activeExchangeId: null }],
+		chats: [
+			{
+				id: 'chat-1',
+				name: 'Chat 1',
+				rootId: null,
+				exchanges: {},
+				activeExchangeId: null,
+				contextStrategy: 'full'
+			}
+		],
 		activeChatIndex: 0,
 		onSelectChat: vi.fn(),
 		onNewChat: vi.fn(() => 0),
@@ -55,7 +64,14 @@ describe('AppSidebar', () => {
 	beforeEach(() => {
 		document.documentElement.className = 'dark';
 		state.chats.chatState.chats = [
-			{ id: 'chat-1', name: 'Chat 1', rootId: null, exchanges: {}, activeExchangeId: null }
+			{
+				id: 'chat-1',
+				name: 'Chat 1',
+				rootId: null,
+				exchanges: {},
+				activeExchangeId: null,
+				contextStrategy: 'full'
+			}
 		];
 		state.chats.chatState.activeChatIndex = 0;
 		state.documents.documentState.folders = [];
@@ -150,7 +166,14 @@ describe('AppSidebar', () => {
 		const user = userEvent.setup();
 		const props = {
 			chats: [
-				{ id: 'chat-1', name: 'Chat 1', rootId: null, exchanges: {}, activeExchangeId: null }
+				{
+					id: 'chat-1',
+					name: 'Chat 1',
+					rootId: null,
+					exchanges: {},
+					activeExchangeId: null,
+					contextStrategy: 'full'
+				}
 			],
 			activeChatIndex: 0,
 			onSelectChat: vi.fn(),
@@ -232,7 +255,14 @@ describe('AppSidebar', () => {
 		const user = userEvent.setup();
 		const props = {
 			chats: [
-				{ id: 'chat-1', name: 'Chat 1', rootId: null, exchanges: {}, activeExchangeId: null }
+				{
+					id: 'chat-1',
+					name: 'Chat 1',
+					rootId: null,
+					exchanges: {},
+					activeExchangeId: null,
+					contextStrategy: 'full'
+				}
 			],
 			activeChatIndex: 0,
 			onSelectChat: vi.fn(),

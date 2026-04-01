@@ -47,7 +47,8 @@ function buildChat(name: string): state.chats.ChatRecord {
 		name,
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
-		activeExchangeId: r.id
+		activeExchangeId: r.id,
+		contextStrategy: 'full' as const
 	};
 }
 

@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
-	import { ChatInput } from '@/view/shared';
+	import { Composer } from '@/view/shared';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -38,14 +38,14 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
-	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
+	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
 
 	let activeExchanges = $derived(activeChat.exchanges);
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
-	let commandStreaming = $state(false);
+	let agentStreaming = $state(false);
 	let pendingDocumentContent: string | null = $state(null);
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
@@ -111,7 +111,7 @@
 			}
 		}
 		if (!isDocumentPanel) {
-			tick().then(() => chatInputRef?.focus());
+			tick().then(() => composerRef?.focus());
 		}
 	}
 
@@ -142,12 +142,12 @@
 		} else {
 			app.chat.selectExchange(parentId);
 		}
-		tick().then(() => chatInputRef?.focus());
+		tick().then(() => composerRef?.focus());
 	}
 
 	function closeSidePanel() {
 		sidePanel = null;
-		chatInputRef?.resetCommand();
+		composerRef?.resetAgent();
 		focusPanel(mainPanel.id);
 	}
 
@@ -175,7 +175,7 @@
 		if (!activeSideChat || activeSideChat.length === 0) return;
 		updateSideChatIndex(sideChats.length);
 		app.chat.selectExchange(sidePanelParentId);
-		tick().then(() => chatInputRef?.focus());
+		tick().then(() => composerRef?.focus());
 	}
 
 	function copyChat(exchangeId: string) {
@@ -363,12 +363,12 @@
 		trackLatestSideChat = true;
 		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === exchangeId) {
 			focusedPanelId = sidePanel.id;
-			tick().then(() => chatInputRef?.focus());
+			tick().then(() => composerRef?.focus());
 			return;
 		}
 		sidePanel = createSideChatPanel(exchangeId, 0);
 		focusedPanelId = sidePanel.id;
-		tick().then(() => chatInputRef?.focus());
+		tick().then(() => composerRef?.focus());
 	}
 
 	function getExchangePath(exchangeId: string): app.chat.Exchange[] {
@@ -522,9 +522,9 @@
 						<Document
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
-							{commandStreaming}
-							commandModel={providerState.activeModel?.modelId}
-							commandProvider={providerState.activeModel?.provider}
+							{agentStreaming}
+							agentModel={providerState.activeModel?.modelId}
+							agentProvider={providerState.activeModel?.provider}
 							pendingContent={pendingDocumentContent}
 							onContentChange={(c) => {
 								if (activeDocumentIndex >= 0)
@@ -695,15 +695,15 @@
 			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
 			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
 		>
-			<ChatInput
-				bind:this={chatInputRef}
+			<Composer
+				bind:this={composerRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
-				commandMode={isDocumentPanel && focusedPane === 'side'}
-				bind:commandStreaming
-				commandPending={pendingDocumentContent !== null}
+				agentMode={isDocumentPanel && focusedPane === 'side'}
+				bind:agentStreaming
+				agentPending={pendingDocumentContent !== null}
 				liveDocumentContent={activeDocumentFile?.content}
-				onCommandResponse={(text) => {
+				onAgentResponse={(text) => {
 					pendingDocumentContent = text;
 				}}
 			/>

@@ -279,7 +279,10 @@ export function getState(): State {
 
 export async function initialize() {
 	await initProviders();
-	autoConnectOllama();
+	await autoConnectOllama();
+	if (state.providers.providerState.activeModel?.provider === 'ollama') {
+		await fetchOllamaContextLength();
+	}
 	syncContextLength(state.providers.providerState.activeModel);
 }
 
@@ -299,9 +302,10 @@ export async function selectModel(model: ActiveModel) {
 	}
 
 	state.providers.selectModel(model);
-	syncContextLength(model);
 	if (model.provider === 'ollama') {
 		await fetchOllamaContextLength();
+	} else {
+		syncContextLength(model);
 	}
 }
 

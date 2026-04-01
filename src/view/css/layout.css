@@ -376,7 +376,7 @@
 
 .composer-row {
 	display: flex;
-	align-items: center;
+	align-items: flex-end;
 	gap: 0.6rem;
 	padding: 0.75rem;
 }
@@ -388,17 +388,20 @@
 	padding: 0 0.25rem;
 }
 
-.composer-input {
-	height: 3.25rem;
+.composer-textarea {
+	flex: 1;
+	min-height: 2.5rem;
+	max-height: 12rem;
 	border: 0;
 	background: transparent;
-	box-shadow: none;
+	color: hsl(var(--foreground));
 	font-size: 1rem;
-}
-
-.composer-input:focus {
-	box-shadow: none;
-	border-color: transparent;
+	font-family: inherit;
+	line-height: 1.5;
+	padding: 0.5rem 0.25rem;
+	outline: none;
+	resize: none;
+	overflow-y: auto;
 }
 
 .canvas-toggle {
@@ -431,16 +434,44 @@
 .composer-send {
 	height: 2.3rem;
 	width: 2.3rem;
+	min-height: 2.3rem;
+	min-width: 2.3rem;
 	border-radius: 999px;
-	align-self: center;
+	align-self: flex-end;
+	flex-shrink: 0;
+}
+
+.composer-stop {
+	background: hsl(var(--foreground) / 0.25);
+	color: hsl(0 0% 0%);
 }
 
 .composer-footer {
 	display: flex;
 	align-items: center;
-	gap: 0.75rem;
 	padding: 0.85rem 1rem;
 	border-top: 1px solid hsl(var(--border));
+}
+
+.composer-footer-left {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.composer-footer-right {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	flex: 1;
+	min-width: 0;
+	padding-left: 0.75rem;
+	margin-left: 0.75rem;
+	border-left: 1px solid hsl(var(--border));
+	align-self: stretch;
+	font-size: 0.75rem;
+	color: hsl(var(--muted-foreground));
 }
 
 .model-chip {
@@ -465,8 +496,11 @@
 }
 
 .mode-indicator {
+	display: inline-flex;
+	align-items: center;
+	height: 2.1rem;
 	font-size: 12px;
-	padding: 2px 8px;
+	padding: 0 8px;
 	border-radius: 999px;
 	color: hsl(var(--foreground) / 0.5);
 	background: hsl(var(--foreground) / 0.06);
@@ -475,18 +509,23 @@
 	color: hsl(var(--primary));
 	background: hsl(var(--primary) / 0.1);
 }
+.mode-chip.ui-button-outline {
+	border-radius: 999px;
+	width: 4rem;
+	justify-content: center;
+	color: hsl(var(--muted-foreground));
+}
 
-.context-meta {
-	display: flex;
-	flex: 1;
-	align-items: center;
-	gap: 0.65rem;
-	font-size: 0.75rem;
+.strategy-chip.ui-button-outline {
+	border-radius: 999px;
+	width: 4rem;
+	justify-content: center;
 	color: hsl(var(--muted-foreground));
 }
 
 .progress-track {
 	height: 0.35rem;
+	min-height: 0.35rem;
 	border-radius: 999px;
 	background: hsl(var(--muted));
 	overflow: hidden;
@@ -494,6 +533,7 @@
 
 .progress-track.compact {
 	flex: 1;
+	min-width: 0;
 }
 
 .progress-fill {

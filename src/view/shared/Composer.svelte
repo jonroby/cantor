@@ -1,137 +1,230 @@
 <script lang="ts">
-	import { Button, Input } from '@/view/components/custom';
-	import { PROVIDER_LOGOS } from '@/view/assets';
+	import { tick } from 'svelte';
+	import ComposerInput from './ComposerInput.svelte';
+	import { ModelPalette } from '@/view/features/model-palette';
+	import * as app from '@/app';
 
 	interface Props {
-		composerValue: string;
-		commandMode: boolean;
-		inputMessage: string | null;
-		submitDisabledReason: string | null;
-		streaming: boolean;
-		activeModelLabel: string | null;
-		activeProvider: string | null;
-		usedTokens: number;
-		contextLength: number | null;
-		onSubmit: () => void;
-		onStop: () => void;
-		onOpenPalette: () => void;
+		onScrollToNode: (nodeId: string | null) => void;
+		onExpandSideChat: (exchangeId: string) => void;
+		agentMode?: boolean;
+		agentStreaming?: boolean;
+		agentPending?: boolean;
+		liveDocumentContent?: string;
+		onAgentResponse?: (text: string) => void;
 	}
 
 	let {
-		composerValue = $bindable(),
-		commandMode,
-		inputMessage,
-		submitDisabledReason,
-		streaming,
-		activeModelLabel,
-		activeProvider,
-		usedTokens,
-		contextLength,
-		onSubmit,
-		onStop,
-		onOpenPalette
+		onScrollToNode,
+		onExpandSideChat,
+		agentMode = false,
+		agentStreaming = $bindable(false),
+		agentPending = false,
+		liveDocumentContent,
+		onAgentResponse
 	}: Props = $props();
 
-	let inputRef: ReturnType<typeof Input> | undefined = $state();
+	let composerValue = $state('');
+	let paletteOpen = $state(false);
+	let operationError: string | null = $state(null);
+	let composerRef: ReturnType<typeof ComposerInput> | undefined = $state();
+	let agentHistory: app.chat.Message[] = $state([]);
+	let agentAbort: AbortController | null = $state(null);
+	let providerState = $derived(app.providers.getState());
+	let activeChat = $derived(app.chat.getChat());
 
 	export function focus() {
-		inputRef?.focus();
+		composerRef?.focus();
+	}
+
+	export function resetAgent() {
+		agentHistory = [];
+		agentStreaming = false;
+		if (agentAbort) {
+			agentAbort.abort();
+			agentAbort = null;
+		}
+	}
+
+	let activeExchanges = $derived(activeChat.exchanges);
+	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
+	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
+	let contextStrategy = $derived(app.chat.getContextStrategy());
+	let usedTokens = $derived(
+		activeExchangeId ? app.chat.getUsedTokens(activeTree, activeExchangeId) : 0
+	);
+	let activeNodeStreaming = $derived.by(() => {
+		const id = activeExchangeId;
+		if (!id) return false;
+		return app.chat.isStreaming(id);
+	});
+	let submitDisabledReason = $derived(
+		!providerState.activeModel
+			? 'Select a model first.'
+			: activeNodeStreaming
+				? 'Waiting for response…'
+				: activeExchangeId && !app.chat.canSubmitPrompt(activeTree, activeExchangeId)
+					? 'Choose a side-chat tip or main-chain node to continue.'
+					: null
+	);
+
+	let activeChatId = $derived(activeChat.id);
+	$effect(() => {
+		void activeChatId;
+		tick().then(() => composerRef?.focus());
+	});
+
+	async function submitPrompt() {
+		if (agentMode) {
+			await submitAgent();
+			return;
+		}
+
+		const prompt = composerValue.trim();
+		if (!prompt || !activeExchanges || submitDisabledReason || !providerState.activeModel) return;
+
+		operationError = null;
+
+		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
+
+		let result;
+		try {
+			result = app.chat.submitPrompt(
+				activeChat.id,
+				tree,
+				activeExchangeId,
+				prompt,
+				providerState.activeModel,
+				{
+					liveDocumentContent,
+					contextStrategy,
+					contextLength: providerState.contextLength
+				}
+			);
+		} catch (error) {
+			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
+			return;
+		}
+
+		if (result.hasSideChildren) {
+			onExpandSideChat(result.parentId);
+		}
+
+		composerValue = '';
+		await tick();
+		onScrollToNode(result.id);
+	}
+
+	function buildAgentMessages(prompt: string): app.chat.Message[] {
+		const documentSection = liveDocumentContent
+			? `\n\n<current_document>\n${liveDocumentContent}\n</current_document>`
+			: '\n\nThe document is currently empty.';
+
+		const systemPrompt = [
+			'You are editing a markdown document. The user will give you instructions about what to change.',
+			'You have access to the chat history above for context.',
+			'Respond with the COMPLETE updated document content. Do NOT wrap it in code fences or backticks.',
+			'Do NOT add any preamble, explanation, or commentary — your entire response becomes the document.',
+			documentSection
+		].join('\n');
+
+		const chatHistory = app.chat
+			.getMainChat(activeTree)
+			.flatMap((exchange) => [
+				{ role: 'user', content: exchange.prompt.text } as app.chat.Message,
+				...(exchange.response?.text
+					? ([{ role: 'assistant', content: exchange.response.text }] as app.chat.Message[])
+					: [])
+			]);
+
+		return [
+			...chatHistory,
+			{ role: 'user', content: systemPrompt },
+			{ role: 'assistant', content: 'Understood.' },
+			...agentHistory,
+			{ role: 'user', content: prompt }
+		];
+	}
+
+	async function submitAgent() {
+		const prompt = composerValue.trim();
+		if (!prompt || !providerState.activeModel) return;
+
+		operationError = null;
+		const messages = buildAgentMessages(prompt);
+		agentHistory = [...agentHistory, { role: 'user', content: prompt }];
+		composerValue = '';
+		agentStreaming = true;
+
+		const abort = new AbortController();
+		agentAbort = abort;
+
+		let responseText = '';
+		try {
+			const stream = app.providers.streamText(providerState.activeModel, messages, abort.signal);
+			for await (const chunk of stream) {
+				if (chunk.type === 'delta') {
+					responseText += chunk.delta;
+				}
+			}
+			agentHistory = [...agentHistory, { role: 'assistant', content: responseText }];
+			onAgentResponse?.(responseText);
+		} catch (e) {
+			if (abort.signal.aborted) return;
+			operationError = e instanceof Error ? e.message : 'Agent failed.';
+		} finally {
+			agentStreaming = false;
+			agentAbort = null;
+		}
 	}
 </script>
 
-<form
-	class="composer"
-	onsubmit={(e: Event) => {
-		e.preventDefault();
-		onSubmit();
+{#if operationError}
+	<div class="error-banner">{operationError}</div>
+{/if}
+
+<ComposerInput
+	bind:this={composerRef}
+	bind:composerValue
+	{agentMode}
+	inputMessage={agentPending ? 'Accept or reject pending changes first.' : null}
+	{submitDisabledReason}
+	streaming={agentStreaming || activeNodeStreaming}
+	activeModelLabel={providerState.activeModelLabel}
+	activeProvider={providerState.activeModel?.provider ?? null}
+	{usedTokens}
+	contextLength={providerState.contextLength}
+	{contextStrategy}
+	onCycleStrategy={() => {
+		const next = contextStrategy === 'full' ? 'lru' : contextStrategy === 'lru' ? 'bm25' : 'full';
+		app.chat.setContextStrategy(next);
 	}}
->
-	<div class="composer-shell">
-		<div class="composer-row">
-			{#if inputMessage}
-				<span class="composer-message">{inputMessage}</span>
-			{:else}
-				<Input
-					bind:this={inputRef}
-					bind:value={composerValue}
-					class="composer-input"
-					placeholder={commandMode ? 'Command...' : (submitDisabledReason ?? 'Chat...')}
-				/>
-			{/if}
-			{#if streaming}
-				<Button
-					class="composer-send composer-stop"
-					type="button"
-					size="icon"
-					onclick={onStop}
-					ariaLabel="Stop response"
-				>
-					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-						<rect x="4" y="4" width="8" height="8" rx="1" />
-					</svg>
-				</Button>
-			{:else}
-				<Button
-					class="composer-send"
-					type="submit"
-					size="icon"
-					disabled={!!submitDisabledReason || !composerValue.trim()}
-					ariaLabel="Send message"
-				>
-					<svg
-						width="16"
-						height="16"
-						viewBox="0 0 16 16"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.6"
-						><path d="M8 3v7M5 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" /></svg
-					>
-				</Button>
-			{/if}
-		</div>
-		<div class="composer-footer">
-			<Button
-				class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
-				variant="outline"
-				size="sm"
-				onclick={onOpenPalette}
-			>
-				{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
-					<img
-						src={PROVIDER_LOGOS[activeProvider]}
-						alt=""
-						style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
-					/>
-				{/if}
-				{activeModelLabel ?? 'Choose model'}
-			</Button>
-			<div class="composer-divider"></div>
-			<span class="mode-indicator" class:mode-active={commandMode}>
-				{commandMode ? 'Command' : 'Chat'}
-			</span>
-			{#if activeModelLabel}
-				<div class="composer-divider"></div>
-				<div class="context-meta">
-					<span>Context</span>
-					{#if contextLength != null}
-						<div class="progress-track compact">
-							<div
-								class="progress-fill"
-								style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}
-							></div>
-						</div>
-					{/if}
-					<span
-						>{usedTokens.toLocaleString()}{contextLength != null
-							? ` / ${contextLength.toLocaleString()}`
-							: ''}</span
-					>
-				</div>
-			{/if}
-			{#if submitDisabledReason && !inputMessage}
-				<span class="composer-hint">{submitDisabledReason}</span>
-			{/if}
-		</div>
-	</div>
-</form>
+	onSubmit={submitPrompt}
+	onStop={() => {
+		if (agentStreaming && agentAbort) {
+			agentAbort.abort();
+			agentStreaming = false;
+			agentAbort = null;
+		} else if (activeExchangeId) {
+			app.chat.stopStream(activeExchangeId);
+		}
+	}}
+	onOpenPalette={() => (paletteOpen = true)}
+/>
+
+<ModelPalette
+	open={paletteOpen}
+	onClose={() => {
+		paletteOpen = false;
+	}}
+	state={providerState}
+	onSelectModel={app.providers.selectModel}
+	onConnect={app.providers.connect}
+	onUnlockCredentials={app.providers.unlockCredentials}
+	onSaveCredential={app.providers.saveCredential}
+	onLockCredential={app.providers.lockCredential}
+	onClearCredential={app.providers.clearCredential}
+	onSetContextSize={app.providers.setContextSize}
+	onRemoveCachedModel={app.providers.removeCachedModel}
+	onClearCachedModels={app.providers.clearCachedModels}
+/>
