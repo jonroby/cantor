@@ -41,7 +41,8 @@ function makeChat(name: string, tree?: domain.tree.ChatTree): import('../chats.s
 		name,
 		rootId: t.rootId,
 		exchanges: t.exchanges,
-		activeExchangeId: domain.tree.getMainChatTail(t)
+		activeExchangeId: domain.tree.getMainChatTail(t),
+		contextStrategy: 'full'
 	};
 }
 
@@ -52,7 +53,8 @@ function resetState() {
 		name: 'Chat 1',
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
-		activeExchangeId: domain.tree.getMainChatTail(tree)
+		activeExchangeId: domain.tree.getMainChatTail(tree),
+		contextStrategy: 'full'
 	};
 	chatState.chats = [chat];
 	chatState.activeChatIndex = 0;
@@ -336,7 +338,8 @@ describe('chats state', () => {
 					name: 'Hydrated',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: domain.tree.getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree),
+					contextStrategy: 'full'
 				}
 			];
 			hydrate({ chats, activeChatIndex: 0 });
@@ -365,7 +368,8 @@ describe('chats state', () => {
 					name: 'H1',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: domain.tree.getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree),
+					contextStrategy: 'full'
 				}
 			];
 			hydrate({ chats, activeChatIndex: 99 });
@@ -380,7 +384,8 @@ describe('chats state', () => {
 					name: 'H1',
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
-					activeExchangeId: domain.tree.getMainChatTail(tree)
+					activeExchangeId: domain.tree.getMainChatTail(tree),
+					contextStrategy: 'full'
 				}
 			];
 			hydrate({ chats, activeChatIndex: -3 });

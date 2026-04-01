@@ -299,9 +299,10 @@ export async function selectModel(model: ActiveModel) {
 	}
 
 	state.providers.selectModel(model);
-	syncContextLength(model);
 	if (model.provider === 'ollama') {
 		await fetchOllamaContextLength();
+	} else {
+		syncContextLength(model);
 	}
 }
 

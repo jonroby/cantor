@@ -132,7 +132,8 @@ function createDeps(overrides: Partial<DocumentCommandDeps> = {}): DocumentComma
 			name: 'Chat 1',
 			rootId: 'root-1',
 			exchanges: {},
-			activeExchangeId: 'root-1'
+			activeExchangeId: 'root-1',
+			contextStrategy: 'full' as const
 		}),
 		getFolders: () => [],
 		createDocumentInFolder: vi.fn(() => null),

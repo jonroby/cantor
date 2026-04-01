@@ -94,7 +94,8 @@ describe('App', () => {
 			name: 'Chat 1',
 			rootId: null,
 			exchanges: {},
-			activeExchangeId: null
+			activeExchangeId: null,
+			contextStrategy: 'full'
 		});
 		const folders = app.documents.getState().folders;
 		folders.length = 0;
@@ -130,8 +131,22 @@ describe('App', () => {
 				const chats = app.chat.getChats();
 				chats.length = 0;
 				chats.push(
-					{ id: '1', name: 'Foo', rootId: null, exchanges: {}, activeExchangeId: null },
-					{ id: '2', name: 'Foo (2)', rootId: null, exchanges: {}, activeExchangeId: null }
+					{
+						id: '1',
+						name: 'Foo',
+						rootId: null,
+						exchanges: {},
+						activeExchangeId: null,
+						contextStrategy: 'full'
+					},
+					{
+						id: '2',
+						name: 'Foo (2)',
+						rootId: null,
+						exchanges: {},
+						activeExchangeId: null,
+						contextStrategy: 'full'
+					}
 				);
 				return { restoredDocument: null, hadDuplicateRenames: true };
 			});

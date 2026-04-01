@@ -49,6 +49,7 @@
 	let activeExchanges = $derived(activeChat.exchanges);
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
+	let contextStrategy = $derived(app.chat.getContextStrategy());
 	let usedTokens = $derived(
 		activeExchangeId ? app.chat.getUsedTokens(activeTree, activeExchangeId) : 0
 	);
@@ -92,7 +93,11 @@
 				activeExchangeId,
 				prompt,
 				providerState.activeModel,
-				liveDocumentContent
+				{
+					liveDocumentContent,
+					contextStrategy,
+					contextLength: providerState.contextLength
+				}
 			);
 		} catch (error) {
 			operationError = error instanceof Error ? error.message : 'Failed to create exchange.';
@@ -187,6 +192,11 @@
 	activeProvider={providerState.activeModel?.provider ?? null}
 	{usedTokens}
 	contextLength={providerState.contextLength}
+	{contextStrategy}
+	onCycleStrategy={() => {
+		const next = contextStrategy === 'full' ? 'lru' : contextStrategy === 'lru' ? 'bm25' : 'full';
+		app.chat.setContextStrategy(next);
+	}}
 	onSubmit={submitPrompt}
 	onStop={() => {
 		if (agentStreaming && agentAbort) {

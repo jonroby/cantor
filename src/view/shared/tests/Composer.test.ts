@@ -15,6 +15,8 @@ function renderComposer(overrides: Partial<Parameters<typeof Composer>[1]> = {})
 		activeProvider: 'claude',
 		usedTokens: 0,
 		contextLength: 128000,
+		contextStrategy: 'full' as const,
+		onCycleStrategy: vi.fn(),
 		onSubmit: vi.fn(),
 		onStop: vi.fn(),
 		onOpenPalette: vi.fn(),
@@ -82,5 +84,26 @@ describe('Composer', () => {
 	it('shows token count', () => {
 		renderComposer({ usedTokens: 1500, contextLength: 128000 });
 		expect(screen.getByText(/1,500 \/ 128,000/)).toBeInTheDocument();
+	});
+
+	it('shows "Full" strategy pill by default', () => {
+		renderComposer();
+		expect(screen.getByText('Full')).toBeInTheDocument();
+	});
+
+	it('shows "LRU" when contextStrategy is lru', () => {
+		renderComposer({ contextStrategy: 'lru' });
+		expect(screen.getByText('LRU')).toBeInTheDocument();
+	});
+
+	it('shows "BM25" when contextStrategy is bm25', () => {
+		renderComposer({ contextStrategy: 'bm25' });
+		expect(screen.getByText('BM25')).toBeInTheDocument();
+	});
+
+	it('strategy pill fires onCycleStrategy', async () => {
+		const { props } = renderComposer();
+		await userEvent.click(screen.getByText('Full'));
+		expect(props.onCycleStrategy).toHaveBeenCalledOnce();
 	});
 });

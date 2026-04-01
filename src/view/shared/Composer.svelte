@@ -12,6 +12,8 @@
 		activeProvider: string | null;
 		usedTokens: number;
 		contextLength: number | null;
+		contextStrategy: 'full' | 'lru' | 'bm25';
+		onCycleStrategy: () => void;
 		onSubmit: () => void;
 		onStop: () => void;
 		onOpenPalette: () => void;
@@ -27,6 +29,8 @@
 		activeProvider,
 		usedTokens,
 		contextLength,
+		contextStrategy,
+		onCycleStrategy,
 		onSubmit,
 		onStop,
 		onOpenPalette
@@ -91,28 +95,34 @@
 			{/if}
 		</div>
 		<div class="composer-footer">
-			<Button
-				class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
-				variant="outline"
-				size="sm"
-				onclick={onOpenPalette}
-			>
-				{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
-					<img
-						src={PROVIDER_LOGOS[activeProvider]}
-						alt=""
-						style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
-					/>
+			<div class="composer-footer-left">
+				<Button
+					class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
+					variant="outline"
+					size="sm"
+					onclick={onOpenPalette}
+				>
+					{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
+						<img
+							src={PROVIDER_LOGOS[activeProvider]}
+							alt=""
+							style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
+						/>
+					{/if}
+					{activeModelLabel ?? 'Choose model'}
+				</Button>
+				<Button class="mode-chip" variant="outline" size="sm">
+					{agentMode ? 'Agent' : 'Chat'}
+				</Button>
+				<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
+					{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
+				</Button>
+				{#if submitDisabledReason && !inputMessage}
+					<span class="composer-hint">{submitDisabledReason}</span>
 				{/if}
-				{activeModelLabel ?? 'Choose model'}
-			</Button>
-			<div class="composer-divider"></div>
-			<span class="mode-indicator" class:mode-active={agentMode}>
-				{agentMode ? 'Agent' : 'Chat'}
-			</span>
+			</div>
 			{#if activeModelLabel}
-				<div class="composer-divider"></div>
-				<div class="context-meta">
+				<div class="composer-footer-right">
 					<span>Context</span>
 					{#if contextLength != null}
 						<div class="progress-track compact">
@@ -128,9 +138,6 @@
 							: ''}</span
 					>
 				</div>
-			{/if}
-			{#if submitDisabledReason && !inputMessage}
-				<span class="composer-hint">{submitDisabledReason}</span>
 			{/if}
 		</div>
 	</div>

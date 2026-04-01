@@ -17,6 +17,7 @@
     "getActiveExchangeId": true,
     "getChat": true,
     "getChats": true,
+    "getContextStrategy": true,
     "getMainChat": true,
     "getSideChats": true,
     "getUsedTokens": true,
@@ -28,6 +29,7 @@
     "renameChat": true,
     "selectChat": true,
     "selectExchange": true,
+    "setContextStrategy": true,
     "stopChatStreams": true,
     "stopStream": true,
     "submitPrompt": true

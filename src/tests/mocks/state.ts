@@ -28,7 +28,8 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			replaceActiveTree: mockFn<typeof state.chats.replaceActiveTree>(),
 			replaceTreeByChatId: mockFn<typeof state.chats.replaceTreeByChatId>(),
 			selectChat: mockFn<typeof state.chats.selectChat>(),
-			setActiveExchangeId: mockFn<typeof state.chats.setActiveExchangeId>()
+			setActiveExchangeId: mockFn<typeof state.chats.setActiveExchangeId>(),
+			setContextStrategy: mockFn<typeof state.chats.setContextStrategy>()
 		},
 		documents: {
 			closeDocument: mockFn<typeof state.documents.closeDocument>(),
