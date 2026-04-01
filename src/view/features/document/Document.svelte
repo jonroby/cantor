@@ -468,12 +468,14 @@
 			{/each}
 		</div>
 	{:else if editing}
-		<textarea
-			class="docs-editor panel-body"
-			bind:value={draft}
-			onkeydown={handleKeydown}
-			spellcheck="false"
-		></textarea>
+		<div class="docs-editor-wrap panel-body">
+			<textarea
+				class="docs-editor"
+				bind:value={draft}
+				onkeydown={handleKeydown}
+				spellcheck="false"
+			></textarea>
+		</div>
 	{:else}
 		<div class="docs-content panel-body" bind:this={contentEl} onscroll={handleContentScroll}>
 			<div class="docs-content-inner">
@@ -658,9 +660,21 @@
 		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 	}
 
-	.docs-editor {
+	.docs-editor-wrap {
 		flex: 1;
-		padding: 16px 20px;
+		min-height: 0;
+		display: flex;
+		justify-content: center;
+		padding: 16px 1rem 12rem;
+		padding-right: calc(1rem - 8px);
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+
+	.docs-editor {
+		width: 100%;
+		max-width: 720px;
+		min-height: 100%;
 		border: none;
 		outline: none;
 		resize: none;
@@ -668,7 +682,7 @@
 		font-size: 13px;
 		line-height: 1.6;
 		color: hsl(var(--foreground, 0 0% 9%));
-		overflow-y: auto;
+		background: transparent;
 		tab-size: 2;
 	}
 

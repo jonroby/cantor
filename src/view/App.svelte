@@ -110,6 +110,10 @@
 	}
 
 	function closePanel(index: number) {
+		const panel = panels[index];
+		if (panel?.type === 'chat') {
+			chatSidePanelOpen = false;
+		}
 		panels = panels.filter((_, i) => i !== index);
 	}
 
@@ -232,8 +236,7 @@
 
 				<div
 					class="composer-anchor"
-					class:composer-left={(isSplit && chatPanelIndex === 0) || chatSidePanelOpen}
-					class:composer-right={isSplit && chatPanelIndex === 1}
+					class:composer-left={isSplit || chatSidePanelOpen}
 				>
 					<Composer
 						bind:this={composerRef}
