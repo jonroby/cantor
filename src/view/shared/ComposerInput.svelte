@@ -1,0 +1,158 @@
+<script lang="ts">
+	import { Button } from '@/view/components/custom';
+	import { PROVIDER_LOGOS } from '@/view/assets';
+	import { ArrowUp, Square } from 'lucide-svelte';
+
+	interface Props {
+		composerValue: string;
+		agentMode: boolean;
+		inputMessage: string | null;
+		submitDisabledReason: string | null;
+		streaming: boolean;
+		activeModelLabel: string | null;
+		activeProvider: string | null;
+		usedTokens: number;
+		contextLength: number | null;
+		contextStrategy: 'full' | 'lru' | 'bm25';
+		onCycleStrategy: () => void;
+		onSubmit: () => void;
+		onStop: () => void;
+		onOpenPalette: () => void;
+	}
+
+	let {
+		composerValue = $bindable(),
+		agentMode,
+		inputMessage,
+		submitDisabledReason,
+		streaming,
+		activeModelLabel,
+		activeProvider,
+		usedTokens,
+		contextLength,
+		contextStrategy,
+		onCycleStrategy,
+		onSubmit,
+		onStop,
+		onOpenPalette
+	}: Props = $props();
+
+	let textareaEl: HTMLTextAreaElement | undefined = $state();
+
+	export function focus() {
+		textareaEl?.focus();
+	}
+
+	function autoResize() {
+		if (!textareaEl) return;
+		textareaEl.style.height = 'auto';
+		textareaEl.style.height = `${textareaEl.scrollHeight}px`;
+	}
+
+	function resetSize() {
+		if (!textareaEl) return;
+		textareaEl.style.height = 'auto';
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			onSubmit();
+			resetSize();
+		}
+	}
+</script>
+
+<form
+	class="composer"
+	onsubmit={(e: Event) => {
+		e.preventDefault();
+		onSubmit();
+		resetSize();
+	}}
+>
+	<div class="composer-shell">
+		<div class="composer-row">
+			{#if inputMessage}
+				<span class="composer-message">{inputMessage}</span>
+			{:else}
+				<textarea
+					bind:this={textareaEl}
+					bind:value={composerValue}
+					class="composer-textarea"
+					placeholder={agentMode ? 'Agent...' : (submitDisabledReason ?? 'Chat...')}
+					rows={1}
+					oninput={autoResize}
+					onkeydown={handleKeydown}
+				></textarea>
+			{/if}
+			{#if streaming}
+				<Button
+					class="composer-send composer-stop"
+					type="button"
+					size="icon"
+					onclick={onStop}
+					ariaLabel="Stop response"
+				>
+					<Square size={13} fill="currentColor" />
+				</Button>
+			{:else}
+				<Button
+					class="composer-send"
+					type="submit"
+					size="icon"
+					disabled={!!submitDisabledReason || !composerValue.trim()}
+					ariaLabel="Send message"
+				>
+					<ArrowUp size={15} strokeWidth={2.5} />
+				</Button>
+			{/if}
+		</div>
+		<div class="composer-footer">
+			<div class="composer-footer-left">
+				<Button
+					class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
+					variant="outline"
+					size="sm"
+					onclick={onOpenPalette}
+				>
+					{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
+						<img
+							src={PROVIDER_LOGOS[activeProvider]}
+							alt=""
+							style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
+						/>
+					{/if}
+					{activeModelLabel ?? 'Choose model'}
+				</Button>
+				<Button class="mode-chip" variant="outline" size="sm">
+					{agentMode ? 'Agent' : 'Chat'}
+				</Button>
+				<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
+					{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
+				</Button>
+				{#if submitDisabledReason && !inputMessage}
+					<span class="composer-hint">{submitDisabledReason}</span>
+				{/if}
+			</div>
+			{#if activeModelLabel}
+				<div class="composer-footer-right">
+					<span>Context</span>
+					{#if contextLength != null}
+						<div class="progress-track compact">
+							<div
+								class="progress-fill"
+								style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}
+							></div>
+						</div>
+					{/if}
+					<span
+						>{usedTokens.toLocaleString()}{contextLength != null
+							? ` / ${contextLength.toLocaleString()}`
+							: ''}</span
+					>
+				</div>
+			{/if}
+		</div>
+	</div>
+</form>

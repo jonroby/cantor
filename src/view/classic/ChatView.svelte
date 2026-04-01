@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
-	import { ChatInput } from '@/view/shared';
+	import { Composer } from '@/view/shared';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -38,7 +38,7 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
-	let chatInputRef: ReturnType<typeof ChatInput> | undefined = $state();
+	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
 
@@ -111,7 +111,7 @@
 			}
 		}
 		if (!isDocumentPanel) {
-			tick().then(() => chatInputRef?.focus());
+			tick().then(() => composerRef?.focus());
 		}
 	}
 
@@ -142,12 +142,12 @@
 		} else {
 			app.chat.selectExchange(parentId);
 		}
-		tick().then(() => chatInputRef?.focus());
+		tick().then(() => composerRef?.focus());
 	}
 
 	function closeSidePanel() {
 		sidePanel = null;
-		chatInputRef?.resetAgent();
+		composerRef?.resetAgent();
 		focusPanel(mainPanel.id);
 	}
 
@@ -175,7 +175,7 @@
 		if (!activeSideChat || activeSideChat.length === 0) return;
 		updateSideChatIndex(sideChats.length);
 		app.chat.selectExchange(sidePanelParentId);
-		tick().then(() => chatInputRef?.focus());
+		tick().then(() => composerRef?.focus());
 	}
 
 	function copyChat(exchangeId: string) {
@@ -363,12 +363,12 @@
 		trackLatestSideChat = true;
 		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === exchangeId) {
 			focusedPanelId = sidePanel.id;
-			tick().then(() => chatInputRef?.focus());
+			tick().then(() => composerRef?.focus());
 			return;
 		}
 		sidePanel = createSideChatPanel(exchangeId, 0);
 		focusedPanelId = sidePanel.id;
-		tick().then(() => chatInputRef?.focus());
+		tick().then(() => composerRef?.focus());
 	}
 
 	function getExchangePath(exchangeId: string): app.chat.Exchange[] {
@@ -695,8 +695,8 @@
 			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
 			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
 		>
-			<ChatInput
-				bind:this={chatInputRef}
+			<Composer
+				bind:this={composerRef}
 				onScrollToNode={scrollToNode}
 				onExpandSideChat={expandSideChat}
 				agentMode={isDocumentPanel && focusedPane === 'side'}
