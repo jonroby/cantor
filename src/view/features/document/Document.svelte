@@ -675,11 +675,10 @@
 	.docs-content {
 		flex: 1;
 		min-height: 0;
-		padding: 16px 1rem 16px 1rem;
+		padding: 16px 1rem 12rem 1rem;
 		padding-right: calc(1rem - 8px);
 		overflow-y: auto;
 		overflow-x: hidden;
-		font-size: 14px;
 		line-height: 1.7;
 		color: hsl(var(--foreground, 0 0% 9%));
 	}

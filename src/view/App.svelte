@@ -21,6 +21,7 @@
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
+	let chatPanelIndex = $derived(panels.findIndex((p) => p.type === 'chat'));
 	let isSplit = $derived(panels.length === 2);
 
 	$effect(() => {
@@ -216,7 +217,7 @@
 									onClose={() => closePanel(index)}
 									onFocusComposer={focusComposer}
 								/>
-							{:else}
+							{:else if panel.type === 'document'}
 								<DocumentView
 									folderId={panel.folderId}
 									fileId={panel.fileId}
@@ -227,7 +228,11 @@
 					{/each}
 				</div>
 
-				<div class="composer-anchor">
+				<div
+					class="composer-anchor"
+					class:composer-left={isSplit && chatPanelIndex === 0}
+					class:composer-right={isSplit && chatPanelIndex === 1}
+				>
 					<Composer
 						bind:this={composerRef}
 						onScrollToNode={(nodeId) => chatViewRef?.scrollToNode(nodeId)}
@@ -266,6 +271,7 @@
 	}
 
 	.panel-slot {
+		position: relative;
 		flex: 1;
 		display: flex;
 		flex-direction: column;
@@ -283,6 +289,7 @@
 		left: 0;
 		right: 0;
 		z-index: 25;
+		padding: 0 1rem;
 	}
 
 	.composer-anchor :global(.composer) {
@@ -290,8 +297,17 @@
 		left: auto;
 		bottom: auto;
 		transform: none;
-		width: calc(100% - 3rem);
-		max-width: 720px;
+		width: 100% !important;
+		max-width: 720px !important;
 		margin: 0 auto;
+		box-sizing: border-box;
+	}
+
+	.composer-left {
+		right: 50%;
+	}
+
+	.composer-right {
+		left: 50%;
 	}
 </style>

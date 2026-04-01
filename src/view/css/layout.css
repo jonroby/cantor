@@ -780,6 +780,7 @@
 
 .chatview-main {
 	flex: 1;
+	overflow-x: hidden;
 	overflow-y: auto;
 	padding: 1.5rem calc(1rem - 8px) 12rem 1rem;
 }
