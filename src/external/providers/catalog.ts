@@ -115,7 +115,7 @@ const KEY_BASED_PROVIDER_DEFINITIONS: Record<
 	},
 	groq: {
 		config: {
-			name: 'Llama (Groq)',
+			name: 'Llama',
 			baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
 			keyPlaceholder: 'gsk_...'
 		},
