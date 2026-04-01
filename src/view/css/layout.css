@@ -904,9 +904,6 @@
 
 .chatview-side-chat-source {
 	position: relative;
-	border-left: 2px solid hsl(var(--primary));
-	padding-left: 0.75rem;
-	border-radius: 2px;
 }
 
 /* ---- ChatMessage (flat bubble style) ---- */
@@ -1209,7 +1206,6 @@
 	padding: 0.15rem 0.5rem;
 	margin: 0 -0.5rem;
 	border-radius: 0.75rem;
-	border-left: 2px solid transparent;
 	transition:
 		background 150ms ease,
 		border-color 150ms ease;

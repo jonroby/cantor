@@ -19,6 +19,7 @@
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
+	let chatSidePanelOpen = $state(false);
 
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
 	let chatPanelIndex = $derived(panels.findIndex((p) => p.type === 'chat'));
@@ -216,6 +217,7 @@
 									bind:this={chatViewRef}
 									onClose={() => closePanel(index)}
 									onFocusComposer={focusComposer}
+									onSidePanelChange={(open) => (chatSidePanelOpen = open)}
 								/>
 							{:else if panel.type === 'document'}
 								<DocumentView
@@ -230,7 +232,7 @@
 
 				<div
 					class="composer-anchor"
-					class:composer-left={isSplit && chatPanelIndex === 0}
+					class:composer-left={(isSplit && chatPanelIndex === 0) || chatSidePanelOpen}
 					class:composer-right={isSplit && chatPanelIndex === 1}
 				>
 					<Composer

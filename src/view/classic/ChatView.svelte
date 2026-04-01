@@ -18,9 +18,10 @@
 	interface Props {
 		onClose?: () => void;
 		onFocusComposer?: () => void;
+		onSidePanelChange?: (open: boolean) => void;
 	}
 
-	let { onClose, onFocusComposer }: Props = $props();
+	let { onClose, onFocusComposer, onSidePanelChange }: Props = $props();
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());
@@ -449,6 +450,11 @@
 		if (!sidePanelOpen && focusedPane === 'side') {
 			focusPanel(mainPanel.id);
 		}
+	});
+
+	// Notify parent of side panel state changes
+	$effect(() => {
+		onSidePanelChange?.(sidePanelOpen);
 	});
 
 	// Close side panel if parent node was deleted
