@@ -666,6 +666,7 @@
 	.docs-content {
 		padding: 16px 20px;
 		overflow-y: auto;
+		overflow-x: hidden;
 		font-size: 14px;
 		line-height: 1.7;
 		color: hsl(var(--foreground, 0 0% 9%));
