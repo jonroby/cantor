@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Button, Input } from '@/view/components/custom';
 	import { PROVIDER_LOGOS } from '@/view/assets';
+	import { ArrowUp, Square } from 'lucide-svelte';
 
 	interface Props {
 		composerValue: string;
@@ -70,9 +71,7 @@
 					onclick={onStop}
 					ariaLabel="Stop response"
 				>
-					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-						<rect x="4" y="4" width="8" height="8" rx="1" />
-					</svg>
+					<Square size={13} fill="currentColor" />
 				</Button>
 			{:else}
 				<Button
@@ -82,15 +81,7 @@
 					disabled={!!submitDisabledReason || !composerValue.trim()}
 					ariaLabel="Send message"
 				>
-					<svg
-						width="16"
-						height="16"
-						viewBox="0 0 16 16"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.6"
-						><path d="M8 3v7M5 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" /></svg
-					>
+					<ArrowUp size={15} strokeWidth={2.5} />
 				</Button>
 			{/if}
 		</div>

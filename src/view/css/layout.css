@@ -431,8 +431,16 @@
 .composer-send {
 	height: 2.3rem;
 	width: 2.3rem;
+	min-height: 2.3rem;
+	min-width: 2.3rem;
 	border-radius: 999px;
 	align-self: center;
+	flex-shrink: 0;
+}
+
+.composer-stop {
+	background: hsl(var(--foreground) / 0.25);
+	color: hsl(0 0% 0%);
 }
 
 .composer-footer {
