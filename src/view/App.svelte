@@ -19,8 +19,6 @@
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
-	let panelLayoutEl: HTMLDivElement | null = $state(null);
-	const scrollTimers = new WeakMap<Element, ReturnType<typeof setTimeout>>();
 
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
 	let isSplit = $derived(panels.length === 2);
@@ -66,20 +64,6 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		function handlePanelScroll(e: Event) {
-			const target = e.target;
-			if (!(target instanceof Element)) return;
-			target.classList.add('is-scrolling');
-			const existing = scrollTimers.get(target);
-			if (existing) clearTimeout(existing);
-			scrollTimers.set(
-				target,
-				setTimeout(() => target.classList.remove('is-scrolling'), 1000)
-			);
-		}
-
-		panelLayoutEl?.addEventListener('scroll', handlePanelScroll, true);
-
 		const { restoredDocument, hadDuplicateRenames } = app.bootstrap.initialize();
 		if (hadDuplicateRenames) {
 			toast.warning('Some items had duplicate names and were automatically renamed.');
@@ -94,7 +78,6 @@
 			window.removeEventListener('keydown', handleKeyDown);
 			window.removeEventListener('dragover', handleWindowDragOver);
 			window.removeEventListener('drop', handleWindowDrop);
-			panelLayoutEl?.removeEventListener('scroll', handlePanelScroll, true);
 		};
 	});
 
@@ -224,7 +207,7 @@
 		/>
 		<SidebarPrimitive.Inset>
 			<div class="app-shell">
-				<div class="panel-layout" class:panel-layout-split={isSplit} bind:this={panelLayoutEl}>
+				<div class="panel-layout" class:panel-layout-split={isSplit}>
 					{#each panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : 'chat')}
 						<div class="panel-slot">
 							{#if panel.type === 'chat'}
@@ -289,24 +272,6 @@
 		flex-direction: column;
 		overflow: hidden;
 		min-width: 0;
-	}
-
-	/* Custom scrollbar for all scrollable areas within panels */
-	.panel-slot :global(::-webkit-scrollbar) {
-		width: 8px;
-	}
-
-	.panel-slot :global(::-webkit-scrollbar-track) {
-		background: transparent;
-	}
-
-	.panel-slot :global(::-webkit-scrollbar-thumb) {
-		background: transparent;
-		border-radius: 4px;
-	}
-
-	.panel-slot :global(.is-scrolling::-webkit-scrollbar-thumb) {
-		background: hsl(var(--foreground) / 0.15);
 	}
 
 	.panel-layout-split .panel-slot:first-child {

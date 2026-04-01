@@ -136,6 +136,15 @@
 
 	let pendingDiff = $derived(pendingContent !== null ? diffLines(content, pendingContent) : null);
 	let contentEl: HTMLDivElement | null = $state(null);
+	let contentScrollTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function handleContentScroll() {
+		contentEl?.classList.add('is-scrolling');
+		if (contentScrollTimer) clearTimeout(contentScrollTimer);
+		contentScrollTimer = setTimeout(() => {
+			contentEl?.classList.remove('is-scrolling');
+		}, 1000);
+	}
 
 	$effect(() => {
 		if (agentStreaming && contentEl) {
@@ -466,7 +475,7 @@
 			spellcheck="false"
 		></textarea>
 	{:else}
-		<div class="docs-content panel-body" bind:this={contentEl}>
+		<div class="docs-content panel-body" bind:this={contentEl} onscroll={handleContentScroll}>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 			{@html renderedHtml}
 			{#if agentStreaming}
@@ -664,12 +673,32 @@
 	}
 
 	.docs-content {
-		padding: 16px 20px;
+		flex: 1;
+		min-height: 0;
+		padding: 16px 1rem 16px 1rem;
+		padding-right: calc(1rem - 8px);
 		overflow-y: auto;
 		overflow-x: hidden;
 		font-size: 14px;
 		line-height: 1.7;
 		color: hsl(var(--foreground, 0 0% 9%));
+	}
+
+	.docs-content:global(::-webkit-scrollbar) {
+		width: 8px;
+	}
+
+	.docs-content:global(::-webkit-scrollbar-track) {
+		background: transparent;
+	}
+
+	.docs-content:global(::-webkit-scrollbar-thumb) {
+		background: transparent;
+		border-radius: 4px;
+	}
+
+	.docs-content:global(.is-scrolling):global(::-webkit-scrollbar-thumb) {
+		background: hsl(var(--foreground) / 0.15);
 	}
 
 	.docs-content :global(h1) {

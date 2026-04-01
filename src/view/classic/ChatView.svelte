@@ -44,6 +44,15 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
+	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function handleMainScroll() {
+		mainScrollContainer?.classList.add('is-scrolling');
+		if (scrollTimer) clearTimeout(scrollTimer);
+		scrollTimer = setTimeout(() => {
+			mainScrollContainer?.classList.remove('is-scrolling');
+		}, 1000);
+	}
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
 
@@ -507,7 +516,7 @@
 					</button>
 				{/if}
 			</div>
-			<div class="chatview-main" bind:this={mainScrollContainer}>
+			<div class="chatview-main" bind:this={mainScrollContainer} onscroll={handleMainScroll}>
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
 						{@const nodeData = getNodeDataForExchange(exchange.id)}
