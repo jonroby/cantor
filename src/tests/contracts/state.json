@@ -29,6 +29,7 @@
     "createDocumentInFolder": true,
     "deleteDocumentFromFolder": true,
     "deleteFolder": true,
+    "findFolder": true,
     "documentState": true,
     "moveDocumentToFolder": true,
     "newFolder": true,

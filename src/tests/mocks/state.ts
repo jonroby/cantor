@@ -46,6 +46,7 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			closeDocument: mockFn<typeof state.documents.closeDocument>(),
 			deleteDocumentFromFolder: mockFn<typeof state.documents.deleteDocumentFromFolder>(),
 			deleteFolder: mockFn<typeof state.documents.deleteFolder>(),
+			findFolder: mockFn<typeof state.documents.findFolder>(),
 			documentState: {
 				folders: [],
 				openDocuments: []

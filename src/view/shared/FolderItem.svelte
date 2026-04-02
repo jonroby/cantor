@@ -8,7 +8,7 @@
 	import DocumentItem from './DocumentItem.svelte';
 
 	interface Props {
-		folder: app.documents.ChatFolder;
+		folder: app.documents.Folder;
 		expanded: boolean;
 		isDragOver: boolean;
 		startEditing?: boolean;
@@ -214,7 +214,7 @@
 							<line x1="12" y1="18" x2="12" y2="12" />
 							<line x1="9" y1="15" x2="15" y2="15" />
 						</svg>
-						Create new .md
+						New file
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"

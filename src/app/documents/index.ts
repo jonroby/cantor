@@ -4,6 +4,16 @@ import * as external from '@/external';
 import * as chat from '@/app/chat';
 import JSZip from 'jszip';
 
+export const SUPPORTED_EXTENSIONS = ['.md', '.svg'] as const;
+
+export function isSupportedFileName(name: string): boolean {
+	return SUPPORTED_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
+
+export function supportedExtensionsLabel(): string {
+	return SUPPORTED_EXTENSIONS.join(', ');
+}
+
 export const getState = () => state.documents.documentState;
 export const createFolder = state.documents.newFolder;
 export const closeDocument = state.documents.closeDocument;
@@ -11,7 +21,7 @@ export const deleteFolder = state.documents.deleteFolder;
 
 export interface DocumentCommandDeps {
 	getActiveChat: typeof state.chats.getActiveChat;
-	getFolders: () => state.documents.ChatFolder[];
+	findFolder: typeof state.documents.findFolder;
 	createDocumentInFolder: typeof state.documents.createDocumentInFolder;
 	selectDocument: typeof state.documents.selectDocument;
 	appendDocumentToChat: typeof chat.addDocumentToChat;
@@ -37,7 +47,7 @@ function deduplicateImportedName(name: string, existingNames: string[]): string 
 
 const defaultDeps: DocumentCommandDeps = {
 	getActiveChat: state.chats.getActiveChat,
-	getFolders: () => state.documents.documentState.folders,
+	findFolder: state.documents.findFolder,
 	createDocumentInFolder: state.documents.createDocumentInFolder,
 	selectDocument: state.documents.selectDocument,
 	appendDocumentToChat: chat.addDocumentToChat
@@ -48,7 +58,7 @@ export function openDocument(
 	fileId: string,
 	deps: DocumentCommandDeps = defaultDeps
 ): boolean {
-	const folder = deps.getFolders().find((candidate) => candidate.id === folderId);
+	const folder = deps.findFolder(folderId);
 	const file = folder?.files?.find((candidate) => candidate.id === fileId);
 	if (!file) return false;
 
@@ -72,7 +82,7 @@ export function addDocumentToChat(
 	fileId: string,
 	deps: DocumentCommandDeps = defaultDeps
 ): boolean {
-	const folder = deps.getFolders().find((candidate) => candidate.id === folderId);
+	const folder = deps.findFolder(folderId);
 	const file = folder?.files?.find((candidate) => candidate.id === fileId);
 	if (!file) return false;
 
@@ -88,10 +98,18 @@ export function renameFolder(folderId: string, name: string): string | null {
 	);
 }
 export const deleteDocument = state.documents.deleteDocumentFromFolder;
-export function renameDocument(folderId: string, fileId: string, name: string): string | null {
-	return lib.rename.renameWithDedup(name, (candidate) =>
+export function renameDocument(
+	folderId: string,
+	fileId: string,
+	name: string
+): { result: string | null; error?: string } {
+	if (!isSupportedFileName(name)) {
+		return { result: null, error: `Cantor only supports: ${supportedExtensionsLabel()}` };
+	}
+	const result = lib.rename.renameWithDedup(name, (candidate) =>
 		state.documents.renameDocumentInFolder(folderId, fileId, candidate)
 	);
+	return { result };
 }
 export const moveDocument = state.documents.moveDocumentToFolder;
 export const updateDocumentContent = state.documents.updateDocumentContent;
@@ -103,9 +121,7 @@ export function importDocument(
 ) {
 	void external.io.pickFile('.md,.svg').then(async (file) => {
 		if (!file) return;
-		const folder = state.documents.documentState.folders.find(
-			(candidate) => candidate.id === folderId
-		);
+		const folder = state.documents.findFolder(folderId);
 		if (!folder) {
 			feedback.error?.('Folder not found');
 			return;
@@ -125,12 +141,7 @@ export function importDocument(
 			name,
 			content
 		};
-		state.documents.documentState.folders = state.documents.documentState.folders.map(
-			(candidate) =>
-				candidate.id === folderId
-					? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
-					: candidate
-		);
+		folder.files = [...(folder.files ?? []), documentFile];
 		feedback.success?.(`Uploaded ${file.name}`);
 	});
 }
@@ -139,9 +150,7 @@ export async function exportFolder(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	const folder = state.documents.documentState.folders.find(
-		(candidate) => candidate.id === folderId
-	);
+	const folder = state.documents.findFolder(folderId);
 	if (!folder || !folder.files?.length) {
 		feedback.error?.('Folder is empty');
 		return;
@@ -159,9 +168,7 @@ async function importDocumentsIntoFolder(
 	files: File[],
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	const folder = state.documents.documentState.folders.find(
-		(candidate) => candidate.id === folderId
-	);
+	const folder = state.documents.findFolder(folderId);
 	if (!folder) {
 		feedback.error?.('Folder not found');
 		return;
@@ -186,12 +193,7 @@ async function importDocumentsIntoFolder(
 			name,
 			content
 		};
-		state.documents.documentState.folders = state.documents.documentState.folders.map(
-			(candidate) =>
-				candidate.id === folderId
-					? { ...candidate, files: [...(candidate.files ?? []), documentFile] }
-					: candidate
-		);
+		folder.files = [...(folder.files ?? []), documentFile];
 		imported++;
 	}
 
@@ -218,7 +220,7 @@ export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK)
 		);
 
 		const folderId = crypto.randomUUID();
-		const folder: state.documents.ChatFolder = { id: folderId, name: folderName, files: [] };
+		const folder: state.documents.Folder = { id: folderId, name: folderName, files: [] };
 		state.documents.documentState.folders = [...state.documents.documentState.folders, folder];
 
 		importDocumentsIntoFolder(folderId, supportedFiles, feedback);
@@ -244,16 +246,15 @@ export function importFolderIntoFolder(
 }
 
 export function getDocument(
-	folders: state.documents.ChatFolder[],
 	folderId: string,
 	fileId: string
-): { folder: state.documents.ChatFolder; file: state.documents.DocumentFile } | null {
-	const folder = folders.find((candidate) => candidate.id === folderId);
+): { folder: state.documents.Folder; file: state.documents.DocumentFile } | null {
+	const folder = state.documents.findFolder(folderId);
 	const file = folder?.files?.find((candidate) => candidate.id === fileId);
 	if (!folder || !file) return null;
 	return { folder, file };
 }
 
-export type ChatFolder = state.documents.ChatFolder;
+export type Folder = state.documents.Folder;
 export type DocumentFile = state.documents.DocumentFile;
 export type OpenDocument = state.documents.OpenDocument;

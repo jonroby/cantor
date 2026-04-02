@@ -46,7 +46,9 @@
     "submitPrompt": true
   },
   "documents": {
+    "SUPPORTED_EXTENSIONS": true,
     "addDocumentToChat": true,
+    "isSupportedFileName": true,
     "closeDocument": true,
     "createDocument": true,
     "createFolder": true,
@@ -62,6 +64,7 @@
     "openDocument": true,
     "renameDocument": true,
     "renameFolder": true,
+    "supportedExtensionsLabel": true,
     "updateDocumentContent": true,
     "validateDocumentMarkdown": true
   },

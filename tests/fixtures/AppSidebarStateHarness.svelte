@@ -39,16 +39,20 @@
 		return candidate;
 	}
 
-	function renameDocumentThroughApp(folderId: string, fileId: string, name: string): string | null {
+	function renameDocumentThroughApp(
+		folderId: string,
+		fileId: string,
+		name: string
+	): { result: string | null; error?: string } {
 		const trimmed = name.trim();
-		if (!trimmed) return null;
+		if (!trimmed) return { result: null };
 		let candidate = trimmed;
 		let suffix = 1;
 		while (!renameDocumentInFolder(folderId, fileId, candidate)) {
 			candidate = `${trimmed} (${suffix})`;
 			suffix += 1;
 		}
-		return candidate;
+		return { result: candidate };
 	}
 </script>
 

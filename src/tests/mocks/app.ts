@@ -69,7 +69,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		deleteDocumentFromFolder: vi.fn(),
 		deleteFolder: vi.fn(),
 		documentState: {
-			folders: [] as state.documents.ChatFolder[],
+			folders: [] as state.documents.Folder[],
 			openDocuments: [] as state.documents.OpenDocument[]
 		},
 		getActiveChat: vi.fn(),
@@ -162,14 +162,19 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			deleteDocument: mockFn<typeof app.documents.deleteDocument>(),
 			deleteFolder: mockFn<typeof app.documents.deleteFolder>(),
 			exportFolder: mockFn<typeof app.documents.exportFolder>(),
-			getDocument: mockFn<typeof app.documents.getDocument>(),
+			SUPPORTED_EXTENSIONS: ['.md', '.svg'] as const,
+			getDocument: mockFn<typeof app.documents.getDocument>(() => null),
+			isSupportedFileName: mockFn<typeof app.documents.isSupportedFileName>(() => true),
 			getState: mockFn<typeof app.documents.getState>(() => appStateBacking.documentState),
 			importDocument: mockFn<typeof app.documents.importDocument>(),
 			importFolder: mockFn<typeof app.documents.importFolder>(),
 			importFolderIntoFolder: mockFn<typeof app.documents.importFolderIntoFolder>(),
 			moveDocument: mockFn<typeof app.documents.moveDocument>(),
 			openDocument: mockFn<typeof app.documents.openDocument>(),
-			renameDocument: mockFn<typeof app.documents.renameDocument>(),
+			renameDocument: mockFn<typeof app.documents.renameDocument>(() => ({ result: null })),
+			supportedExtensionsLabel: mockFn<typeof app.documents.supportedExtensionsLabel>(
+				() => '.md, .svg'
+			),
 			renameFolder: mockFn<typeof app.documents.renameFolder>(),
 			updateDocumentContent: mockFn<typeof app.documents.updateDocumentContent>(),
 			validateDocumentMarkdown: mockFn<typeof app.documents.validateDocumentMarkdown>(() => [])
