@@ -61,6 +61,7 @@ function assertValidNames(chats: PersistedChat[], folders: PersistedFolder[]) {
 export interface PersistedLayout {
 	openDocument?: { folderId: string; fileId: string };
 	chatPanelOpen?: boolean;
+	sidebarOpen?: boolean;
 }
 
 let _layout: PersistedLayout = {};

@@ -18,7 +18,7 @@
 		onSubmit: () => void;
 		onStop: () => void;
 		onOpenPalette: () => void;
-		onToggleMode: () => void;
+		onToggleMode?: () => void;
 	}
 
 	let {
@@ -127,9 +127,11 @@
 					{/if}
 					{activeModelLabel ?? 'Choose model'}
 				</Button>
-				<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
-					{agentMode ? 'Agent' : 'Chat'}
-				</Button>
+				{#if onToggleMode}
+					<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
+						{agentMode ? 'Agent' : 'Chat'}
+					</Button>
+				{/if}
 				<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
 					{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
 				</Button>

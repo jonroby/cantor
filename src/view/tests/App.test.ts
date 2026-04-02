@@ -42,10 +42,16 @@ vi.mock('@/app', async () => {
 	return createAppMock({
 		bootstrap: {
 			clearOpenDocument: vi.fn(),
-			initialize: vi.fn(() => ({ restoredDocument: null, chatPanelOpen: undefined, hadDuplicateRenames: false })),
+			initialize: vi.fn(() => ({
+				restoredDocument: null,
+				chatPanelOpen: undefined,
+				sidebarOpen: undefined,
+				hadDuplicateRenames: false
+			})),
 			rememberOpenDocument: vi.fn(),
 			save: vi.fn(),
-			setChatPanelOpen: vi.fn()
+			setChatPanelOpen: vi.fn(),
+			setSidebarOpen: vi.fn()
 		},
 		chat: {
 			createChat: vi.fn(),
@@ -151,7 +157,12 @@ describe('App', () => {
 						contextStrategy: 'full'
 					}
 				);
-				return { restoredDocument: null, chatPanelOpen: undefined, hadDuplicateRenames: true };
+				return {
+					restoredDocument: null,
+					chatPanelOpen: undefined,
+					sidebarOpen: undefined,
+					hadDuplicateRenames: true
+				};
 			});
 			const warningSpy = vi.spyOn(toast, 'warning');
 
@@ -168,7 +179,12 @@ describe('App', () => {
 				const folders = app.documents.getState().folders;
 				folders.length = 0;
 				folders.push({ id: 'f1', name: 'Docs' }, { id: 'f2', name: 'Docs (2)' });
-				return { restoredDocument: null, chatPanelOpen: undefined, hadDuplicateRenames: true };
+				return {
+					restoredDocument: null,
+					chatPanelOpen: undefined,
+					sidebarOpen: undefined,
+					hadDuplicateRenames: true
+				};
 			});
 			const warningSpy = vi.spyOn(toast, 'warning');
 
@@ -192,7 +208,12 @@ describe('App', () => {
 						{ id: 'd2', name: 'readme.md (2)', content: '' }
 					]
 				});
-				return { restoredDocument: null, chatPanelOpen: undefined, hadDuplicateRenames: true };
+				return {
+					restoredDocument: null,
+					chatPanelOpen: undefined,
+					sidebarOpen: undefined,
+					hadDuplicateRenames: true
+				};
 			});
 			const warningSpy = vi.spyOn(toast, 'warning');
 

@@ -10,6 +10,7 @@
 		pendingContent?: string | null;
 		onAcceptPending?: () => void;
 		onRejectPending?: () => void;
+		onSwap?: () => void;
 		onClose: () => void;
 	}
 
@@ -21,6 +22,7 @@
 		pendingContent = null,
 		onAcceptPending,
 		onRejectPending,
+		onSwap,
 		onClose
 	}: Props = $props();
 
@@ -48,6 +50,7 @@
 			{pendingContent}
 			{onAcceptPending}
 			{onRejectPending}
+			{onSwap}
 			onContentChange={(c) => {
 				if (openDocumentIndex >= 0) app.documents.updateDocumentContent(openDocumentIndex, c);
 			}}

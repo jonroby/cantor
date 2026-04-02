@@ -16,17 +16,32 @@
 	let searchOpen = $state(false);
 	let hasHydrated = $state(false);
 	let panels: PanelEntry[] = $state([]);
+	let sidebarOpen = $state(true);
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let chatSidePanelOpen = $state(false);
-	let agentMode = $state(false);
+	let composerFocus: 'chat' | 'agent' = $state('chat');
 	let agentStreaming = $state(false);
 	let pendingDocumentContent: string | null = $state(null);
 
 	let providerState = $derived(app.providers.getState());
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
+	let hasDocPanel = $derived(panels.some((p) => p.type === 'document'));
 	let isSplit = $derived(panels.length === 2);
+	let agentMode = $derived.by(() => {
+		if (!isSplit) {
+			return !hasChatPanel && hasDocPanel;
+		}
+		return composerFocus === 'agent';
+	});
+	let chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
+	let composerSide = $derived.by(() => {
+		if (!isSplit) return null;
+		if (chatSidePanelOpen) return 'left';
+		if (agentMode) return chatPanelIsFirst ? 'right' : 'left';
+		return chatPanelIsFirst ? 'left' : 'right';
+	});
 	let activeDocPanel = $derived(
 		panels.find((p): p is PanelEntry & { type: 'document' } => p.type === 'document') ?? null
 	);
@@ -87,9 +102,18 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		const { restoredDocument, chatPanelOpen, hadDuplicateRenames } = app.bootstrap.initialize();
+		const {
+			restoredDocument,
+			chatPanelOpen,
+			sidebarOpen: restoredSidebarOpen,
+			hadDuplicateRenames
+		} = app.bootstrap.initialize();
 		if (hadDuplicateRenames) {
 			toast.warning('Some items had duplicate names and were automatically renamed.');
+		}
+
+		if (restoredSidebarOpen === false) {
+			sidebarOpen = false;
 		}
 
 		if (chatPanelOpen !== false) {
@@ -135,6 +159,12 @@
 		}
 	}
 
+	function swapPanels() {
+		if (panels.length === 2) {
+			panels = [panels[1], panels[0]];
+		}
+	}
+
 	function closePanel(index: number) {
 		const panel = panels[index];
 		if (panel?.type === 'chat') {
@@ -169,6 +199,7 @@
 	function selectChat(index: number) {
 		app.chat.selectChat(index);
 		ensureChatPanel();
+		composerFocus = 'chat';
 		resetUIState();
 	}
 
@@ -205,7 +236,10 @@
 {#if routerState.route === 'landing'}
 	<LandingPage />
 {:else}
-	<SidebarPrimitive.Provider>
+	<SidebarPrimitive.Provider
+		bind:open={sidebarOpen}
+		onOpenChange={(open) => app.bootstrap.setSidebarOpen(open)}
+	>
 		<AppSidebar
 			chats={app.chat.getChats()}
 			activeChatIndex={hasChatPanel ? app.chat.getActiveChatIndex() : -1}
@@ -272,6 +306,7 @@
 									onRejectPending={() => {
 										pendingDocumentContent = null;
 									}}
+									onSwap={isSplit ? swapPanels : undefined}
 									onClose={() => closePanel(index)}
 								/>
 							{/if}
@@ -279,12 +314,18 @@
 					{/each}
 				</div>
 
-				<div class="composer-anchor" class:composer-left={isSplit || chatSidePanelOpen}>
+				<div
+					class="composer-anchor"
+					class:composer-left={composerSide === 'left'}
+					class:composer-right={composerSide === 'right'}
+				>
 					<Composer
 						bind:this={composerRef}
 						{agentMode}
 						bind:agentStreaming
-						onToggleMode={() => (agentMode = !agentMode)}
+						onToggleMode={isSplit
+							? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
+							: undefined}
 						liveDocumentContent={activeDocumentFile?.content}
 						agentPending={pendingDocumentContent !== null}
 						onAgentResponse={(text) => {

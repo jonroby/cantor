@@ -3,6 +3,7 @@
 	import { Marked } from 'marked';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
+	import { ArrowLeftRight } from 'lucide-svelte';
 	import * as app from '@/app';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import ConfirmDeleteDialog from '@/view/shared/ConfirmDeleteDialog.svelte';
@@ -18,6 +19,7 @@
 		onRejectPending?: () => void;
 		onClose?: () => void;
 		onAddToChat?: () => void;
+		onSwap?: () => void;
 	}
 
 	let {
@@ -30,7 +32,8 @@
 		onAcceptPending,
 		onRejectPending,
 		onClose,
-		onAddToChat
+		onAddToChat,
+		onSwap
 	}: Props = $props();
 
 	let showCloseConfirm = $state(false);
@@ -330,6 +333,11 @@
 			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 		{/if}
 		<div class="header-actions">
+			{#if onSwap}
+				<button class="header-btn" onclick={onSwap} title="Swap panels">
+					<ArrowLeftRight size={14} />
+				</button>
+			{/if}
 			{#if pendingDiff}
 				<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
 				<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>

@@ -4,7 +4,8 @@
     "initialize": true,
     "rememberOpenDocument": true,
     "save": true,
-    "setChatPanelOpen": true
+    "setChatPanelOpen": true,
+    "setSidebarOpen": true
   },
   "chat": {
     "addDocumentToChat": true,
