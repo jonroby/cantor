@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { Marked } from 'marked';
+	import Plotly from 'plotly.js-dist-min';
+	import functionPlot from 'function-plot';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
 	import { ArrowLeftRight } from 'lucide-svelte';
@@ -157,6 +159,71 @@
 		}
 	});
 
+	$effect(() => {
+		void renderedHtml;
+		if (!contentEl) return;
+		tick().then(() => {
+			const plotEls = contentEl?.querySelectorAll('.plotly-chart[data-plotly-config]') ?? [];
+			for (const el of plotEls) {
+				if (el.children.length > 0) continue;
+				try {
+					const config = JSON.parse(decodeURIComponent(el.getAttribute('data-plotly-config')!));
+					Plotly.newPlot(el as HTMLDivElement, config.data ?? [], config.layout ?? {}, { responsive: true });
+				} catch {
+					el.textContent = 'Invalid plotly config';
+				}
+			}
+
+			const fplotEls = contentEl?.querySelectorAll('.function-plot-chart[data-fplot-config]') ?? [];
+			for (const el of fplotEls) {
+				if (el.children.length > 0) continue;
+				try {
+					const config = JSON.parse(decodeURIComponent(el.getAttribute('data-fplot-config')!));
+					const { xAxis, yAxis, ...rest } = config;
+					const tooltip = document.createElement('div');
+					tooltip.className = 'fplot-tooltip';
+					tooltip.style.display = 'none';
+					el.style.position = 'relative';
+					el.appendChild(tooltip);
+
+					functionPlot({
+						target: el as HTMLDivElement,
+						grid: true,
+						tip: {
+							renderer: (x: number, y: number) => {
+								tooltip.textContent = `${x.toFixed(2)}, ${y.toFixed(2)}`;
+								return `${x.toFixed(2)}, ${y.toFixed(2)}`;
+							}
+						},
+						...rest,
+						xAxis: { position: 'sticky' as const, ...xAxis },
+						yAxis: { position: 'sticky' as const, ...yAxis }
+					});
+
+					const svg = el.querySelector('svg');
+					if (svg) {
+						svg.addEventListener('mousemove', (e) => {
+							const innerTip = el.querySelector('.inner-tip') as HTMLElement | null;
+							if (!innerTip || innerTip.style.display === 'none') {
+								tooltip.style.display = 'none';
+								return;
+							}
+							const rect = el.getBoundingClientRect();
+							tooltip.style.display = 'block';
+							tooltip.style.left = `${e.clientX - rect.left}px`;
+							tooltip.style.top = `${e.clientY - rect.top - 45}px`;
+						});
+						svg.addEventListener('mouseleave', () => {
+							tooltip.style.display = 'none';
+						});
+					}
+				} catch {
+					el.textContent = 'Invalid plot config';
+				}
+			}
+		});
+	});
+
 	const marked = new Marked({
 		breaks: true,
 		gfm: true
@@ -189,6 +256,18 @@
 				return svgContent ?? _match;
 			});
 		}
+
+		// Extract ```plotly code blocks and replace with placeholder divs
+		md = md.replace(/```plotly\s*\n([\s\S]*?)```/g, (_match, json, offset) => {
+			const id = `plotly-${offset}`;
+			return `<div class="plotly-chart" data-plotly-id="${id}" data-plotly-config="${encodeURIComponent(json.trim())}"></div>`;
+		});
+
+		// Extract ```plot code blocks (function-plot) and replace with placeholder divs
+		md = md.replace(/```plot\s*\n([\s\S]*?)```/g, (_match, json, offset) => {
+			const id = `fplot-${offset}`;
+			return `<div class="function-plot-chart" data-fplot-id="${id}" data-fplot-config="${encodeURIComponent(json.trim())}"></div>`;
+		});
 
 		// Extract SVG blocks before marked mangles them with <p> tags
 		const svgBlocks: string[] = [];
@@ -233,7 +312,8 @@
 
 	let renderedHtml = $derived(
 		DOMPurify.sanitize(processContentSafe(content), {
-			USE_PROFILES: { html: true, svg: true }
+			USE_PROFILES: { html: true, svg: true },
+			ADD_ATTR: ['data-plotly-id', 'data-plotly-config', 'data-fplot-id', 'data-fplot-config']
 		})
 	);
 
@@ -845,5 +925,70 @@
 		height: auto;
 		display: block;
 		margin: 16px auto;
+		border: 1px solid hsl(var(--border));
+		border-radius: 8px;
+		padding: 16px;
+	}
+
+	/* function-plot styling */
+	:global(.function-plot-chart) {
+		border: 1px solid hsl(var(--border));
+		border-radius: 8px;
+		margin: 16px auto;
+		width: fit-content;
+	}
+	:global(.function-plot-chart .domain) {
+		stroke: #ccc;
+	}
+	:global(.function-plot-chart .tick line) {
+		stroke: #e5e5e5;
+	}
+	:global(.function-plot-chart .tick text) {
+		fill: #999;
+		font-size: 11px;
+	}
+	:global(.function-plot-chart .x.grid line),
+	:global(.function-plot-chart .y.grid line) {
+		stroke: #e0e0e0;
+		stroke-dasharray: none;
+	}
+	:global(.function-plot-chart path.line) {
+		stroke-width: 2.5 !important;
+	}
+	:global(.function-plot-chart .top-right-legend) {
+		display: none;
+	}
+	:global(.function-plot-chart circle) {
+		fill: #1a1a1a !important;
+		r: 4;
+	}
+	:global(.function-plot-chart .top-right-legend text),
+	:global(.function-plot-chart .x.axis-tip),
+	:global(.function-plot-chart .y.axis-tip) {
+		display: none;
+	}
+	:global(.function-plot-chart .tip-x-line),
+	:global(.function-plot-chart .tip-y-line) {
+		display: none;
+	}
+	:global(.function-plot-chart .inner-tip text) {
+		display: none;
+	}
+	:global(.function-plot-chart .inner-tip circle) {
+		fill: #1a1a1a !important;
+		r: 5;
+	}
+	:global(.fplot-tooltip) {
+		position: absolute;
+		pointer-events: none;
+		z-index: 10;
+		background: #1a1a1a;
+		color: #fff;
+		padding: 5px 12px;
+		border-radius: 8px;
+		font-size: 13px;
+		font-weight: 500;
+		white-space: nowrap;
+		transform: translateX(-50%);
 	}
 </style>
