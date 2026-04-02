@@ -16,6 +16,7 @@
 		editingDocumentFileName: string;
 		draggingDocumentFileId: string | null;
 		onToggle: () => void;
+		onOpenFolder: () => void;
 		onNewDocument: () => void;
 		onUploadDocument: () => void;
 		onUploadFolder: () => void;
@@ -44,6 +45,7 @@
 		editingDocumentFileName = $bindable(),
 		draggingDocumentFileId,
 		onToggle,
+		onOpenFolder,
 		onNewDocument,
 		onUploadDocument,
 		onUploadFolder,
@@ -172,6 +174,27 @@
 					side="right"
 					class="rounded-lg bg-popover p-1 text-popover-foreground shadow-md z-50 min-w-[140px] border"
 				>
+					<DropdownMenu.Item
+						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						onclick={onOpenFolder}
+					>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+							/>
+						</svg>
+						Open
+					</DropdownMenu.Item>
+					<DropdownMenu.Separator class="my-1 bg-border h-px" />
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 						onclick={onNewDocument}

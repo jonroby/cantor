@@ -10,7 +10,8 @@ export function createViewMock(overrides?: DeepPartial<ViewMock>): ViewMock {
 		classic: {
 			ChatMessage: view.classic.ChatMessage,
 			ChatView: view.classic.ChatView,
-			DocumentView: view.classic.DocumentView
+			DocumentView: view.classic.DocumentView,
+			FolderDocumentView: view.classic.FolderDocumentView
 		},
 		shared: {
 			AppSidebar: view.shared.AppSidebar,

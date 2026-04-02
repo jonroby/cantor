@@ -179,6 +179,14 @@
 	}
 
 	function processContent(md: string): string {
+		// Extract SVG blocks before marked mangles them with <p> tags
+		const svgBlocks: string[] = [];
+		md = md.replace(/<svg[\s\S]*?<\/svg>/gi, (match) => {
+			const index = svgBlocks.length;
+			svgBlocks.push(match);
+			return `\n<p data-svg-placeholder="${index}"></p>\n`;
+		});
+
 		// Replace display math $$...$$ before marked processes it
 		md = md.replace(/\$\$([\s\S]*?)\$\$/g, (_match, tex) => {
 			return `<div class="katex-display">${renderKatex(tex.trim(), true)}</div>`;
@@ -189,9 +197,16 @@
 			return renderKatex(tex.trim(), false);
 		});
 
-		const html = marked.parse(md);
-		if (typeof html === 'string') return html;
-		return '';
+		let html = marked.parse(md);
+		if (typeof html !== 'string') return '';
+
+		// Restore SVG blocks
+		html = html.replace(
+			/<p data-svg-placeholder="(\d+)"><\/p>/g,
+			(_match, index) => svgBlocks[Number(index)] ?? ''
+		);
+
+		return html;
 	}
 
 	function validate(md: string): string | null {
@@ -205,7 +220,11 @@
 		}
 	}
 
-	let renderedHtml = $derived(DOMPurify.sanitize(processContentSafe(content)));
+	let renderedHtml = $derived(
+		DOMPurify.sanitize(processContentSafe(content), {
+			USE_PROFILES: { html: true, svg: true }
+		})
+	);
 
 	function processContentSafe(md: string): string {
 		try {
@@ -316,82 +335,50 @@
 	onwheel={(e) => e.stopPropagation()}
 >
 	<div class="docs-header">
-		<svg
-			width="16"
-			height="16"
-			viewBox="0 0 16 16"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.5"
-		>
-			<path d="M3 2h7l3 3v9H3V2z" />
-			<path d="M10 2v3h3" />
-			<path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke-linecap="round" />
-		</svg>
-		<span>{title || 'Document'}</span>
-		{#if dirty}
-			<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
-		{/if}
-		<div class="header-actions">
-			{#if onSwap}
-				<button class="header-btn" onclick={onSwap} title="Swap panels">
-					<ArrowLeftRight size={14} />
-				</button>
+		<div class="docs-header-inner">
+			<svg
+				width="16"
+				height="16"
+				viewBox="0 0 16 16"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.5"
+			>
+				<path d="M3 2h7l3 3v9H3V2z" />
+				<path d="M10 2v3h3" />
+				<path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke-linecap="round" />
+			</svg>
+			<span>{title || 'Document'}</span>
+			{#if dirty}
+				<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 			{/if}
-			{#if pendingDiff}
-				<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
-				<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
-			{/if}
-			{#if onClose}
-				<button class="header-btn" onclick={requestClose} title="Close">
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-					>
-						<path d="M18 6L6 18M6 6l12 12" />
-					</svg>
-				</button>
-			{/if}
-			{#if onAddToChat}
-				<button class="header-btn" onclick={onAddToChat} title="Add to chat">
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-					</svg>
-				</button>
-			{/if}
-			<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
-				<svg
-					width="14"
-					height="14"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-					<polyline points="7 10 12 15 17 10" />
-					<line x1="12" y1="15" x2="12" y2="3" />
-				</svg>
-			</button>
-			{#if editing}
-				{#if dirty}
-					<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
+			<div class="header-actions">
+				{#if onSwap}
+					<button class="header-btn" onclick={onSwap} title="Swap panels">
+						<ArrowLeftRight size={14} />
+					</button>
+				{/if}
+				{#if pendingDiff}
+					<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+					<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+				{/if}
+				{#if onClose}
+					<button class="header-btn" onclick={requestClose} title="Close">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+						>
+							<path d="M18 6L6 18M6 6l12 12" />
+						</svg>
+					</button>
+				{/if}
+				{#if onAddToChat}
+					<button class="header-btn" onclick={onAddToChat} title="Add to chat">
 						<svg
 							width="14"
 							height="14"
@@ -402,12 +389,11 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<polyline points="1 4 1 10 7 10" />
-							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+							<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 						</svg>
 					</button>
 				{/if}
-				<button class="header-btn" onclick={cancelEdit} title="Done (Esc)">
+				<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
 					<svg
 						width="14"
 						height="14"
@@ -418,44 +404,79 @@
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					>
-						<path d="M5 12l5 5L20 7" />
+						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+						<polyline points="7 10 12 15 17 10" />
+						<line x1="12" y1="15" x2="12" y2="3" />
 					</svg>
 				</button>
-				<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-						<polyline points="17 21 17 13 7 13 7 21" />
-						<polyline points="7 3 7 8 15 8" />
-					</svg>
-				</button>
-			{:else}
-				<button class="header-btn" onclick={enterEditMode} title="Edit">
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M12 20h9" />
-						<path
-							d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
-						/>
-					</svg>
-				</button>
-			{/if}
+				{#if editing}
+					{#if dirty}
+						<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<polyline points="1 4 1 10 7 10" />
+								<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+							</svg>
+						</button>
+					{/if}
+					<button class="header-btn" onclick={cancelEdit} title="Done (Esc)">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M5 12l5 5L20 7" />
+						</svg>
+					</button>
+					<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+							<polyline points="17 21 17 13 7 13 7 21" />
+							<polyline points="7 3 7 8 15 8" />
+						</svg>
+					</button>
+				{:else}
+					<button class="header-btn" onclick={enterEditMode} title="Edit">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M12 20h9" />
+							<path
+								d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+							/>
+						</svg>
+					</button>
+				{/if}
+			</div>
 		</div>
 	</div>
 	{#if error}
@@ -529,14 +550,22 @@
 
 	.docs-header {
 		display: flex;
+		padding: 0 1rem;
+		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
+		flex-shrink: 0;
+	}
+
+	.docs-header-inner {
+		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 12px 16px;
-		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
+		width: 100%;
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 12px 0;
 		font-size: 13px;
 		font-weight: 600;
 		color: hsl(var(--foreground, 0 0% 9%));
-		flex-shrink: 0;
 	}
 
 	.dirty-indicator {
@@ -799,5 +828,11 @@
 		border: none;
 		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 		margin: 16px 0;
+	}
+	.docs-content-inner > :global(svg) {
+		max-width: 100%;
+		height: auto;
+		display: block;
+		margin: 16px auto;
 	}
 </style>

@@ -6,10 +6,13 @@
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar';
 	import { AppSidebar, SearchDialog, Composer } from '@/view/shared';
 	import { LandingPage, routerState } from '@/view/routes';
-	import { ChatView, DocumentView } from '@/view/classic';
+	import { ChatView, DocumentView, FolderDocumentView } from '@/view/classic';
 	import * as app from '@/app';
 
-	type PanelEntry = { type: 'chat' } | { type: 'document'; folderId: string; fileId: string };
+	type PanelEntry =
+		| { type: 'chat' }
+		| { type: 'document'; folderId: string; fileId: string }
+		| { type: 'folder'; folderId: string };
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
@@ -24,10 +27,11 @@
 	let composerFocus: 'chat' | 'agent' = $state('chat');
 	let agentStreaming = $state(false);
 	let pendingDocumentContent: string | null = $state(null);
+	let folderSelectedFiles: Record<string, string> = $state({});
 
 	let providerState = $derived(app.providers.getState());
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
-	let hasDocPanel = $derived(panels.some((p) => p.type === 'document'));
+	let hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
 	let isSplit = $derived(panels.length === 2);
 	let agentMode = $derived.by(() => {
 		if (!isSplit) {
@@ -42,22 +46,38 @@
 		if (agentMode) return chatPanelIsFirst ? 'right' : 'left';
 		return chatPanelIsFirst ? 'left' : 'right';
 	});
-	let activeDocPanel = $derived(
-		panels.find((p): p is PanelEntry & { type: 'document' } => p.type === 'document') ?? null
-	);
+	let activeDocumentKey = $derived.by(() => {
+		const docPanel = panels.find((p) => p.type === 'document') as
+			| (PanelEntry & { type: 'document' })
+			| undefined;
+		if (docPanel) return { folderId: docPanel.folderId, fileId: docPanel.fileId };
+
+		const folderPanel = panels.find((p) => p.type === 'folder') as
+			| (PanelEntry & { type: 'folder' })
+			| undefined;
+		if (folderPanel) {
+			const folder = app.documents.getState().folders.find((f) => f.id === folderPanel.folderId);
+			const selectedFileId = folderSelectedFiles[folderPanel.folderId];
+			const fileId = selectedFileId ?? folder?.files?.[0]?.id;
+			if (fileId) return { folderId: folderPanel.folderId, fileId };
+		}
+		return null;
+	});
 	let activeDocumentFile = $derived.by(() => {
-		if (!activeDocPanel) return null;
-		const folder = app.documents.getState().folders.find((f) => f.id === activeDocPanel.folderId);
-		return folder?.files?.find((f) => f.id === activeDocPanel.fileId) ?? null;
+		if (!activeDocumentKey) return null;
+		const folder = app.documents
+			.getState()
+			.folders.find((f) => f.id === activeDocumentKey.folderId);
+		return folder?.files?.find((f) => f.id === activeDocumentKey.fileId) ?? null;
 	});
 	let activeDocumentIndex = $derived.by(() => {
-		if (!activeDocPanel) return -1;
+		if (!activeDocumentKey) return -1;
 		return app.documents
 			.getState()
 			.openDocuments.findIndex(
 				(d) =>
-					d.documentKey?.folderId === activeDocPanel!.folderId &&
-					d.documentKey?.fileId === activeDocPanel!.fileId
+					d.documentKey?.folderId === activeDocumentKey!.folderId &&
+					d.documentKey?.fileId === activeDocumentKey!.fileId
 			);
 	});
 
@@ -154,8 +174,28 @@
 		} else if (panels.length === 1) {
 			panels = [...panels, docPanel];
 		} else {
-			// Replace the second panel
 			panels = [panels[0], docPanel];
+		}
+	}
+
+	function openFolderPanel(folderId: string) {
+		const existingIndex = panels.findIndex((p) => p.type === 'folder' && p.folderId === folderId);
+		if (existingIndex >= 0) return;
+
+		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
+		if (!folder || !folder.files?.length) return;
+
+		const firstFile = folder.files[0];
+		app.documents.openDocument(folderId, firstFile.id);
+
+		const folderPanel: PanelEntry = { type: 'folder', folderId };
+
+		if (panels.length === 0) {
+			panels = [folderPanel];
+		} else if (panels.length === 1) {
+			panels = [...panels, folderPanel];
+		} else {
+			panels = [panels[0], folderPanel];
 		}
 	}
 
@@ -264,6 +304,7 @@
 			onUploadDocument={(folderId) => app.documents.importDocument(folderId, fileFeedback)}
 			onUploadFolder={(folderId) => app.documents.importFolderIntoFolder(folderId, fileFeedback)}
 			onUploadNewFolder={() => app.documents.importFolder(fileFeedback)}
+			onOpenFolder={openFolderPanel}
 			onSelectDocument={(folderId, fileId) => {
 				if (app.documents.openDocument(folderId, fileId)) {
 					app.bootstrap.rememberOpenDocument(folderId, fileId);
@@ -278,7 +319,7 @@
 		<SidebarPrimitive.Inset>
 			<div class="app-shell">
 				<div class="panel-layout" class:panel-layout-split={isSplit}>
-					{#each panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : 'chat')}
+					{#each panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : 'chat')}
 						<div class="panel-slot">
 							{#if panel.type === 'chat'}
 								<ChatView
@@ -294,6 +335,32 @@
 									{agentStreaming}
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={pendingDocumentContent}
+									onAcceptPending={() => {
+										if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
+											app.documents.updateDocumentContent(
+												activeDocumentIndex,
+												pendingDocumentContent
+											);
+										}
+										pendingDocumentContent = null;
+									}}
+									onRejectPending={() => {
+										pendingDocumentContent = null;
+									}}
+									onSwap={isSplit ? swapPanels : undefined}
+									onClose={() => closePanel(index)}
+								/>
+							{:else if panel.type === 'folder'}
+								<FolderDocumentView
+									folderId={panel.folderId}
+									{agentStreaming}
+									agentProvider={providerState.activeModel?.provider}
+									pendingContent={pendingDocumentContent}
+									selectedFileId={folderSelectedFiles[panel.folderId]}
+									onSelectFile={(fileId) => {
+										folderSelectedFiles = { ...folderSelectedFiles, [panel.folderId]: fileId };
+										app.documents.openDocument(panel.folderId, fileId);
+									}}
 									onAcceptPending={() => {
 										if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
 											app.documents.updateDocumentContent(

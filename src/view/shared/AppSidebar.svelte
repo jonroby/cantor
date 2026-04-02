@@ -29,6 +29,7 @@
 		onUploadDocument: (folderId: string) => void;
 		onUploadFolder: (folderId: string) => void;
 		onUploadNewFolder: () => void;
+		onOpenFolder: (folderId: string) => void;
 		onSelectDocument: (folderId: string, fileId: string) => void;
 		onAddDocumentToChat: (folderId: string, fileId: string) => void;
 		onDeleteDocument: (folderId: string, fileId: string) => void;
@@ -54,6 +55,7 @@
 		onUploadDocument,
 		onUploadFolder,
 		onUploadNewFolder,
+		onOpenFolder,
 		onSelectDocument,
 		onAddDocumentToChat,
 		onDeleteDocument,
@@ -396,6 +398,7 @@
 									bind:editingDocumentFileName
 									draggingDocumentFileId={draggingDocument?.fileId ?? null}
 									onToggle={() => toggleFolder(folder.id)}
+									onOpenFolder={() => onOpenFolder(folder.id)}
 									onNewDocument={() => onNewDocument(folder.id)}
 									onUploadDocument={() => onUploadDocument(folder.id)}
 									onUploadFolder={() => onUploadFolder(folder.id)}
