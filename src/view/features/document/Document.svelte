@@ -186,9 +186,14 @@
 					el.style.position = 'relative';
 					el.appendChild(tooltip);
 
-					functionPlot({
+					const data = (rest.data ?? []).map((d: Record<string, unknown>) => ({
+						graphType: 'polyline',
+						sampler: 'builtIn',
+						nSamples: 2000,
+						...d
+					}));
+					const chart = functionPlot({
 						target: el as HTMLDivElement,
-						grid: true,
 						tip: {
 							renderer: (x: number, y: number) => {
 								tooltip.textContent = `${x.toFixed(2)}, ${y.toFixed(2)}`;
@@ -196,12 +201,24 @@
 							}
 						},
 						...rest,
+						data,
+						grid: true,
 						xAxis: { position: 'sticky' as const, ...xAxis },
 						yAxis: { position: 'sticky' as const, ...yAxis }
 					});
 
 					const svg = el.querySelector('svg');
 					if (svg) {
+						const fixGrid = () => {
+							svg.querySelectorAll('.axis line, .axis path').forEach((el) => {
+								el.setAttribute('opacity', '0.4');
+							});
+							svg.querySelectorAll('.tick text').forEach((t) => {
+								if (t.textContent?.trim() === '0') (t as SVGElement).style.display = 'none';
+							});
+						};
+						fixGrid();
+						chart.on('all:zoom', () => requestAnimationFrame(fixGrid));
 						svg.addEventListener('mousemove', () => {
 							const innerTip = el.querySelector('.inner-tip') as HTMLElement | null;
 							if (!innerTip || innerTip.style.display === 'none') {
@@ -940,23 +957,20 @@
 	:global(.function-plot-chart) {
 		border: 1px solid hsl(var(--border));
 		border-radius: 8px;
+		overflow: hidden;
 		margin: 16px auto;
 		width: fit-content;
 	}
 	:global(.function-plot-chart .domain) {
-		stroke: #ccc;
+		stroke: transparent;
 	}
 	:global(.function-plot-chart .tick line) {
-		stroke: #e5e5e5;
+		stroke: #000 !important;
+		stroke-opacity: 0.15 !important;
 	}
 	:global(.function-plot-chart .tick text) {
 		fill: #999;
 		font-size: 11px;
-	}
-	:global(.function-plot-chart .x.grid line),
-	:global(.function-plot-chart .y.grid line) {
-		stroke: #e0e0e0;
-		stroke-dasharray: none;
 	}
 	:global(.function-plot-chart path.line) {
 		stroke-width: 2.5 !important;
