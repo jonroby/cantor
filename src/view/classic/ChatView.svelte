@@ -19,9 +19,10 @@
 		onClose?: () => void;
 		onFocusComposer?: () => void;
 		onSidePanelChange?: (open: boolean) => void;
+		onScrollAwayChange?: (away: boolean) => void;
 	}
 
-	let { onClose, onFocusComposer, onSidePanelChange }: Props = $props();
+	let { onClose, onFocusComposer, onSidePanelChange, onScrollAwayChange }: Props = $props();
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());
@@ -46,6 +47,7 @@
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+	let lastScrollAway = false;
 
 	function handleMainScroll() {
 		mainScrollContainer?.classList.add('is-scrolling');
@@ -53,7 +55,22 @@
 		scrollTimer = setTimeout(() => {
 			mainScrollContainer?.classList.remove('is-scrolling');
 		}, 1000);
+
+		if (mainScrollContainer && mainChatPath.length > 0) {
+			const lastId = mainChatPath[mainChatPath.length - 1]!.id;
+			const lastEl = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
+			if (lastEl) {
+				const rect = lastEl.getBoundingClientRect();
+				const containerRect = mainScrollContainer.getBoundingClientRect();
+				const away = rect.top > containerRect.bottom;
+				if (away !== lastScrollAway) {
+					lastScrollAway = away;
+					onScrollAwayChange?.(away);
+				}
+			}
+		}
 	}
+
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
 
@@ -371,6 +388,13 @@
 				return;
 			}
 		}
+	}
+
+	export function scrollToBottom() {
+		if (!mainScrollContainer || mainChatPath.length === 0) return;
+		const lastId = mainChatPath[mainChatPath.length - 1]!.id;
+		const el = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
+		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
 	export function expandSideChat(exchangeId: string) {
@@ -803,4 +827,5 @@
 	.chatview-doc-wrap :global(.panel-body) {
 		padding-bottom: 12rem;
 	}
+
 </style>

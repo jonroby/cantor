@@ -47,6 +47,11 @@
 		onSelectFile?.(fileId);
 		dropdownOpen = false;
 	}
+
+	function resolveAsset(name: string): string | null {
+		const file = files.find((f) => f.name === name);
+		return file?.content ?? null;
+	}
 </script>
 
 <div class="folderview-shell">
@@ -121,6 +126,7 @@
 			{agentStreaming}
 			{agentProvider}
 			{pendingContent}
+			{resolveAsset}
 			{onAcceptPending}
 			{onRejectPending}
 			{onSwap}

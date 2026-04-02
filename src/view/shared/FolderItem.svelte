@@ -234,7 +234,7 @@
 							<polyline points="17 8 12 3 7 8" />
 							<line x1="12" y1="3" x2="12" y2="15" />
 						</svg>
-						Upload .md
+						Upload file
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"

@@ -14,6 +14,7 @@
 		agentStreaming?: boolean;
 		agentProvider?: app.providers.Provider | null;
 		pendingContent?: string | null;
+		resolveAsset?: (name: string) => string | null;
 		onContentChange?: (content: string) => void;
 		onAcceptPending?: () => void;
 		onRejectPending?: () => void;
@@ -28,6 +29,7 @@
 		agentStreaming = false,
 		agentProvider,
 		pendingContent = null,
+		resolveAsset,
 		onContentChange,
 		onAcceptPending,
 		onRejectPending,
@@ -179,6 +181,15 @@
 	}
 
 	function processContent(md: string): string {
+		// Resolve ![alt](file.svg) references to inline SVG content
+		if (resolveAsset) {
+			md = md.replace(/!\[([^\]]*)\]\(([^)]+\.svg)\)/gi, (_match, _alt, src) => {
+				const name = src.replace(/^\.\//, '');
+				const svgContent = resolveAsset(name);
+				return svgContent ?? _match;
+			});
+		}
+
 		// Extract SVG blocks before marked mangles them with <p> tags
 		const svgBlocks: string[] = [];
 		md = md.replace(/<svg[\s\S]*?<\/svg>/gi, (match) => {

@@ -7,6 +7,7 @@
 	import { AppSidebar, SearchDialog, Composer } from '@/view/shared';
 	import { LandingPage, routerState } from '@/view/routes';
 	import { ChatView, DocumentView, FolderDocumentView } from '@/view/classic';
+	import { ArrowDown } from 'lucide-svelte';
 	import * as app from '@/app';
 
 	type PanelEntry =
@@ -24,6 +25,7 @@
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let chatSidePanelOpen = $state(false);
+	let chatScrolledAway = $state(false);
 	let composerFocus: 'chat' | 'agent' = $state('chat');
 	let agentStreaming = $state(false);
 	let pendingDocumentContent: string | null = $state(null);
@@ -340,6 +342,7 @@
 										chatSidePanelOpen = open;
 										if (!open) sideChatSide = 'left';
 									}}
+									onScrollAwayChange={(away) => (chatScrolledAway = away)}
 								/>
 							{:else if panel.type === 'document'}
 								<DocumentView
@@ -399,6 +402,19 @@
 					class:composer-left={composerSide === 'left'}
 					class:composer-right={composerSide === 'right'}
 				>
+					{#if hasChatPanel && chatScrolledAway}
+						<button
+							class="scroll-to-bottom-btn"
+							onclick={() => {
+								const chat = app.chat.getChat();
+								const path = app.chat.getMainChat({ rootId: chat.rootId, exchanges: chat.exchanges });
+								if (path.length > 0) chatViewRef?.scrollToNode(path[path.length - 1]!.id);
+							}}
+							aria-label="Scroll to bottom"
+						>
+							<ArrowDown size={18} />
+						</button>
+					{/if}
 					<Composer
 						bind:this={composerRef}
 						{agentMode}

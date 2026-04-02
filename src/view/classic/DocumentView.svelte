@@ -26,10 +26,13 @@
 		onClose
 	}: Props = $props();
 
-	let documentFile = $derived.by(() => {
-		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
-		return folder?.files?.find((f) => f.id === fileId) ?? null;
-	});
+	let folder = $derived(app.documents.getState().folders.find((f) => f.id === folderId));
+	let documentFile = $derived(folder?.files?.find((f) => f.id === fileId) ?? null);
+
+	function resolveAsset(name: string): string | null {
+		const file = folder?.files?.find((f) => f.name === name);
+		return file?.content ?? null;
+	}
 
 	let openDocumentIndex = $derived.by(() => {
 		return app.documents
@@ -48,6 +51,7 @@
 			{agentStreaming}
 			{agentProvider}
 			{pendingContent}
+			{resolveAsset}
 			{onAcceptPending}
 			{onRejectPending}
 			{onSwap}

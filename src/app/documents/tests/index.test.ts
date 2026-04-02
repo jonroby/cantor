@@ -433,7 +433,7 @@ describe('documents.importFolder', () => {
 		app.documents.importFolder(feedback);
 		await flushAsyncWork();
 
-		expect(feedback.error).toHaveBeenCalledWith('No .md files found in the selected folder');
+		expect(feedback.error).toHaveBeenCalledWith('No .md or .svg files found in the selected folder');
 	});
 
 	it('does nothing when no files selected', async () => {
@@ -552,7 +552,7 @@ describe('documents.importFolderIntoFolder', () => {
 		app.documents.importFolderIntoFolder('folder-1', feedback);
 		await flushAsyncWork();
 
-		expect(feedback.error).toHaveBeenCalledWith('No .md files found in the selected folder');
+		expect(feedback.error).toHaveBeenCalledWith('No .md or .svg files found in the selected folder');
 	});
 
 	it('does nothing when no files selected', async () => {
