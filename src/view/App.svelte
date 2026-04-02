@@ -41,10 +41,11 @@
 	});
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
+	let sideChatSide = $state<'left' | 'right'>('left');
 	let composerSide = $derived.by(() => {
+		if (chatSidePanelOpen) return sideChatSide;
 		if (!isSplit) return null;
 		if (bothDocs) return activeDocSide;
-		if (chatSidePanelOpen) return 'left';
 		if (agentMode) return chatPanelIsFirst ? 'right' : 'left';
 		return chatPanelIsFirst ? 'left' : 'right';
 	});
@@ -335,7 +336,10 @@
 									bind:this={chatViewRef}
 									onClose={() => closePanel(index)}
 									onFocusComposer={focusComposer}
-									onSidePanelChange={(open) => (chatSidePanelOpen = open)}
+									onSidePanelChange={(open) => {
+										chatSidePanelOpen = open;
+										if (!open) sideChatSide = 'left';
+									}}
 								/>
 							{:else if panel.type === 'document'}
 								<DocumentView
@@ -399,11 +403,13 @@
 						bind:this={composerRef}
 						{agentMode}
 						bind:agentStreaming
-						onToggleMode={bothDocs
-							? () => (activeDocSide = activeDocSide === 'left' ? 'right' : 'left')
-							: isSplit
-								? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
-								: undefined}
+						onToggleMode={chatSidePanelOpen
+							? () => (sideChatSide = sideChatSide === 'left' ? 'right' : 'left')
+							: bothDocs
+								? () => (activeDocSide = activeDocSide === 'left' ? 'right' : 'left')
+								: isSplit
+									? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
+									: undefined}
 						liveDocumentContent={activeDocumentFile?.content}
 						agentPending={pendingDocumentContent !== null}
 						onAgentResponse={(text) => {
