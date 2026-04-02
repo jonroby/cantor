@@ -7,6 +7,7 @@ import ComposerInput from '../ComposerInput.svelte';
 function renderComposerInput(overrides: Partial<Parameters<typeof ComposerInput>[1]> = {}) {
 	const props = {
 		composerValue: '',
+		pendingImages: [],
 		agentMode: false,
 		inputMessage: null,
 		submitDisabledReason: null,
@@ -72,12 +73,12 @@ describe('ComposerInput', () => {
 
 	it('model chip shows "Connect a model" when no model', () => {
 		renderComposerInput({ activeModelLabel: null });
-		expect(screen.getByText('Connect a model')).toBeInTheDocument();
+		expect(screen.getByText('Choose model')).toBeInTheDocument();
 	});
 
 	it('model chip opens palette', async () => {
 		const { props } = renderComposerInput();
-		await userEvent.click(screen.getByText('claude-sonnet-4-5'));
+		await userEvent.click(screen.getByText('Claude Sonnet 4.5'));
 		expect(props.onOpenPalette).toHaveBeenCalledOnce();
 	});
 

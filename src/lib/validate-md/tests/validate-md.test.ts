@@ -100,26 +100,25 @@ $$
 		expect(validate(md)).toEqual([]);
 	});
 
-	it('rejects raw HTML', () => {
+	it('allows raw HTML (sanitized at render time)', () => {
 		const md = `# Title
 
 <div>some html</div>
 
 Some text.
 `;
-		const errors = validate(md);
-		expect(errors).toContain('Raw HTML not allowed');
+		expect(validate(md)).toEqual([]);
 	});
 
-	it('rejects multiple raw HTML tags', () => {
-		const md = `<script>alert("xss")</script>
+	it('allows SVG elements', () => {
+		const md = `# Diagram
 
-<img src="x" onerror="alert(1)">
+<svg width="200" height="100" viewBox="0 0 200 100">
+  <rect x="10" y="10" width="80" height="40" fill="#eee" stroke="#333"/>
+  <text x="50" y="35" text-anchor="middle">Hello</text>
+</svg>
 `;
-		const errors = validate(md);
-		expect(
-			errors.filter((error: string) => error === 'Raw HTML not allowed').length
-		).toBeGreaterThanOrEqual(2);
+		expect(validate(md)).toEqual([]);
 	});
 
 	it('rejects empty block math', () => {
@@ -148,38 +147,6 @@ More text.
 $$`;
 		const errors = validate(md);
 		expect(errors).toContain('Empty math block');
-	});
-
-	it('rejects inline HTML tags', () => {
-		expect(validate('text <br> more')).toContain('Raw HTML not allowed');
-	});
-
-	it('rejects self-closing HTML tags', () => {
-		expect(validate('<hr/>')).toContain('Raw HTML not allowed');
-	});
-
-	it('rejects HTML comments', () => {
-		expect(validate('<!-- comment -->')).toContain('Raw HTML not allowed');
-	});
-
-	it('rejects anchor tags', () => {
-		const errors = validate('<a href="x">click</a>');
-		expect(errors).toContain('Raw HTML not allowed');
-		expect(errors.length).toBeGreaterThanOrEqual(2);
-	});
-
-	it('reports multiple errors at once', () => {
-		const md = `<div>bad html</div>
-
-$$
-$$
-
-More <span>html</span>.
-`;
-		const errors = validate(md);
-		expect(errors).toContain('Raw HTML not allowed');
-		expect(errors).toContain('Empty math block');
-		expect(errors.length).toBeGreaterThanOrEqual(3);
 	});
 
 	it('returns no errors for empty input', () => {

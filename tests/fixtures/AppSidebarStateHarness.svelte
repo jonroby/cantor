@@ -76,5 +76,6 @@
 		onDeleteDocument={deleteDocumentFromFolder}
 		onRenameDocument={renameDocumentThroughApp}
 		onMoveDocument={moveDocumentToFolder}
+		onOpenFolder={noop}
 	/>
 </Sidebar.Provider>

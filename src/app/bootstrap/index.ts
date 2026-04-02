@@ -97,18 +97,38 @@ export function initialize() {
 	}
 
 	const restoredDocument = restoreOpenDocument();
+	const layout = external.persistence.getPersistedLayout();
 	void providers.initialize();
 
-	return { restoredDocument, hadDuplicateRenames };
+	return {
+		restoredDocument,
+		chatPanelOpen: layout.chatPanelOpen,
+		sidebarOpen: layout.sidebarOpen,
+		hadDuplicateRenames
+	};
 }
 
 export function rememberOpenDocument(folderId: string, fileId: string) {
-	external.persistence.setPersistedLayout({ openDocument: { folderId, fileId } });
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, openDocument: { folderId, fileId } });
 	save();
 }
 
 export function clearOpenDocument() {
-	external.persistence.setPersistedLayout({});
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, openDocument: undefined });
+	save();
+}
+
+export function setChatPanelOpen(open: boolean) {
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, chatPanelOpen: open });
+	save();
+}
+
+export function setSidebarOpen(open: boolean) {
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, sidebarOpen: open });
 	save();
 }
 

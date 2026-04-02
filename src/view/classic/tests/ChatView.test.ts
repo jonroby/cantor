@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { tick } from 'svelte';
 import ChatView from '../ChatView.svelte';
+import ChatViewTestWrapper from './ChatViewTestWrapper.svelte';
 import * as state from '@/state';
 import * as domain from '@/domain';
 
@@ -154,7 +155,7 @@ describe('ChatView', () => {
 	describe('empty chat', () => {
 		it('shows starter text when no exchanges', () => {
 			render(ChatView);
-			expect(screen.getByText('Start a conversation below.')).toBeInTheDocument();
+			expect(screen.getByText(/Type something and submit|Select a model/)).toBeInTheDocument();
 		});
 	});
 
@@ -177,7 +178,7 @@ describe('ChatView', () => {
 	describe('submitting messages', () => {
 		it('submitting a message adds it to the chat', async () => {
 			resetState(buildVisibleTree(1));
-			render(ChatView);
+			render(ChatViewTestWrapper);
 
 			const input = screen.getByRole('textbox');
 			await userEvent.type(input, 'New message');
@@ -189,7 +190,7 @@ describe('ChatView', () => {
 
 		it('clears input after submit', async () => {
 			resetState(buildVisibleTree(1));
-			render(ChatView);
+			render(ChatViewTestWrapper);
 
 			const input = screen.getByRole('textbox');
 			await userEvent.type(input, 'Test message');
@@ -201,15 +202,14 @@ describe('ChatView', () => {
 
 		it('send button disabled without a model', () => {
 			state.providers.providerState.activeModel = null;
-			render(ChatView);
+			render(ChatViewTestWrapper);
 			expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
-			expect(screen.getByText('Select a model first.')).toBeInTheDocument();
 		});
 
 		it('calls startStream after submit', async () => {
 			const { streams } = await import('@/external');
 			resetState(buildVisibleTree(1));
-			render(ChatView);
+			render(ChatViewTestWrapper);
 
 			const input = screen.getByRole('textbox');
 			await userEvent.type(input, 'Hello');
@@ -291,7 +291,7 @@ describe('ChatView', () => {
 		it('submitting in side panel adds exchange to the side chat', async () => {
 			const { tree, sideChatParentId } = buildTreeWithSideChat();
 			resetState(tree);
-			render(ChatView);
+			render(ChatViewTestWrapper);
 
 			await userEvent.click(screen.getByText('1'));
 			await tick();

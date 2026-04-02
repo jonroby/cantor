@@ -17,7 +17,12 @@ export async function* streamGeminiChat(
 
 	const contents = messages.map((m) => ({
 		role: m.role === 'assistant' ? 'model' : 'user',
-		parts: [{ text: m.content }]
+		parts: [
+			...(m.images ?? []).map((img) => ({
+				inlineData: { mimeType: img.mimeType, data: img.base64 }
+			})),
+			{ text: m.content }
+		]
 	}));
 
 	const response = await fetch(url, {

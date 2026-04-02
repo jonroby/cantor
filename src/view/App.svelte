@@ -4,17 +4,95 @@
 	import { Toaster } from '@/view/components/shadcn/ui/sonner';
 	import { toast } from 'svelte-sonner';
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar';
-	import { AppSidebar, SearchDialog } from '@/view/shared';
+	import { AppSidebar, SearchDialog, Composer } from '@/view/shared';
 	import { LandingPage, routerState } from '@/view/routes';
-	import { ChatView } from '@/view/classic';
+	import { ChatView, DocumentView, FolderDocumentView } from '@/view/classic';
+	import { ArrowDown } from 'lucide-svelte';
 	import * as app from '@/app';
+
+	type PanelEntry =
+		| { type: 'chat' }
+		| { type: 'document'; folderId: string; fileId: string }
+		| { type: 'folder'; folderId: string };
 
 	let searchQuery = $state('');
 	let searchAllChats = $state(true);
 	let searchOpen = $state(false);
 	let hasHydrated = $state(false);
+	let panels: PanelEntry[] = $state([]);
+	let sidebarOpen = $state(true);
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
+	let composerRef: ReturnType<typeof Composer> | undefined = $state();
+	let chatSidePanelOpen = $state(false);
+	let chatScrolledAway = $state(false);
+	let composerFocus: 'chat' | 'agent' = $state('chat');
+	let agentStreaming = $state(false);
+	let pendingDocumentContent: string | null = $state(null);
+	let folderSelectedFiles: Record<string, string> = $state({});
+
+	let providerState = $derived(app.providers.getState());
+	let hasModel = $derived(!!providerState.activeModel);
+	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
+	let hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
+	let isSplit = $derived(panels.length === 2);
+	let bothDocs = $derived(isSplit && !hasChatPanel);
+	let agentMode = $derived.by(() => {
+		if (!hasChatPanel && hasDocPanel) return true;
+		if (isSplit) return composerFocus === 'agent';
+		return false;
+	});
+	let activeDocSide = $state<'left' | 'right'>('left');
+	let chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
+	let sideChatSide = $state<'left' | 'right'>('left');
+	let composerSide = $derived.by(() => {
+		if (chatSidePanelOpen) return sideChatSide;
+		if (!isSplit) return null;
+		if (bothDocs) return activeDocSide;
+		if (agentMode) return chatPanelIsFirst ? 'right' : 'left';
+		return chatPanelIsFirst ? 'left' : 'right';
+	});
+	let activeDocumentKey = $derived.by(() => {
+		const targetIndex = bothDocs ? (activeDocSide === 'left' ? 0 : 1) : -1;
+
+		function keyFromPanel(p: PanelEntry) {
+			if (p.type === 'document') return { folderId: p.folderId, fileId: p.fileId };
+			if (p.type === 'folder') {
+				const folder = app.documents.getState().folders.find((f) => f.id === p.folderId);
+				const selectedFileId = folderSelectedFiles[p.folderId];
+				const fileId = selectedFileId ?? folder?.files?.[0]?.id;
+				if (fileId) return { folderId: p.folderId, fileId };
+			}
+			return null;
+		}
+
+		if (targetIndex >= 0 && panels[targetIndex]) {
+			return keyFromPanel(panels[targetIndex]);
+		}
+
+		for (const p of panels) {
+			const key = keyFromPanel(p);
+			if (key) return key;
+		}
+		return null;
+	});
+	let activeDocumentFile = $derived.by(() => {
+		if (!activeDocumentKey) return null;
+		const folder = app.documents
+			.getState()
+			.folders.find((f) => f.id === activeDocumentKey.folderId);
+		return folder?.files?.find((f) => f.id === activeDocumentKey.fileId) ?? null;
+	});
+	let activeDocumentIndex = $derived.by(() => {
+		if (!activeDocumentKey) return -1;
+		return app.documents
+			.getState()
+			.openDocuments.findIndex(
+				(d) =>
+					d.documentKey?.folderId === activeDocumentKey!.folderId &&
+					d.documentKey?.fileId === activeDocumentKey!.fileId
+			);
+	});
 
 	$effect(() => {
 		if (hasHydrated) {
@@ -57,12 +135,26 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		const { restoredDocument, hadDuplicateRenames } = app.bootstrap.initialize();
+		const {
+			restoredDocument,
+			chatPanelOpen,
+			sidebarOpen: restoredSidebarOpen,
+			hadDuplicateRenames
+		} = app.bootstrap.initialize();
 		if (hadDuplicateRenames) {
 			toast.warning('Some items had duplicate names and were automatically renamed.');
 		}
+
+		if (restoredSidebarOpen === false) {
+			sidebarOpen = false;
+		}
+
+		if (chatPanelOpen !== false) {
+			panels = [{ type: 'chat' }];
+		}
+
 		if (restoredDocument) {
-			chatViewRef?.showDocument(restoredDocument.folderId, restoredDocument.fileId);
+			openDocumentPanel(restoredDocument.folderId, restoredDocument.fileId);
 		}
 
 		hasHydrated = true;
@@ -78,14 +170,89 @@
 		chatViewRef?.resetUIState();
 	}
 
+	function focusComposer() {
+		composerRef?.focus();
+	}
+
+	function openDocumentPanel(folderId: string, fileId: string) {
+		const existingIndex = panels.findIndex(
+			(p) => p.type === 'document' && p.folderId === folderId && p.fileId === fileId
+		);
+		if (existingIndex >= 0) return;
+
+		const docPanel: PanelEntry = { type: 'document', folderId, fileId };
+
+		if (panels.length === 0) {
+			panels = [docPanel];
+		} else if (panels.length === 1) {
+			panels = [...panels, docPanel];
+		} else {
+			panels = [panels[0], docPanel];
+		}
+	}
+
+	function openFolderPanel(folderId: string) {
+		const existingIndex = panels.findIndex((p) => p.type === 'folder' && p.folderId === folderId);
+		if (existingIndex >= 0) return;
+
+		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
+		if (!folder || !folder.files?.length) return;
+
+		const firstFile = folder.files[0];
+		app.documents.openDocument(folderId, firstFile.id);
+
+		const folderPanel: PanelEntry = { type: 'folder', folderId };
+
+		if (panels.length === 0) {
+			panels = [folderPanel];
+		} else if (panels.length === 1) {
+			panels = [...panels, folderPanel];
+		} else {
+			panels = [panels[0], folderPanel];
+		}
+	}
+
+	function swapPanels() {
+		if (panels.length === 2) {
+			panels = [panels[1], panels[0]];
+		}
+	}
+
+	function closePanel(index: number) {
+		const panel = panels[index];
+		if (panel?.type === 'chat') {
+			chatSidePanelOpen = false;
+			app.bootstrap.setChatPanelOpen(false);
+		} else if (panel?.type === 'document') {
+			app.bootstrap.clearOpenDocument();
+		}
+		panels = panels.filter((_, i) => i !== index);
+	}
+
+	function ensureChatPanel() {
+		if (!hasChatPanel) {
+			if (panels.length === 0) {
+				panels = [{ type: 'chat' }];
+			} else if (panels.length === 1) {
+				panels = [{ type: 'chat' }, panels[0]];
+			} else {
+				panels = [{ type: 'chat' }, panels[1]];
+			}
+			app.bootstrap.setChatPanelOpen(true);
+		}
+	}
+
 	function newChat(): number {
 		const index = app.chat.createChat();
+		ensureChatPanel();
 		resetUIState();
 		return index;
 	}
 
 	function selectChat(index: number) {
 		app.chat.selectChat(index);
+		ensureChatPanel();
+		composerFocus = 'chat';
 		resetUIState();
 	}
 
@@ -122,10 +289,13 @@
 {#if routerState.route === 'landing'}
 	<LandingPage />
 {:else}
-	<SidebarPrimitive.Provider>
+	<SidebarPrimitive.Provider
+		bind:open={sidebarOpen}
+		onOpenChange={(open) => app.bootstrap.setSidebarOpen(open)}
+	>
 		<AppSidebar
 			chats={app.chat.getChats()}
-			activeChatIndex={app.chat.getActiveChatIndex()}
+			activeChatIndex={hasChatPanel ? app.chat.getActiveChatIndex() : -1}
 			onSelectChat={selectChat}
 			onNewChat={newChat}
 			onDeleteChat={doDeleteChat}
@@ -141,16 +311,17 @@
 				const document = app.documents.createDocument(folderId);
 				if (document) {
 					app.bootstrap.rememberOpenDocument(document.folderId, document.fileId);
-					chatViewRef?.showDocument(document.folderId, document.fileId);
+					openDocumentPanel(document.folderId, document.fileId);
 				}
 			}}
 			onUploadDocument={(folderId) => app.documents.importDocument(folderId, fileFeedback)}
 			onUploadFolder={(folderId) => app.documents.importFolderIntoFolder(folderId, fileFeedback)}
 			onUploadNewFolder={() => app.documents.importFolder(fileFeedback)}
+			onOpenFolder={openFolderPanel}
 			onSelectDocument={(folderId, fileId) => {
 				if (app.documents.openDocument(folderId, fileId)) {
 					app.bootstrap.rememberOpenDocument(folderId, fileId);
-					chatViewRef?.showDocument(folderId, fileId);
+					openDocumentPanel(folderId, fileId);
 				}
 			}}
 			onAddDocumentToChat={addDocumentToChat}
@@ -159,7 +330,124 @@
 			onMoveDocument={app.documents.moveDocument}
 		/>
 		<SidebarPrimitive.Inset>
-			<ChatView bind:this={chatViewRef} />
+			<div class="app-shell">
+				<div class="panel-layout" class:panel-layout-split={isSplit}>
+					{#each panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : 'chat')}
+						<div class="panel-slot">
+							{#if panel.type === 'chat'}
+								<ChatView
+									bind:this={chatViewRef}
+									onClose={() => closePanel(index)}
+									onFocusComposer={focusComposer}
+									onSidePanelChange={(open) => {
+										chatSidePanelOpen = open;
+										if (!open) sideChatSide = 'left';
+									}}
+									onScrollAwayChange={(away) => (chatScrolledAway = away)}
+								/>
+							{:else if panel.type === 'document'}
+								<DocumentView
+									folderId={panel.folderId}
+									fileId={panel.fileId}
+									{agentStreaming}
+									agentProvider={providerState.activeModel?.provider}
+									pendingContent={pendingDocumentContent}
+									onAcceptPending={() => {
+										if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
+											app.documents.updateDocumentContent(
+												activeDocumentIndex,
+												pendingDocumentContent
+											);
+										}
+										pendingDocumentContent = null;
+									}}
+									onRejectPending={() => {
+										pendingDocumentContent = null;
+									}}
+									onSwap={isSplit ? swapPanels : undefined}
+									onClose={() => closePanel(index)}
+								/>
+							{:else if panel.type === 'folder'}
+								<FolderDocumentView
+									folderId={panel.folderId}
+									{agentStreaming}
+									agentProvider={providerState.activeModel?.provider}
+									pendingContent={pendingDocumentContent}
+									selectedFileId={folderSelectedFiles[panel.folderId]}
+									onSelectFile={(fileId) => {
+										folderSelectedFiles = { ...folderSelectedFiles, [panel.folderId]: fileId };
+										app.documents.openDocument(panel.folderId, fileId);
+									}}
+									onAcceptPending={() => {
+										if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
+											app.documents.updateDocumentContent(
+												activeDocumentIndex,
+												pendingDocumentContent
+											);
+										}
+										pendingDocumentContent = null;
+									}}
+									onRejectPending={() => {
+										pendingDocumentContent = null;
+									}}
+									onSwap={isSplit ? swapPanels : undefined}
+									onClose={() => closePanel(index)}
+								/>
+							{/if}
+						</div>
+					{/each}
+				</div>
+
+				{#if panels.length === 0}
+					<div class="welcome-container">
+						<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
+					</div>
+				{/if}
+				<div
+					class="composer-anchor"
+					class:composer-left={composerSide === 'left'}
+					class:composer-right={composerSide === 'right'}
+				>
+					{#if hasChatPanel && chatScrolledAway}
+						<button
+							class="scroll-to-bottom-btn"
+							onclick={() => {
+								const chat = app.chat.getChat();
+								const path = app.chat.getMainChat({
+									rootId: chat.rootId,
+									exchanges: chat.exchanges
+								});
+								if (path.length > 0) chatViewRef?.scrollToNode(path[path.length - 1]!.id);
+							}}
+							aria-label="Scroll to bottom"
+						>
+							<ArrowDown size={18} />
+						</button>
+					{/if}
+					<Composer
+						bind:this={composerRef}
+						{agentMode}
+						bind:agentStreaming
+						onToggleMode={chatSidePanelOpen
+							? () => (sideChatSide = sideChatSide === 'left' ? 'right' : 'left')
+							: bothDocs
+								? () => (activeDocSide = activeDocSide === 'left' ? 'right' : 'left')
+								: isSplit
+									? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
+									: undefined}
+						liveDocumentContent={activeDocumentFile?.content}
+						agentPending={pendingDocumentContent !== null}
+						onAgentResponse={(text) => {
+							pendingDocumentContent = text;
+						}}
+						onScrollToNode={(nodeId) => {
+							ensureChatPanel();
+							tick().then(() => chatViewRef?.scrollToNode(nodeId));
+						}}
+						onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
+					/>
+				</div>
+			</div>
 
 			{#if searchOpen}
 				<SearchDialog
@@ -175,3 +463,79 @@
 	</SidebarPrimitive.Provider>
 {/if}
 <Toaster position="top-center" />
+
+<style>
+	.app-shell {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+	}
+
+	.panel-layout {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+	}
+
+	.panel-slot {
+		position: relative;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		min-width: 0;
+		transition: flex 250ms ease;
+	}
+
+	.panel-layout-split .panel-slot:first-child {
+		border-right: 1px solid hsl(var(--border));
+	}
+
+	.welcome-container {
+		position: absolute;
+		top: 40%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		text-align: center;
+		z-index: 1;
+	}
+
+	.welcome-text {
+		font-size: 28px;
+		font-weight: 500;
+		font-feature-settings: normal;
+		color: hsl(var(--foreground));
+	}
+
+	.composer-anchor {
+		position: absolute;
+		bottom: 1rem;
+		left: 0;
+		right: 0;
+		z-index: 25;
+		padding: 0 1rem;
+		transition:
+			left 250ms ease,
+			right 250ms ease;
+	}
+
+	.composer-anchor :global(.composer) {
+		position: relative;
+		left: auto;
+		bottom: auto;
+		transform: none;
+		width: 100% !important;
+		max-width: 720px !important;
+		margin: 0 auto;
+		box-sizing: border-box;
+	}
+
+	.composer-left {
+		right: 50%;
+	}
+
+	.composer-right {
+		left: 50%;
+	}
+</style>

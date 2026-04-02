@@ -101,7 +101,7 @@ export function importDocument(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
-	void external.io.pickFile('.md').then(async (file) => {
+	void external.io.pickFile('.md,.svg').then(async (file) => {
 		if (!file) return;
 		const folder = state.documents.documentState.folders.find(
 			(candidate) => candidate.id === folderId
@@ -111,10 +111,12 @@ export function importDocument(
 			return;
 		}
 		const content = await file.text();
-		const errors = lib.validateMd.validate(content);
-		if (errors.length > 0) {
-			feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
-			return;
+		if (file.name.endsWith('.md')) {
+			const errors = lib.validateMd.validate(content);
+			if (errors.length > 0) {
+				feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
+				return;
+			}
 		}
 		const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
 		const name = deduplicateImportedName(file.name, existingNames);
@@ -154,7 +156,7 @@ export async function exportFolder(
 
 async function importDocumentsIntoFolder(
 	folderId: string,
-	mdFiles: File[],
+	files: File[],
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
 ) {
 	const folder = state.documents.documentState.folders.find(
@@ -168,12 +170,14 @@ async function importDocumentsIntoFolder(
 	let imported = 0;
 	const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
 
-	for (const file of mdFiles) {
+	for (const file of files) {
 		const content = await file.text();
-		const errors = lib.validateMd.validate(content);
-		if (errors.length > 0) {
-			feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
-			continue;
+		if (file.name.endsWith('.md')) {
+			const errors = lib.validateMd.validate(content);
+			if (errors.length > 0) {
+				feedback.error?.(`Skipped ${file.name}: ${errors.join('; ')}`);
+				continue;
+			}
 		}
 		const name = deduplicateImportedName(file.name, existingNames);
 		existingNames.push(name);
@@ -199,13 +203,15 @@ async function importDocumentsIntoFolder(
 export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK) {
 	void external.io.pickDirectory().then((files) => {
 		if (files.length === 0) return;
-		const mdFiles = files.filter((file) => file.name.endsWith('.md'));
-		if (mdFiles.length === 0) {
-			feedback.error?.('No .md files found in the selected folder');
+		const supportedFiles = files.filter(
+			(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
+		);
+		if (supportedFiles.length === 0) {
+			feedback.error?.('No .md or .svg files found in the selected folder');
 			return;
 		}
 
-		const dirName = mdFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
+		const dirName = supportedFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
 		const folderName = deduplicateImportedName(
 			dirName,
 			state.documents.documentState.folders.map((folder) => folder.name)
@@ -215,7 +221,7 @@ export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK)
 		const folder: state.documents.ChatFolder = { id: folderId, name: folderName, files: [] };
 		state.documents.documentState.folders = [...state.documents.documentState.folders, folder];
 
-		importDocumentsIntoFolder(folderId, mdFiles, feedback);
+		importDocumentsIntoFolder(folderId, supportedFiles, feedback);
 	});
 }
 
@@ -225,13 +231,15 @@ export function importFolderIntoFolder(
 ) {
 	void external.io.pickDirectory().then((files) => {
 		if (files.length === 0) return;
-		const mdFiles = files.filter((file) => file.name.endsWith('.md'));
-		if (mdFiles.length === 0) {
-			feedback.error?.('No .md files found in the selected folder');
+		const supportedFiles = files.filter(
+			(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
+		);
+		if (supportedFiles.length === 0) {
+			feedback.error?.('No .md or .svg files found in the selected folder');
 			return;
 		}
 
-		importDocumentsIntoFolder(folderId, mdFiles, feedback);
+		importDocumentsIntoFolder(folderId, supportedFiles, feedback);
 	});
 }
 

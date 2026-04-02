@@ -3,7 +3,6 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
-	import { Composer } from '@/view/shared';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -15,6 +14,15 @@
 	import type { ChatCardData } from './chat-card';
 	import { Document } from '@/view/features/document';
 	import * as app from '@/app';
+
+	interface Props {
+		onClose?: () => void;
+		onFocusComposer?: () => void;
+		onSidePanelChange?: (open: boolean) => void;
+		onScrollAwayChange?: (away: boolean) => void;
+	}
+
+	let { onClose, onFocusComposer, onSidePanelChange, onScrollAwayChange }: Props = $props();
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());
@@ -38,7 +46,31 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
-	let composerRef: ReturnType<typeof Composer> | undefined = $state();
+	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+	let lastScrollAway = false;
+
+	function handleMainScroll() {
+		mainScrollContainer?.classList.add('is-scrolling');
+		if (scrollTimer) clearTimeout(scrollTimer);
+		scrollTimer = setTimeout(() => {
+			mainScrollContainer?.classList.remove('is-scrolling');
+		}, 1000);
+
+		if (mainScrollContainer && mainChatPath.length > 0) {
+			const lastId = mainChatPath[mainChatPath.length - 1]!.id;
+			const lastEl = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
+			if (lastEl) {
+				const rect = lastEl.getBoundingClientRect();
+				const containerRect = mainScrollContainer.getBoundingClientRect();
+				const away = rect.top > containerRect.bottom;
+				if (away !== lastScrollAway) {
+					lastScrollAway = away;
+					onScrollAwayChange?.(away);
+				}
+			}
+		}
+	}
+
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
 
@@ -111,7 +143,7 @@
 			}
 		}
 		if (!isDocumentPanel) {
-			tick().then(() => composerRef?.focus());
+			tick().then(() => onFocusComposer?.());
 		}
 	}
 
@@ -142,12 +174,11 @@
 		} else {
 			app.chat.selectExchange(parentId);
 		}
-		tick().then(() => composerRef?.focus());
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function closeSidePanel() {
 		sidePanel = null;
-		composerRef?.resetAgent();
 		focusPanel(mainPanel.id);
 	}
 
@@ -175,7 +206,7 @@
 		if (!activeSideChat || activeSideChat.length === 0) return;
 		updateSideChatIndex(sideChats.length);
 		app.chat.selectExchange(sidePanelParentId);
-		tick().then(() => composerRef?.focus());
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function copyChat(exchangeId: string) {
@@ -342,7 +373,7 @@
 		return data;
 	}
 
-	async function scrollToNode(nodeId: string | null) {
+	export async function scrollToNode(nodeId: string | null) {
 		if (!nodeId) return;
 		await tick();
 		const isSideFocused = sidePanel !== null && focusedPanelId === sidePanel.id;
@@ -359,16 +390,23 @@
 		}
 	}
 
-	function expandSideChat(exchangeId: string) {
+	export function scrollToBottom() {
+		if (!mainScrollContainer || mainChatPath.length === 0) return;
+		const lastId = mainChatPath[mainChatPath.length - 1]!.id;
+		const el = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
+		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	export function expandSideChat(exchangeId: string) {
 		trackLatestSideChat = true;
 		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === exchangeId) {
 			focusedPanelId = sidePanel.id;
-			tick().then(() => composerRef?.focus());
+			tick().then(() => onFocusComposer?.());
 			return;
 		}
 		sidePanel = createSideChatPanel(exchangeId, 0);
 		focusedPanelId = sidePanel.id;
-		tick().then(() => composerRef?.focus());
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function getExchangePath(exchangeId: string): app.chat.Exchange[] {
@@ -438,6 +476,11 @@
 		}
 	});
 
+	// Notify parent of side panel state changes
+	$effect(() => {
+		onSidePanelChange?.(sidePanelOpen);
+	});
+
 	// Close side panel if parent node was deleted
 	$effect(() => {
 		if (
@@ -486,8 +529,24 @@
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
-			<div class="chatview-main-title">{activeChat.name}</div>
-			<div class="chatview-main" bind:this={mainScrollContainer}>
+			<div class="chatview-main-title">
+				{activeChat.name}
+				{#if onClose}
+					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
+							<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
+						</svg>
+					</button>
+				{/if}
+			</div>
+			<div class="chatview-main" bind:this={mainScrollContainer} onscroll={handleMainScroll}>
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
 						{@const nodeData = getNodeDataForExchange(exchange.id)}
@@ -502,7 +561,11 @@
 						{/if}
 					{/each}
 					{#if mainChatPath.length === 0}
-						<div class="chatview-empty">Start a conversation below.</div>
+						<div class="chatview-empty">
+							{providerState.activeModel
+								? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.'
+								: 'Select a model to get started.'}
+						</div>
 					{/if}
 				</div>
 			</div>
@@ -523,7 +586,6 @@
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
 							{agentStreaming}
-							agentModel={providerState.activeModel?.modelId}
 							agentProvider={providerState.activeModel?.provider}
 							pendingContent={pendingDocumentContent}
 							onContentChange={(c) => {
@@ -689,25 +751,6 @@
 				{/if}
 			{/if}
 		</div>
-
-		<div
-			class="chatview-input-anchor"
-			class:chatview-input-right={sidePanelOpen && focusedPane === 'side'}
-			class:chatview-input-left={sidePanelOpen && focusedPane === 'main'}
-		>
-			<Composer
-				bind:this={composerRef}
-				onScrollToNode={scrollToNode}
-				onExpandSideChat={expandSideChat}
-				agentMode={isDocumentPanel && focusedPane === 'side'}
-				bind:agentStreaming
-				agentPending={pendingDocumentContent !== null}
-				liveDocumentContent={activeDocumentFile?.content}
-				onAgentResponse={(text) => {
-					pendingDocumentContent = text;
-				}}
-			/>
-		</div>
 	</div>
 </div>
 
@@ -776,7 +819,6 @@
 		height: 52px;
 		padding: 0 12px;
 		gap: 8px;
-		border-bottom: 1px solid hsl(var(--border));
 		background: hsl(var(--background) / 0.97);
 		font-size: 13px;
 		font-weight: 600;

@@ -1,7 +1,9 @@
 {
   "classic": {
     "ChatMessage": true,
-    "ChatView": true
+    "ChatView": true,
+    "DocumentView": true,
+    "FolderDocumentView": true
   },
   "shared": {
     "AppSidebar": true,

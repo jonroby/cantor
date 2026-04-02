@@ -21,7 +21,15 @@ export async function* streamClaudeChat(
 			stream: true,
 			messages: messages.map((message) => ({
 				role: message.role,
-				content: message.content
+				content: message.images?.length
+					? [
+							...message.images.map((img) => ({
+								type: 'image' as const,
+								source: { type: 'base64' as const, media_type: img.mimeType, data: img.base64 }
+							})),
+							{ type: 'text' as const, text: message.content }
+						]
+					: message.content
 			}))
 		}),
 		signal

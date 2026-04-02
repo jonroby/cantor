@@ -1,13 +1,20 @@
 import type { Provider } from '@/domain/models';
 
+export interface ImageAttachment {
+	mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+	base64: string;
+}
+
 export interface Message {
 	role: 'user' | 'assistant';
 	content: string;
+	images?: ImageAttachment[];
 }
 
 export interface MessagePart {
 	text: string;
 	tokenCount: number;
+	images?: ImageAttachment[];
 }
 
 export interface Exchange {
@@ -360,7 +367,8 @@ export function addExchange(
 	parentId: string,
 	prompt: string,
 	model: string,
-	provider: Provider
+	provider: Provider,
+	images?: ImageAttachment[]
 ): AddExchangeResult {
 	const indexed = validateTree(tree);
 
@@ -369,7 +377,7 @@ export function addExchange(
 		id,
 		parentId,
 		childIds: [],
-		prompt: { text: prompt, tokenCount: 0 },
+		prompt: { text: prompt, tokenCount: 0, ...(images?.length ? { images } : {}) },
 		response: null,
 		model,
 		provider,

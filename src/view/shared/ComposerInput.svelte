@@ -1,10 +1,14 @@
 <script lang="ts">
 	import { Button } from '@/view/components/custom';
 	import { PROVIDER_LOGOS } from '@/view/assets';
-	import { ArrowUp, Square } from 'lucide-svelte';
+	import { ArrowUp, Square, Plus, X } from 'lucide-svelte';
+	import type * as app from '@/app';
+
+	type ImageAttachment = app.chat.ImageAttachment;
 
 	interface Props {
 		composerValue: string;
+		pendingImages: ImageAttachment[];
 		agentMode: boolean;
 		inputMessage: string | null;
 		submitDisabledReason: string | null;
@@ -18,10 +22,12 @@
 		onSubmit: () => void;
 		onStop: () => void;
 		onOpenPalette: () => void;
+		onToggleMode?: () => void;
 	}
 
 	let {
 		composerValue = $bindable(),
+		pendingImages = $bindable(),
 		agentMode,
 		inputMessage,
 		submitDisabledReason,
@@ -34,10 +40,12 @@
 		onCycleStrategy,
 		onSubmit,
 		onStop,
-		onOpenPalette
+		onOpenPalette,
+		onToggleMode
 	}: Props = $props();
 
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
+	let fileInputEl: HTMLInputElement | undefined = $state();
 
 	export function focus() {
 		textareaEl?.focus();
@@ -61,7 +69,51 @@
 			resetSize();
 		}
 	}
+
+	function openFilePicker() {
+		fileInputEl?.click();
+	}
+
+	async function handleFiles(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const files = input.files;
+		if (!files) return;
+
+		for (const file of files) {
+			const base64 = await fileToBase64(file);
+			pendingImages = [
+				...pendingImages,
+				{ mimeType: file.type as ImageAttachment['mimeType'], base64 }
+			];
+		}
+		input.value = '';
+	}
+
+	function removeImage(index: number) {
+		pendingImages = pendingImages.filter((_, i) => i !== index);
+	}
+
+	function fileToBase64(file: File): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => {
+				const dataUrl = reader.result as string;
+				resolve(dataUrl.split(',')[1]!);
+			};
+			reader.onerror = reject;
+			reader.readAsDataURL(file);
+		});
+	}
 </script>
+
+<input
+	bind:this={fileInputEl}
+	type="file"
+	accept="image/jpeg,image/png,image/gif,image/webp"
+	multiple
+	style="display: none"
+	onchange={handleFiles}
+/>
 
 <form
 	class="composer"
@@ -72,15 +124,42 @@
 	}}
 >
 	<div class="composer-shell">
+		{#if pendingImages.length > 0}
+			<div class="composer-images">
+				{#each pendingImages as img, i (i)}
+					<div class="composer-image-thumb">
+						<img src={`data:${img.mimeType};base64,${img.base64}`} alt="" />
+						<button class="composer-image-remove" type="button" onclick={() => removeImage(i)}>
+							<X size={12} />
+						</button>
+					</div>
+				{/each}
+			</div>
+		{/if}
 		<div class="composer-row">
 			{#if inputMessage}
 				<span class="composer-message">{inputMessage}</span>
 			{:else}
+				{#if activeModelLabel}
+					<button
+						class="composer-attach"
+						type="button"
+						onclick={openFilePicker}
+						aria-label="Attach image"
+					>
+						<Plus size={18} />
+					</button>
+				{/if}
 				<textarea
 					bind:this={textareaEl}
 					bind:value={composerValue}
 					class="composer-textarea"
-					placeholder={agentMode ? 'Agent...' : (submitDisabledReason ?? 'Chat...')}
+					placeholder={!activeModelLabel
+						? 'Select a model to get started with chat or working with an agent'
+						: agentMode
+							? 'Agent...'
+							: 'Chat...'}
+					disabled={!activeModelLabel}
 					rows={1}
 					oninput={autoResize}
 					onkeydown={handleKeydown}
@@ -101,7 +180,7 @@
 					class="composer-send"
 					type="submit"
 					size="icon"
-					disabled={!!submitDisabledReason || !composerValue.trim()}
+					disabled={!!submitDisabledReason || (!composerValue.trim() && pendingImages.length === 0)}
 					ariaLabel="Send message"
 				>
 					<ArrowUp size={15} strokeWidth={2.5} />
@@ -120,18 +199,22 @@
 						<img
 							src={PROVIDER_LOGOS[activeProvider]}
 							alt=""
-							style="height: 1.5rem; width: 1.5rem; object-fit: contain; border-radius: 0.25rem;"
+							style="height: 1.15rem; width: 1.15rem; object-fit: contain;"
 						/>
 					{/if}
 					{activeModelLabel ?? 'Choose model'}
 				</Button>
-				<Button class="mode-chip" variant="outline" size="sm">
-					{agentMode ? 'Agent' : 'Chat'}
-				</Button>
-				<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
-					{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
-				</Button>
-				{#if submitDisabledReason && !inputMessage}
+				{#if activeModelLabel}
+					{#if onToggleMode}
+						<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
+							{agentMode ? 'Agent' : 'Chat'}
+						</Button>
+					{/if}
+					<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
+						{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
+					</Button>
+				{/if}
+				{#if submitDisabledReason && !inputMessage && activeModelLabel}
 					<span class="composer-hint">{submitDisabledReason}</span>
 				{/if}
 			</div>
