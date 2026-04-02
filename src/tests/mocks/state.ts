@@ -7,6 +7,17 @@ type StateMock = PublicApiMock<typeof state, typeof stateContract>;
 
 export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 	const base = {
+		agent: {
+			agentState: {
+				history: [],
+				streaming: false,
+				pendingContent: null
+			},
+			pushMessage: mockFn<typeof state.agent.pushMessage>(),
+			reset: mockFn<typeof state.agent.reset>(),
+			setPendingContent: mockFn<typeof state.agent.setPendingContent>(),
+			setStreaming: mockFn<typeof state.agent.setStreaming>()
+		},
 		chats: {
 			addChat: mockFn<typeof state.chats.addChat>(),
 			chatState: {

@@ -1,4 +1,13 @@
 {
+  "agent": {
+    "acceptPending": true,
+    "buildMessages": true,
+    "getState": true,
+    "rejectPending": true,
+    "reset": true,
+    "stop": true,
+    "submit": true
+  },
   "bootstrap": {
     "clearOpenDocument": true,
     "initialize": true,

@@ -1,4 +1,11 @@
 {
+  "agent": {
+    "agentState": true,
+    "pushMessage": true,
+    "reset": true,
+    "setPendingContent": true,
+    "setStreaming": true
+  },
   "chats": {
     "addChat": true,
     "chatState": true,

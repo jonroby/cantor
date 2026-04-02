@@ -91,6 +91,19 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 	};
 
 	const base = {
+		agent: {
+			acceptPending: mockFn<typeof app.agent.acceptPending>(),
+			buildMessages: mockFn<typeof app.agent.buildMessages>(() => []),
+			getState: mockFn<typeof app.agent.getState>(() => ({
+				history: [],
+				streaming: false,
+				pendingContent: null
+			})),
+			rejectPending: mockFn<typeof app.agent.rejectPending>(),
+			reset: mockFn<typeof app.agent.reset>(),
+			stop: mockFn<typeof app.agent.stop>(),
+			submit: mockFn<typeof app.agent.submit>()
+		},
 		bootstrap: {
 			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
 			initialize: mockFn<typeof app.bootstrap.initialize>(() => ({

@@ -27,11 +27,10 @@
 	let chatSidePanelOpen = $state(false);
 	let chatScrolledAway = $state(false);
 	let composerFocus: 'chat' | 'agent' = $state('chat');
-	let agentStreaming = $state(false);
-	let pendingDocumentContent: string | null = $state(null);
 	let folderSelectedFiles: Record<string, string> = $state({});
 
 	let providerState = $derived(app.providers.getState());
+	let agentState = $derived(app.agent.getState());
 	let hasModel = $derived(!!providerState.activeModel);
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
 	let hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
@@ -349,47 +348,27 @@
 								<DocumentView
 									folderId={panel.folderId}
 									fileId={panel.fileId}
-									{agentStreaming}
+									agentStreaming={agentState.streaming}
 									agentProvider={providerState.activeModel?.provider}
-									pendingContent={pendingDocumentContent}
-									onAcceptPending={() => {
-										if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
-											app.documents.updateDocumentContent(
-												activeDocumentIndex,
-												pendingDocumentContent
-											);
-										}
-										pendingDocumentContent = null;
-									}}
-									onRejectPending={() => {
-										pendingDocumentContent = null;
-									}}
+									pendingContent={agentState.pendingContent}
+									onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
+									onRejectPending={() => app.agent.rejectPending()}
 									onSwap={isSplit ? swapPanels : undefined}
 									onClose={() => closePanel(index)}
 								/>
 							{:else if panel.type === 'folder'}
 								<FolderDocumentView
 									folderId={panel.folderId}
-									{agentStreaming}
+									agentStreaming={agentState.streaming}
 									agentProvider={providerState.activeModel?.provider}
-									pendingContent={pendingDocumentContent}
+									pendingContent={agentState.pendingContent}
 									selectedFileId={folderSelectedFiles[panel.folderId]}
 									onSelectFile={(fileId) => {
 										folderSelectedFiles = { ...folderSelectedFiles, [panel.folderId]: fileId };
 										app.documents.openDocument(panel.folderId, fileId);
 									}}
-									onAcceptPending={() => {
-										if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
-											app.documents.updateDocumentContent(
-												activeDocumentIndex,
-												pendingDocumentContent
-											);
-										}
-										pendingDocumentContent = null;
-									}}
-									onRejectPending={() => {
-										pendingDocumentContent = null;
-									}}
+									onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
+									onRejectPending={() => app.agent.rejectPending()}
 									onSwap={isSplit ? swapPanels : undefined}
 									onClose={() => closePanel(index)}
 								/>
@@ -427,7 +406,6 @@
 					<Composer
 						bind:this={composerRef}
 						{agentMode}
-						bind:agentStreaming
 						onToggleMode={chatSidePanelOpen
 							? () => (sideChatSide = sideChatSide === 'left' ? 'right' : 'left')
 							: bothDocs
@@ -436,10 +414,6 @@
 									? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
 									: undefined}
 						liveDocumentContent={activeDocumentFile?.content}
-						agentPending={pendingDocumentContent !== null}
-						onAgentResponse={(text) => {
-							pendingDocumentContent = text;
-						}}
 						onScrollToNode={(nodeId) => {
 							ensureChatPanel();
 							tick().then(() => chatViewRef?.scrollToNode(nodeId));
