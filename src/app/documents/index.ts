@@ -1,3 +1,4 @@
+import * as domain from '@/domain';
 import * as state from '@/state';
 import * as lib from '@/lib';
 import * as external from '@/external';
@@ -248,13 +249,42 @@ export function importFolderIntoFolder(
 export function getDocument(
 	folderId: string,
 	fileId: string
-): { folder: state.documents.Folder; file: state.documents.DocumentFile } | null {
+): { folder: domain.documents.Folder; file: domain.documents.DocumentFile } | null {
 	const folder = state.documents.findFolder(folderId);
-	const file = folder?.files?.find((candidate) => candidate.id === fileId);
-	if (!folder || !file) return null;
+	if (!folder) return null;
+	const file = domain.documents.findFile(folder, fileId);
+	if (!file) return null;
 	return { folder, file };
 }
 
-export type Folder = state.documents.Folder;
-export type DocumentFile = state.documents.DocumentFile;
-export type OpenDocument = state.documents.OpenDocument;
+export function getFolder(folderId: string): domain.documents.Folder | undefined {
+	return state.documents.findFolder(folderId);
+}
+
+export function resolveAsset(folderId: string, name: string): string | null {
+	const folder = state.documents.findFolder(folderId);
+	if (!folder) return null;
+	return domain.documents.resolveAsset(folder, name);
+}
+
+export function findOpenDocumentIndex(folderId: string, fileId: string): number {
+	return domain.documents.findOpenDocumentIndex(getState().openDocuments, folderId, fileId);
+}
+
+export function updateOpenDocumentContent(
+	folderId: string,
+	fileId: string,
+	content: string
+): void {
+	const index = findOpenDocumentIndex(folderId, fileId);
+	if (index >= 0) state.documents.updateDocumentContent(index, content);
+}
+
+export function closeOpenDocument(folderId: string, fileId: string): void {
+	const index = findOpenDocumentIndex(folderId, fileId);
+	if (index >= 0) state.documents.closeDocument(index);
+}
+
+export type Folder = domain.documents.Folder;
+export type DocumentFile = domain.documents.DocumentFile;
+export type OpenDocument = domain.documents.OpenDocument;

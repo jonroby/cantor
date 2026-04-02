@@ -283,12 +283,15 @@ describe('document app actions', () => {
 			'SUPPORTED_EXTENSIONS',
 			'addDocumentToChat',
 			'closeDocument',
+			'closeOpenDocument',
 			'createDocument',
 			'createFolder',
 			'deleteDocument',
 			'deleteFolder',
 			'exportFolder',
+			'findOpenDocumentIndex',
 			'getDocument',
+			'getFolder',
 			'getState',
 			'importDocument',
 			'importFolder',
@@ -298,8 +301,10 @@ describe('document app actions', () => {
 			'openDocument',
 			'renameDocument',
 			'renameFolder',
+			'resolveAsset',
 			'supportedExtensionsLabel',
 			'updateDocumentContent',
+			'updateOpenDocumentContent',
 			'validateDocumentMarkdown'
 		]);
 		expect(createFolder).toBeTypeOf('function');

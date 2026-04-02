@@ -357,12 +357,17 @@
 									onClose={() => closePanel(index)}
 								/>
 							{:else if panel.type === 'folder'}
+								{@const folder = app.documents.getFolder(panel.folderId)}
+								{@const folderFiles = folder?.files ?? []}
+								{@const activeFileId = folderSelectedFiles[panel.folderId] ?? folderFiles[0]?.id ?? null}
 								<FolderDocumentView
 									folderId={panel.folderId}
+									folderName={folder?.name ?? 'Folder'}
+									files={folderFiles}
+									{activeFileId}
 									agentStreaming={agentState.streaming}
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={agentState.pendingContent}
-									selectedFileId={folderSelectedFiles[panel.folderId]}
 									onSelectFile={(fileId) => {
 										folderSelectedFiles = { ...folderSelectedFiles, [panel.folderId]: fileId };
 										app.documents.openDocument(panel.folderId, fileId);
@@ -370,7 +375,15 @@
 									onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
 									onRejectPending={() => app.agent.rejectPending()}
 									onSwap={isSplit ? swapPanels : undefined}
-									onClose={() => closePanel(index)}
+									resolveAsset={(name) => app.documents.resolveAsset(panel.folderId, name)}
+									onContentChange={activeFileId
+										? (c) => app.documents.updateOpenDocumentContent(panel.folderId, activeFileId, c)
+										: undefined}
+									onClose={() => {
+										if (activeFileId) app.documents.closeOpenDocument(panel.folderId, activeFileId);
+										app.bootstrap.clearOpenDocument();
+										closePanel(index);
+									}}
 								/>
 							{/if}
 						</div>

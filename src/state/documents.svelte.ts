@@ -1,21 +1,8 @@
-export interface DocumentFile {
-	id: string;
-	name: string;
-	content: string;
-}
+import * as domain from '@/domain';
 
-export interface Folder {
-	id: string;
-	name: string;
-	files?: DocumentFile[];
-	folders?: Folder[];
-}
-
-export interface OpenDocument {
-	id: string;
-	content: string;
-	documentKey: { folderId: string; fileId: string } | null;
-}
+export type DocumentFile = domain.documents.DocumentFile;
+export type Folder = domain.documents.Folder;
+export type OpenDocument = domain.documents.OpenDocument;
 
 const DEFAULT_DOCUMENT_CONTENT = `# Cantor
 
@@ -51,12 +38,7 @@ function notifyFoldersChanged() {
 }
 
 export function findFolder(folderId: string): Folder | undefined {
-	for (const folder of documentState.folders) {
-		if (folder.id === folderId) return folder;
-		const sub = folder.folders?.find((f) => f.id === folderId);
-		if (sub) return sub;
-	}
-	return undefined;
+	return domain.documents.findFolder(documentState.folders, folderId);
 }
 
 function findParent(folderId: string): Folder | undefined {

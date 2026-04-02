@@ -11,6 +11,12 @@ export function createDomainMock(overrides?: DeepPartial<DomainMock>): DomainMoc
 			hasDuplicateNames: mockFn<typeof domain.constraints.hasDuplicateNames>(() => false),
 			isUniqueName: mockFn<typeof domain.constraints.isUniqueName>(() => true)
 		},
+		documents: {
+			findFile: mockFn<typeof domain.documents.findFile>(() => undefined),
+			findFolder: mockFn<typeof domain.documents.findFolder>(() => undefined),
+			findOpenDocumentIndex: mockFn<typeof domain.documents.findOpenDocumentIndex>(() => -1),
+			resolveAsset: mockFn<typeof domain.documents.resolveAsset>(() => null)
+		},
 		models: {
 			LOCAL_PROVIDERS: ['ollama', 'webllm'] as const,
 			KEY_BASED_PROVIDERS: [

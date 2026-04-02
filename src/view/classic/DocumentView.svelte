@@ -26,48 +26,24 @@
 		onClose
 	}: Props = $props();
 
-	let folder = $derived(app.documents.getState().folders.find((f) => f.id === folderId));
-	let documentFile = $derived(folder?.files?.find((f) => f.id === fileId) ?? null);
-
-	function resolveAsset(name: string): string | null {
-		const parts = name.split('/');
-		if (parts.length === 2) {
-			const sub = folder?.folders?.find((f) => f.name === parts[0]);
-			const file = sub?.files?.find((f) => f.name === parts[1]);
-			return file?.content ?? null;
-		}
-		const file = folder?.files?.find((f) => f.name === name);
-		return file?.content ?? null;
-	}
-
-	let openDocumentIndex = $derived.by(() => {
-		return app.documents
-			.getState()
-			.openDocuments.findIndex(
-				(d) => d.documentKey?.folderId === folderId && d.documentKey?.fileId === fileId
-			);
-	});
+	let result = $derived(app.documents.getDocument(folderId, fileId));
 </script>
 
 <div class="documentview-shell">
-	{#if documentFile}
+	{#if result}
 		<Document
-			title={documentFile.name}
-			content={documentFile.content}
+			title={result.file.name}
+			content={result.file.content}
 			{agentStreaming}
 			{agentProvider}
 			{pendingContent}
-			{resolveAsset}
+			resolveAsset={(name) => app.documents.resolveAsset(folderId, name)}
 			{onAcceptPending}
 			{onRejectPending}
 			{onSwap}
-			onContentChange={(c) => {
-				if (openDocumentIndex >= 0) app.documents.updateDocumentContent(openDocumentIndex, c);
-			}}
+			onContentChange={(c) => app.documents.updateOpenDocumentContent(folderId, fileId, c)}
 			onClose={() => {
-				if (openDocumentIndex >= 0) {
-					app.documents.closeDocument(openDocumentIndex);
-				}
+				app.documents.closeOpenDocument(folderId, fileId);
 				app.bootstrap.clearOpenDocument();
 				onClose();
 			}}

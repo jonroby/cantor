@@ -4,6 +4,9 @@
 
 	interface Props {
 		folderId: string;
+		folderName: string;
+		files: app.documents.DocumentFile[];
+		activeFileId: string | null;
 		agentStreaming?: boolean;
 		agentProvider?: app.providers.Provider | null;
 		pendingContent?: string | null;
@@ -11,12 +14,16 @@
 		onRejectPending?: () => void;
 		onSwap?: () => void;
 		onClose: () => void;
-		selectedFileId?: string;
 		onSelectFile?: (fileId: string) => void;
+		onContentChange?: (content: string) => void;
+		resolveAsset?: (name: string) => string | null;
 	}
 
 	let {
 		folderId,
+		folderName,
+		files,
+		activeFileId,
 		agentStreaming = false,
 		agentProvider,
 		pendingContent = null,
@@ -24,39 +31,17 @@
 		onRejectPending,
 		onSwap,
 		onClose,
-		selectedFileId,
-		onSelectFile
+		onSelectFile,
+		onContentChange,
+		resolveAsset
 	}: Props = $props();
 
-	let folder = $derived(app.documents.getState().folders.find((f) => f.id === folderId));
-	let files = $derived(folder?.files ?? []);
-	let activeFileId = $derived(selectedFileId ?? files[0]?.id ?? null);
 	let activeFile = $derived(files.find((f) => f.id === activeFileId) ?? null);
 	let dropdownOpen = $state(false);
-
-	let openDocumentIndex = $derived.by(() => {
-		if (!activeFileId) return -1;
-		return app.documents
-			.getState()
-			.openDocuments.findIndex(
-				(d) => d.documentKey?.folderId === folderId && d.documentKey?.fileId === activeFileId
-			);
-	});
 
 	function selectFile(fileId: string) {
 		onSelectFile?.(fileId);
 		dropdownOpen = false;
-	}
-
-	function resolveAsset(name: string): string | null {
-		const parts = name.split('/');
-		if (parts.length === 2) {
-			const sub = folder?.folders?.find((f) => f.name === parts[0]);
-			const file = sub?.files?.find((f) => f.name === parts[1]);
-			return file?.content ?? null;
-		}
-		const file = files.find((f) => f.name === name);
-		return file?.content ?? null;
 	}
 </script>
 
@@ -76,7 +61,7 @@
 				d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
 			/>
 		</svg>
-		<span class="folderview-folder-name">{folder?.name ?? 'Folder'}</span>
+		<span class="folderview-folder-name">{folderName}</span>
 		<span class="folderview-separator">/</span>
 		<div class="folderview-file-picker">
 			<button class="folderview-file-btn" onclick={() => (dropdownOpen = !dropdownOpen)}>
@@ -136,16 +121,8 @@
 			{onAcceptPending}
 			{onRejectPending}
 			{onSwap}
-			onContentChange={(c) => {
-				if (openDocumentIndex >= 0) app.documents.updateDocumentContent(openDocumentIndex, c);
-			}}
-			onClose={() => {
-				if (openDocumentIndex >= 0) {
-					app.documents.closeDocument(openDocumentIndex);
-				}
-				app.bootstrap.clearOpenDocument();
-				onClose();
-			}}
+			onContentChange={onContentChange}
+			{onClose}
 		/>
 	{/if}
 </div>
