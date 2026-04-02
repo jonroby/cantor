@@ -11,7 +11,6 @@
 		title?: string;
 		content: string;
 		agentStreaming?: boolean;
-		agentModel?: string;
 		agentProvider?: app.providers.Provider | null;
 		pendingContent?: string | null;
 		onContentChange?: (content: string) => void;
@@ -25,7 +24,6 @@
 		title,
 		content,
 		agentStreaming = false,
-		agentModel,
 		agentProvider,
 		pendingContent = null,
 		onContentChange,
@@ -480,20 +478,18 @@
 			</div>
 			{#if agentStreaming}
 				<div class="docs-streaming">
-					<div class="chatmsg-response-header">
-						{#if agentProvider && PROVIDER_LOGOS[agentProvider]}
-							<img
-								src={PROVIDER_LOGOS[agentProvider]}
-								alt={agentProvider}
-								class="chatmsg-provider-logo"
-							/>
-						{/if}
-						{#if agentModel}
-							<span class="chatmsg-model">{agentModel}</span>
-						{/if}
-						<div class="streaming-dot"></div>
+					<div class="docs-streaming-inner">
+						<div class="chatmsg-response-header">
+							{#if agentProvider && PROVIDER_LOGOS[agentProvider]}
+								<img
+									src={PROVIDER_LOGOS[agentProvider]}
+									alt={agentProvider}
+									class="chatmsg-provider-logo"
+								/>
+							{/if}
+							<span class="docs-streaming-text">Waiting for response…</span>
+						</div>
 					</div>
-					<div class="chatmsg-response-body chatmsg-response-plain">Waiting for response…</div>
 				</div>
 			{/if}
 		</div>
@@ -654,6 +650,11 @@
 		margin-top: 16px;
 		padding-top: 16px;
 		border-top: 1px solid hsl(var(--border, 0 0% 85%));
+	}
+
+	.docs-streaming-inner {
+		max-width: 720px;
+		margin: 0 auto;
 	}
 
 	.docs-editor-wrap {

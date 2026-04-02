@@ -12,6 +12,7 @@
 		agentPending?: boolean;
 		liveDocumentContent?: string;
 		onAgentResponse?: (text: string) => void;
+		onToggleMode?: () => void;
 	}
 
 	let {
@@ -21,7 +22,8 @@
 		agentStreaming = $bindable(false),
 		agentPending = false,
 		liveDocumentContent,
-		onAgentResponse
+		onAgentResponse,
+		onToggleMode
 	}: Props = $props();
 
 	let composerValue = $state('');
@@ -210,6 +212,7 @@
 		}
 	}}
 	onOpenPalette={() => (paletteOpen = true)}
+	onToggleMode={() => onToggleMode?.()}
 />
 
 <ModelPalette

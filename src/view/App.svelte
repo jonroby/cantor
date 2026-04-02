@@ -15,14 +15,36 @@
 	let searchAllChats = $state(true);
 	let searchOpen = $state(false);
 	let hasHydrated = $state(false);
-	let panels: PanelEntry[] = $state([{ type: 'chat' }]);
+	let panels: PanelEntry[] = $state([]);
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let chatSidePanelOpen = $state(false);
+	let agentMode = $state(false);
+	let agentStreaming = $state(false);
+	let pendingDocumentContent: string | null = $state(null);
 
+	let providerState = $derived(app.providers.getState());
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
 	let isSplit = $derived(panels.length === 2);
+	let activeDocPanel = $derived(
+		panels.find((p): p is PanelEntry & { type: 'document' } => p.type === 'document') ?? null
+	);
+	let activeDocumentFile = $derived.by(() => {
+		if (!activeDocPanel) return null;
+		const folder = app.documents.getState().folders.find((f) => f.id === activeDocPanel.folderId);
+		return folder?.files?.find((f) => f.id === activeDocPanel.fileId) ?? null;
+	});
+	let activeDocumentIndex = $derived.by(() => {
+		if (!activeDocPanel) return -1;
+		return app.documents
+			.getState()
+			.openDocuments.findIndex(
+				(d) =>
+					d.documentKey?.folderId === activeDocPanel!.folderId &&
+					d.documentKey?.fileId === activeDocPanel!.fileId
+			);
+	});
 
 	$effect(() => {
 		if (hasHydrated) {
@@ -65,10 +87,15 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		const { restoredDocument, hadDuplicateRenames } = app.bootstrap.initialize();
+		const { restoredDocument, chatPanelOpen, hadDuplicateRenames } = app.bootstrap.initialize();
 		if (hadDuplicateRenames) {
 			toast.warning('Some items had duplicate names and were automatically renamed.');
 		}
+
+		if (chatPanelOpen !== false) {
+			panels = [{ type: 'chat' }];
+		}
+
 		if (restoredDocument) {
 			openDocumentPanel(restoredDocument.folderId, restoredDocument.fileId);
 		}
@@ -112,6 +139,9 @@
 		const panel = panels[index];
 		if (panel?.type === 'chat') {
 			chatSidePanelOpen = false;
+			app.bootstrap.setChatPanelOpen(false);
+		} else if (panel?.type === 'document') {
+			app.bootstrap.clearOpenDocument();
 		}
 		panels = panels.filter((_, i) => i !== index);
 	}
@@ -125,6 +155,7 @@
 			} else {
 				panels = [{ type: 'chat' }, panels[1]];
 			}
+			app.bootstrap.setChatPanelOpen(true);
 		}
 	}
 
@@ -177,7 +208,7 @@
 	<SidebarPrimitive.Provider>
 		<AppSidebar
 			chats={app.chat.getChats()}
-			activeChatIndex={app.chat.getActiveChatIndex()}
+			activeChatIndex={hasChatPanel ? app.chat.getActiveChatIndex() : -1}
 			onSelectChat={selectChat}
 			onNewChat={newChat}
 			onDeleteChat={doDeleteChat}
@@ -226,6 +257,21 @@
 								<DocumentView
 									folderId={panel.folderId}
 									fileId={panel.fileId}
+									{agentStreaming}
+									agentProvider={providerState.activeModel?.provider}
+									pendingContent={pendingDocumentContent}
+									onAcceptPending={() => {
+										if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
+											app.documents.updateDocumentContent(
+												activeDocumentIndex,
+												pendingDocumentContent
+											);
+										}
+										pendingDocumentContent = null;
+									}}
+									onRejectPending={() => {
+										pendingDocumentContent = null;
+									}}
 									onClose={() => closePanel(index)}
 								/>
 							{/if}
@@ -236,6 +282,14 @@
 				<div class="composer-anchor" class:composer-left={isSplit || chatSidePanelOpen}>
 					<Composer
 						bind:this={composerRef}
+						{agentMode}
+						bind:agentStreaming
+						onToggleMode={() => (agentMode = !agentMode)}
+						liveDocumentContent={activeDocumentFile?.content}
+						agentPending={pendingDocumentContent !== null}
+						onAgentResponse={(text) => {
+							pendingDocumentContent = text;
+						}}
 						onScrollToNode={(nodeId) => chatViewRef?.scrollToNode(nodeId)}
 						onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
 					/>
@@ -278,6 +332,7 @@
 		flex-direction: column;
 		overflow: hidden;
 		min-width: 0;
+		transition: flex 250ms ease;
 	}
 
 	.panel-layout-split .panel-slot:first-child {

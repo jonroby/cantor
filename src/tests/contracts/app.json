@@ -3,7 +3,8 @@
     "clearOpenDocument": true,
     "initialize": true,
     "rememberOpenDocument": true,
-    "save": true
+    "save": true,
+    "setChatPanelOpen": true
   },
   "chat": {
     "addDocumentToChat": true,

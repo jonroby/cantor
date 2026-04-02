@@ -357,6 +357,32 @@
 	animation: pulse 1.2s infinite;
 }
 
+.docs-streaming-text {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	background: linear-gradient(
+		90deg,
+		hsl(var(--foreground) / 0.3) 0%,
+		hsl(var(--foreground) / 0.8) 50%,
+		hsl(var(--foreground) / 0.3) 100%
+	);
+	background-size: 200% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 100% 0;
+	}
+	100% {
+		background-position: -100% 0;
+	}
+}
+
 .composer {
 	position: fixed;
 	left: 50%;

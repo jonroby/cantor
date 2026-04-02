@@ -122,7 +122,9 @@
 				{#if data.model}
 					<span class="chatmsg-model">{data.model}</span>
 				{/if}
-				{#if data.isStreaming}
+				{#if data.isStreaming && !data.response}
+					<span class="docs-streaming-text">Waiting for response…</span>
+				{:else if data.isStreaming}
 					<div class="streaming-dot"></div>
 				{/if}
 			</div>
@@ -147,10 +149,12 @@
 						{/each}
 					</div>
 				{/if}
-			{:else}
+			{:else if data.response}
 				<div class="chatmsg-response-body chatmsg-response-plain">
-					{data.response || (data.isStreaming ? 'Waiting for response…' : 'Cancelled')}
+					{data.response}
 				</div>
+			{:else if !data.isStreaming}
+				<div class="chatmsg-response-body chatmsg-response-plain">Cancelled</div>
 			{/if}
 		</div>
 	{/if}

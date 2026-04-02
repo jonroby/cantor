@@ -18,6 +18,7 @@
 		onSubmit: () => void;
 		onStop: () => void;
 		onOpenPalette: () => void;
+		onToggleMode: () => void;
 	}
 
 	let {
@@ -34,7 +35,8 @@
 		onCycleStrategy,
 		onSubmit,
 		onStop,
-		onOpenPalette
+		onOpenPalette,
+		onToggleMode
 	}: Props = $props();
 
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
@@ -125,7 +127,7 @@
 					{/if}
 					{activeModelLabel ?? 'Choose model'}
 				</Button>
-				<Button class="mode-chip" variant="outline" size="sm">
+				<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
 					{agentMode ? 'Agent' : 'Chat'}
 				</Button>
 				<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>

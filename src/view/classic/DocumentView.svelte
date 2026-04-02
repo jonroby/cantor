@@ -5,10 +5,24 @@
 	interface Props {
 		folderId: string;
 		fileId: string;
+		agentStreaming?: boolean;
+		agentProvider?: app.providers.Provider | null;
+		pendingContent?: string | null;
+		onAcceptPending?: () => void;
+		onRejectPending?: () => void;
 		onClose: () => void;
 	}
 
-	let { folderId, fileId, onClose }: Props = $props();
+	let {
+		folderId,
+		fileId,
+		agentStreaming = false,
+		agentProvider,
+		pendingContent = null,
+		onAcceptPending,
+		onRejectPending,
+		onClose
+	}: Props = $props();
 
 	let documentFile = $derived.by(() => {
 		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
@@ -29,6 +43,11 @@
 		<Document
 			title={documentFile.name}
 			content={documentFile.content}
+			{agentStreaming}
+			{agentProvider}
+			{pendingContent}
+			{onAcceptPending}
+			{onRejectPending}
 			onContentChange={(c) => {
 				if (openDocumentIndex >= 0) app.documents.updateDocumentContent(openDocumentIndex, c);
 			}}
