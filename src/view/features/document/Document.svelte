@@ -562,7 +562,6 @@
 	.docs-header {
 		display: flex;
 		padding: 0 1rem;
-		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
 		flex-shrink: 0;
 	}
 
@@ -577,6 +576,7 @@
 		font-size: 13px;
 		font-weight: 600;
 		color: hsl(var(--foreground, 0 0% 9%));
+		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
 	}
 
 	.dirty-indicator {
