@@ -413,7 +413,10 @@
 							class="scroll-to-bottom-btn"
 							onclick={() => {
 								const chat = app.chat.getChat();
-								const path = app.chat.getMainChat({ rootId: chat.rootId, exchanges: chat.exchanges });
+								const path = app.chat.getMainChat({
+									rootId: chat.rootId,
+									exchanges: chat.exchanges
+								});
 								if (path.length > 0) chatViewRef?.scrollToNode(path[path.length - 1]!.id);
 							}}
 							aria-label="Scroll to bottom"

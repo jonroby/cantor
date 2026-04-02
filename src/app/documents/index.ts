@@ -203,7 +203,9 @@ async function importDocumentsIntoFolder(
 export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK) {
 	void external.io.pickDirectory().then((files) => {
 		if (files.length === 0) return;
-		const supportedFiles = files.filter((file) => file.name.endsWith('.md') || file.name.endsWith('.svg'));
+		const supportedFiles = files.filter(
+			(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
+		);
 		if (supportedFiles.length === 0) {
 			feedback.error?.('No .md or .svg files found in the selected folder');
 			return;
@@ -229,7 +231,9 @@ export function importFolderIntoFolder(
 ) {
 	void external.io.pickDirectory().then((files) => {
 		if (files.length === 0) return;
-		const supportedFiles = files.filter((file) => file.name.endsWith('.md') || file.name.endsWith('.svg'));
+		const supportedFiles = files.filter(
+			(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
+		);
 		if (supportedFiles.length === 0) {
 			feedback.error?.('No .md or .svg files found in the selected folder');
 			return;

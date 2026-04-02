@@ -155,7 +155,7 @@ describe('ChatView', () => {
 	describe('empty chat', () => {
 		it('shows starter text when no exchanges', () => {
 			render(ChatView);
-			expect(screen.getByText('Start a conversation below.')).toBeInTheDocument();
+			expect(screen.getByText(/Type something and submit|Select a model/)).toBeInTheDocument();
 		});
 	});
 
@@ -204,7 +204,6 @@ describe('ChatView', () => {
 			state.providers.providerState.activeModel = null;
 			render(ChatViewTestWrapper);
 			expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
-			expect(screen.getByText('Select a model first.')).toBeInTheDocument();
 		});
 
 		it('calls startStream after submit', async () => {

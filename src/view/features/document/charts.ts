@@ -1,5 +1,6 @@
-import Plotly from 'plotly.js-dist-min';
-import functionPlot from 'function-plot';
+// Lazy-loaded to avoid crashing in test environments (jsdom)
+const loadPlotly = () => import('plotly.js-dist-min').then((m) => m.default);
+const loadFunctionPlot = () => import('function-plot').then((m) => m.default);
 
 /**
  * Preprocess markdown: replace ```plotly and ```plot code blocks with placeholder HTML.
@@ -21,19 +22,25 @@ export function preprocessChartBlocks(
 		let caption = '';
 		try {
 			const config = JSON.parse(json.trim());
-			const fns = (config.data ?? [])
-				.map((d: { fn?: string }) => d.fn)
-				.filter(Boolean);
-			if (fns.length > 0) {
-				const katexHtml = fns
-					.map((fn: string) => {
-						const tex = `y = ${fn.replace(
-							/\b(log|ln|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|sinh|cosh|tanh|exp|sqrt|abs|min|max)\b/g,
-							'\\$1'
-						)}`;
-						return renderKatex(tex, true);
-					})
-					.join('');
+			const texExprs: string[] = [];
+			for (const d of config.data ?? []) {
+				const escapeMath = (s: string) =>
+					s.replace(
+						/\b(log|ln|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|sinh|cosh|tanh|exp|sqrt|abs|min|max)\b/g,
+						'\\$1'
+					);
+				if (d.fnType === 'implicit' && d.fn) {
+					texExprs.push(`${escapeMath(d.fn)} = 0`);
+				} else if (d.fnType === 'polar' && d.r) {
+					texExprs.push(`r = ${escapeMath(d.r)}`);
+				} else if (d.fnType === 'parametric' && d.x && d.y) {
+					texExprs.push(`x = ${escapeMath(d.x)},\\; y = ${escapeMath(d.y)}`);
+				} else if (d.fn) {
+					texExprs.push(`y = ${escapeMath(d.fn)}`);
+				}
+			}
+			if (texExprs.length > 0) {
+				const katexHtml = texExprs.map((tex: string) => renderKatex(tex, true)).join('');
 				caption = `<div class="fplot-caption">${katexHtml}</div>`;
 			}
 		} catch {
@@ -46,20 +53,17 @@ export function preprocessChartBlocks(
 }
 
 /** Mount Plotly charts on placeholder elements inside a container. */
-function mountPlotlyCharts(container: HTMLElement): void {
+async function mountPlotlyCharts(container: HTMLElement): Promise<void> {
 	const els = container.querySelectorAll('.plotly-chart[data-plotly-config]');
+	if (els.length === 0) return;
+	const Plotly = await loadPlotly();
 	for (const el of els) {
 		if (el.children.length > 0) continue;
 		try {
-			const config = JSON.parse(
-				decodeURIComponent(el.getAttribute('data-plotly-config')!)
-			);
-			Plotly.newPlot(
-				el as HTMLDivElement,
-				config.data ?? [],
-				config.layout ?? {},
-				{ responsive: true }
-			);
+			const config = JSON.parse(decodeURIComponent(el.getAttribute('data-plotly-config')!));
+			Plotly.newPlot(el as HTMLDivElement, config.data ?? [], config.layout ?? {}, {
+				responsive: true
+			});
 		} catch {
 			el.textContent = 'Invalid plotly config';
 		}
@@ -67,16 +71,14 @@ function mountPlotlyCharts(container: HTMLElement): void {
 }
 
 /** Mount function-plot charts on placeholder elements inside a container. */
-function mountFunctionPlotCharts(container: HTMLElement): void {
-	const els = container.querySelectorAll(
-		'.function-plot-chart[data-fplot-config]'
-	);
+async function mountFunctionPlotCharts(container: HTMLElement): Promise<void> {
+	const els = container.querySelectorAll('.function-plot-chart[data-fplot-config]');
+	if (els.length === 0) return;
+	const functionPlot = await loadFunctionPlot();
 	for (const el of els) {
 		if (el.children.length > 0) continue;
 		try {
-			const config = JSON.parse(
-				decodeURIComponent(el.getAttribute('data-fplot-config')!)
-			);
+			const config = JSON.parse(decodeURIComponent(el.getAttribute('data-fplot-config')!));
 			const { xAxis, yAxis, ...rest } = config;
 
 			const tooltip = document.createElement('div');
@@ -85,17 +87,15 @@ function mountFunctionPlotCharts(container: HTMLElement): void {
 			(el as HTMLElement).style.position = 'relative';
 			el.appendChild(tooltip);
 
-			const data = (rest.data ?? []).map(
-				(d: Record<string, unknown>) => ({
-					graphType: 'polyline',
-					sampler: 'builtIn',
-					nSamples: 2000,
+			const data = (rest.data ?? []).map((d: Record<string, unknown>) => {
+				const isImplicit = d.fnType === 'implicit';
+				return {
+					...(!isImplicit ? { graphType: 'polyline', sampler: 'builtIn', nSamples: 2000 } : {}),
 					...d
-				})
-			);
+				};
+			});
 
-			const parentWidth =
-				el.closest('.docs-content-inner')?.clientWidth ?? 600;
+			const parentWidth = el.closest('.docs-content-inner')?.clientWidth ?? 600;
 			const size = Math.round(parentWidth * 0.5);
 
 			const chart = functionPlot({
@@ -122,21 +122,15 @@ function mountFunctionPlotCharts(container: HTMLElement): void {
 						line.setAttribute('opacity', '0.4');
 					});
 					svg.querySelectorAll('.tick text').forEach((t) => {
-						if (t.textContent?.trim() === '0')
-							(t as SVGElement).style.display = 'none';
+						if (t.textContent?.trim() === '0') (t as SVGElement).style.display = 'none';
 					});
 				};
 				fixGrid();
 				chart.on('all:zoom', () => requestAnimationFrame(fixGrid));
 
 				svg.addEventListener('mousemove', () => {
-					const innerTip = el.querySelector(
-						'.inner-tip'
-					) as HTMLElement | null;
-					if (
-						!innerTip ||
-						innerTip.style.display === 'none'
-					) {
+					const innerTip = el.querySelector('.inner-tip') as HTMLElement | null;
+					if (!innerTip || innerTip.style.display === 'none') {
 						tooltip.style.display = 'none';
 						return;
 					}
@@ -155,14 +149,14 @@ function mountFunctionPlotCharts(container: HTMLElement): void {
 					tooltip.style.display = 'none';
 				});
 			}
-		} catch {
-			el.textContent = 'Invalid plot config';
+		} catch (e) {
+			console.error('function-plot error:', e);
+			el.textContent = `Invalid plot config: ${e instanceof Error ? e.message : String(e)}`;
 		}
 	}
 }
 
 /** Mount all chart types (Plotly + function-plot) inside a container. */
-export function mountCharts(container: HTMLElement): void {
-	mountPlotlyCharts(container);
-	mountFunctionPlotCharts(container);
+export async function mountCharts(container: HTMLElement): Promise<void> {
+	await Promise.all([mountPlotlyCharts(container), mountFunctionPlotCharts(container)]);
 }

@@ -82,7 +82,11 @@
 					bind:this={textareaEl}
 					bind:value={composerValue}
 					class="composer-textarea"
-					placeholder={!activeModelLabel ? 'Select a model to get started with chat or working with an agent' : agentMode ? 'Agent...' : 'Chat...'}
+					placeholder={!activeModelLabel
+						? 'Select a model to get started with chat or working with an agent'
+						: agentMode
+							? 'Agent...'
+							: 'Chat...'}
 					disabled={!activeModelLabel}
 					rows={1}
 					oninput={autoResize}

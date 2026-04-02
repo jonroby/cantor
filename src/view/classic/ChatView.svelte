@@ -562,7 +562,9 @@
 					{/each}
 					{#if mainChatPath.length === 0}
 						<div class="chatview-empty">
-							{providerState.activeModel ? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.' : 'Select a model to get started.'}
+							{providerState.activeModel
+								? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.'
+								: 'Select a model to get started.'}
 						</div>
 					{/if}
 				</div>
@@ -584,7 +586,6 @@
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
 							{agentStreaming}
-							agentModel={providerState.activeModel?.modelId}
 							agentProvider={providerState.activeModel?.provider}
 							pendingContent={pendingDocumentContent}
 							onContentChange={(c) => {
@@ -828,5 +829,4 @@
 	.chatview-doc-wrap :global(.panel-body) {
 		padding-bottom: 12rem;
 	}
-
 </style>
