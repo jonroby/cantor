@@ -42,6 +42,7 @@ describe('models', () => {
 		}
 	});
 
+
 	it('returns model context length for known key-based models', () => {
 		expect(external.providers.catalog.getModelContextLength('openai', 'gpt-4o')).toBe(128_000);
 		expect(external.providers.catalog.getModelContextLength('claude', 'claude-haiku-4-5')).toBe(

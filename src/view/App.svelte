@@ -36,11 +36,7 @@
 	let hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
 	let isSplit = $derived(panels.length === 2);
 	let bothDocs = $derived(isSplit && !hasChatPanel);
-	let agentMode = $derived.by(() => {
-		if (!hasChatPanel && hasDocPanel) return true;
-		if (isSplit) return composerFocus === 'agent';
-		return false;
-	});
+	let agentMode = $state(false);
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
 	let sideChatSide = $state<'left' | 'right'>('left');

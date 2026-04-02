@@ -38,3 +38,4 @@ export interface ProviderModelEntry {
 export function isKeyBasedProvider(provider: Provider): provider is KeyBasedProvider {
 	return KEY_BASED_PROVIDERS.includes(provider as KeyBasedProvider);
 }
+

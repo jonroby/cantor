@@ -1,6 +1,8 @@
 import * as domain from '@/domain';
 import * as state from '@/state';
 import * as external from '@/external';
+import * as documents from '@/app/documents';
+import * as chat from '@/app/chat';
 
 export type Message = domain.tree.Message;
 
@@ -31,19 +33,24 @@ const TOOLS: external.providers.stream.ToolDefinition[] = [
 	{
 		name: 'create_file',
 		description:
-			'Create a new file in the current folder (or its svg/ subfolder for SVGs). ' +
+			'Create a new file in a folder. ' +
 			'The file will be created and its content written. ' +
-			'For SVG files referenced from a markdown document, use the svg/ subfolder convention.',
+			'For SVG files referenced from a markdown document, use the svg/ subfolder convention. ' +
+			'If folder_id is omitted, uses the current folder context.',
 		input_schema: {
 			type: 'object',
 			properties: {
 				filename: {
 					type: 'string',
-					description: 'Name of the file to create, e.g. "diagram.svg"'
+					description: 'Name of the file to create, e.g. "diagram.svg" or "Notes.md"'
 				},
 				content: {
 					type: 'string',
 					description: 'The full content of the file'
+				},
+				folder_id: {
+					type: 'string',
+					description: 'ID of the folder to create the file in. Omit to use current folder.'
 				},
 				subfolder: {
 					type: 'string',
@@ -51,6 +58,52 @@ const TOOLS: external.providers.stream.ToolDefinition[] = [
 				}
 			},
 			required: ['filename', 'content']
+		}
+	},
+	{
+		name: 'create_folder',
+		description:
+			'Create a new folder. Optionally nest it inside an existing folder. ' +
+			'Returns the new folder ID which you can use with create_file.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				name: {
+					type: 'string',
+					description: 'Name for the folder'
+				},
+				parent_folder_id: {
+					type: 'string',
+					description: 'Optional parent folder ID to nest this folder inside'
+				}
+			},
+			required: ['name']
+		}
+	},
+	{
+		name: 'list_folders',
+		description:
+			'List all folders and their files. ' +
+			'Use this to discover existing folders before creating files or to understand the current workspace.',
+		input_schema: {
+			type: 'object',
+			properties: {},
+			required: []
+		}
+	},
+	{
+		name: 'create_chat',
+		description:
+			'Create a new chat conversation. Returns the chat index and name.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				name: {
+					type: 'string',
+					description: 'Optional name for the chat'
+				}
+			},
+			required: []
 		}
 	}
 ];
@@ -71,6 +124,15 @@ function executeTool(
 	if (name === 'create_file') {
 		return { result: executeCreateFile(input, ctx) };
 	}
+	if (name === 'create_folder') {
+		return { result: executeCreateFolder(input) };
+	}
+	if (name === 'list_folders') {
+		return { result: executeListFolders() };
+	}
+	if (name === 'create_chat') {
+		return { result: executeCreateChat(input) };
+	}
 	return { result: `Unknown tool: ${name}` };
 }
 
@@ -80,40 +142,92 @@ function executeCreateFile(
 ): string {
 	const filename = input.filename as string;
 	const content = input.content as string;
+	const folderId = (input.folder_id as string | undefined) ?? ctx.folderId;
 	const subfolder = input.subfolder as string | undefined;
 
 	if (!filename || content === undefined) {
 		return 'Error: filename and content are required';
 	}
 
-	if (!ctx.folderId) {
-		return 'Error: no folder context — open a document in a folder first';
+	if (!folderId) {
+		return 'Error: no folder context — provide folder_id or open a document in a folder first';
 	}
 
-	let targetFolderId = ctx.folderId;
+	let targetFolderId = folderId;
 
 	if (subfolder) {
-		const parentFolder = state.documents.findFolder(ctx.folderId);
-		if (!parentFolder) return 'Error: parent folder not found';
+		const folder = documents.getFolder(folderId);
+		if (!folder) return 'Error: parent folder not found';
 
-		let sub = parentFolder.folders?.find((f) => f.name === subfolder);
+		const sub = folder.folders?.find((f) => f.name === subfolder);
 		if (!sub) {
-			targetFolderId = state.documents.newFolder(ctx.folderId);
-			const created = state.documents.findFolder(targetFolderId);
-			if (created) created.name = subfolder;
+			const subId = documents.createFolder(folderId);
+			documents.renameFolder(subId, subfolder);
+			targetFolderId = subId;
 		} else {
 			targetFolderId = sub.id;
 		}
 	}
 
-	const fileId = state.documents.createDocumentInFolder(targetFolderId, filename);
-	if (!fileId) return `Error: could not create file "${filename}"`;
+	const result = documents.createDocument(targetFolderId);
+	if (!result) return `Error: could not create file "${filename}"`;
 
-	const folder = state.documents.findFolder(targetFolderId);
-	const file = folder?.files?.find((f) => f.id === fileId);
-	if (file) file.content = content;
+	const renameResult = documents.renameDocument(targetFolderId, result.fileId, filename);
+	documents.updateOpenDocumentContent(targetFolderId, result.fileId, content);
 
-	return `Created "${subfolder ? subfolder + '/' : ''}${filename}"`;
+	const actualName = renameResult.result ?? filename;
+	const path = subfolder ? `${subfolder}/${actualName}` : actualName;
+	if (actualName !== filename) {
+		return `Created "${path}" (note: renamed from "${filename}" because that name was already taken — use "${path}" in your markdown reference)`;
+	}
+	return `Created "${path}"`;
+}
+
+function executeCreateFolder(input: Record<string, unknown>): string {
+	const name = input.name as string;
+	const parentFolderId = input.parent_folder_id as string | undefined;
+
+	if (!name) {
+		return 'Error: name is required';
+	}
+
+	const folderId = documents.createFolder(parentFolderId);
+	documents.renameFolder(folderId, name);
+
+	return `Created folder "${name}" (id: ${folderId})`;
+}
+
+function executeListFolders(): string {
+	const folders = documents.getState().folders;
+	if (folders.length === 0) {
+		return 'No folders exist yet.';
+	}
+
+	function describeFolder(folder: domain.documents.Folder, indent: number): string {
+		const prefix = '  '.repeat(indent);
+		const files = folder.files ?? [];
+		const fileList =
+			files.length > 0
+				? files.map((f) => `${prefix}  - ${f.name}`).join('\n')
+				: `${prefix}  (empty)`;
+		let result = `${prefix}📁 ${folder.name} (id: ${folder.id})\n${fileList}`;
+		for (const sub of folder.folders ?? []) {
+			result += '\n' + describeFolder(sub, indent + 1);
+		}
+		return result;
+	}
+
+	return folders.map((f) => describeFolder(f, 0)).join('\n\n');
+}
+
+function executeCreateChat(input: Record<string, unknown>): string {
+	const name = input.name as string | undefined;
+	const index = chat.createChat();
+	if (name) {
+		chat.renameChat(index, name);
+	}
+	const chats = chat.getChats();
+	return `Created chat "${chats[index].name}" (index: ${index})`;
 }
 
 // ── Message building ───────────────────────────────────────────────────────
@@ -128,7 +242,8 @@ export function buildMessages(
 		: '\n\nThe document is currently empty.';
 
 	const systemPrompt = [
-		'You are editing a markdown document. The user will give you instructions about what to change.',
+		'You are an assistant that can edit documents, create files, manage folders, and create chats.',
+		'When editing a document, your text response becomes the new document content.',
 		'',
 		'CRITICAL RULES:',
 		'- Only change what the user asked for. Do NOT rewrite, rephrase, reformat, or reorganize any content the user did not mention.',
@@ -138,6 +253,14 @@ export function buildMessages(
 		'COMMUNICATING WITH THE USER:',
 		'If you need to ask a clarifying question or respond to the user without editing the document, use the respond tool.',
 		'Do NOT write conversational text as your response — that would overwrite the document.',
+		'',
+		'WORKSPACE MANAGEMENT:',
+		'You can create folders, files, and chats using the available tools.',
+		'- Use list_folders to see existing folders and files before creating new ones.',
+		'- Use create_folder to create a new folder, then use its returned ID with create_file.',
+		'- Use create_file to create documents (.md) or SVGs (.svg) inside a folder.',
+		'- Use create_chat to create new chat conversations.',
+		'- When creating multiple files in a new folder, create the folder first, then create files using the folder ID.',
 		'',
 		'CREATING SVG DIAGRAMS:',
 		'When the user asks for a diagram, chart, visual, or SVG, you MUST use the create_file tool. Do NOT write SVG markup inline in the document.',
