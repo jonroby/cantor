@@ -202,16 +202,22 @@
 
 					const svg = el.querySelector('svg');
 					if (svg) {
-						svg.addEventListener('mousemove', (e) => {
+						svg.addEventListener('mousemove', () => {
 							const innerTip = el.querySelector('.inner-tip') as HTMLElement | null;
 							if (!innerTip || innerTip.style.display === 'none') {
 								tooltip.style.display = 'none';
 								return;
 							}
-							const rect = el.getBoundingClientRect();
+							const circle = innerTip.querySelector('circle');
+							if (!circle) {
+								tooltip.style.display = 'none';
+								return;
+							}
+							const circleRect = circle.getBoundingClientRect();
+							const elRect = el.getBoundingClientRect();
 							tooltip.style.display = 'block';
-							tooltip.style.left = `${e.clientX - rect.left}px`;
-							tooltip.style.top = `${e.clientY - rect.top - 45}px`;
+							tooltip.style.left = `${circleRect.left - elRect.left + circleRect.width / 2}px`;
+							tooltip.style.top = `${circleRect.top - elRect.top - 40}px`;
 						});
 						svg.addEventListener('mouseleave', () => {
 							tooltip.style.display = 'none';
