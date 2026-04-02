@@ -1,0 +1,90 @@
+/* function-plot chart styles */
+
+.function-plot-wrap {
+	margin: 16px auto;
+	border: 1px solid hsl(var(--border));
+	border-radius: 8px;
+	overflow: hidden;
+	background: #fff;
+	width: fit-content;
+}
+
+.function-plot-chart {
+	overflow: hidden;
+}
+
+.function-plot-chart svg {
+	display: block;
+	margin: -20px -20px -20px -40px;
+}
+
+.function-plot-chart .domain {
+	stroke: transparent !important;
+}
+
+.function-plot-chart .tick line {
+	stroke: #000 !important;
+	stroke-opacity: 0.15 !important;
+}
+
+.function-plot-chart .tick text {
+	fill: #999;
+	font-size: 11px;
+}
+
+.function-plot-chart path.line {
+	stroke-width: 2.5 !important;
+}
+
+.function-plot-chart .top-right-legend {
+	display: none;
+}
+
+.function-plot-chart circle {
+	fill: #1a1a1a !important;
+	r: 4;
+}
+
+.function-plot-chart .top-right-legend text,
+.function-plot-chart .x.axis-tip,
+.function-plot-chart .y.axis-tip {
+	display: none;
+}
+
+.function-plot-chart .tip-x-line,
+.function-plot-chart .tip-y-line {
+	display: none;
+}
+
+.function-plot-chart .inner-tip text {
+	display: none;
+}
+
+.function-plot-chart .inner-tip circle {
+	fill: #1a1a1a !important;
+	r: 5;
+}
+
+.fplot-caption {
+	padding: 12px 16px;
+	border-top: 1px solid hsl(var(--border));
+	text-align: center;
+}
+
+.fplot-caption .katex-display {
+	margin: 0;
+}
+
+.fplot-tooltip {
+	position: absolute;
+	pointer-events: none;
+	z-index: 10;
+	background: #1a1a1a;
+	color: #fff;
+	padding: 5px 12px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	white-space: nowrap;
+	transform: translateX(-50%);
+}

@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { Marked } from 'marked';
-	import Plotly from 'plotly.js-dist-min';
-	import functionPlot from 'function-plot';
 	import katex from 'katex';
 	import DOMPurify from 'dompurify';
+	import { preprocessChartBlocks, mountCharts } from './charts';
 	import { ArrowLeftRight } from 'lucide-svelte';
 	import * as app from '@/app';
 	import { PROVIDER_LOGOS } from '@/view/assets';
@@ -162,89 +161,7 @@
 	$effect(() => {
 		void renderedHtml;
 		if (!contentEl) return;
-		tick().then(() => {
-			const plotEls = contentEl?.querySelectorAll('.plotly-chart[data-plotly-config]') ?? [];
-			for (const el of plotEls) {
-				if (el.children.length > 0) continue;
-				try {
-					const config = JSON.parse(decodeURIComponent(el.getAttribute('data-plotly-config')!));
-					Plotly.newPlot(el as HTMLDivElement, config.data ?? [], config.layout ?? {}, { responsive: true });
-				} catch {
-					el.textContent = 'Invalid plotly config';
-				}
-			}
-
-			const fplotEls = contentEl?.querySelectorAll('.function-plot-chart[data-fplot-config]') ?? [];
-			for (const el of fplotEls) {
-				if (el.children.length > 0) continue;
-				try {
-					const config = JSON.parse(decodeURIComponent(el.getAttribute('data-fplot-config')!));
-					const { xAxis, yAxis, ...rest } = config;
-					const tooltip = document.createElement('div');
-					tooltip.className = 'fplot-tooltip';
-					tooltip.style.display = 'none';
-					el.style.position = 'relative';
-					el.appendChild(tooltip);
-
-					const data = (rest.data ?? []).map((d: Record<string, unknown>) => ({
-						graphType: 'polyline',
-						sampler: 'builtIn',
-						nSamples: 2000,
-						...d
-					}));
-					const chart = functionPlot({
-						target: el as HTMLDivElement,
-						tip: {
-							renderer: (x: number, y: number) => {
-								tooltip.textContent = `${x.toFixed(2)}, ${y.toFixed(2)}`;
-								return `${x.toFixed(2)}, ${y.toFixed(2)}`;
-							}
-						},
-						...rest,
-						data,
-						grid: true,
-						xAxis: { position: 'sticky' as const, ...xAxis },
-						yAxis: { position: 'sticky' as const, ...yAxis }
-					});
-
-					const svg = el.querySelector('svg');
-					if (svg) {
-						const fixGrid = () => {
-							svg.querySelectorAll('.axis line, .axis path').forEach((el) => {
-								el.setAttribute('opacity', '0.4');
-							});
-							svg.querySelectorAll('.tick text').forEach((t) => {
-								if (t.textContent?.trim() === '0') (t as SVGElement).style.display = 'none';
-							});
-						};
-						fixGrid();
-						chart.on('all:zoom', () => requestAnimationFrame(fixGrid));
-						svg.addEventListener('mousemove', () => {
-							const innerTip = el.querySelector('.inner-tip') as HTMLElement | null;
-							if (!innerTip || innerTip.style.display === 'none') {
-								tooltip.style.display = 'none';
-								return;
-							}
-							const circle = innerTip.querySelector('circle');
-							if (!circle) {
-								tooltip.style.display = 'none';
-								return;
-							}
-							const circleRect = circle.getBoundingClientRect();
-							const elRect = el.getBoundingClientRect();
-							tooltip.style.display = 'block';
-							tooltip.style.left = `${circleRect.left - elRect.left + circleRect.width / 2}px`;
-							tooltip.style.top = `${circleRect.top - elRect.top - 40}px`;
-						});
-						svg.addEventListener('mouseleave', () => {
-							tooltip.style.display = 'none';
-						});
-					}
-				} catch {
-					el.textContent = 'Invalid plot config';
-				}
-			}
-		});
+		tick().then(() => mountCharts(contentEl!));
 	});
 
 	const marked = new Marked({
@@ -280,17 +197,7 @@
 			});
 		}
 
-		// Extract ```plotly code blocks and replace with placeholder divs
-		md = md.replace(/```plotly\s*\n([\s\S]*?)```/g, (_match, json, offset) => {
-			const id = `plotly-${offset}`;
-			return `<div class="plotly-chart" data-plotly-id="${id}" data-plotly-config="${encodeURIComponent(json.trim())}"></div>`;
-		});
-
-		// Extract ```plot code blocks (function-plot) and replace with placeholder divs
-		md = md.replace(/```plot\s*\n([\s\S]*?)```/g, (_match, json, offset) => {
-			const id = `fplot-${offset}`;
-			return `<div class="function-plot-chart" data-fplot-id="${id}" data-fplot-config="${encodeURIComponent(json.trim())}"></div>`;
-		});
+		md = preprocessChartBlocks(md, renderKatex);
 
 		// Extract SVG blocks before marked mangles them with <p> tags
 		const svgBlocks: string[] = [];
@@ -951,64 +858,7 @@
 		border: 1px solid hsl(var(--border));
 		border-radius: 8px;
 		padding: 16px;
+		background: white;
 	}
 
-	/* function-plot styling */
-	:global(.function-plot-chart) {
-		border: 1px solid hsl(var(--border));
-		border-radius: 8px;
-		overflow: hidden;
-		margin: 16px auto;
-		width: fit-content;
-	}
-	:global(.function-plot-chart .domain) {
-		stroke: transparent;
-	}
-	:global(.function-plot-chart .tick line) {
-		stroke: #000 !important;
-		stroke-opacity: 0.15 !important;
-	}
-	:global(.function-plot-chart .tick text) {
-		fill: #999;
-		font-size: 11px;
-	}
-	:global(.function-plot-chart path.line) {
-		stroke-width: 2.5 !important;
-	}
-	:global(.function-plot-chart .top-right-legend) {
-		display: none;
-	}
-	:global(.function-plot-chart circle) {
-		fill: #1a1a1a !important;
-		r: 4;
-	}
-	:global(.function-plot-chart .top-right-legend text),
-	:global(.function-plot-chart .x.axis-tip),
-	:global(.function-plot-chart .y.axis-tip) {
-		display: none;
-	}
-	:global(.function-plot-chart .tip-x-line),
-	:global(.function-plot-chart .tip-y-line) {
-		display: none;
-	}
-	:global(.function-plot-chart .inner-tip text) {
-		display: none;
-	}
-	:global(.function-plot-chart .inner-tip circle) {
-		fill: #1a1a1a !important;
-		r: 5;
-	}
-	:global(.fplot-tooltip) {
-		position: absolute;
-		pointer-events: none;
-		z-index: 10;
-		background: #1a1a1a;
-		color: #fff;
-		padding: 5px 12px;
-		border-radius: 8px;
-		font-size: 13px;
-		font-weight: 500;
-		white-space: nowrap;
-		transform: translateX(-50%);
-	}
 </style>
