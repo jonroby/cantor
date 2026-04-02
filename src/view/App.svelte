@@ -414,6 +414,7 @@
 									? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
 									: undefined}
 						liveDocumentContent={activeDocumentFile?.content}
+						activeFolderId={activeDocumentKey?.folderId ?? null}
 						onScrollToNode={(nodeId) => {
 							ensureChatPanel();
 							tick().then(() => chatViewRef?.scrollToNode(nodeId));

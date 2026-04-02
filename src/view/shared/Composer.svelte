@@ -9,6 +9,7 @@
 		onExpandSideChat: (exchangeId: string) => void;
 		agentMode?: boolean;
 		liveDocumentContent?: string;
+		activeFolderId?: string | null;
 		onToggleMode?: () => void;
 	}
 
@@ -17,6 +18,7 @@
 		onExpandSideChat,
 		agentMode = false,
 		liveDocumentContent,
+		activeFolderId = null,
 		onToggleMode
 	}: Props = $props();
 
@@ -122,7 +124,7 @@
 		composerValue = '';
 
 		try {
-			await app.agent.submit(prompt, providerState.activeModel, liveDocumentContent, activeTree);
+			await app.agent.submit(prompt, providerState.activeModel, liveDocumentContent, activeTree, activeFolderId);
 		} catch (e) {
 			operationError = e instanceof Error ? e.message : 'Agent failed.';
 		}
@@ -131,6 +133,13 @@
 
 {#if operationError}
 	<div class="error-banner">{operationError}</div>
+{/if}
+
+{#if agentMode && agentState.lastResponse}
+	<div class="agent-response">
+		<div class="agent-response-text">{agentState.lastResponse}</div>
+		<button class="agent-response-dismiss" onclick={() => app.agent.dismissResponse()}>Dismiss</button>
+	</div>
 {/if}
 
 <ComposerInput
@@ -178,3 +187,37 @@
 	onRemoveCachedModel={app.providers.removeCachedModel}
 	onClearCachedModels={app.providers.clearCachedModels}
 />
+
+<style>
+	.agent-response {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+		padding: 0.625rem 0.75rem;
+		border-radius: 0.5rem;
+		background: hsl(var(--muted));
+		font-size: 0.8125rem;
+		line-height: 1.4;
+		color: hsl(var(--foreground));
+	}
+
+	.agent-response-text {
+		flex: 1;
+		white-space: pre-wrap;
+	}
+
+	.agent-response-dismiss {
+		flex-shrink: 0;
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		font-size: 0.6875rem;
+		color: hsl(var(--muted-foreground));
+		cursor: pointer;
+		transition: color 150ms;
+	}
+
+	.agent-response-dismiss:hover {
+		color: hsl(var(--foreground));
+	}
+</style>

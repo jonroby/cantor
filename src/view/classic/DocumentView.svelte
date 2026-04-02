@@ -30,6 +30,12 @@
 	let documentFile = $derived(folder?.files?.find((f) => f.id === fileId) ?? null);
 
 	function resolveAsset(name: string): string | null {
+		const parts = name.split('/');
+		if (parts.length === 2) {
+			const sub = folder?.folders?.find((f) => f.name === parts[0]);
+			const file = sub?.files?.find((f) => f.name === parts[1]);
+			return file?.content ?? null;
+		}
 		const file = folder?.files?.find((f) => f.name === name);
 		return file?.content ?? null;
 	}

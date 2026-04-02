@@ -36,7 +36,7 @@ const streamCallback = fromCallback<StreamMachineEvent, CallbackInput>(({ sendBa
 			for await (const chunk of stream) {
 				if (chunk.type === 'delta') {
 					sendBack({ type: 'DELTA', delta: chunk.delta });
-				} else {
+				} else if (chunk.type === 'done') {
 					sendBack({
 						type: 'DONE',
 						promptTokens: chunk.promptTokens,

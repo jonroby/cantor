@@ -6,12 +6,14 @@ export interface AgentState {
 	history: Message[];
 	streaming: boolean;
 	pendingContent: string | null;
+	lastResponse: string | null;
 }
 
 export const agentState: AgentState = $state({
 	history: [],
 	streaming: false,
-	pendingContent: null
+	pendingContent: null,
+	lastResponse: null
 });
 
 export function pushMessage(message: Message) {
@@ -26,8 +28,13 @@ export function setPendingContent(content: string | null) {
 	agentState.pendingContent = content;
 }
 
+export function setLastResponse(response: string | null) {
+	agentState.lastResponse = response;
+}
+
 export function reset() {
 	agentState.history = [];
 	agentState.streaming = false;
 	agentState.pendingContent = null;
+	agentState.lastResponse = null;
 }

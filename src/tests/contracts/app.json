@@ -2,6 +2,7 @@
   "agent": {
     "acceptPending": true,
     "buildMessages": true,
+    "dismissResponse": true,
     "getState": true,
     "rejectPending": true,
     "reset": true,

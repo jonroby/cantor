@@ -3,6 +3,7 @@
     "agentState": true,
     "pushMessage": true,
     "reset": true,
+    "setLastResponse": true,
     "setPendingContent": true,
     "setStreaming": true
   },

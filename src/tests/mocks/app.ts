@@ -94,10 +94,12 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		agent: {
 			acceptPending: mockFn<typeof app.agent.acceptPending>(),
 			buildMessages: mockFn<typeof app.agent.buildMessages>(() => []),
+			dismissResponse: mockFn<typeof app.agent.dismissResponse>(),
 			getState: mockFn<typeof app.agent.getState>(() => ({
 				history: [],
 				streaming: false,
-				pendingContent: null
+				pendingContent: null,
+				lastResponse: null
 			})),
 			rejectPending: mockFn<typeof app.agent.rejectPending>(),
 			reset: mockFn<typeof app.agent.reset>(),

@@ -416,7 +416,9 @@
 									onDownloadFolder={() => onDownloadFolder(folder.id)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
 									onSelectDocument={(fileId) => onSelectDocument(folder.id, fileId)}
+									onSelectSubfolderDocument={(subfolderId, fileId) => onSelectDocument(subfolderId, fileId)}
 									onAddDocumentToChat={(fileId) => onAddDocumentToChat(folder.id, fileId)}
+									onAddSubfolderDocumentToChat={(subfolderId, fileId) => onAddDocumentToChat(subfolderId, fileId)}
 									onStartRenameFile={(fileId, fileName) =>
 										startRenameDocument(folder.id, fileId, fileName)}
 									onCommitRenameFile={commitRenameDocument}
@@ -424,6 +426,12 @@
 									onDeleteDocument={(fileId, fileName) =>
 										(deleteDocumentTarget = {
 											folderId: folder.id,
+											fileId,
+											fileName
+										})}
+									onDeleteSubfolderDocument={(subfolderId, fileId, fileName) =>
+										(deleteDocumentTarget = {
+											folderId: subfolderId,
 											fileId,
 											fileName
 										})}

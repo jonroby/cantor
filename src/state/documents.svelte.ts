@@ -46,6 +46,10 @@ export const documentState = $state({
 	] as OpenDocument[]
 });
 
+function notifyFoldersChanged() {
+	documentState.folders = [...documentState.folders];
+}
+
 export function findFolder(folderId: string): Folder | undefined {
 	for (const folder of documentState.folders) {
 		if (folder.id === folderId) return folder;
@@ -81,6 +85,7 @@ export function newFolder(parentId?: string): string {
 	const folder: Folder = { id: crypto.randomUUID(), name };
 	if (container) {
 		container.folders = [...(container.folders ?? []), folder];
+		notifyFoldersChanged();
 	} else {
 		documentState.folders = [...documentState.folders, folder];
 	}
@@ -92,15 +97,18 @@ export function createDocumentInFolder(folderId: string, name?: string): string 
 	if (!folder) return null;
 	const existingNames = (folder.files ?? []).map((f) => f.name);
 	let fileName = name ?? 'Untitled.md';
-	if (!name) {
+	if (existingNames.includes(fileName)) {
+		const ext = fileName.lastIndexOf('.') !== -1 ? fileName.slice(fileName.lastIndexOf('.')) : '';
+		const base = ext ? fileName.slice(0, fileName.lastIndexOf('.')) : fileName;
 		let i = 2;
-		while (existingNames.includes(fileName)) {
-			fileName = `Untitled ${i}.md`;
+		while (existingNames.includes(`${base} ${i}${ext}`)) {
 			i++;
 		}
+		fileName = `${base} ${i}${ext}`;
 	}
 	const documentFile: DocumentFile = { id: crypto.randomUUID(), name: fileName, content: '' };
 	folder.files = [...(folder.files ?? []), documentFile];
+	notifyFoldersChanged();
 	return documentFile.id;
 }
 
@@ -108,6 +116,7 @@ export function deleteFolder(folderId: string) {
 	const parent = findParent(folderId);
 	if (parent) {
 		parent.folders = (parent.folders ?? []).filter((f) => f.id !== folderId);
+		notifyFoldersChanged();
 	} else {
 		documentState.folders = documentState.folders.filter((f) => f.id !== folderId);
 	}
@@ -118,6 +127,7 @@ export function renameFolder(folderId: string, name: string): boolean {
 	if (sibs.some((f) => f.id !== folderId && f.name === name)) return false;
 	const folder = findFolder(folderId);
 	if (folder) folder.name = name;
+	notifyFoldersChanged();
 	return true;
 }
 
@@ -141,12 +151,14 @@ export function renameDocumentInFolder(folderId: string, fileId: string, name: s
 	if (folder?.files?.some((f) => f.id !== fileId && f.name === name)) return false;
 	const file = folder?.files?.find((f) => f.id === fileId);
 	if (file) file.name = name;
+	notifyFoldersChanged();
 	return true;
 }
 
 export function deleteDocumentFromFolder(folderId: string, fileId: string) {
 	const folder = findFolder(folderId);
 	if (folder) folder.files = (folder.files ?? []).filter((d) => d.id !== fileId);
+	notifyFoldersChanged();
 	documentState.openDocuments = documentState.openDocuments.filter(
 		(document) =>
 			!(document.documentKey?.folderId === folderId && document.documentKey?.fileId === fileId)
@@ -170,6 +182,7 @@ export function moveDocumentToFolder(
 			document.documentKey?.folderId === fromFolderId && document.documentKey?.fileId === fileId
 	);
 	if (openDocument?.documentKey) openDocument.documentKey = { folderId: toFolderId, fileId };
+	notifyFoldersChanged();
 	return true;
 }
 

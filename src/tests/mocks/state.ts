@@ -11,10 +11,12 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			agentState: {
 				history: [],
 				streaming: false,
-				pendingContent: null
+				pendingContent: null,
+				lastResponse: null
 			},
 			pushMessage: mockFn<typeof state.agent.pushMessage>(),
 			reset: mockFn<typeof state.agent.reset>(),
+			setLastResponse: mockFn<typeof state.agent.setLastResponse>(),
 			setPendingContent: mockFn<typeof state.agent.setPendingContent>(),
 			setStreaming: mockFn<typeof state.agent.setStreaming>()
 		},
