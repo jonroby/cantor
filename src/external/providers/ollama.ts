@@ -46,7 +46,11 @@ export async function* streamOllamaChat(
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
 			model,
-			messages: messages.map((m) => ({ role: m.role, content: m.content })),
+			messages: messages.map((m) => ({
+				role: m.role,
+				content: m.content,
+				...(m.images?.length ? { images: m.images.map((img) => img.base64) } : {})
+			})),
 			stream: true
 		}),
 		signal

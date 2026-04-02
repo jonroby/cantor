@@ -5,6 +5,7 @@ import * as lib from '@/lib';
 import { selectExchanges, type ContextBudget } from './context';
 
 export type ContextStrategy = state.chats.ContextStrategy;
+export type ImageAttachment = domain.tree.ImageAttachment;
 
 export interface ChatTransferFeedback {
 	success?: (message: string) => void;
@@ -261,6 +262,7 @@ export interface SubmitOptions {
 	liveDocumentContent?: string;
 	contextStrategy?: state.chats.ContextStrategy;
 	contextLength?: number | null;
+	images?: domain.tree.ImageAttachment[];
 }
 
 export function submitPrompt(
@@ -276,7 +278,14 @@ export function submitPrompt(
 	const hasSideChildren =
 		activeExchangeId !== null && domain.tree.getChildren(tree, activeExchangeId).length > 0;
 
-	const created = domain.tree.addExchange(tree, parentId, prompt, model.modelId, model.provider);
+	const created = domain.tree.addExchange(
+		tree,
+		parentId,
+		prompt,
+		model.modelId,
+		model.provider,
+		options?.images
+	);
 
 	const fullPath = domain.tree.getPath(created.tree, created.id);
 	const budget: ContextBudget = {
@@ -287,7 +296,9 @@ export function submitPrompt(
 	const selectedPath = selectExchanges(fullPath, budget);
 
 	const history = selectedPath.flatMap((exchange) => {
-		const messages: domain.tree.Message[] = [{ role: 'user', content: exchange.prompt.text }];
+		const userMsg: domain.tree.Message = { role: 'user', content: exchange.prompt.text };
+		if (exchange.prompt.images?.length) userMsg.images = exchange.prompt.images;
+		const messages: domain.tree.Message[] = [userMsg];
 		if (exchange.response) {
 			messages.push({ role: 'assistant', content: exchange.response.text });
 		}

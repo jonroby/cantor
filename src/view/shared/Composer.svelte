@@ -27,6 +27,7 @@
 	}: Props = $props();
 
 	let composerValue = $state('');
+	let pendingImages: app.chat.ImageAttachment[] = $state([]);
 	let paletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof ComposerInput> | undefined = $state();
@@ -83,7 +84,13 @@
 		}
 
 		const prompt = composerValue.trim();
-		if (!prompt || !activeExchanges || submitDisabledReason || !providerState.activeModel) return;
+		if (
+			(!prompt && pendingImages.length === 0) ||
+			!activeExchanges ||
+			submitDisabledReason ||
+			!providerState.activeModel
+		)
+			return;
 
 		operationError = null;
 
@@ -100,7 +107,8 @@
 				{
 					liveDocumentContent,
 					contextStrategy,
-					contextLength: providerState.contextLength
+					contextLength: providerState.contextLength,
+					images: pendingImages.length > 0 ? pendingImages : undefined
 				}
 			);
 		} catch (error) {
@@ -113,6 +121,7 @@
 		}
 
 		composerValue = '';
+		pendingImages = [];
 		await tick();
 		onScrollToNode(result.id);
 	}
@@ -188,6 +197,7 @@
 <ComposerInput
 	bind:this={composerRef}
 	bind:composerValue
+	bind:pendingImages
 	{agentMode}
 	inputMessage={agentPending ? 'Accept or reject pending changes first.' : null}
 	{submitDisabledReason}

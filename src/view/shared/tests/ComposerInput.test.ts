@@ -7,6 +7,7 @@ import ComposerInput from '../ComposerInput.svelte';
 function renderComposerInput(overrides: Partial<Parameters<typeof ComposerInput>[1]> = {}) {
 	const props = {
 		composerValue: '',
+		pendingImages: [],
 		agentMode: false,
 		inputMessage: null,
 		submitDisabledReason: null,
