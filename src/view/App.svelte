@@ -33,33 +33,42 @@
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
 	let hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
 	let isSplit = $derived(panels.length === 2);
+	let bothDocs = $derived(isSplit && !hasChatPanel);
 	let agentMode = $derived.by(() => {
-		if (!isSplit) {
-			return !hasChatPanel && hasDocPanel;
-		}
-		return composerFocus === 'agent';
+		if (!hasChatPanel && hasDocPanel) return true;
+		if (isSplit) return composerFocus === 'agent';
+		return false;
 	});
+	let activeDocSide = $state<'left' | 'right'>('left');
 	let chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
 	let composerSide = $derived.by(() => {
 		if (!isSplit) return null;
+		if (bothDocs) return activeDocSide;
 		if (chatSidePanelOpen) return 'left';
 		if (agentMode) return chatPanelIsFirst ? 'right' : 'left';
 		return chatPanelIsFirst ? 'left' : 'right';
 	});
 	let activeDocumentKey = $derived.by(() => {
-		const docPanel = panels.find((p) => p.type === 'document') as
-			| (PanelEntry & { type: 'document' })
-			| undefined;
-		if (docPanel) return { folderId: docPanel.folderId, fileId: docPanel.fileId };
+		const targetIndex = bothDocs ? (activeDocSide === 'left' ? 0 : 1) : -1;
 
-		const folderPanel = panels.find((p) => p.type === 'folder') as
-			| (PanelEntry & { type: 'folder' })
-			| undefined;
-		if (folderPanel) {
-			const folder = app.documents.getState().folders.find((f) => f.id === folderPanel.folderId);
-			const selectedFileId = folderSelectedFiles[folderPanel.folderId];
-			const fileId = selectedFileId ?? folder?.files?.[0]?.id;
-			if (fileId) return { folderId: folderPanel.folderId, fileId };
+		function keyFromPanel(p: PanelEntry) {
+			if (p.type === 'document') return { folderId: p.folderId, fileId: p.fileId };
+			if (p.type === 'folder') {
+				const folder = app.documents.getState().folders.find((f) => f.id === p.folderId);
+				const selectedFileId = folderSelectedFiles[p.folderId];
+				const fileId = selectedFileId ?? folder?.files?.[0]?.id;
+				if (fileId) return { folderId: p.folderId, fileId };
+			}
+			return null;
+		}
+
+		if (targetIndex >= 0 && panels[targetIndex]) {
+			return keyFromPanel(panels[targetIndex]);
+		}
+
+		for (const p of panels) {
+			const key = keyFromPanel(p);
+			if (key) return key;
 		}
 		return null;
 	});
@@ -390,9 +399,11 @@
 						bind:this={composerRef}
 						{agentMode}
 						bind:agentStreaming
-						onToggleMode={isSplit
-							? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
-							: undefined}
+						onToggleMode={bothDocs
+							? () => (activeDocSide = activeDocSide === 'left' ? 'right' : 'left')
+							: isSplit
+								? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
+								: undefined}
 						liveDocumentContent={activeDocumentFile?.content}
 						agentPending={pendingDocumentContent !== null}
 						onAgentResponse={(text) => {

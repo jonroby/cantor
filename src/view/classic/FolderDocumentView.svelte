@@ -190,6 +190,11 @@
 		color: hsl(var(--muted-foreground));
 		letter-spacing: 0.02em;
 		z-index: 1;
+		pointer-events: none;
+	}
+
+	.folderview-header > :global(*) {
+		pointer-events: auto;
 	}
 
 	.folderview-folder-name {
