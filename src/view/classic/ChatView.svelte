@@ -561,7 +561,9 @@
 						{/if}
 					{/each}
 					{#if mainChatPath.length === 0}
-						<div class="chatview-empty">Start a conversation below.</div>
+						<div class="chatview-empty">
+							{providerState.activeModel ? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.' : 'Select a model to get started.'}
+						</div>
 					{/if}
 				</div>
 			</div>

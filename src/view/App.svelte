@@ -32,6 +32,7 @@
 	let folderSelectedFiles: Record<string, string> = $state({});
 
 	let providerState = $derived(app.providers.getState());
+	let hasModel = $derived(!!providerState.activeModel);
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
 	let hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
 	let isSplit = $derived(panels.length === 2);
@@ -397,6 +398,11 @@
 					{/each}
 				</div>
 
+				{#if panels.length === 0}
+					<div class="welcome-container">
+						<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
+					</div>
+				{/if}
 				<div
 					class="composer-anchor"
 					class:composer-left={composerSide === 'left'}
@@ -431,7 +437,10 @@
 						onAgentResponse={(text) => {
 							pendingDocumentContent = text;
 						}}
-						onScrollToNode={(nodeId) => chatViewRef?.scrollToNode(nodeId)}
+						onScrollToNode={(nodeId) => {
+							ensureChatPanel();
+							tick().then(() => chatViewRef?.scrollToNode(nodeId));
+						}}
 						onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
 					/>
 				</div>
@@ -478,6 +487,22 @@
 
 	.panel-layout-split .panel-slot:first-child {
 		border-right: 1px solid hsl(var(--border));
+	}
+
+	.welcome-container {
+		position: absolute;
+		top: 40%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		text-align: center;
+		z-index: 1;
+	}
+
+	.welcome-text {
+		font-size: 28px;
+		font-weight: 500;
+		font-feature-settings: normal;
+		color: hsl(var(--foreground));
 	}
 
 	.composer-anchor {

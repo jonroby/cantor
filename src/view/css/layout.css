@@ -1315,10 +1315,17 @@
 }
 
 .chatview-empty {
-	padding: 4rem 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: calc(100vh - 200px);
 	text-align: center;
-	font-size: 0.9rem;
-	color: hsl(var(--muted-foreground));
+	font-size: 28px;
+	font-weight: 500;
+	font-feature-settings: normal;
+	color: hsl(var(--foreground));
+	max-width: 500px;
+	margin: 0 auto;
 }
 
 .chatview-side {

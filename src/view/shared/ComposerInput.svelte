@@ -82,7 +82,8 @@
 					bind:this={textareaEl}
 					bind:value={composerValue}
 					class="composer-textarea"
-					placeholder={agentMode ? 'Agent...' : (submitDisabledReason ?? 'Chat...')}
+					placeholder={!activeModelLabel ? 'Select a model to get started with chat or working with an agent' : agentMode ? 'Agent...' : 'Chat...'}
+					disabled={!activeModelLabel}
 					rows={1}
 					oninput={autoResize}
 					onkeydown={handleKeydown}
@@ -127,15 +128,17 @@
 					{/if}
 					{activeModelLabel ?? 'Choose model'}
 				</Button>
-				{#if onToggleMode}
-					<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
-						{agentMode ? 'Agent' : 'Chat'}
+				{#if activeModelLabel}
+					{#if onToggleMode}
+						<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
+							{agentMode ? 'Agent' : 'Chat'}
+						</Button>
+					{/if}
+					<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
+						{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
 					</Button>
 				{/if}
-				<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
-					{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
-				</Button>
-				{#if submitDisabledReason && !inputMessage}
+				{#if submitDisabledReason && !inputMessage && activeModelLabel}
 					<span class="composer-hint">{submitDisabledReason}</span>
 				{/if}
 			</div>
