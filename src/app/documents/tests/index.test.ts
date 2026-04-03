@@ -9,10 +9,6 @@ vi.mock('@/state', async () => {
 	const mocks = await import('@/tests/mocks/state');
 	return await mocks.mockStateModule();
 });
-vi.mock('@/lib', async (importOriginal) => {
-	const mocks = await import('@/tests/mocks/lib');
-	return await mocks.mockLibModuleFromOriginal(importOriginal);
-});
 vi.mock('@/external', async () => {
 	const mocks = await import('@/tests/mocks/external');
 	return await mocks.mockExternalModule();
@@ -111,7 +107,7 @@ function buildValidUploadData() {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	vi.mocked(lib.validateMd.validate).mockReturnValue([]);
+	vi.spyOn(lib.validateMd, 'validate').mockReturnValue([]);
 	nextPickedFile = null;
 	nextPickedDirectory = [];
 	downloads = [];
@@ -292,7 +288,7 @@ describe('document app actions', () => {
 			appendDocumentToChat
 		});
 
-		expect(addDocumentToChat('folder-1', 'file-1', deps)).toBe(true);
+		expect(addDocumentToChat('folder-1', 'file-1', deps)).toBe('exchange-9');
 		expect(appendDocumentToChat).toHaveBeenCalledWith(
 			{ rootId: 'root-1', exchanges: {} },
 			'root-1',
@@ -379,7 +375,7 @@ describe('documents.importDocument', () => {
 	});
 
 	it('shows error toast for invalid markdown', async () => {
-		vi.mocked(lib.validateMd.validate).mockReturnValue(['Invalid heading']);
+		vi.spyOn(lib.validateMd, 'validate').mockReturnValue(['Invalid heading']);
 		const feedback = createFeedback();
 		const file = new File(['bad markdown'], 'bad.md', { type: 'text/markdown' });
 		nextPickedFile = file;
@@ -563,7 +559,7 @@ describe('documents.importFolder', () => {
 	});
 
 	it('still shows a success summary for valid files when one file in the batch is invalid', async () => {
-		vi.mocked(lib.validateMd.validate).mockImplementation((markdown: string) =>
+		vi.spyOn(lib.validateMd, 'validate').mockImplementation((markdown: string) =>
 			markdown.includes('bad') ? ['Invalid heading'] : []
 		);
 		const feedback = createFeedback();

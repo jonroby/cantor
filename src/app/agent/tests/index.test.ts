@@ -27,7 +27,6 @@ vi.mock('@/app/workspace', async () => {
 
 import * as agent from '../index';
 import * as documents from '@/app/documents';
-import * as chat from '@/app/chat';
 
 describe('app/agent', () => {
 	beforeEach(() => {
@@ -39,16 +38,7 @@ describe('app/agent', () => {
 			folder: { id: 'folder-1', name: 'Docs', files: [] },
 			file: { id: 'file-1', name: 'notes.md', content: '# Notes' }
 		});
-		vi.mocked(chat.getChat).mockReturnValue({
-			id: 'chat-1',
-			name: 'Chat 1',
-			rootId: 'root-1',
-			exchanges: {},
-			activeExchangeId: 'exchange-1',
-			contextStrategy: 'full',
-			mode: 'agent'
-		});
-		vi.mocked(chat.addDocumentToChat).mockReturnValue('exchange-2');
+		vi.mocked(documents.addDocumentToChat).mockReturnValue('exchange-2');
 
 		const result = agent.executeTool(
 			'add_document_to_chat',
@@ -59,12 +49,7 @@ describe('app/agent', () => {
 			}
 		);
 
-		expect(chat.addDocumentToChat).toHaveBeenCalledWith(
-			{ rootId: 'root-1', exchanges: {} },
-			'exchange-1',
-			'# Notes',
-			'notes.md'
-		);
+		expect(documents.addDocumentToChat).toHaveBeenCalledWith('folder-1', 'file-1');
 		expect(result.result).toBe('Added document "notes.md" to the chat as exchange exchange-2.');
 	});
 

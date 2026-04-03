@@ -186,6 +186,11 @@
 		}
 	}
 
+	function openDocumentInWorkspace(folderId: string, fileId: string) {
+		if (!app.documents.openDocument(folderId, fileId)) return;
+		openDocumentPanel(folderId, fileId);
+	}
+
 	function openFolderPanel(folderId: string) {
 		const panels = workspaceState.panels;
 		const existingIndex = panels.findIndex((p) => p.type === 'folder' && p.folderId === folderId);
@@ -319,11 +324,7 @@
 			onUploadFolder={(folderId) => app.documents.importFolderIntoFolder(folderId, fileFeedback)}
 			onUploadNewFolder={() => app.documents.importFolder(fileFeedback)}
 			onOpenFolder={openFolderPanel}
-			onSelectDocument={(folderId, fileId) => {
-				if (app.documents.openDocument(folderId, fileId)) {
-					openDocumentPanel(folderId, fileId);
-				}
-			}}
+			onSelectDocument={openDocumentInWorkspace}
 			onAddDocumentToChat={addDocumentToChat}
 			onDeleteDocument={app.documents.deleteDocument}
 			onRenameDocument={app.documents.renameDocument}
@@ -425,7 +426,7 @@
 						liveDocumentContent={activeDocumentFile?.content}
 						{activeDocumentKey}
 						toolCallbacks={{
-							onOpenDocument: openDocumentPanel,
+							onOpenDocument: openDocumentInWorkspace,
 							onOpenFolder: openFolderPanel,
 							onClosePanel: closePanel,
 							onToggleSidebar: app.workspace.toggleSidebar

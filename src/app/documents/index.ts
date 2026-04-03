@@ -164,15 +164,14 @@ export function addDocumentToChat(
 	folderId: string,
 	fileId: string,
 	deps: DocumentCommandDeps = defaultDeps
-): boolean {
+): string | null {
 	const folder = deps.findFolder(folderId);
 	const file = folder?.files?.find((candidate) => candidate.id === fileId);
-	if (!file) return false;
+	if (!file) return null;
 
 	const activeChat = deps.getActiveChat();
 	const tree = { rootId: activeChat.rootId, exchanges: activeChat.exchanges };
-	deps.appendDocumentToChat(tree, activeChat.activeExchangeId, file.content, file.name);
-	return true;
+	return deps.appendDocumentToChat(tree, activeChat.activeExchangeId, file.content, file.name);
 }
 
 export function renameFolder(folderId: string, name: string): string | null {

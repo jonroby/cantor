@@ -68,6 +68,13 @@ Current concern:
 - some workspace behaviors are still view-composed instead of app-owned
 - when touching those paths, prefer collapsing them into `app.workspace` or another existing `app.*` module instead of adding more callback-specific behavior in `view`
 
+Blurry boundary:
+
+- some workspace capabilities are genuinely presentation-owned, not app-owned
+- for those actions, it is acceptable for agent tools to call a view callback instead of an `app.*` action
+- but a capability must choose one owner: either call the shared `app.*` action or call the view-owned action, never both in sequence
+- current examples of acceptable view-owned actions are pane/layout choreography such as opening folder panels, closing panels, and toggling the sidebar
+
 ## Icons
 
 Use `lucide-svelte` for all icons. Do not use inline SVG paths or one-off SVGs for icons. Import named icons from `lucide-svelte` directly in view components.
@@ -76,6 +83,9 @@ Use `lucide-svelte` for all icons. Do not use inline SVG paths or one-off SVGs f
 
 - Make impossible states impossible. But if the trade-off for call-site friction or performance isn't worth it, write imperative code.
 - Write code that is testable. If you can't test it without heavy mocking, it's in the wrong layer. Extract pure logic into Domain. Extract orchestration into App.
+- In tests, prefer the existing shared mocks under `src/tests/mocks`. Do not add ad hoc mock systems or per-suite mock wrappers when the shared mocks can be extended instead.
+- Do not mock `@/lib` in app-layer tests unless there is no reasonable alternative. Prefer spying on the specific real export you need to override.
+- In app-layer tests, avoid importing the `@/app` barrel unless the test actually needs the full root namespace. Prefer the specific module under test to avoid unnecessary import-graph churn.
 - Do not add features, refactor code, or make "improvements" beyond what was asked.
 - Do not add error handling, fallbacks, or validation for scenarios that can't happen. Trust internal code. Only validate at system boundaries.
 - Do not create helpers or abstractions for one-time operations. Three similar lines is better than a premature abstraction.

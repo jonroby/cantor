@@ -9,10 +9,6 @@ vi.mock('@/state', async () => {
 	const mocks = await import('@/tests/mocks/state');
 	return await mocks.mockStateModule();
 });
-vi.mock('@/lib', async (importOriginal) => {
-	const mocks = await import('@/tests/mocks/lib');
-	return await mocks.mockLibModuleFromOriginal(importOriginal);
-});
 vi.mock('@/external', async () => {
 	const mocks = await import('@/tests/mocks/external');
 	return await mocks.mockExternalModule();

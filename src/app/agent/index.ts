@@ -352,13 +352,8 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			}
 			const result = documents.getDocument(folderId, fileId);
 			if (!result) return { result: 'Error: document not found' };
-			const current = chat.getChat();
-			const exchangeId = chat.addDocumentToChat(
-				{ rootId: current.rootId, exchanges: current.exchanges },
-				current.activeExchangeId,
-				result.file.content,
-				result.file.name
-			);
+			const exchangeId = documents.addDocumentToChat(folderId, fileId);
+			if (!exchangeId) return { result: 'Error: could not add document to chat' };
 			return { result: `Added document "${result.file.name}" to the chat as exchange ${exchangeId}.` };
 		},
 		verification: {
@@ -386,7 +381,6 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			const fileId = input.file_id as string;
 			if (!folderId || !fileId) return { result: 'Error: folder_id and file_id are required' };
 			if (!ctx.onOpenDocument) return { result: 'Error: opening documents is not available here' };
-			documents.openDocument(folderId, fileId);
 			ctx.onOpenDocument(folderId, fileId);
 			return { result: `Opened document ${fileId}.` };
 		},
