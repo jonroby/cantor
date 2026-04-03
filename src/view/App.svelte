@@ -32,12 +32,12 @@
 	let agentState = $derived(app.agent.getState());
 	let hasModel = $derived(!!providerState.activeModel);
 	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
-	let hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
+	let _hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
 	let isSplit = $derived(panels.length === 2);
 	let bothDocs = $derived(isSplit && !hasChatPanel);
 	let agentMode = $state(false);
 	let activeDocSide = $state<'left' | 'right'>('left');
-	let chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
+	let _chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
 	let sideChatSide = $state<'left' | 'right'>('left');
 	let composerSide = $derived.by(() => {
 		if (chatSidePanelOpen) return sideChatSide;
@@ -352,7 +352,8 @@
 							{:else if panel.type === 'folder'}
 								{@const folder = app.documents.getFolder(panel.folderId)}
 								{@const folderFiles = folder?.files ?? []}
-								{@const activeFileId = folderSelectedFiles[panel.folderId] ?? folderFiles[0]?.id ?? null}
+								{@const activeFileId =
+									folderSelectedFiles[panel.folderId] ?? folderFiles[0]?.id ?? null}
 								<FolderDocumentView
 									folderId={panel.folderId}
 									folderName={folder?.name ?? 'Folder'}
@@ -370,7 +371,8 @@
 									onSwap={isSplit ? swapPanels : undefined}
 									resolveAsset={(name) => app.documents.resolveAsset(panel.folderId, name)}
 									onContentChange={activeFileId
-										? (c) => app.documents.updateOpenDocumentContent(panel.folderId, activeFileId, c)
+										? (c) =>
+												app.documents.updateOpenDocumentContent(panel.folderId, activeFileId, c)
 										: undefined}
 									onClose={() => {
 										if (activeFileId) app.documents.closeOpenDocument(panel.folderId, activeFileId);

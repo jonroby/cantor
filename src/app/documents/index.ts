@@ -271,11 +271,7 @@ export function findOpenDocumentIndex(folderId: string, fileId: string): number 
 	return domain.documents.findOpenDocumentIndex(getState().openDocuments, folderId, fileId);
 }
 
-export function updateOpenDocumentContent(
-	folderId: string,
-	fileId: string,
-	content: string
-): void {
+export function updateOpenDocumentContent(folderId: string, fileId: string, content: string): void {
 	const index = findOpenDocumentIndex(folderId, fileId);
 	if (index >= 0) state.documents.updateDocumentContent(index, content);
 }

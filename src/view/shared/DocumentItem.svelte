@@ -47,7 +47,9 @@
 	<Sidebar.MenuButton
 		isActive={false}
 		tooltipContent={file.name}
-		class="rounded-lg pr-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground cursor-default {indent ? 'pl-12' : 'pl-8'}"
+		class="rounded-lg pr-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground cursor-default {indent
+			? 'pl-12'
+			: 'pl-8'}"
 		ondblclick={onOpen}
 	>
 		<svg

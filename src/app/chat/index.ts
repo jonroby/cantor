@@ -374,10 +374,16 @@ export function submitPrompt(
 			getTreeByChatId: state.chats.getTreeByChatId,
 			replaceTreeByChatId: state.chats.replaceTreeByChatId,
 			getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
-				external.providers.stream.getProviderStream(activeModel, streamHistory, signal, {
-					apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
-					ollamaUrl: state.providers.providerState.ollamaUrl
-				}, streamTools)
+				external.providers.stream.getProviderStream(
+					activeModel,
+					streamHistory,
+					signal,
+					{
+						apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
+						ollamaUrl: state.providers.providerState.ollamaUrl
+					},
+					streamTools
+				)
 		}
 	);
 

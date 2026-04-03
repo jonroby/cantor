@@ -36,7 +36,6 @@
 		composerRef?.focus();
 	}
 
-
 	let activeExchanges = $derived(activeChat.exchanges);
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());

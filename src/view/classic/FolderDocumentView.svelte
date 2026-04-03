@@ -20,7 +20,7 @@
 	}
 
 	let {
-		folderId,
+		folderId: _folderId,
 		folderName,
 		files,
 		activeFileId,
@@ -121,7 +121,7 @@
 			{onAcceptPending}
 			{onRejectPending}
 			{onSwap}
-			onContentChange={onContentChange}
+			{onContentChange}
 			{onClose}
 		/>
 	{/if}

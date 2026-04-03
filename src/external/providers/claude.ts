@@ -104,7 +104,9 @@ export async function* streamClaudeChat(
 				}
 
 				if (parsed.type === 'content_block_start') {
-					const block = parsed.content_block as { type?: string; id?: string; name?: string } | undefined;
+					const block = parsed.content_block as
+						| { type?: string; id?: string; name?: string }
+						| undefined;
 					if (block?.type === 'tool_use') {
 						currentToolId = block.id ?? null;
 						currentToolName = block.name ?? null;
@@ -113,7 +115,9 @@ export async function* streamClaudeChat(
 				}
 
 				if (parsed.type === 'content_block_delta') {
-					const delta = parsed.delta as { type?: string; text?: string; partial_json?: string } | undefined;
+					const delta = parsed.delta as
+						| { type?: string; text?: string; partial_json?: string }
+						| undefined;
 					if (delta?.type === 'text_delta' && delta.text) {
 						yield { type: 'delta', delta: delta.text };
 					}
@@ -127,8 +131,13 @@ export async function* streamClaudeChat(
 						let input: Record<string, unknown> = {};
 						try {
 							input = JSON.parse(toolInputJson);
-						} catch { /* empty input */ }
-						yield { type: 'tool_use', toolUse: { id: currentToolId, name: currentToolName, input } };
+						} catch {
+							/* empty input */
+						}
+						yield {
+							type: 'tool_use',
+							toolUse: { id: currentToolId, name: currentToolName, input }
+						};
 						currentToolId = null;
 						currentToolName = null;
 						toolInputJson = '';

@@ -93,8 +93,7 @@ export const TOOLS: external.providers.stream.ToolDefinition[] = [
 	},
 	{
 		name: 'create_chat',
-		description:
-			'Create a new chat conversation. Returns the chat index and name.',
+		description: 'Create a new chat conversation. Returns the chat index and name.',
 		input_schema: {
 			type: 'object',
 			properties: {
@@ -193,7 +192,8 @@ export const TOOLS: external.providers.stream.ToolDefinition[] = [
 	},
 	{
 		name: 'read_document',
-		description: 'Read the content of a document file. Use this to inspect a file before editing or to answer questions about it.',
+		description:
+			'Read the content of a document file. Use this to inspect a file before editing or to answer questions about it.',
 		input_schema: {
 			type: 'object',
 			properties: {
@@ -280,7 +280,8 @@ export const TOOLS: external.providers.stream.ToolDefinition[] = [
 	},
 	{
 		name: 'close_panel',
-		description: 'Close a panel by index (0 = left panel, 1 = right panel). Use this to close an open document or chat panel.',
+		description:
+			'Close a panel by index (0 = left panel, 1 = right panel). Use this to close an open document or chat panel.',
 		input_schema: {
 			type: 'object',
 			properties: {
@@ -308,7 +309,10 @@ export function executeTool(
 		const content = input.content as string;
 		if (!content) return { result: 'Error: content is required' };
 		state.agent.setPendingContent(content);
-		return { result: 'Document edit pending — waiting for user to accept or reject.', pendingContent: content };
+		return {
+			result: 'Document edit pending — waiting for user to accept or reject.',
+			pendingContent: content
+		};
 	}
 	if (name === 'create_file') {
 		return { result: executeCreateFile(input, ctx) };
@@ -367,10 +371,7 @@ export function executeTool(
 	return { result: `Unknown tool: ${name}` };
 }
 
-function executeCreateFile(
-	input: Record<string, unknown>,
-	ctx: ToolContext
-): string {
+function executeCreateFile(input: Record<string, unknown>, ctx: ToolContext): string {
 	const filename = input.filename as string;
 	const content = input.content as string;
 	const folderId = (input.folder_id as string | undefined) ?? ctx.folderId;
@@ -465,7 +466,8 @@ function executeMoveDocument(input: Record<string, unknown>): string {
 	const fromFolderId = input.from_folder_id as string;
 	const fileId = input.file_id as string;
 	const toFolderId = input.to_folder_id as string;
-	if (!fromFolderId || !fileId || !toFolderId) return 'Error: from_folder_id, file_id, and to_folder_id are required';
+	if (!fromFolderId || !fileId || !toFolderId)
+		return 'Error: from_folder_id, file_id, and to_folder_id are required';
 	const ok = documents.moveDocument(fromFolderId, fileId, toFolderId);
 	if (!ok) return 'Error: could not move document — destination may have a file with the same name';
 	return 'Moved document successfully';
@@ -508,7 +510,8 @@ function executeSelectChat(input: Record<string, unknown>): string {
 	const index = input.index as number;
 	if (index === undefined) return 'Error: index is required';
 	const chats = chat.getChats();
-	if (index < 0 || index >= chats.length) return `Error: invalid index ${index} — there are ${chats.length} chats`;
+	if (index < 0 || index >= chats.length)
+		return `Error: invalid index ${index} — there are ${chats.length} chats`;
 	chat.selectChat(index);
 	return `Switched to chat "${chats[index].name}"`;
 }
@@ -597,7 +600,7 @@ export function buildSystemPrompt(documentContent: string | undefined): string {
 		'Documents:',
 		'- edit_document: Edit the currently open document. Only change what was asked for.',
 		'- create_file: Create a new file (.md or .svg) in a folder.',
-		'- read_document: Read a document\'s content by folder/file ID.',
+		"- read_document: Read a document's content by folder/file ID.",
 		'- rename_document: Rename a document.',
 		'- delete_document: Delete a document.',
 		'- move_document: Move a document between folders.',
@@ -764,7 +767,7 @@ async function agentLoop(
 ): Promise<void> {
 	// Claude API uses structured content arrays, not plain strings, for multi-turn tool use.
 	// We maintain a parallel "raw" message list for the API while keeping domain Messages for history.
-	let rawMessages: unknown[] = messages.map((m) => ({
+	const rawMessages: unknown[] = messages.map((m) => ({
 		role: m.role,
 		content: m.content
 	}));

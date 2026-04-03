@@ -20,7 +20,12 @@ export interface StreamMachineInput {
 export type StreamMachineEvent =
 	| { type: 'DELTA'; delta: string }
 	| { type: 'DONE'; promptTokens: number; responseTokens: number }
-	| { type: 'TOOL_USE'; toolCalls: providers.stream.ToolUseBlock[]; responseText: string; stopReason?: string }
+	| {
+			type: 'TOOL_USE';
+			toolCalls: providers.stream.ToolUseBlock[];
+			responseText: string;
+			stopReason?: string;
+	  }
 	| { type: 'TOOL_RESULT'; messages: unknown[] }
 	| { type: 'ERROR'; message: string }
 	| { type: 'CANCEL' };
@@ -37,7 +42,12 @@ const streamCallback = fromCallback<StreamMachineEvent, CallbackInput>(({ sendBa
 
 	(async () => {
 		try {
-			const stream = input.getStream(input.model, input.history, abortController.signal, input.tools);
+			const stream = input.getStream(
+				input.model,
+				input.history,
+				abortController.signal,
+				input.tools
+			);
 			const toolCalls: providers.stream.ToolUseBlock[] = [];
 			let responseText = '';
 			let stopReason: string | undefined;

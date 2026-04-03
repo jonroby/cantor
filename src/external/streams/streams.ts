@@ -12,9 +12,10 @@ export interface StreamStore {
 }
 
 export interface ToolExecutor {
-	execute: (
-		toolCalls: providers.stream.ToolUseBlock[]
-	) => { results: Array<{ tool_use_id: string; content: string }>; summary: string[] };
+	execute: (toolCalls: providers.stream.ToolUseBlock[]) => {
+		results: Array<{ tool_use_id: string; content: string }>;
+		summary: string[];
+	};
 }
 
 export interface StreamDeps {
@@ -72,7 +73,7 @@ export function startStream(
 
 	let lastResponse = '';
 	// Track raw messages for multi-turn tool use
-	let rawMessages: unknown[] = history.map((m) => ({ role: m.role, content: m.content }));
+	const rawMessages: unknown[] = history.map((m) => ({ role: m.role, content: m.content }));
 
 	actor.subscribe((snapshot: SnapshotFrom<typeof streamMachine>) => {
 		const { context } = snapshot;
@@ -118,8 +119,7 @@ export function startStream(
 			// Update response with tool summary
 			if (summary.length > 0) {
 				const progressText =
-					(lastResponse ? lastResponse + '\n\n' : '') +
-					summary.map((s) => `> ${s}`).join('\n');
+					(lastResponse ? lastResponse + '\n\n' : '') + summary.map((s) => `> ${s}`).join('\n');
 				lastResponse = progressText;
 
 				const latestTree = deps.getTreeByChatId(targetChatId);
