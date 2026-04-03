@@ -30,9 +30,9 @@ const declaredPackages = new Set([
 const AREA_ORDER = ['domain', 'lib', 'state', 'external', 'app', 'view'];
 
 const APPROVED_PUBLIC_NAMESPACES = {
-	app: new Set(['bootstrap', 'chat', 'documents', 'providers']),
+	app: new Set(['agent', 'bootstrap', 'chat', 'documents', 'providers']),
 	external: new Set(['persistence', 'io', 'providers', 'streams']),
-	state: new Set(['chats', 'documents', 'providers'])
+	state: new Set(['agent', 'chats', 'documents', 'providers'])
 };
 
 const AREA_RULES = {

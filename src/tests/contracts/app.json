@@ -1,4 +1,17 @@
 {
+  "agent": {
+    "TOOLS": true,
+    "acceptPending": true,
+    "buildMessages": true,
+    "buildSystemPrompt": true,
+    "dismissResponse": true,
+    "executeTool": true,
+    "getState": true,
+    "rejectPending": true,
+    "reset": true,
+    "stop": true,
+    "submit": true
+  },
   "bootstrap": {
     "clearOpenDocument": true,
     "initialize": true,
@@ -37,14 +50,19 @@
     "submitPrompt": true
   },
   "documents": {
+    "SUPPORTED_EXTENSIONS": true,
     "addDocumentToChat": true,
+    "isSupportedFileName": true,
     "closeDocument": true,
+    "closeOpenDocument": true,
     "createDocument": true,
     "createFolder": true,
     "deleteDocument": true,
     "deleteFolder": true,
     "exportFolder": true,
+    "findOpenDocumentIndex": true,
     "getDocument": true,
+    "getFolder": true,
     "getState": true,
     "importDocument": true,
     "importFolder": true,
@@ -53,7 +71,10 @@
     "openDocument": true,
     "renameDocument": true,
     "renameFolder": true,
+    "resolveAsset": true,
+    "supportedExtensionsLabel": true,
     "updateDocumentContent": true,
+    "updateOpenDocumentContent": true,
     "validateDocumentMarkdown": true
   },
   "providers": {

@@ -280,7 +280,7 @@ describe('AppSidebar', () => {
 			onUploadNewFolder: vi.fn(),
 			onSelectDocument: vi.fn(),
 			onDeleteDocument: vi.fn(),
-			onRenameDocument: vi.fn(() => 'a.md (1)'),
+			onRenameDocument: vi.fn(() => ({ result: 'a.md (1)' })),
 			onMoveDocument: vi.fn(() => true)
 		};
 		render(AppSidebarHarness, { props });

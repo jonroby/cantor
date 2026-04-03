@@ -69,7 +69,8 @@ describe('provider stream dispatch', () => {
 			'claude-sonnet-4-6',
 			HISTORY,
 			'claude-key',
-			signal
+			signal,
+			undefined
 		);
 	});
 

@@ -77,8 +77,7 @@
 	let activeExchanges = $derived(activeChat.exchanges);
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
-	let agentStreaming = $state(false);
-	let pendingDocumentContent: string | null = $state(null);
+	let agentState = $derived(app.agent.getState());
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
 		mainChatPath.length > 0 ? mainChatPath[mainChatPath.length - 1]!.id : null
@@ -585,24 +584,17 @@
 						<Document
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
-							{agentStreaming}
+							agentStreaming={false}
 							agentProvider={providerState.activeModel?.provider}
-							pendingContent={pendingDocumentContent}
+							pendingContent={agentState.pendingContent}
 							onContentChange={(c) => {
 								if (activeDocumentIndex >= 0)
 									app.documents.updateDocumentContent(activeDocumentIndex, c);
 							}}
-							onAcceptPending={() => {
-								if (pendingDocumentContent !== null && activeDocumentIndex >= 0) {
-									app.documents.updateDocumentContent(activeDocumentIndex, pendingDocumentContent);
-								}
-								pendingDocumentContent = null;
-							}}
-							onRejectPending={() => {
-								pendingDocumentContent = null;
-							}}
+							onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
+							onRejectPending={() => app.agent.rejectPending()}
 							onClose={() => {
-								pendingDocumentContent = null;
+								app.agent.rejectPending();
 								if (activeDocumentIndex >= 0) {
 									app.documents.closeDocument(activeDocumentIndex);
 								}

@@ -8,7 +8,7 @@
 	import DocumentItem from './DocumentItem.svelte';
 
 	interface Props {
-		folder: app.documents.ChatFolder;
+		folder: app.documents.Folder;
 		expanded: boolean;
 		isDragOver: boolean;
 		startEditing?: boolean;
@@ -24,11 +24,14 @@
 		onDownloadFolder: () => void;
 		onDeleteFolder: () => void;
 		onSelectDocument: (fileId: string) => void;
+		onSelectSubfolderDocument: (subfolderId: string, fileId: string) => void;
 		onAddDocumentToChat: (fileId: string) => void;
+		onAddSubfolderDocumentToChat: (subfolderId: string, fileId: string) => void;
 		onStartRenameFile: (fileId: string, fileName: string) => void;
 		onCommitRenameFile: (name: string) => void;
 		onCancelRenameFile: () => void;
 		onDeleteDocument: (fileId: string, fileName: string) => void;
+		onDeleteSubfolderDocument: (subfolderId: string, fileId: string, fileName: string) => void;
 		onDragStart: (fileId: string, e: DragEvent) => void;
 		onDragEnd: () => void;
 		onDrop: (e: DragEvent) => void;
@@ -53,11 +56,14 @@
 		onDownloadFolder,
 		onDeleteFolder,
 		onSelectDocument,
+		onSelectSubfolderDocument,
 		onAddDocumentToChat,
+		onAddSubfolderDocumentToChat,
 		onStartRenameFile,
 		onCommitRenameFile,
 		onCancelRenameFile,
 		onDeleteDocument,
+		onDeleteSubfolderDocument,
 		onDragStart,
 		onDragEnd,
 		onDrop,
@@ -68,6 +74,7 @@
 	let editingFolderName = $state('');
 	let isEditingFolder = $state(false);
 	let handledStartEditing = $state(false);
+	let expandedSubfolders: Record<string, boolean> = $state({});
 
 	$effect(() => {
 		if (startEditing && !handledStartEditing) {
@@ -214,7 +221,7 @@
 							<line x1="12" y1="18" x2="12" y2="12" />
 							<line x1="9" y1="15" x2="15" y2="15" />
 						</svg>
-						Create new .md
+						New file
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
@@ -340,8 +347,90 @@
 				{onDragEnd}
 			/>
 		{/each}
-		{#if (folder.files ?? []).length === 0}
+		{#each folder.folders ?? [] as subfolder (subfolder.id)}
+			<Sidebar.MenuItem>
+				<button
+					class="subfolder-row"
+					onclick={() =>
+						(expandedSubfolders = {
+							...expandedSubfolders,
+							[subfolder.id]: !expandedSubfolders[subfolder.id]
+						})}
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="shrink-0 transition-transform"
+						style:transform={expandedSubfolders[subfolder.id] ? 'rotate(90deg)' : 'rotate(0deg)'}
+					>
+						<path d="M9 6l6 6-6 6" />
+					</svg>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="shrink-0"
+					>
+						<path
+							d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+						/>
+					</svg>
+					<span class="truncate">{subfolder.name}</span>
+				</button>
+			</Sidebar.MenuItem>
+			{#if expandedSubfolders[subfolder.id]}
+				{#each subfolder.files ?? [] as file (file.id)}
+					<DocumentItem
+						{file}
+						isEditing={editingDocumentFileId === file.id}
+						bind:editingName={editingDocumentFileName}
+						isDragging={draggingDocumentFileId === file.id}
+						indent
+						onOpen={() => onSelectSubfolderDocument(subfolder.id, file.id)}
+						onAddToChat={() => onAddSubfolderDocumentToChat(subfolder.id, file.id)}
+						onStartRename={() => onStartRenameFile(file.id, file.name)}
+						onCommitRename={onCommitRenameFile}
+						onCancelRename={onCancelRenameFile}
+						onDownload={() => downloadDocument(file)}
+						onDelete={() => onDeleteSubfolderDocument(subfolder.id, file.id, file.name)}
+						onDragStart={(e) => onDragStart(file.id, e)}
+						{onDragEnd}
+					/>
+				{/each}
+			{/if}
+		{/each}
+		{#if (folder.files ?? []).length === 0 && (folder.folders ?? []).length === 0}
 			<div class="px-8 py-1 text-xs text-sidebar-foreground/30">Empty</div>
 		{/if}
 	{/if}
 </div>
+
+<style>
+	.subfolder-row {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		width: 100%;
+		padding: 0.375rem 0.75rem 0.375rem 2rem;
+		border-radius: 0.5rem;
+		font-size: 0.8125rem;
+		color: hsl(var(--sidebar-foreground));
+		cursor: pointer;
+		transition: background-color 150ms;
+	}
+
+	.subfolder-row:hover {
+		background: hsl(var(--sidebar-accent));
+	}
+</style>

@@ -706,13 +706,13 @@
 
 	.docs-streaming {
 		margin-top: 16px;
-		padding-top: 16px;
-		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 	}
 
 	.docs-streaming-inner {
 		max-width: 720px;
 		margin: 0 auto;
+		padding-top: 16px;
+		border-top: 1px solid hsl(var(--border, 0 0% 85%));
 	}
 
 	.docs-editor-wrap {

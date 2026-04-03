@@ -69,7 +69,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		deleteDocumentFromFolder: vi.fn(),
 		deleteFolder: vi.fn(),
 		documentState: {
-			folders: [] as state.documents.ChatFolder[],
+			folders: [] as state.documents.Folder[],
 			openDocuments: [] as state.documents.OpenDocument[]
 		},
 		getActiveChat: vi.fn(),
@@ -91,6 +91,24 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 	};
 
 	const base = {
+		agent: {
+			TOOLS: [] as typeof app.agent.TOOLS,
+			acceptPending: mockFn<typeof app.agent.acceptPending>(),
+			buildMessages: mockFn<typeof app.agent.buildMessages>(() => []),
+			buildSystemPrompt: mockFn<typeof app.agent.buildSystemPrompt>(() => ''),
+			dismissResponse: mockFn<typeof app.agent.dismissResponse>(),
+			executeTool: mockFn<typeof app.agent.executeTool>(() => ({ result: '' })),
+			getState: mockFn<typeof app.agent.getState>(() => ({
+				history: [],
+				streaming: false,
+				pendingContent: null,
+				lastResponse: null
+			})),
+			rejectPending: mockFn<typeof app.agent.rejectPending>(),
+			reset: mockFn<typeof app.agent.reset>(),
+			stop: mockFn<typeof app.agent.stop>(),
+			submit: mockFn<typeof app.agent.submit>()
+		},
 		bootstrap: {
 			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
 			initialize: mockFn<typeof app.bootstrap.initialize>(() => ({
@@ -144,21 +162,31 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		documents: {
 			addDocumentToChat: mockFn<typeof app.documents.addDocumentToChat>(),
 			closeDocument: mockFn<typeof app.documents.closeDocument>(),
+			closeOpenDocument: mockFn<typeof app.documents.closeOpenDocument>(),
 			createDocument: mockFn<typeof app.documents.createDocument>(),
 			createFolder: mockFn<typeof app.documents.createFolder>(),
 			deleteDocument: mockFn<typeof app.documents.deleteDocument>(),
 			deleteFolder: mockFn<typeof app.documents.deleteFolder>(),
 			exportFolder: mockFn<typeof app.documents.exportFolder>(),
-			getDocument: mockFn<typeof app.documents.getDocument>(),
+			findOpenDocumentIndex: mockFn<typeof app.documents.findOpenDocumentIndex>(() => -1),
+			SUPPORTED_EXTENSIONS: ['.md', '.svg'] as const,
+			getDocument: mockFn<typeof app.documents.getDocument>(() => null),
+			getFolder: mockFn<typeof app.documents.getFolder>(() => undefined),
+			isSupportedFileName: mockFn<typeof app.documents.isSupportedFileName>(() => true),
 			getState: mockFn<typeof app.documents.getState>(() => appStateBacking.documentState),
 			importDocument: mockFn<typeof app.documents.importDocument>(),
 			importFolder: mockFn<typeof app.documents.importFolder>(),
 			importFolderIntoFolder: mockFn<typeof app.documents.importFolderIntoFolder>(),
 			moveDocument: mockFn<typeof app.documents.moveDocument>(),
 			openDocument: mockFn<typeof app.documents.openDocument>(),
-			renameDocument: mockFn<typeof app.documents.renameDocument>(),
+			renameDocument: mockFn<typeof app.documents.renameDocument>(() => ({ result: null })),
+			supportedExtensionsLabel: mockFn<typeof app.documents.supportedExtensionsLabel>(
+				() => '.md, .svg'
+			),
 			renameFolder: mockFn<typeof app.documents.renameFolder>(),
+			resolveAsset: mockFn<typeof app.documents.resolveAsset>(() => null),
 			updateDocumentContent: mockFn<typeof app.documents.updateDocumentContent>(),
+			updateOpenDocumentContent: mockFn<typeof app.documents.updateOpenDocumentContent>(),
 			validateDocumentMarkdown: mockFn<typeof app.documents.validateDocumentMarkdown>(() => [])
 		},
 		providers: {

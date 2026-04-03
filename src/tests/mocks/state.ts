@@ -7,6 +7,19 @@ type StateMock = PublicApiMock<typeof state, typeof stateContract>;
 
 export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 	const base = {
+		agent: {
+			agentState: {
+				history: [],
+				streaming: false,
+				pendingContent: null,
+				lastResponse: null
+			},
+			pushMessage: mockFn<typeof state.agent.pushMessage>(),
+			reset: mockFn<typeof state.agent.reset>(),
+			setLastResponse: mockFn<typeof state.agent.setLastResponse>(),
+			setPendingContent: mockFn<typeof state.agent.setPendingContent>(),
+			setStreaming: mockFn<typeof state.agent.setStreaming>()
+		},
 		chats: {
 			addChat: mockFn<typeof state.chats.addChat>(),
 			chatState: {
@@ -35,6 +48,7 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			closeDocument: mockFn<typeof state.documents.closeDocument>(),
 			deleteDocumentFromFolder: mockFn<typeof state.documents.deleteDocumentFromFolder>(),
 			deleteFolder: mockFn<typeof state.documents.deleteFolder>(),
+			findFolder: mockFn<typeof state.documents.findFolder>(),
 			documentState: {
 				folders: [],
 				openDocuments: []

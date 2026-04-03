@@ -11,13 +11,21 @@ export interface StreamStore {
 	actorChatIds: Map<string, string>;
 }
 
+export interface ToolExecutor {
+	execute: (toolCalls: providers.stream.ToolUseBlock[]) => {
+		results: Array<{ tool_use_id: string; content: string }>;
+		summary: string[];
+	};
+}
+
 export interface StreamDeps {
 	getTreeByChatId: (chatId: string) => domain.tree.ChatTree | undefined;
 	replaceTreeByChatId: (chatId: string, tree: domain.tree.ChatTree) => void;
 	getProviderStream: (
 		model: domain.models.ActiveModel,
 		history: domain.tree.Message[],
-		signal: AbortSignal
+		signal: AbortSignal,
+		tools?: providers.stream.ToolDefinition[]
 	) => AsyncGenerator<providers.stream.StreamChunk>;
 }
 
@@ -43,15 +51,18 @@ export function startStream(
 		chatId: string;
 		model: domain.models.ActiveModel;
 		history: domain.tree.Message[];
+		tools?: providers.stream.ToolDefinition[];
+		toolExecutor?: ToolExecutor;
 	}
 ): void {
-	const { exchangeId, chatId, model, history } = params;
+	const { exchangeId, chatId, model, history, tools, toolExecutor } = params;
 
 	const input: StreamMachineInput = {
 		exchangeId,
 		model,
 		history,
-		getStream: deps.getProviderStream
+		getStream: deps.getProviderStream,
+		tools
 	};
 
 	const actor = createActor(streamMachine, { input });
@@ -61,6 +72,8 @@ export function startStream(
 	store.streamingIds.add(exchangeId);
 
 	let lastResponse = '';
+	// Track raw messages for multi-turn tool use
+	const rawMessages: unknown[] = history.map((m) => ({ role: m.role, content: m.content }));
 
 	actor.subscribe((snapshot: SnapshotFrom<typeof streamMachine>) => {
 		const { context } = snapshot;
@@ -83,6 +96,48 @@ export function startStream(
 					context.response
 				)
 			});
+		}
+
+		// Handle tool use — execute tools and send results back
+		if (snapshot.value === 'awaiting_tools' && toolExecutor && context.toolCalls.length > 0) {
+			const { results, summary } = toolExecutor.execute(context.toolCalls);
+
+			// Build structured assistant message
+			const assistantContent: unknown[] = [];
+			if (lastResponse) {
+				assistantContent.push({ type: 'text', text: lastResponse });
+			}
+			for (const tc of context.toolCalls) {
+				assistantContent.push({ type: 'tool_use', id: tc.id, name: tc.name, input: tc.input });
+			}
+			rawMessages.push({ role: 'assistant', content: assistantContent });
+			rawMessages.push({
+				role: 'user',
+				content: results.map((r) => ({ type: 'tool_result', ...r }))
+			});
+
+			// Update response with tool summary
+			if (summary.length > 0) {
+				const progressText =
+					(lastResponse ? lastResponse + '\n\n' : '') + summary.map((s) => `> ${s}`).join('\n');
+				lastResponse = progressText;
+
+				const latestTree = deps.getTreeByChatId(targetChatId);
+				if (latestTree) {
+					deps.replaceTreeByChatId(targetChatId, {
+						rootId: latestTree.rootId,
+						exchanges: domain.tree.updateExchangeResponse(
+							latestTree.exchanges,
+							exchangeId,
+							progressText
+						)
+					});
+				}
+			}
+
+			// Reset response for next turn
+			// Send tool results back to continue streaming
+			actor.send({ type: 'TOOL_RESULT', messages: rawMessages });
 		}
 
 		if (snapshot.status === 'done') {

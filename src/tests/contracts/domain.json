@@ -3,6 +3,12 @@
     "hasDuplicateNames": true,
     "isUniqueName": true
   },
+  "documents": {
+    "findFile": true,
+    "findFolder": true,
+    "findOpenDocumentIndex": true,
+    "resolveAsset": true
+  },
   "models": {
     "isKeyBasedProvider": true,
     "KEY_BASED_PROVIDERS": true,

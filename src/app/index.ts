@@ -1,3 +1,4 @@
+export * as agent from './agent/index';
 export * as chat from './chat/index';
 export * as bootstrap from './bootstrap/index';
 export * as documents from './documents/index';

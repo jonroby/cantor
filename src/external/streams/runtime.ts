@@ -1,5 +1,6 @@
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import type * as domain from '@/domain';
+import type * as providers from '@/external/providers';
 import {
 	isStreaming as _isStreaming,
 	isAnyStreaming as _isAnyStreaming,
@@ -9,7 +10,8 @@ import {
 	cancelStreamsForExchanges as _cancelStreamsForExchanges,
 	cancelStreamsForChat as _cancelStreamsForChat,
 	type StreamStore,
-	type StreamDeps
+	type StreamDeps,
+	type ToolExecutor
 } from './streams';
 
 const store: StreamStore = {
@@ -32,6 +34,8 @@ export function startStream(
 		chatId: string;
 		model: domain.models.ActiveModel;
 		history: domain.tree.Message[];
+		tools?: providers.stream.ToolDefinition[];
+		toolExecutor?: ToolExecutor;
 	},
 	deps: StreamDeps
 ): void {

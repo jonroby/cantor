@@ -42,7 +42,7 @@ vi.mock('@/state', async () => {
 		],
 		activeChatIndex: 0
 	};
-	const documentState = {
+	const documentState: { folders: import('@/state').documents.Folder[] } = {
 		folders: [
 			{
 				id: 'folder-1',
@@ -61,7 +61,15 @@ vi.mock('@/state', async () => {
 		},
 		documents: {
 			...actual.documents,
-			documentState
+			documentState,
+			findFolder: (folderId: string) => {
+				for (const folder of documentState.folders) {
+					if (folder.id === folderId) return folder;
+					const sub = folder.folders?.find((f: { id: string }) => f.id === folderId);
+					if (sub) return sub;
+				}
+				return undefined;
+			}
 		}
 	};
 });
@@ -135,7 +143,7 @@ function createDeps(overrides: Partial<DocumentCommandDeps> = {}): DocumentComma
 			activeExchangeId: 'root-1',
 			contextStrategy: 'full' as const
 		}),
-		getFolders: () => [],
+		findFolder: () => undefined,
 		createDocumentInFolder: vi.fn(() => null),
 		selectDocument: vi.fn(),
 		appendDocumentToChat: vi.fn(() => 'exchange-1'),
@@ -222,9 +230,11 @@ describe('document app actions', () => {
 	it('opens an existing document', () => {
 		const selectDocument = vi.fn();
 		const deps = createDeps({
-			getFolders: () => [
-				{ id: 'folder-1', name: 'Docs', files: [{ id: 'file-1', name: 'a.md', content: '' }] }
-			],
+			findFolder: () => ({
+				id: 'folder-1',
+				name: 'Docs',
+				files: [{ id: 'file-1', name: 'a.md', content: '' }]
+			}),
 			selectDocument
 		});
 
@@ -251,13 +261,11 @@ describe('document app actions', () => {
 	it('adds a folder document to the active chat', () => {
 		const appendDocumentToChat = vi.fn(() => 'exchange-9');
 		const deps = createDeps({
-			getFolders: () => [
-				{
-					id: 'folder-1',
-					name: 'Docs',
-					files: [{ id: 'file-1', name: 'notes.md', content: '# Notes' }]
-				}
-			],
+			findFolder: () => ({
+				id: 'folder-1',
+				name: 'Docs',
+				files: [{ id: 'file-1', name: 'notes.md', content: '# Notes' }]
+			}),
 			appendDocumentToChat
 		});
 
@@ -272,23 +280,31 @@ describe('document app actions', () => {
 
 	it('exposes the expected public API', () => {
 		expect(Object.keys(documents).sort()).toEqual([
+			'SUPPORTED_EXTENSIONS',
 			'addDocumentToChat',
 			'closeDocument',
+			'closeOpenDocument',
 			'createDocument',
 			'createFolder',
 			'deleteDocument',
 			'deleteFolder',
 			'exportFolder',
+			'findOpenDocumentIndex',
 			'getDocument',
+			'getFolder',
 			'getState',
 			'importDocument',
 			'importFolder',
 			'importFolderIntoFolder',
+			'isSupportedFileName',
 			'moveDocument',
 			'openDocument',
 			'renameDocument',
 			'renameFolder',
+			'resolveAsset',
+			'supportedExtensionsLabel',
 			'updateDocumentContent',
+			'updateOpenDocumentContent',
 			'validateDocumentMarkdown'
 		]);
 		expect(createFolder).toBeTypeOf('function');

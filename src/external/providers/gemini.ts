@@ -34,7 +34,14 @@ export async function* streamGeminiChat(
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`Gemini request failed: ${response.status} ${errorText}`);
+		let message = `Request failed (${response.status})`;
+		try {
+			const parsed = JSON.parse(errorText);
+			if (parsed?.error?.message) message = parsed.error.message;
+		} catch {
+			/* use default */
+		}
+		throw new Error(message);
 	}
 
 	const reader = response.body?.getReader();

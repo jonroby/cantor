@@ -20,7 +20,7 @@
 		onRenameChat: (index: number, name: string) => string | null;
 		onDownloadChat: (index: number) => void;
 		onUploadChat: () => void;
-		folders: app.documents.ChatFolder[];
+		folders: app.documents.Folder[];
 		onNewFolder: () => string;
 		onDeleteFolder: (folderId: string) => void;
 		onDownloadFolder: (folderId: string) => void;
@@ -33,7 +33,11 @@
 		onSelectDocument: (folderId: string, fileId: string) => void;
 		onAddDocumentToChat: (folderId: string, fileId: string) => void;
 		onDeleteDocument: (folderId: string, fileId: string) => void;
-		onRenameDocument: (folderId: string, fileId: string, name: string) => string | null;
+		onRenameDocument: (
+			folderId: string,
+			fileId: string,
+			name: string
+		) => { result: string | null; error?: string };
 		onMoveDocument: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
 	}
 
@@ -111,8 +115,14 @@
 
 	function commitRenameDocument(name: string) {
 		if (editingDocumentFolderId && editingDocumentFileId) {
-			const result = onRenameDocument(editingDocumentFolderId!, editingDocumentFileId!, name);
-			if (result && result !== name.trim()) {
+			const { result, error } = onRenameDocument(
+				editingDocumentFolderId!,
+				editingDocumentFileId!,
+				name
+			);
+			if (error) {
+				toast.error(error);
+			} else if (result && result !== name.trim()) {
 				toast.warning(`Renamed to "${result}" to avoid duplicate`);
 			}
 		}
@@ -133,7 +143,7 @@
 
 	// Delete targets
 	let deleteChatTarget: { index: number; name: string } | null = $state(null);
-	let deleteFolderTarget: app.documents.ChatFolder | null = $state(null);
+	let deleteFolderTarget: app.documents.Folder | null = $state(null);
 	let deleteDocumentTarget: { folderId: string; fileId: string; fileName: string } | null =
 		$state(null);
 
@@ -406,7 +416,11 @@
 									onDownloadFolder={() => onDownloadFolder(folder.id)}
 									onDeleteFolder={() => (deleteFolderTarget = folder)}
 									onSelectDocument={(fileId) => onSelectDocument(folder.id, fileId)}
+									onSelectSubfolderDocument={(subfolderId, fileId) =>
+										onSelectDocument(subfolderId, fileId)}
 									onAddDocumentToChat={(fileId) => onAddDocumentToChat(folder.id, fileId)}
+									onAddSubfolderDocumentToChat={(subfolderId, fileId) =>
+										onAddDocumentToChat(subfolderId, fileId)}
 									onStartRenameFile={(fileId, fileName) =>
 										startRenameDocument(folder.id, fileId, fileName)}
 									onCommitRenameFile={commitRenameDocument}
@@ -414,6 +428,12 @@
 									onDeleteDocument={(fileId, fileName) =>
 										(deleteDocumentTarget = {
 											folderId: folder.id,
+											fileId,
+											fileName
+										})}
+									onDeleteSubfolderDocument={(subfolderId, fileId, fileName) =>
+										(deleteDocumentTarget = {
+											folderId: subfolderId,
 											fileId,
 											fileName
 										})}
