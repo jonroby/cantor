@@ -48,6 +48,7 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
+	let bottomSpacerEl: HTMLDivElement | null = $state(null);
 	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 	let lastScrollAway = false;
 
@@ -361,6 +362,12 @@
 		return data;
 	}
 
+	function resizeSpacer(el: Element) {
+		if (!mainScrollContainer || !bottomSpacerEl) return;
+		const needed = mainScrollContainer.clientHeight - (el as HTMLElement).offsetHeight;
+		bottomSpacerEl.style.height = `${Math.max(128, needed)}px`;
+	}
+
 	export async function scrollToNode(nodeId: string | null) {
 		if (!nodeId) return;
 		await tick();
@@ -372,17 +379,23 @@
 			if (!container) continue;
 			const el = container.querySelector(`[data-exchange-id="${nodeId}"]`);
 			if (el) {
+				if (container === mainScrollContainer) resizeSpacer(el);
+				await tick();
 				el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				return;
 			}
 		}
 	}
 
-	export function scrollToBottom() {
+	export async function scrollToBottom() {
 		if (!mainScrollContainer || mainChatPath.length === 0) return;
 		const lastId = mainChatPath[mainChatPath.length - 1]!.id;
 		const el = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
-		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		if (el) {
+			resizeSpacer(el);
+			await tick();
+			el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 	}
 
 	export function expandSideChat(exchangeId: string) {
@@ -540,6 +553,7 @@
 						</div>
 					{/if}
 				</div>
+				<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>
 			</div>
 		</div>
 
