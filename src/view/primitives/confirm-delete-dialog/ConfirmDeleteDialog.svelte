@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as AlertDialog from '@/view/primitives/shadcn/ui/alert-dialog';
+	import * as AlertDialog from '@/view/primitives/bits/alert-dialog';
 
 	interface Props {
 		open: boolean;
@@ -19,27 +19,85 @@
 	}}
 >
 	<AlertDialog.Portal>
-		<AlertDialog.Overlay class="fixed inset-0 z-50 bg-black/50" />
-		<AlertDialog.Content
-			class="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-background p-6 shadow-lg"
-		>
+		<AlertDialog.Overlay class="confirm-delete-overlay" />
+		<AlertDialog.Content class="confirm-delete-content">
 			<AlertDialog.Header>
-				<AlertDialog.Title class="text-lg font-semibold">{title}</AlertDialog.Title>
-				<AlertDialog.Description class="mt-2 text-sm text-muted-foreground">
+				<AlertDialog.Title class="confirm-delete-title">{title}</AlertDialog.Title>
+				<AlertDialog.Description class="confirm-delete-description">
 					{description}
 				</AlertDialog.Description>
 			</AlertDialog.Header>
-			<AlertDialog.Footer class="mt-6 flex justify-end gap-2">
-				<AlertDialog.Cancel class="rounded-lg border px-4 py-2 text-sm hover:bg-muted"
-					>Cancel</AlertDialog.Cancel
-				>
-				<AlertDialog.Action
-					class="rounded-lg bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/90"
-					onclick={onConfirm}
-				>
+			<AlertDialog.Footer class="confirm-delete-footer">
+				<AlertDialog.Cancel class="confirm-delete-cancel">Cancel</AlertDialog.Cancel>
+				<AlertDialog.Action class="confirm-delete-action" onclick={onConfirm}>
 					Delete
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		</AlertDialog.Content>
 	</AlertDialog.Portal>
 </AlertDialog.Root>
+
+<style>
+	:global(.confirm-delete-overlay) {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		background: hsl(0 0% 0% / 0.5);
+	}
+
+	:global(.confirm-delete-content) {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		z-index: 50;
+		width: min(100%, 28rem);
+		padding: 1.5rem;
+		border: 1px solid hsl(var(--border));
+		border-radius: 0.75rem;
+		background: hsl(var(--background));
+		box-shadow: 0 16px 40px hsl(var(--foreground) / 0.18);
+		transform: translate(-50%, -50%);
+	}
+
+	:global(.confirm-delete-title) {
+		font-size: var(--text-lg);
+		font-weight: 600;
+	}
+
+	:global(.confirm-delete-description) {
+		margin-top: 0.5rem;
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	:global(.confirm-delete-footer) {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		margin-top: 1.5rem;
+	}
+
+	:global(.confirm-delete-cancel),
+	:global(.confirm-delete-action) {
+		padding: 0.5rem 1rem;
+		border-radius: 0.5rem;
+		font-size: var(--text-sm);
+	}
+
+	:global(.confirm-delete-cancel) {
+		border: 1px solid hsl(var(--border));
+	}
+
+	:global(.confirm-delete-cancel:hover) {
+		background: hsl(var(--muted));
+	}
+
+	:global(.confirm-delete-action) {
+		background: hsl(var(--destructive));
+		color: hsl(var(--destructive-foreground));
+	}
+
+	:global(.confirm-delete-action:hover) {
+		background: hsl(var(--destructive) / 0.9);
+	}
+</style>

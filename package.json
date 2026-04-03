@@ -49,11 +49,9 @@
 		"playwright": "^1.58.2",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
-		"prettier-plugin-tailwindcss": "^0.7.2",
 		"svelte": "^5.51.0",
 		"svelte-check": "^4.4.2",
 		"svelte-sonner": "^1.1.0",
-		"tailwind-variants": "^3.2.2",
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.54.0",
@@ -71,7 +69,6 @@
 	},
 	"dependencies": {
 		"@mlc-ai/web-llm": "^0.2.82",
-		"clsx": "^2.1.1",
 		"dompurify": "^3.3.3",
 		"function-plot": "^1.25.3",
 		"jszip": "^3.10.1",
@@ -81,7 +78,6 @@
 		"plotly.js-dist-min": "^3.4.0",
 		"remark-math": "^6.0.0",
 		"remark-parse": "^11.0.0",
-		"tailwind-merge": "^3.5.0",
 		"unified": "^11.0.5",
 		"unist-util-visit": "^5.1.0",
 		"xstate": "^5.29.0"

@@ -1,0 +1,52 @@
+<script lang="ts">
+	import { Tooltip as TooltipPrimitive } from 'bits-ui';
+	import type { ComponentProps } from 'svelte';
+	import TooltipPortal from './tooltip-portal.svelte';
+
+	type PortalProps = ComponentProps<typeof TooltipPortal>;
+
+	let {
+		ref = $bindable(null),
+		class: className = '',
+		sideOffset = 0,
+		side = 'top',
+		children,
+		arrowClasses: _arrowClasses,
+		portalProps,
+		...restProps
+	}: TooltipPrimitive.ContentProps & {
+		arrowClasses?: string;
+		portalProps?: Omit<PortalProps, 'children'>;
+	} = $props();
+</script>
+
+<TooltipPortal {...portalProps}>
+	<TooltipPrimitive.Content
+		bind:ref
+		data-slot="tooltip-content"
+		{sideOffset}
+		{side}
+		class={`bits-tooltip-content ${typeof className === 'string' ? className : ''}`}
+		{...restProps}
+	>
+		{@render children?.()}
+	</TooltipPrimitive.Content>
+</TooltipPortal>
+
+<style>
+	:global(.bits-tooltip-content) {
+		z-index: 50;
+		display: inline-flex;
+		width: fit-content;
+		max-width: 20rem;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.75rem;
+		border-radius: 0.375rem;
+		background: hsl(var(--foreground));
+		color: hsl(var(--background));
+		font-size: var(--text-xs);
+		box-shadow: 0 10px 24px hsl(var(--foreground) / 0.18);
+		transform-origin: var(--bits-tooltip-content-transform-origin);
+	}
+</style>

@@ -412,16 +412,12 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div
-	class="overflow-hidden rounded-[--radius-lg] border border-border bg-card shadow-[0_2px_8px_hsl(var(--foreground)/0.06)]"
->
-	<div class="flex items-center gap-0.5 border-b border-border bg-muted/100 px-2 py-1.5">
+<div class="drawing-board">
+	<div class="drawing-toolbar">
 		{#each tools as tool (tool.id)}
 			<button
-				class="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[6px] border-none transition-colors {activeTool ===
-				tool.id
-					? 'bg-primary text-primary-foreground'
-					: 'bg-transparent text-foreground hover:bg-background'}"
+				class="drawing-tool-btn"
+				class:drawing-tool-active={activeTool === tool.id}
 				onclick={() => (activeTool = tool.id)}
 				title={tool.label}
 			>
@@ -444,17 +440,16 @@
 				{/if}
 			</button>
 		{/each}
-		<div class="mx-1 h-5 w-px bg-border"></div>
+		<div class="drawing-toolbar-sep"></div>
 		{#each colors as color (color.value)}
 			<button
-				class="color-btn mx-px flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-2 border-transparent bg-transparent p-0 transition-colors hover:border-border"
+				class="color-btn"
 				class:color-active={activeColor === color.value}
 				style="--swatch:{color.value}"
 				onclick={() => selectColor(color.value)}
 				title={color.label}
 			>
-				<span class="color-swatch block h-3.5 w-3.5 rounded-full" style="background: var(--swatch)"
-				></span>
+				<span class="color-swatch" style="background: var(--swatch)"></span>
 			</button>
 		{/each}
 	</div>
@@ -462,7 +457,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<svg
 		bind:this={svgEl}
-		class="block h-auto w-full touch-none"
+		class="drawing-svg"
 		viewBox="0 0 {BOARD_WIDTH} {BOARD_HEIGHT}"
 		style="cursor: {cursorStyle}"
 		onpointerdown={onPointerDown}
@@ -486,7 +481,6 @@
 			{@const sel = selectedId === shape.id}
 			<g
 				data-shape-id={shape.id}
-				class="pointer-events-auto"
 				class:shape-selected={sel}
 				style="cursor: {activeTool === 'select' ? 'move' : cursorStyle}"
 			>
@@ -586,7 +580,6 @@
 		{#each handles as handle (handle.id)}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<rect
-				class="pointer-events-auto"
 				x={handle.x - HANDLE_SIZE / 2}
 				y={handle.y - HANDLE_SIZE / 2}
 				width={HANDLE_SIZE}
@@ -656,8 +649,89 @@
 </div>
 
 <style>
+	.drawing-board {
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		border: 1px solid hsl(var(--border));
+		background: hsl(var(--card));
+		box-shadow: 0 2px 8px hsl(var(--foreground) / 0.06);
+	}
+
+	.drawing-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 0.125rem;
+		border-bottom: 1px solid hsl(var(--border));
+		background: hsl(var(--muted));
+		padding: 0.375rem 0.5rem;
+	}
+
+	.drawing-toolbar-sep {
+		margin: 0 0.25rem;
+		height: 1.25rem;
+		width: 1px;
+		background: hsl(var(--border));
+		flex-shrink: 0;
+	}
+
+	.drawing-tool-btn {
+		display: flex;
+		height: 30px;
+		width: 30px;
+		cursor: pointer;
+		align-items: center;
+		justify-content: center;
+		border-radius: 6px;
+		border: none;
+		background: transparent;
+		color: hsl(var(--foreground));
+		transition: background 120ms;
+	}
+
+	.drawing-tool-btn:hover {
+		background: hsl(var(--background));
+	}
+
+	.drawing-tool-btn.drawing-tool-active {
+		background: hsl(var(--primary));
+		color: hsl(var(--primary-foreground));
+	}
+
+	.color-btn {
+		display: flex;
+		height: 1.5rem;
+		width: 1.5rem;
+		margin: 0 1px;
+		cursor: pointer;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		border: 2px solid transparent;
+		background: transparent;
+		padding: 0;
+		transition: border-color 120ms;
+	}
+
+	.color-btn:hover {
+		border-color: hsl(var(--border));
+	}
+
 	.color-btn.color-active {
 		border-color: hsl(var(--foreground));
+	}
+
+	.color-swatch {
+		display: block;
+		height: 0.875rem;
+		width: 0.875rem;
+		border-radius: 50%;
+	}
+
+	.drawing-svg {
+		display: block;
+		height: auto;
+		width: 100%;
+		touch-action: none;
 	}
 
 	.shape-selected {

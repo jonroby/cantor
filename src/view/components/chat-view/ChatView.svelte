@@ -525,23 +525,19 @@
 	<div class="error-banner">{operationError}</div>
 {/if}
 
-<div class="relative flex h-full min-w-0 flex-col overflow-hidden">
-	<div class="relative flex flex-1 overflow-hidden" class:chatview-body-split={sidePanelOpen}>
+<div class="chatview-shell">
+	<div class="chatview-body" class:chatview-body-split={sidePanelOpen}>
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="relative flex flex-1 flex-col overflow-hidden"
+			class="chatview-pane"
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
 			<Header class="chatview-main-title">
 				{activeChat.name}
 				{#if onClose}
-					<button
-						class="ml-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted-foreground transition-[background,color] duration-[150ms] hover:bg-muted hover:text-foreground"
-						onclick={onClose}
-						aria-label="Close chat panel"
-					>
+					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
 						<X size={14} />
 					</button>
 				{/if}
@@ -573,14 +569,14 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="chatview-side relative flex flex-col overflow-hidden opacity-0 transition-[flex,opacity] duration-[400ms] ease-[ease]"
+			class="chatview-side"
 			class:chatview-side-open={sidePanelOpen}
 			class:chatview-pane-focused={focusedPane === 'side'}
 			onclick={focusSide}
 		>
 			{#if sidePanelOpen}
 				{#if isDocumentPanel && activeDocumentFile}
-					<div class="flex flex-1 flex-col overflow-hidden">
+					<div class="chatview-doc-wrap">
 						<Document
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
@@ -641,12 +637,48 @@
 />
 
 <style>
+	.chatview-shell {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	.chatview-body {
+		position: relative;
+		display: flex;
+		flex: 1;
+		overflow: hidden;
+	}
+
 	/* Split layout — border added to first pane when side panel is open */
 	.chatview-body-split > :first-child {
 		border-right: 1px solid hsl(var(--border));
 	}
 
+	.chatview-pane {
+		position: relative;
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
 	/* Side panel open/closed transition */
+	.chatview-side {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		flex: 0;
+		opacity: 0;
+		transition:
+			flex 400ms ease,
+			opacity 400ms ease;
+	}
+
 	.chatview-side-open {
 		flex: 1;
 		opacity: 1;
@@ -672,6 +704,28 @@
 		max-width: var(--pane-content-width);
 		height: 1px;
 		background: hsl(var(--border));
+	}
+
+	.chatview-close-btn {
+		margin-left: auto;
+		display: flex;
+		height: 1.75rem;
+		width: 1.75rem;
+		cursor: pointer;
+		align-items: center;
+		justify-content: center;
+		border-radius: 6px;
+		border: none;
+		background: transparent;
+		color: hsl(var(--muted-foreground));
+		transition:
+			background 150ms,
+			color 150ms;
+	}
+
+	.chatview-close-btn:hover {
+		background: hsl(var(--muted));
+		color: hsl(var(--foreground));
 	}
 
 	/* .chatview-main extends .pane-scroll — no padding/scrollbar overrides needed */
@@ -713,6 +767,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+	}
+
+	.chatview-doc-wrap {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		overflow: hidden;
 	}
 
 	/* Focused pane ring — applied via class: directive */

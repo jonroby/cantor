@@ -113,55 +113,39 @@
 	type="file"
 	accept="image/jpeg,image/png,image/gif,image/webp"
 	multiple
-	class="hidden"
+	style="display: none"
 	onchange={handleFiles}
 />
 
 <form
-	class={anchored
-		? 'composer mx-auto box-border w-full max-w-[var(--pane-content-width)]'
-		: 'composer fixed bottom-6 left-1/2 z-[25] w-[min(768px,calc(100vw-2rem))] -translate-x-1/2'}
+	class="composer"
+	class:composer-anchored={anchored}
 	onsubmit={(e: Event) => {
 		e.preventDefault();
 		onSubmit();
 		resetSize();
 	}}
 >
-	<!-- shell -->
-	<div
-		class="overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-[0_12px_40px_hsl(var(--foreground)/0.12)]"
-	>
+	<div class="composer-shell">
 		{#if pendingImages.length > 0}
-			<div class="flex flex-wrap gap-2 px-3 pt-3">
+			<div class="composer-images">
 				{#each pendingImages as img, i (i)}
-					<div
-						class="relative h-16 w-16 overflow-hidden rounded-[var(--radius-md)] border border-border"
-					>
-						<img
-							src={`data:${img.mimeType};base64,${img.base64}`}
-							alt=""
-							class="h-full w-full object-cover"
-						/>
-						<button
-							class="absolute top-0.5 right-0.5 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full border-none bg-[hsl(var(--foreground)/0.7)] p-0 text-[hsl(var(--background))] hover:bg-[hsl(var(--foreground))]"
-							type="button"
-							onclick={() => removeImage(i)}
-						>
+					<div class="composer-image-thumb">
+						<img src={`data:${img.mimeType};base64,${img.base64}`} alt="" />
+						<button class="composer-image-remove" type="button" onclick={() => removeImage(i)}>
 							<X size={12} />
 						</button>
 					</div>
 				{/each}
 			</div>
 		{/if}
-		<div class="flex items-end gap-[0.6rem] p-3">
+		<div class="composer-row">
 			{#if inputMessage}
-				<span class="flex-1 px-1 text-[length:var(--text-base)] text-[hsl(var(--foreground)/0.45)]"
-					>{inputMessage}</span
-				>
+				<span class="composer-message">{inputMessage}</span>
 			{:else}
 				{#if activeModelLabel}
 					<button
-						class="mb-[0.15rem] flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center self-end rounded-full border border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+						class="composer-attach"
 						type="button"
 						onclick={openFilePicker}
 						aria-label="Attach image"
@@ -172,7 +156,7 @@
 				<textarea
 					bind:this={textareaEl}
 					bind:value={composerValue}
-					class="max-h-48 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent p-2 pl-1 font-[inherit] text-[length:var(--text-lg)] text-foreground outline-none"
+					class="composer-textarea"
 					placeholder={!activeModelLabel
 						? 'Select a model to get started with chat or working with an agent'
 						: agentMode
@@ -186,7 +170,7 @@
 			{/if}
 			{#if streaming}
 				<Button
-					class="composer-send composer-stop h-[2.3rem] min-h-[2.3rem] w-[2.3rem] min-w-[2.3rem] shrink-0 self-end rounded-full bg-[hsl(var(--foreground)/0.25)] text-black"
+					class="composer-send composer-stop"
 					type="button"
 					size="icon"
 					onclick={onStop}
@@ -196,7 +180,7 @@
 				</Button>
 			{:else}
 				<Button
-					class="composer-send h-[2.3rem] min-h-[2.3rem] w-[2.3rem] min-w-[2.3rem] shrink-0 self-end rounded-full"
+					class="composer-send"
 					type="submit"
 					size="icon"
 					disabled={!!submitDisabledReason || (!composerValue.trim() && pendingImages.length === 0)}
@@ -206,12 +190,10 @@
 				</Button>
 			{/if}
 		</div>
-		<div class="flex items-center border-t border-border px-4 py-[0.85rem]">
-			<div class="flex shrink-0 items-center gap-3">
+		<div class="composer-footer">
+			<div class="composer-footer-left">
 				<Button
-					class={activeModelLabel
-						? 'model-chip rounded-full text-muted-foreground'
-						: 'model-chip rounded-full border-foreground! bg-foreground! text-background!'}
+					class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
 					variant="outline"
 					size="sm"
 					onclick={onOpenPalette}
@@ -220,48 +202,32 @@
 						<img
 							src={PROVIDER_LOGOS[activeProvider]}
 							alt=""
-							class="h-[1.15rem] w-[1.15rem] object-contain"
+							style="height: 1.15rem; width: 1.15rem; object-fit: contain;"
 						/>
 					{/if}
 					{activeModelLabel ?? 'Choose model'}
 				</Button>
 				{#if activeModelLabel}
 					{#if onToggleMode}
-						<Button
-							class="mode-chip w-16 justify-center rounded-full text-muted-foreground"
-							variant="outline"
-							size="sm"
-							onclick={onToggleMode}
-						>
+						<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
 							{agentMode ? 'Agent' : 'Chat'}
 						</Button>
 					{/if}
-					<Button
-						class="strategy-chip w-16 justify-center rounded-full text-muted-foreground"
-						variant="outline"
-						size="sm"
-						onclick={onCycleStrategy}
-					>
+					<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
 						{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
 					</Button>
 				{/if}
 				{#if submitDisabledReason && !inputMessage && activeModelLabel}
-					<span class="text-[length:var(--text-sm)] text-muted-foreground"
-						>{submitDisabledReason}</span
-					>
+					<span class="composer-hint">{submitDisabledReason}</span>
 				{/if}
 			</div>
 			{#if activeModelLabel}
-				<div
-					class="ml-3 flex min-w-0 flex-1 items-center items-stretch gap-[0.65rem] self-stretch border-l border-border pl-3 text-[length:var(--text-sm)] text-muted-foreground"
-				>
+				<div class="composer-footer-right">
 					<span>Context</span>
 					{#if contextLength != null}
-						<div
-							class="h-[0.35rem] min-h-[0.35rem] min-w-0 flex-1 overflow-hidden rounded-full bg-muted"
-						>
+						<div class="progress-track compact">
 							<div
-								class="h-full rounded-[inherit] bg-foreground"
+								class="progress-fill"
 								style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}
 							></div>
 						</div>
@@ -276,3 +242,175 @@
 		</div>
 	</div>
 </form>
+
+<style>
+	.composer {
+		position: fixed;
+		bottom: 1.5rem;
+		left: 50%;
+		z-index: 25;
+		width: min(768px, calc(100vw - 2rem));
+		transform: translateX(-50%);
+	}
+
+	.composer-anchored {
+		position: relative;
+		bottom: auto;
+		left: auto;
+		transform: none;
+		width: 100%;
+		max-width: var(--pane-content-width);
+		margin: 0 auto;
+		box-sizing: border-box;
+	}
+
+	.composer-shell {
+		overflow: hidden;
+		border-radius: 1.25rem;
+		border: 1px solid hsl(var(--border));
+		background: hsl(var(--card));
+		box-shadow: 0 12px 40px hsl(var(--foreground) / 0.12);
+	}
+
+	.composer-images {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		padding: 0.75rem 0.75rem 0;
+	}
+
+	.composer-image-thumb {
+		position: relative;
+		width: 4rem;
+		height: 4rem;
+		overflow: hidden;
+		border-radius: var(--radius-md);
+		border: 1px solid hsl(var(--border));
+	}
+
+	.composer-image-thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.composer-image-remove {
+		position: absolute;
+		top: 0.125rem;
+		right: 0.125rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		border: none;
+		background: hsl(var(--foreground) / 0.7);
+		color: hsl(var(--background));
+		padding: 0;
+		cursor: pointer;
+	}
+
+	.composer-image-remove:hover {
+		background: hsl(var(--foreground));
+	}
+
+	.composer-row {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.6rem;
+		padding: 0.75rem;
+	}
+
+	.composer-message {
+		flex: 1;
+		padding: 0 0.25rem;
+		font-size: var(--text-base);
+		color: hsl(var(--foreground) / 0.45);
+	}
+
+	.composer-attach {
+		margin-bottom: 0.15rem;
+		display: flex;
+		height: 1.75rem;
+		width: 1.75rem;
+		flex-shrink: 0;
+		cursor: pointer;
+		align-items: center;
+		justify-content: center;
+		align-self: flex-end;
+		border-radius: 50%;
+		border: 1px solid hsl(var(--border));
+		background: transparent;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.composer-attach:hover {
+		background: hsl(var(--muted));
+		color: hsl(var(--foreground));
+	}
+
+	.composer-textarea {
+		flex: 1;
+		min-height: 2.5rem;
+		max-height: 12rem;
+		resize: none;
+		overflow-y: auto;
+		border: 0;
+		background: transparent;
+		padding: 0.5rem 0.5rem 0.5rem 0.25rem;
+		font-family: inherit;
+		font-size: var(--text-lg);
+		color: hsl(var(--foreground));
+		outline: none;
+	}
+
+	.composer-footer {
+		display: flex;
+		align-items: center;
+		border-top: 1px solid hsl(var(--border));
+		padding: 0.85rem 1rem;
+	}
+
+	.composer-footer-left {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.composer-hint {
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.composer-footer-right {
+		margin-left: 0.75rem;
+		display: flex;
+		min-width: 0;
+		flex: 1;
+		align-items: center;
+		align-self: stretch;
+		gap: 0.65rem;
+		border-left: 1px solid hsl(var(--border));
+		padding-left: 0.75rem;
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.progress-track {
+		flex: 1;
+		min-width: 0;
+		height: 0.35rem;
+		min-height: 0.35rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: hsl(var(--muted));
+	}
+
+	.progress-fill {
+		height: 100%;
+		border-radius: inherit;
+		background: hsl(var(--foreground));
+	}
+</style>

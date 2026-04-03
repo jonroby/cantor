@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
-vi.mock('@/view/primitives/shadcn/ui/sonner/sonner.svelte', async () => ({
+vi.mock('@/view/primitives/bits/sonner/sonner.svelte', async () => ({
 	default: (await import('../../../../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
 
@@ -35,7 +35,7 @@ vi.mock('@/view/components/landing', async () => ({
 	LandingPage: (await import('../../../../../tests/fixtures/LandingPageMock.svelte')).default
 }));
 
-vi.mock('@/view/primitives/shadcn/ui/sidebar/index.js', async () => ({
+vi.mock('@/view/primitives/bits/sidebar', async () => ({
 	Provider: (await import('../../../../../tests/fixtures/PassthroughWrapper.svelte')).default,
 	Inset: (await import('../../../../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));

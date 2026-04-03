@@ -27,5 +27,16 @@
 		if (e.key === 'Escape') onCancel();
 	}}
 	onclick={(e) => e.stopPropagation()}
-	class="w-full border-none bg-transparent text-sm text-sidebar-foreground outline-none"
+	class="inline-rename-input"
 />
+
+<style>
+	.inline-rename-input {
+		width: 100%;
+		border: none;
+		background: transparent;
+		outline: none;
+		font-size: var(--text-sm);
+		color: hsl(var(--sidebar-foreground));
+	}
+</style>

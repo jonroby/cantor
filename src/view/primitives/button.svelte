@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { cn } from '@/view/primitives/shadcn';
-
 	type Variant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 	type Size = 'default' | 'sm' | 'lg' | 'icon';
 
@@ -44,6 +42,10 @@
 		lg: 'ui-button-size-lg',
 		icon: 'ui-button-size-icon'
 	};
+
+	function joinClasses(...classes: Array<string | undefined | false>) {
+		return classes.filter(Boolean).join(' ');
+	}
 </script>
 
 <button
@@ -51,7 +53,7 @@
 	{disabled}
 	{title}
 	aria-label={ariaLabel}
-	class={cn('ui-button', variants[variant], sizes[size], className)}
+	class={joinClasses('ui-button', variants[variant], sizes[size], className)}
 	{onclick}
 	{...restProps}
 >

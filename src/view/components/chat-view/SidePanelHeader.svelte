@@ -54,7 +54,7 @@
 			<Plus size={14} />
 		</Button>
 		<Button
-			class="ghost-button ml-auto"
+			class="ghost-button sidepanel-close-btn"
 			variant="ghost"
 			size="sm"
 			onclick={onClose}
@@ -67,7 +67,7 @@
 	<Header>
 		<span class="chatview-side-counter">New side chat</span>
 		<Button
-			class="ghost-button ml-auto"
+			class="ghost-button sidepanel-close-btn"
 			variant="ghost"
 			size="sm"
 			onclick={onClose}
@@ -84,5 +84,9 @@
 		color: hsl(var(--muted-foreground));
 		min-width: 3rem;
 		text-align: center;
+	}
+
+	:global(.sidepanel-close-btn) {
+		margin-left: auto;
 	}
 </style>

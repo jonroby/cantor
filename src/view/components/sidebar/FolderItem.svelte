@@ -13,8 +13,8 @@
 		Trash2
 	} from 'lucide-svelte';
 	import * as app from '@/app';
-	import * as Sidebar from '@/view/primitives/shadcn/ui/sidebar';
-	import * as DropdownMenu from '@/view/primitives/shadcn/ui/dropdown-menu';
+	import * as Sidebar from '@/view/primitives/bits/sidebar';
+	import * as DropdownMenu from '@/view/primitives/bits/dropdown-menu';
 	import InlineRenameInput from '@/view/primitives/inline-rename-input/InlineRenameInput.svelte';
 	import DocumentItem from './DocumentItem.svelte';
 
@@ -131,14 +131,9 @@
 	<Sidebar.MenuItem>
 		<Sidebar.MenuButton
 			onclick={onToggle}
-			class="rounded-lg px-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground {isDragOver
-				? 'ring-2 ring-primary ring-inset'
-				: ''}"
+			class={`folder-item-button ${isDragOver ? 'folder-item-button-dragover' : ''}`}
 		>
-			<span
-				class="inline-flex shrink-0 transition-transform"
-				style:transform={expanded ? 'rotate(90deg)' : 'rotate(0deg)'}
-			>
+			<span class="chevron-icon" style:transform={expanded ? 'rotate(90deg)' : 'rotate(0deg)'}>
 				<ChevronRight size={16} strokeWidth={1.5} />
 			</span>
 			{#if isEditingFolder}
@@ -160,64 +155,39 @@
 			{/if}
 		</Sidebar.MenuButton>
 		<DropdownMenu.Root>
-			<DropdownMenu.Trigger
-				class="absolute top-1/2 right-1 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-sidebar-foreground/40 opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:text-sidebar-foreground data-[state=open]:opacity-100"
-				onclick={(e) => e.stopPropagation()}
-			>
+			<DropdownMenu.Trigger class="folder-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
 				<Ellipsis size={14} />
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Portal>
-				<DropdownMenu.Content
-					align="start"
-					side="right"
-					class="z-50 min-w-(--dropdown-min-w) rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
-				>
-					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-						onclick={onOpenFolder}
-					>
+				<DropdownMenu.Content align="start" side="right" class="folder-item-menu-content">
+					<DropdownMenu.Item class="folder-item-menu-action" onclick={onOpenFolder}>
 						<Folder size={14} strokeWidth={1.5} />
 						Open
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="my-1 h-px bg-border" />
-					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-						onclick={onNewDocument}
-					>
+					<DropdownMenu.Separator class="folder-item-menu-separator" />
+					<DropdownMenu.Item class="folder-item-menu-action" onclick={onNewDocument}>
 						<FilePlus size={14} strokeWidth={1.5} />
 						New file
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-						onclick={onUploadDocument}
-					>
+					<DropdownMenu.Item class="folder-item-menu-action" onclick={onUploadDocument}>
 						<Upload size={14} strokeWidth={1.5} />
 						Upload file
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-						onclick={onUploadFolder}
-					>
+					<DropdownMenu.Item class="folder-item-menu-action" onclick={onUploadFolder}>
 						<FolderUp size={14} strokeWidth={1.5} />
 						Upload folder
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-						onclick={startRenameFolder}
-					>
+					<DropdownMenu.Item class="folder-item-menu-action" onclick={startRenameFolder}>
 						<Pencil size={14} strokeWidth={1.5} />
 						Rename
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-						onclick={onDownloadFolder}
-					>
+					<DropdownMenu.Item class="folder-item-menu-action" onclick={onDownloadFolder}>
 						<Download size={14} strokeWidth={1.5} />
 						Download
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="my-1 h-px bg-border" />
+					<DropdownMenu.Separator class="folder-item-menu-separator" />
 					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10"
+						class="folder-item-menu-action folder-item-menu-action-destructive"
 						onclick={onDeleteFolder}
 					>
 						<Trash2 size={14} strokeWidth={1.5} />
@@ -249,7 +219,7 @@
 		{#each folder.folders ?? [] as subfolder (subfolder.id)}
 			<Sidebar.MenuItem>
 				<button
-					class="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 pl-8 text-base text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+					class="subfolder-btn"
 					onclick={() =>
 						(expandedSubfolders = {
 							...expandedSubfolders,
@@ -257,13 +227,13 @@
 						})}
 				>
 					<span
-						class="inline-flex shrink-0 transition-transform"
+						class="chevron-icon"
 						style:transform={expandedSubfolders[subfolder.id] ? 'rotate(90deg)' : 'rotate(0deg)'}
 					>
 						<ChevronRight size={14} strokeWidth={1.5} />
 					</span>
-					<Folder size={14} strokeWidth={1.5} class="shrink-0" />
-					<span class="truncate">{subfolder.name}</span>
+					<Folder size={14} strokeWidth={1.5} class="subfolder-folder-icon" />
+					<span class="subfolder-name">{subfolder.name}</span>
 				</button>
 			</Sidebar.MenuItem>
 			{#if expandedSubfolders[subfolder.id]}
@@ -288,7 +258,131 @@
 			{/if}
 		{/each}
 		{#if (folder.files ?? []).length === 0 && (folder.folders ?? []).length === 0}
-			<div class="px-8 py-1 text-xs text-sidebar-foreground/30">Empty</div>
+			<div class="folder-empty-label">Empty</div>
 		{/if}
 	{/if}
 </div>
+
+<style>
+	.chevron-icon {
+		display: inline-flex;
+		flex-shrink: 0;
+		transition: transform 120ms;
+	}
+
+	:global(.folder-item-button) {
+		border-radius: 0.5rem;
+		padding: 0.5rem 0.75rem;
+	}
+
+	:global(.folder-item-button-dragover) {
+		box-shadow: inset 0 0 0 2px hsl(var(--primary));
+	}
+
+	:global(li[data-sidebar='menu-item']:hover .folder-item-button),
+	:global(li[data-sidebar='menu-item'][data-state='open'] .folder-item-button) {
+		background: hsl(var(--sidebar-accent));
+		color: hsl(var(--sidebar-accent-foreground));
+	}
+
+	:global(.folder-item-menu-trigger) {
+		position: absolute;
+		top: 50%;
+		right: 0.25rem;
+		display: flex;
+		height: 1.5rem;
+		width: 1.5rem;
+		align-items: center;
+		justify-content: center;
+		transform: translateY(-50%);
+		border-radius: 0.375rem;
+		color: hsl(var(--sidebar-foreground) / 0.4);
+		opacity: 0;
+		transition:
+			opacity 120ms ease,
+			color 120ms ease;
+	}
+
+	:global(li[data-sidebar='menu-item']:hover .folder-item-menu-trigger),
+	:global(.folder-item-menu-trigger[data-state='open']) {
+		opacity: 1;
+	}
+
+	:global(.folder-item-menu-trigger:hover) {
+		color: hsl(var(--sidebar-foreground));
+	}
+
+	:global(.folder-item-menu-content) {
+		z-index: 50;
+		min-width: var(--dropdown-min-w);
+		padding: 0.25rem;
+		border: 1px solid hsl(var(--border));
+		border-radius: 0.5rem;
+		background: hsl(var(--popover));
+		color: hsl(var(--popover-foreground));
+		box-shadow: 0 10px 24px hsl(var(--foreground) / 0.12);
+	}
+
+	:global(.folder-item-menu-action) {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.375rem 0.5rem;
+		border-radius: 0.375rem;
+		font-size: var(--text-sm);
+		cursor: pointer;
+	}
+
+	:global(.folder-item-menu-action:hover) {
+		background: hsl(var(--accent));
+	}
+
+	:global(.folder-item-menu-action-destructive) {
+		color: hsl(var(--destructive));
+	}
+
+	:global(.folder-item-menu-action-destructive:hover) {
+		background: hsl(var(--destructive) / 0.1);
+	}
+
+	:global(.folder-item-menu-separator) {
+		height: 1px;
+		margin: 0.25rem 0;
+		background: hsl(var(--border));
+	}
+
+	.subfolder-btn {
+		display: flex;
+		width: 100%;
+		cursor: pointer;
+		align-items: center;
+		gap: 0.375rem;
+		border-radius: 0.5rem;
+		border: none;
+		background: transparent;
+		padding: 0.375rem 0.75rem 0.375rem 2rem;
+		font-size: var(--text-base);
+		color: hsl(var(--sidebar-foreground));
+		transition: background 120ms;
+	}
+
+	.subfolder-btn:hover {
+		background: hsl(var(--sidebar-accent));
+	}
+
+	.folder-empty-label {
+		padding: 0.25rem 2rem;
+		font-size: var(--text-xs);
+		color: hsl(var(--sidebar-foreground) / 0.3);
+	}
+
+	:global(.subfolder-folder-icon) {
+		flex-shrink: 0;
+	}
+
+	.subfolder-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+</style>

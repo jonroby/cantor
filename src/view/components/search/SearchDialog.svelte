@@ -167,8 +167,8 @@
 </script>
 
 <button class="modal-scrim" type="button" aria-label="Close search" onclick={onClose}></button>
-<div class="modal-panel top-24 w-[min(768px,calc(100vw-2rem))] overflow-hidden p-0">
-	<div class="flex items-center gap-3 border-b border-border px-[1.2rem] py-4">
+<div class="modal-panel search-panel">
+	<div class="search-header">
 		<svg
 			width="18"
 			height="18"
@@ -184,29 +184,29 @@
 			class="search-input"
 			placeholder="Search chats and projects"
 		/>
-		<label class="flex items-center gap-[0.45rem] text-sm whitespace-nowrap text-muted-foreground">
+		<label class="search-all-label">
 			<input type="checkbox" bind:checked={searchAllChats} />
 			<span>All chats</span>
 		</label>
 	</div>
-	<div class="flex max-h-[28rem] flex-col overflow-auto py-[0.4rem]">
+	<div class="search-results">
 		{#if searchItems.length === 0}
-			<div class="px-[1.2rem] py-8 text-center text-base text-muted-foreground">
+			<div class="search-empty">
 				{searchQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}
 			</div>
 		{/if}
 		{#each searchItems.slice(0, 40) as result (result.chatIndex + ':' + result.exchangeId)}
 			<button
-				class="flex flex-col gap-[0.3rem] rounded-none border-0 bg-transparent px-[1.2rem] py-[0.8rem] shadow-none hover:transform-none hover:bg-muted/75"
+				class="search-result-btn"
 				type="button"
 				onclick={() => {
 					onSelect(result);
 					onClose();
 				}}
 			>
-				<div class="text-[0.92rem]">{result.prompt}</div>
+				<div class="search-result-prompt">{result.prompt}</div>
 				{#if result.snippets[0]}
-					<div class="text-sm text-muted-foreground">{result.snippets[0].text}</div>
+					<div class="search-result-snippet">{result.snippets[0].text}</div>
 				{/if}
 			</button>
 		{/each}
@@ -214,6 +214,72 @@
 </div>
 
 <style>
+	.search-panel {
+		top: 6rem;
+		width: min(768px, calc(100vw - 2rem));
+		overflow: hidden;
+		padding: 0;
+	}
+
+	.search-header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		border-bottom: 1px solid hsl(var(--border));
+		padding: 1rem 1.2rem;
+	}
+
+	.search-all-label {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: var(--text-sm);
+		white-space: nowrap;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.search-results {
+		display: flex;
+		max-height: 28rem;
+		flex-direction: column;
+		overflow: auto;
+		padding: 0.4rem 0;
+	}
+
+	.search-empty {
+		padding: 2rem 1.2rem;
+		text-align: center;
+		font-size: var(--text-base);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.search-result-btn {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		border-radius: 0;
+		border: 0;
+		background: transparent;
+		padding: 0.8rem 1.2rem;
+		box-shadow: none;
+		text-align: left;
+		cursor: pointer;
+		width: 100%;
+	}
+
+	.search-result-btn:hover {
+		background: hsl(var(--muted) / 0.75);
+	}
+
+	.search-result-prompt {
+		font-size: 0.92rem;
+	}
+
+	.search-result-snippet {
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
 	:global(.search-input) {
 		border: 0;
 		background: transparent;

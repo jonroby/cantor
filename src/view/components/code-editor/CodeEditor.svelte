@@ -118,16 +118,9 @@
 	import { tick } from 'svelte';
 </script>
 
-<div
-	class="min-w-full overflow-hidden rounded-[0.7rem] border border-border bg-card text-card-foreground shadow-[0_2px_6px_hsl(var(--foreground)/0.06)]"
-	bind:this={cardElement}
->
-	<div
-		class="flex items-center justify-between border-b border-border bg-muted/65 px-[0.85rem] py-[0.6rem]"
-	>
-		<div
-			class="flex items-center gap-[0.4rem] text-[0.78rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
-		>
+<div class="code-editor-card" bind:this={cardElement}>
+	<div class="code-editor-header">
+		<div class="code-editor-title">
 			<svg
 				width="16"
 				height="16"
@@ -143,17 +136,10 @@
 				/>
 			</svg>
 			<span>Code</span>
-			<span
-				class="ml-1 rounded-full bg-muted px-[0.45rem] py-[0.1rem] text-xs font-normal tracking-normal normal-case"
-				>JavaScript</span
-			>
+			<span class="code-editor-lang">JavaScript</span>
 		</div>
-		<div class="flex items-center gap-[0.4rem]">
-			<button
-				class="code-editor-btn flex h-7 w-7 cursor-pointer items-center justify-center rounded-[0.4rem] border-none bg-transparent text-muted-foreground transition-colors hover:bg-muted"
-				onclick={clearOutput}
-				title="Clear output"
-			>
+		<div class="code-editor-actions">
+			<button class="code-editor-btn" onclick={clearOutput} title="Clear output">
 				<svg
 					width="14"
 					height="14"
@@ -166,7 +152,7 @@
 				</svg>
 			</button>
 			<button
-				class="flex cursor-pointer items-center gap-[0.35rem] rounded-lg border border-border bg-primary px-[0.7rem] py-[0.3rem] text-sm font-semibold text-primary-foreground transition-opacity hover:not-disabled:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
+				class="code-editor-run-btn"
 				onclick={runCode}
 				disabled={isRunning}
 				title="Run (Cmd+Enter)"
@@ -182,9 +168,9 @@
 			</button>
 		</div>
 	</div>
-	<div class="relative">
+	<div class="code-editor-body">
 		<textarea
-			class="code-editor-textarea box-border block max-h-[500px] min-h-[240px] w-full resize-y border-none bg-card px-[0.85rem] py-3 font-mono text-[0.85rem] leading-[1.6] text-card-foreground outline-none [tab-size:2]"
+			class="code-editor-textarea"
 			bind:value={code}
 			onkeydown={handleKeyDown}
 			spellcheck={false}
@@ -192,21 +178,103 @@
 		></textarea>
 	</div>
 	{#if output}
-		<div class="border-t border-border" class:code-editor-output-error={hasError}>
-			<div
-				class="output-header bg-muted/35 px-[0.85rem] py-[0.4rem] text-[0.7rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase"
-			>
+		<div class="code-editor-output" class:code-editor-output-error={hasError}>
+			<div class="code-editor-output-header">
 				<span>Output</span>
 			</div>
-			<pre
-				class="output-text m-0 max-h-[200px] overflow-y-auto px-[0.85rem] py-[0.65rem] font-mono text-[0.8rem] leading-[1.55] break-words whitespace-pre-wrap text-foreground">{output}</pre>
+			<pre class="code-editor-output-text">{output}</pre>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.code-editor-textarea::placeholder {
-		color: hsl(var(--muted-foreground) / 0.5);
+	.code-editor-card {
+		border: 1px solid hsl(var(--border));
+		border-radius: 0.7rem;
+		background: hsl(var(--card));
+		color: hsl(var(--card-foreground));
+		box-shadow: 0 2px 6px hsl(var(--foreground) / 0.06);
+		overflow: hidden;
+		min-width: 100%;
+	}
+
+	.code-editor-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.6rem 0.85rem;
+		border-bottom: 1px solid hsl(var(--border));
+		background: hsl(var(--muted) / 0.65);
+	}
+
+	.code-editor-title {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.78rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.code-editor-lang {
+		font-weight: 400;
+		letter-spacing: 0;
+		text-transform: none;
+		margin-left: 0.25rem;
+		padding: 0.1rem 0.45rem;
+		border-radius: 999px;
+		background: hsl(var(--muted));
+		font-size: 0.7rem;
+	}
+
+	.code-editor-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.code-editor-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border: none;
+		border-radius: 0.4rem;
+		background: transparent;
+		color: hsl(var(--muted-foreground));
+		cursor: pointer;
+		transition: background 120ms ease;
+	}
+
+	.code-editor-btn:hover {
+		background: hsl(var(--muted));
+	}
+
+	.code-editor-run-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.3rem 0.7rem;
+		border: 1px solid hsl(var(--border));
+		border-radius: 0.5rem;
+		background: hsl(var(--primary));
+		color: hsl(var(--primary-foreground));
+		font-size: 0.75rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: opacity 120ms ease;
+	}
+
+	.code-editor-run-btn:hover:not(:disabled) {
+		opacity: 0.85;
+	}
+
+	.code-editor-run-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.code-run-spinner {
@@ -224,11 +292,66 @@
 		}
 	}
 
-	.code-editor-output-error .output-header {
+	.code-editor-body {
+		position: relative;
+	}
+
+	.code-editor-textarea {
+		display: block;
+		width: 100%;
+		min-height: 240px;
+		max-height: 500px;
+		padding: 0.75rem 0.85rem;
+		border: none;
+		background: hsl(var(--card));
+		color: hsl(var(--card-foreground));
+		font-family:
+			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+		font-size: 0.85rem;
+		line-height: 1.6;
+		tab-size: 2;
+		resize: vertical;
+		outline: none;
+		box-sizing: border-box;
+	}
+
+	.code-editor-textarea::placeholder {
+		color: hsl(var(--muted-foreground) / 0.5);
+	}
+
+	.code-editor-output {
+		border-top: 1px solid hsl(var(--border));
+	}
+
+	.code-editor-output-header {
+		padding: 0.4rem 0.85rem;
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: hsl(var(--muted-foreground));
+		background: hsl(var(--muted) / 0.35);
+	}
+
+	.code-editor-output-text {
+		margin: 0;
+		padding: 0.65rem 0.85rem;
+		font-family:
+			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+		font-size: 0.8rem;
+		line-height: 1.55;
+		white-space: pre-wrap;
+		word-break: break-word;
+		max-height: 200px;
+		overflow-y: auto;
+		color: hsl(var(--foreground));
+	}
+
+	.code-editor-output-error .code-editor-output-text {
 		color: hsl(var(--destructive));
 	}
 
-	.code-editor-output-error .output-text {
+	.code-editor-output-error .code-editor-output-header {
 		color: hsl(var(--destructive));
 	}
 </style>

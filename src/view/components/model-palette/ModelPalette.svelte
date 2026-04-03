@@ -201,9 +201,7 @@
 {#if open}
 	<button class="modal-scrim" type="button" aria-label="Close model palette" onclick={handleClose}
 	></button>
-	<div
-		class="modal-panel flex max-h-[85vh] w-[min(900px,calc(100vw-2rem))] flex-col overflow-hidden p-0"
-	>
+	<div class="modal-panel palette-panel">
 		{#if credentialFlow}
 			<CredentialFlow
 				mode={credentialFlow.mode}
@@ -224,8 +222,8 @@
 				}}
 			/>
 		{:else}
-			<div class="flex flex-col overflow-hidden">
-				<div class="flex gap-0 border-b border-border px-6">
+			<div class="palette-body">
+				<div class="palette-tabs">
 					<button
 						class="palette-tab"
 						class:active={activeTab === 'frontier'}
@@ -249,7 +247,7 @@
 					</button>
 				</div>
 
-				<div class="flex-1 overflow-y-auto px-6 pt-4 pb-6">
+				<div class="palette-content">
 					{#if activeTab === 'frontier'}
 						<FrontierTab
 							vaultState={providerState.vaultState}
@@ -291,6 +289,34 @@
 {/if}
 
 <style>
+	.palette-panel {
+		display: flex;
+		flex-direction: column;
+		max-height: 85vh;
+		width: min(900px, calc(100vw - 2rem));
+		overflow: hidden;
+		padding: 0;
+	}
+
+	.palette-body {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.palette-tabs {
+		display: flex;
+		gap: 0;
+		border-bottom: 1px solid hsl(var(--border));
+		padding: 0 1.5rem;
+	}
+
+	.palette-content {
+		flex: 1;
+		overflow-y: auto;
+		padding: 1rem 1.5rem 1.5rem;
+	}
+
 	.palette-tab {
 		display: flex;
 		align-items: center;

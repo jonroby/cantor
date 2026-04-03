@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Sidebar from '@/view/primitives/shadcn/ui/sidebar/index.js';
+	import * as Sidebar from '@/view/primitives/bits/sidebar';
 	import AppSidebar from '@/view/components/sidebar/AppSidebar.svelte';
 
 	let props = $props();

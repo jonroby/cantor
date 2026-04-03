@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { cn } from '@/view/primitives/shadcn';
-
 	interface Props {
 		class?: string;
 		type?: string;
@@ -26,6 +24,10 @@
 	export function focus() {
 		inputEl?.focus();
 	}
+
+	function joinClasses(...classes: Array<string | undefined | false>) {
+		return classes.filter(Boolean).join(' ');
+	}
 </script>
 
 <input
@@ -35,6 +37,6 @@
 	{type}
 	{placeholder}
 	{disabled}
-	class={cn('ui-input', className)}
+	class={joinClasses('ui-input', className)}
 	{onkeydown}
 />

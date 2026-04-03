@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
-	import { Toaster } from '@/view/primitives/shadcn/ui/sonner';
+	import { Toaster } from '@/view/primitives/bits/sonner';
 	import { toast } from 'svelte-sonner';
-	import * as SidebarPrimitive from '@/view/primitives/shadcn/ui/sidebar';
+	import * as SidebarPrimitive from '@/view/primitives/bits/sidebar';
 	import { AppSidebar } from '@/view/components/sidebar';
 	import { SearchDialog } from '@/view/components/search';
 	import { Composer } from '@/view/components/composer';
@@ -341,12 +341,10 @@
 			onMoveDocument={app.documents.moveDocument}
 		/>
 		<SidebarPrimitive.Inset>
-			<div class="relative flex h-screen flex-col">
-				<div class="flex min-h-0 flex-1" class:panel-layout-split={isSplit}>
+			<div class="app-shell">
+				<div class="panel-layout" class:panel-layout-split={isSplit}>
 					{#each workspaceState.panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : 'chat')}
-						<div
-							class="relative flex min-w-0 flex-1 flex-col overflow-hidden transition-[flex] duration-[250ms] ease-[ease]"
-						>
+						<div class="panel-slot">
 							{#if panel.type === 'chat'}
 								<ChatView
 									bind:this={chatViewRef}
@@ -404,12 +402,8 @@
 				</div>
 
 				{#if workspaceState.panels.length === 0}
-					<div
-						class="absolute top-[40%] left-1/2 z-[1] -translate-x-1/2 -translate-y-1/2 text-center"
-					>
-						<span class="text-[28px] font-medium text-foreground"
-							>{hasModel ? 'What can I help with?' : 'Welcome!'}</span
-						>
+					<div class="welcome-container">
+						<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
 					</div>
 				{/if}
 				<ComposerAnchor
@@ -454,8 +448,45 @@
 <Toaster position="top-center" />
 
 <style>
-	/* Split layout — border on first panel when two panels are open */
-	.panel-layout-split > :first-child {
+	.app-shell {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+	}
+
+	.panel-layout {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+	}
+
+	.panel-slot {
+		position: relative;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		min-width: 0;
+		transition: flex 250ms ease;
+	}
+
+	.panel-layout-split .panel-slot:first-child {
 		border-right: 1px solid hsl(var(--border));
+	}
+
+	.welcome-container {
+		position: absolute;
+		top: 40%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		text-align: center;
+		z-index: 1;
+	}
+
+	.welcome-text {
+		font-size: 28px;
+		font-weight: 500;
+		color: hsl(var(--foreground));
 	}
 </style>
