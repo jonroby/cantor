@@ -12,12 +12,10 @@ export function createViewMock(overrides?: DeepPartial<ViewMock>): ViewMock {
 		ChatView: view.ChatView,
 		DocumentView: view.DocumentView,
 		FolderDocumentView: view.FolderDocumentView,
-		shared: {
-			AppSidebar: view.shared.AppSidebar,
-			Composer: view.shared.Composer,
-			ComposerInput: view.shared.ComposerInput,
-			SearchDialog: view.shared.SearchDialog
-		}
+		AppSidebar: view.AppSidebar,
+		Composer: view.Composer,
+		ComposerInput: view.ComposerInput,
+		SearchDialog: view.SearchDialog
 	} satisfies ViewMock;
 
 	return mergeMock<ViewMock>(base, overrides);

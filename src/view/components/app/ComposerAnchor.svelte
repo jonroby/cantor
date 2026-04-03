@@ -87,6 +87,25 @@
 </div>
 
 <style>
+	.scroll-to-bottom-btn {
+		margin: 0 auto 0.5rem;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		border: 1px solid hsl(var(--border));
+		background: hsl(var(--background));
+		color: hsl(var(--muted-foreground));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		box-shadow: 0 1px 3px hsl(var(--foreground) / 0.1);
+	}
+
+	.scroll-to-bottom-btn:hover {
+		background: hsl(var(--muted));
+	}
+
 	.composer-anchor {
 		position: absolute;
 		bottom: 1rem;

@@ -25,3 +25,20 @@
 		</div>
 	{/if}
 {/each}
+
+<style>
+	.chatview-exchange-wrap {
+		width: 100%;
+		padding-bottom: 1.25rem;
+		border-bottom: 1px solid hsl(var(--border));
+		scroll-margin-top: 1rem;
+	}
+
+	.chatview-exchange-wrap:last-child {
+		border-bottom: none;
+	}
+
+	.chatview-side-chat-source {
+		position: relative;
+	}
+</style>

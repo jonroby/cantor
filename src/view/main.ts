@@ -2,6 +2,7 @@ import { mount } from 'svelte';
 import 'katex/dist/katex.min.css';
 import './css/index.css';
 import './css/layout.css';
+import './css/prose.css';
 import './css/function-plot.css';
 import App from './components/app/App.svelte';
 

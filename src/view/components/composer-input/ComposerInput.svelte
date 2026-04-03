@@ -239,3 +239,212 @@
 		</div>
 	</div>
 </form>
+
+<style>
+	.composer {
+		position: fixed;
+		left: 50%;
+		bottom: 1.5rem;
+		z-index: 25;
+		width: min(768px, calc(100vw - 2rem));
+		transform: translateX(-50%);
+	}
+
+	.composer-shell {
+		overflow: hidden;
+		border: 1px solid hsl(var(--border));
+		border-radius: 1.25rem;
+		background: hsl(var(--card) / 1);
+		box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+	}
+
+	.composer-row {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.6rem;
+		padding: 0.75rem;
+	}
+
+	.composer-message {
+		flex: 1;
+		font-size: var(--text-base);
+		color: hsl(var(--foreground) / 0.45);
+		padding: 0 0.25rem;
+	}
+
+	.composer-textarea {
+		flex: 1;
+		min-height: 2.5rem;
+		max-height: 12rem;
+		border: 0;
+		background: transparent;
+		color: hsl(var(--foreground));
+		font-size: var(--text-lg);
+		font-family: inherit;
+		line-height: 1.5;
+		padding: 0.5rem 0.25rem;
+		outline: none;
+		resize: none;
+		overflow-y: auto;
+	}
+
+	.composer-send {
+		height: 2.3rem;
+		width: 2.3rem;
+		min-height: 2.3rem;
+		min-width: 2.3rem;
+		border-radius: var(--radius-full);
+		align-self: flex-end;
+		flex-shrink: 0;
+	}
+
+	.composer-stop {
+		background: hsl(var(--foreground) / 0.25);
+		color: hsl(0 0% 0%);
+	}
+
+	.composer-footer {
+		display: flex;
+		align-items: center;
+		padding: 0.85rem 1rem;
+		border-top: 1px solid hsl(var(--border));
+	}
+
+	.composer-footer-left {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.composer-footer-right {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		flex: 1;
+		min-width: 0;
+		padding-left: 0.75rem;
+		margin-left: 0.75rem;
+		border-left: 1px solid hsl(var(--border));
+		align-self: stretch;
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.model-chip {
+		border-radius: var(--radius-full);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.model-chip-cta {
+		background: hsl(var(--foreground)) !important;
+		color: hsl(var(--background)) !important;
+		border-color: hsl(var(--foreground)) !important;
+	}
+
+	.model-chip-cta:hover {
+		opacity: 0.85;
+	}
+
+	:global(.mode-chip.ui-button-outline) {
+		border-radius: var(--radius-full);
+		width: 4rem;
+		justify-content: center;
+		color: hsl(var(--muted-foreground));
+	}
+
+	:global(.strategy-chip.ui-button-outline) {
+		border-radius: var(--radius-full);
+		width: 4rem;
+		justify-content: center;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.progress-track {
+		height: 0.35rem;
+		min-height: 0.35rem;
+		border-radius: var(--radius-full);
+		background: hsl(var(--muted));
+		overflow: hidden;
+	}
+
+	.progress-track.compact {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.progress-fill {
+		height: 100%;
+		border-radius: inherit;
+		background: hsl(var(--foreground));
+	}
+
+	.composer-hint {
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.composer-attach {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		border: 1px solid hsl(var(--border));
+		background: transparent;
+		color: hsl(var(--muted-foreground));
+		cursor: pointer;
+		flex-shrink: 0;
+		align-self: flex-end;
+		margin-bottom: 0.15rem;
+	}
+
+	.composer-attach:hover {
+		background: hsl(var(--muted));
+		color: hsl(var(--foreground));
+	}
+
+	.composer-images {
+		display: flex;
+		gap: 8px;
+		padding: 0.75rem 0.75rem 0;
+		flex-wrap: wrap;
+	}
+
+	.composer-image-thumb {
+		position: relative;
+		width: 64px;
+		height: 64px;
+		border-radius: var(--radius-md);
+		overflow: hidden;
+		border: 1px solid hsl(var(--border));
+	}
+
+	.composer-image-thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.composer-image-remove {
+		position: absolute;
+		top: 2px;
+		right: 2px;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		border: none;
+		background: hsl(var(--foreground) / 0.7);
+		color: hsl(var(--background));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		padding: 0;
+	}
+
+	.composer-image-remove:hover {
+		background: hsl(var(--foreground));
+	}
+</style>

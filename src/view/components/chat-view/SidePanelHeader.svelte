@@ -77,3 +77,28 @@
 		</Button>
 	</div>
 {/if}
+
+<style>
+	.chatview-side-header {
+		height: 52px;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0;
+		position: relative;
+		background: hsl(var(--background) / 0.97);
+		flex-shrink: 0;
+	}
+
+	.chatview-side-counter {
+		font-size: var(--text-base);
+		color: hsl(var(--muted-foreground));
+		min-width: 3rem;
+		text-align: center;
+	}
+
+	:global(.chatview-side-close) {
+		margin-left: auto;
+	}
+</style>

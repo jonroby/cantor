@@ -4,10 +4,8 @@
   "ChatView": true,
   "DocumentView": true,
   "FolderDocumentView": true,
-  "shared": {
-    "AppSidebar": true,
-    "Composer": true,
-    "ComposerInput": true,
-    "SearchDialog": true
-  }
+  "AppSidebar": true,
+  "Composer": true,
+  "ComposerInput": true,
+  "SearchDialog": true
 }

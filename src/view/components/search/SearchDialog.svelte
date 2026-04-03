@@ -212,3 +212,85 @@
 		{/each}
 	</div>
 </div>
+
+<style>
+	.search-dialog {
+		top: 6rem;
+		width: min(768px, calc(100vw - 2rem));
+		overflow: hidden;
+	}
+
+	.search-dialog-header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem 1.2rem;
+		border-bottom: 1px solid hsl(var(--border));
+	}
+
+	:global(.search-input) {
+		border: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	:global(.search-input:focus) {
+		border-color: transparent;
+		box-shadow: none;
+	}
+
+	.check-row {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.check-row.compact {
+		white-space: nowrap;
+	}
+
+	.search-results {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.search-dialog-results {
+		max-height: 28rem;
+		overflow: auto;
+		padding: 0.4rem 0;
+	}
+
+	.search-result {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		padding: 0.8rem 1.2rem;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.search-result:hover {
+		transform: none;
+		background: hsl(var(--muted) / 0.75);
+	}
+
+	.search-result-title {
+		font-size: 0.92rem;
+	}
+
+	.search-result-snippet {
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.search-empty {
+		padding: 2rem 1.2rem;
+		text-align: center;
+		font-size: var(--text-base);
+		color: hsl(var(--muted-foreground));
+	}
+</style>
