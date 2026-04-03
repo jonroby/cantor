@@ -53,10 +53,9 @@ export function getTreeByChatId(chatId: string): domain.tree.ChatTree | undefine
 }
 
 export function replaceTreeByChatId(chatId: string, nextTree: domain.tree.ChatTree) {
-	const chat = chatState.chats.find((c) => c.id === chatId);
-	if (!chat) return;
-	chat.rootId = nextTree.rootId;
-	chat.exchanges = nextTree.exchanges;
+	chatState.chats = chatState.chats.map((c) =>
+		c.id === chatId ? { ...c, rootId: nextTree.rootId, exchanges: nextTree.exchanges } : c
+	);
 }
 
 function hasRenderableExchanges(exchanges: domain.tree.ExchangeMap) {
@@ -64,9 +63,10 @@ function hasRenderableExchanges(exchanges: domain.tree.ExchangeMap) {
 }
 
 export function replaceActiveTree(nextTree: domain.tree.ChatTree) {
-	const chat = chatState.chats[chatState.activeChatIndex];
-	chat.rootId = nextTree.rootId;
-	chat.exchanges = nextTree.exchanges;
+	const i = chatState.activeChatIndex;
+	chatState.chats = chatState.chats.map((c, idx) =>
+		idx === i ? { ...c, rootId: nextTree.rootId, exchanges: nextTree.exchanges } : c
+	);
 }
 
 export function addChat(chat: ChatRecord): number {
@@ -76,7 +76,10 @@ export function addChat(chat: ChatRecord): number {
 }
 
 export function setActiveExchangeId(exchangeId: string | null) {
-	chatState.chats[chatState.activeChatIndex].activeExchangeId = exchangeId;
+	const i = chatState.activeChatIndex;
+	chatState.chats = chatState.chats.map((c, idx) =>
+		idx === i ? { ...c, activeExchangeId: exchangeId } : c
+	);
 }
 
 function nextChatName(): string {
