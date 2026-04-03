@@ -249,7 +249,7 @@
 		{#each folder.folders ?? [] as subfolder (subfolder.id)}
 			<Sidebar.MenuItem>
 				<button
-					class="subfolder-row"
+					class="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 pl-8 text-base text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
 					onclick={() =>
 						(expandedSubfolders = {
 							...expandedSubfolders,
@@ -292,22 +292,3 @@
 		{/if}
 	{/if}
 </div>
-
-<style>
-	.subfolder-row {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		width: 100%;
-		padding: 0.375rem 0.75rem 0.375rem 2rem;
-		border-radius: 0.5rem;
-		font-size: var(--text-base);
-		color: hsl(var(--sidebar-foreground));
-		cursor: pointer;
-		transition: background-color var(--duration-normal);
-	}
-
-	.subfolder-row:hover {
-		background: hsl(var(--sidebar-accent));
-	}
-</style>

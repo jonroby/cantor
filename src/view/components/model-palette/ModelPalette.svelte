@@ -201,7 +201,9 @@
 {#if open}
 	<button class="modal-scrim" type="button" aria-label="Close model palette" onclick={handleClose}
 	></button>
-	<div class="modal-panel palette-panel">
+	<div
+		class="modal-panel flex max-h-[85vh] w-[min(900px,calc(100vw-2rem))] flex-col overflow-hidden p-0"
+	>
 		{#if credentialFlow}
 			<CredentialFlow
 				mode={credentialFlow.mode}
@@ -222,8 +224,8 @@
 				}}
 			/>
 		{:else}
-			<div class="palette-content">
-				<div class="palette-tabs">
+			<div class="flex flex-col overflow-hidden">
+				<div class="flex gap-0 border-b border-border px-6">
 					<button
 						class="palette-tab"
 						class:active={activeTab === 'frontier'}
@@ -239,7 +241,7 @@
 						Ollama
 					</button>
 					<button
-						class="palette-tab palette-tab-muted"
+						class="palette-tab"
 						class:active={activeTab === 'webllm'}
 						onclick={() => (activeTab = 'webllm')}
 					>
@@ -247,7 +249,7 @@
 					</button>
 				</div>
 
-				<div class="palette-scroll">
+				<div class="flex-1 overflow-y-auto px-6 pt-4 pb-6">
 					{#if activeTab === 'frontier'}
 						<FrontierTab
 							vaultState={providerState.vaultState}
@@ -289,28 +291,6 @@
 {/if}
 
 <style>
-	.palette-panel {
-		width: min(900px, calc(100vw - 2rem));
-		max-height: 85vh;
-		padding: 0;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.palette-content {
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.palette-tabs {
-		display: flex;
-		border-bottom: 1px solid hsl(var(--border));
-		padding: 0 1.5rem;
-		gap: 0;
-	}
-
 	.palette-tab {
 		display: flex;
 		align-items: center;
@@ -338,11 +318,5 @@
 	.palette-tab.active {
 		color: hsl(var(--foreground));
 		border-bottom-color: hsl(var(--primary));
-	}
-
-	.palette-scroll {
-		overflow-y: auto;
-		flex: 1;
-		padding: 1rem 1.5rem 1.5rem;
 	}
 </style>

@@ -29,7 +29,7 @@
 	let result = $derived(app.documents.getDocument(folderId, fileId));
 </script>
 
-<div class="documentview-shell">
+<div class="documentview-shell flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 	{#if result}
 		<Document
 			title={result.file.name}
@@ -48,21 +48,10 @@
 </div>
 
 <style>
-	.documentview-shell {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-height: 0;
-		min-width: 0;
-		overflow: hidden;
-	}
-
 	.documentview-shell > :global(.document) {
 		width: 100%;
 		height: 100%;
 		border: none;
 		border-radius: 0;
 	}
-
-	/* .docs-header uses .pane-header from layout.css — no overrides needed */
 </style>

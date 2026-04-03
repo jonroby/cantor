@@ -412,12 +412,16 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="drawing-board">
-	<div class="board-toolbar">
+<div
+	class="overflow-hidden rounded-[--radius-lg] border border-border bg-card shadow-[0_2px_8px_hsl(var(--foreground)/0.06)]"
+>
+	<div class="flex items-center gap-0.5 border-b border-border bg-muted/100 px-2 py-1.5">
 		{#each tools as tool (tool.id)}
 			<button
-				class="tool-btn"
-				class:active={activeTool === tool.id}
+				class="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[6px] border-none transition-colors {activeTool ===
+				tool.id
+					? 'bg-primary text-primary-foreground'
+					: 'bg-transparent text-foreground hover:bg-background'}"
 				onclick={() => (activeTool = tool.id)}
 				title={tool.label}
 			>
@@ -440,16 +444,17 @@
 				{/if}
 			</button>
 		{/each}
-		<div class="toolbar-divider"></div>
+		<div class="mx-1 h-5 w-px bg-border"></div>
 		{#each colors as color (color.value)}
 			<button
-				class="color-btn"
+				class="color-btn mx-px flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-2 border-transparent bg-transparent p-0 transition-colors hover:border-border"
 				class:color-active={activeColor === color.value}
 				style="--swatch:{color.value}"
 				onclick={() => selectColor(color.value)}
 				title={color.label}
 			>
-				<span class="color-swatch"></span>
+				<span class="color-swatch block h-3.5 w-3.5 rounded-full" style="background: var(--swatch)"
+				></span>
 			</button>
 		{/each}
 	</div>
@@ -457,7 +462,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<svg
 		bind:this={svgEl}
-		class="board-svg"
+		class="block h-auto w-full touch-none"
 		viewBox="0 0 {BOARD_WIDTH} {BOARD_HEIGHT}"
 		style="cursor: {cursorStyle}"
 		onpointerdown={onPointerDown}
@@ -481,7 +486,7 @@
 			{@const sel = selectedId === shape.id}
 			<g
 				data-shape-id={shape.id}
-				class="shape-group"
+				class="pointer-events-auto"
 				class:shape-selected={sel}
 				style="cursor: {activeTool === 'select' ? 'move' : cursorStyle}"
 			>
@@ -581,7 +586,7 @@
 		{#each handles as handle (handle.id)}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<rect
-				class="resize-handle"
+				class="pointer-events-auto"
 				x={handle.x - HANDLE_SIZE / 2}
 				y={handle.y - HANDLE_SIZE / 2}
 				width={HANDLE_SIZE}
@@ -651,101 +656,11 @@
 </div>
 
 <style>
-	.drawing-board {
-		background: hsl(var(--card));
-		border: 1px solid hsl(var(--border, 0 0% 85%));
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-		box-shadow: 0 2px 8px hsl(var(--foreground) / 0.06);
-	}
-
-	.board-toolbar {
-		display: flex;
-		align-items: center;
-		gap: 2px;
-		padding: 6px 8px;
-		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
-		background: hsl(var(--muted, 0 0% 96%));
-	}
-
-	.tool-btn {
-		width: 30px;
-		height: 30px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border: none;
-		background: transparent;
-		border-radius: 6px;
-		cursor: pointer;
-		font-size: var(--text-md);
-		color: hsl(var(--foreground, 0 0% 10%));
-		transition: background var(--duration-normal);
-	}
-
-	.tool-btn:hover {
-		background: hsl(var(--background, 0 0% 100%));
-	}
-
-	.tool-btn.active {
-		background: hsl(var(--primary, 0 0% 12%));
-		color: hsl(var(--primary-foreground, 0 0% 98%));
-	}
-
-	.toolbar-divider {
-		width: 1px;
-		height: 20px;
-		background: hsl(var(--border, 0 0% 85%));
-		margin: 0 4px;
-	}
-
-	.color-btn {
-		width: 24px;
-		height: 24px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border: 2px solid transparent;
-		background: transparent;
-		border-radius: 50%;
-		cursor: pointer;
-		padding: 0;
-		margin: 0 1px;
-		transition: border-color var(--duration-normal);
-	}
-
-	.color-btn:hover {
-		border-color: hsl(var(--border, 0 0% 85%));
-	}
-
 	.color-btn.color-active {
-		border-color: hsl(var(--foreground, 0 0% 10%));
-	}
-
-	.color-swatch {
-		display: block;
-		width: 14px;
-		height: 14px;
-		border-radius: 50%;
-		background: var(--swatch);
-	}
-
-	.board-svg {
-		display: block;
-		width: 100%;
-		height: auto;
-		touch-action: none;
-	}
-
-	.shape-group {
-		pointer-events: all;
+		border-color: hsl(var(--foreground));
 	}
 
 	.shape-selected {
 		filter: drop-shadow(0 0 2px #3b82f6);
-	}
-
-	.resize-handle {
-		pointer-events: all;
 	}
 </style>

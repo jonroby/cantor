@@ -17,28 +17,11 @@
 	{@const nodeData = getNodeData(exchange.id)}
 	{#if nodeData}
 		<div
-			class="chatview-exchange-wrap"
-			class:chatview-side-chat-source={sidePanelOpen && sidePanelParentId === exchange.id}
+			class="w-full scroll-mt-4 border-b border-border pb-5 last:border-b-0"
+			class:relative={sidePanelOpen && sidePanelParentId === exchange.id}
 			data-exchange-id={exchange.id}
 		>
 			<ChatMessage data={nodeData} />
 		</div>
 	{/if}
 {/each}
-
-<style>
-	.chatview-exchange-wrap {
-		width: 100%;
-		padding-bottom: 1.25rem;
-		border-bottom: 1px solid hsl(var(--border));
-		scroll-margin-top: 1rem;
-	}
-
-	.chatview-exchange-wrap:last-child {
-		border-bottom: none;
-	}
-
-	.chatview-side-chat-source {
-		position: relative;
-	}
-</style>

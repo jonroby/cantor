@@ -8,45 +8,14 @@
 	let { exchange }: Props = $props();
 </script>
 
-<div class="chatview-side-context">
-	<div class="chatview-side-context-label">From this message</div>
-	<div class="chatview-side-context-prompt">{exchange.prompt.text}</div>
+<div class="mx-3 mt-3 rounded-lg border border-primary/25 bg-primary/[0.06] px-4 py-3">
+	<div class="mb-[0.35rem] text-xs font-semibold tracking-[0.08em] text-primary/60 uppercase">
+		From this message
+	</div>
+	<div class="text-base leading-[1.4] font-medium text-foreground">{exchange.prompt.text}</div>
 	{#if exchange.response}
-		<div class="chatview-side-context-response">
+		<div class="mt-[0.3rem] text-base leading-[1.4] text-muted-foreground">
 			{exchange.response.text.slice(0, 150)}{exchange.response.text.length > 150 ? '…' : ''}
 		</div>
 	{/if}
 </div>
-
-<style>
-	.chatview-side-context {
-		padding: 0.75rem 1rem;
-		margin: 0.75rem 0.75rem 0;
-		border: 1px solid hsl(var(--primary) / 0.25);
-		border-radius: 0.5rem;
-		background: hsl(var(--primary) / 0.06);
-	}
-
-	.chatview-side-context-label {
-		font-size: var(--text-xs);
-		font-weight: 600;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: hsl(var(--primary) / 0.6);
-		margin-bottom: 0.35rem;
-	}
-
-	.chatview-side-context-prompt {
-		font-size: var(--text-base);
-		font-weight: 500;
-		color: hsl(var(--foreground));
-		line-height: 1.4;
-	}
-
-	.chatview-side-context-response {
-		margin-top: 0.3rem;
-		font-size: var(--text-base);
-		color: hsl(var(--muted-foreground));
-		line-height: 1.4;
-	}
-</style>

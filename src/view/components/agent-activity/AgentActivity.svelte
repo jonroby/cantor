@@ -137,71 +137,127 @@
 </script>
 
 {#if hasActivity}
-	<div class="agent-activity" class:agent-activity-compact={compact}>
-		<button class="agent-activity-header" onclick={toggle} type="button">
-			<div class="agent-activity-heading">
-				<div class="agent-activity-title">Agent activity</div>
+	<div
+		class="agent-activity mx-4 mt-4 overflow-hidden rounded-[14px] border border-border"
+		class:agent-activity-compact={compact}
+	>
+		<button
+			class="flex w-full cursor-pointer items-start justify-between gap-4 border-0 bg-transparent px-4 py-[14px] text-left text-inherit max-[820px]:flex-col max-[820px]:items-stretch"
+			onclick={toggle}
+			type="button"
+		>
+			<div class="flex min-w-0 items-center gap-2">
+				<div class="text-sm font-bold tracking-[0.06em] text-muted-foreground uppercase">
+					Agent activity
+				</div>
 				{#if liveStatus}
-					<div class="agent-activity-badge">Running</div>
+					<div class="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-bold text-foreground">
+						Running
+					</div>
 				{/if}
 			</div>
-			<div class="agent-activity-summary">
-				<span class="agent-activity-last">{lastEvent}</span>
-				<span class="agent-activity-count">{stepCount} step{stepCount === 1 ? '' : 's'}</span>
+			<div
+				class="flex max-w-[min(60%,420px)] flex-col items-end gap-1 max-[820px]:max-w-none max-[820px]:items-start"
+			>
+				<span
+					class="w-full overflow-hidden text-right text-base leading-[1.4] text-ellipsis whitespace-nowrap text-foreground max-[820px]:text-left"
+					>{lastEvent}</span
+				>
+				<span class="text-xs font-bold tracking-[0.04em] text-muted-foreground uppercase"
+					>{stepCount} step{stepCount === 1 ? '' : 's'}</span
+				>
 			</div>
 		</button>
 		{#if expanded}
-			<div class="agent-activity-body">
+			<div class="flex flex-col gap-2.5 px-4 pb-4">
 				{#each groupedEvents as group (group.id)}
 					{#if group.kind === 'tool'}
-						<div class="agent-activity-step agent-activity-step-tool">
-							<div class="agent-activity-step-header">
-								<div class="agent-activity-step-title">Tool step</div>
-								<div class="agent-activity-step-time">
+						<div
+							class="agent-activity-step flex flex-col gap-2 rounded-[--radius-lg] border border-border/70 bg-muted/[0.22] px-2.5 py-2.5 pb-3"
+						>
+							<div class="flex items-center justify-between gap-2 px-0.5">
+								<div class="text-xs font-bold tracking-[0.04em] text-muted-foreground uppercase">
+									Tool step
+								</div>
+								<div class="text-xs font-bold tracking-[0.04em] text-muted-foreground uppercase">
 									{formatTimestamp(group.call.createdAt)}
 								</div>
 							</div>
-							<div class="agent-activity-event agent-activity-event-call">
-								<div class="agent-activity-event-header">
-									<div class="agent-activity-event-type">{getEventLabel(group.call.type)}</div>
+							<div
+								class="agent-activity-event agent-activity-event-call rounded-[--radius-lg] border border-border/82 bg-background/92 px-[13px] py-3"
+							>
+								<div class="mb-1.5 flex items-center justify-between gap-2">
+									<div class="text-xs font-bold tracking-[0.05em] text-muted-foreground uppercase">
+										{getEventLabel(group.call.type)}
+									</div>
 								</div>
-								<div class="agent-activity-event-text">{group.call.text}</div>
+								<div
+									class="text-base leading-[1.5] break-words whitespace-pre-wrap text-foreground"
+								>
+									{group.call.text}
+								</div>
 							</div>
 							{#each group.followups as event (event.id)}
 								<div
-									class={`agent-activity-event agent-activity-event-${getEventTone(event.type)}`}
+									class="agent-activity-event agent-activity-event-{getEventTone(
+										event.type
+									)} rounded-[--radius-lg] border border-border/82 bg-background/92 px-[13px] py-3"
 								>
-									<div class="agent-activity-event-header">
-										<div class="agent-activity-event-type">{getEventLabel(event.type)}</div>
-										<div class="agent-activity-event-time">
+									<div class="mb-1.5 flex items-center justify-between gap-2">
+										<div
+											class="text-xs font-bold tracking-[0.05em] text-muted-foreground uppercase"
+										>
+											{getEventLabel(event.type)}
+										</div>
+										<div
+											class="text-xs font-bold tracking-[0.04em] text-muted-foreground uppercase"
+										>
 											{formatTimestamp(event.createdAt)}
 										</div>
 									</div>
-									<div class="agent-activity-event-text">{event.text}</div>
+									<div
+										class="text-base leading-[1.5] break-words whitespace-pre-wrap text-foreground"
+									>
+										{event.text}
+									</div>
 								</div>
 							{/each}
 						</div>
 					{:else}
 						<div
-							class={`agent-activity-event agent-activity-event-${getEventTone(group.event.type)}`}
+							class="agent-activity-event agent-activity-event-{getEventTone(
+								group.event.type
+							)} rounded-[--radius-lg] border border-border/82 bg-background/92 px-[13px] py-3"
 						>
-							<div class="agent-activity-event-header">
-								<div class="agent-activity-event-type">{getEventLabel(group.event.type)}</div>
-								<div class="agent-activity-event-time">
+							<div class="mb-1.5 flex items-center justify-between gap-2">
+								<div class="text-xs font-bold tracking-[0.05em] text-muted-foreground uppercase">
+									{getEventLabel(group.event.type)}
+								</div>
+								<div class="text-xs font-bold tracking-[0.04em] text-muted-foreground uppercase">
 									{formatTimestamp(group.event.createdAt)}
 								</div>
 							</div>
-							<div class="agent-activity-event-text">{group.event.text}</div>
+							<div class="text-base leading-[1.5] break-words whitespace-pre-wrap text-foreground">
+								{group.event.text}
+							</div>
 						</div>
 					{/if}
 				{/each}
 				{#if liveStatus}
-					<div class="agent-activity-event agent-activity-event-live">
-						<div class="agent-activity-event-header">
-							<div class="agent-activity-event-type">In progress</div>
-							<div class="agent-activity-event-time">live</div>
+					<div
+						class="agent-activity-event agent-activity-event-live rounded-[--radius-lg] border border-border/82 bg-background/92 px-[13px] py-3"
+					>
+						<div class="mb-1.5 flex items-center justify-between gap-2">
+							<div class="text-xs font-bold tracking-[0.05em] text-muted-foreground uppercase">
+								In progress
+							</div>
+							<div class="text-xs font-bold tracking-[0.04em] text-muted-foreground uppercase">
+								live
+							</div>
 						</div>
-						<div class="agent-activity-event-text">{liveStatus}</div>
+						<div class="text-base leading-[1.5] break-words whitespace-pre-wrap text-foreground">
+							{liveStatus}
+						</div>
 					</div>
 				{/if}
 			</div>
@@ -211,122 +267,11 @@
 
 <style>
 	.agent-activity {
-		margin: 16px 16px 0;
-		border: 1px solid hsl(var(--border));
-		border-radius: 14px;
 		background: linear-gradient(180deg, hsl(var(--muted) / 0.4), hsl(var(--background) / 0.92));
-		overflow: hidden;
 	}
 
 	.agent-activity-compact {
 		margin: 12px 12px 0;
-	}
-
-	.agent-activity-header {
-		width: 100%;
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 16px;
-		padding: 14px 16px;
-		background: transparent;
-		border: 0;
-		color: inherit;
-		text-align: left;
-		cursor: pointer;
-	}
-
-	.agent-activity-heading {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		min-width: 0;
-	}
-
-	.agent-activity-title {
-		font-size: var(--text-sm);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.agent-activity-badge {
-		padding: 2px 8px;
-		border-radius: var(--radius-full);
-		background: hsl(var(--accent) / 0.15);
-		color: hsl(var(--foreground));
-		font-size: var(--text-xs);
-		font-weight: 700;
-	}
-
-	.agent-activity-summary {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		gap: 4px;
-		max-width: min(60%, 420px);
-	}
-
-	.agent-activity-last {
-		font-size: var(--text-base);
-		line-height: 1.4;
-		color: hsl(var(--foreground));
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		width: 100%;
-		text-align: right;
-	}
-
-	.agent-activity-count {
-		font-size: var(--text-xs);
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.agent-activity-body {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		padding: 0 16px 16px;
-	}
-
-	.agent-activity-step {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-		padding: 10px 10px 12px;
-		border-radius: var(--radius-lg);
-		background: hsl(var(--muted) / 0.22);
-		border: 1px solid hsl(var(--border) / 0.7);
-	}
-
-	.agent-activity-step-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 8px;
-		padding: 0 2px;
-	}
-
-	.agent-activity-step-title,
-	.agent-activity-event-time,
-	.agent-activity-step-time {
-		font-size: var(--text-xs);
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.agent-activity-event {
-		padding: 12px 13px;
-		border-radius: var(--radius-lg);
-		background: hsl(var(--background) / 0.92);
-		border: 1px solid hsl(var(--border) / 0.82);
 	}
 
 	.agent-activity-event-call {
@@ -344,45 +289,5 @@
 	.agent-activity-event-status,
 	.agent-activity-event-live {
 		border-style: dashed;
-	}
-
-	.agent-activity-event-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 8px;
-		margin-bottom: 6px;
-	}
-
-	.agent-activity-event-type {
-		font-size: var(--text-xs);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.agent-activity-event-text {
-		white-space: pre-wrap;
-		word-break: break-word;
-		font-size: var(--text-base);
-		line-height: 1.5;
-		color: hsl(var(--foreground));
-	}
-
-	@media (max-width: 820px) {
-		.agent-activity-header {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.agent-activity-summary {
-			max-width: none;
-			align-items: flex-start;
-		}
-
-		.agent-activity-last {
-			text-align: left;
-		}
 	}
 </style>
