@@ -13,8 +13,8 @@
 		Trash2
 	} from 'lucide-svelte';
 	import * as app from '@/app';
-	import * as Sidebar from '@/view/primitives/bits/sidebar';
-	import * as DropdownMenu from '@/view/primitives/bits/dropdown-menu';
+	import * as Sidebar from '@/view/primitives/sidebar';
+	import * as DropdownMenu from '@/view/primitives/dropdown-menu';
 	import InlineRenameInput from '@/view/primitives/inline-rename-input/InlineRenameInput.svelte';
 	import DocumentItem from './DocumentItem.svelte';
 

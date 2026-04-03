@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
-	import { Toaster } from '@/view/primitives/bits/sonner';
+	import { Toaster } from '@/view/primitives/sonner';
 	import { toast } from 'svelte-sonner';
-	import * as SidebarPrimitive from '@/view/primitives/bits/sidebar';
+	import * as SidebarPrimitive from '@/view/primitives/sidebar';
 	import { AppSidebar } from '@/view/components/sidebar';
 	import { SearchDialog } from '@/view/components/search';
 	import { Composer } from '@/view/components/composer';

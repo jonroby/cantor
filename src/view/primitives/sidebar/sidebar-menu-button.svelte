@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Tooltip from '@/view/primitives/bits/tooltip';
+	import * as Tooltip from '@/view/primitives/tooltip';
 	import type { ComponentProps, Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { useSidebar } from './context.svelte.js';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as AlertDialog from '@/view/primitives/bits/alert-dialog';
+	import * as AlertDialog from '@/view/primitives/alert-dialog';
 
 	interface Props {
 		open: boolean;

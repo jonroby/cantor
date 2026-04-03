@@ -2,8 +2,8 @@
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import * as app from '@/app';
-	import * as Sidebar from '@/view/primitives/bits/sidebar';
-	import * as Tooltip from '@/view/primitives/bits/tooltip';
+	import * as Sidebar from '@/view/primitives/sidebar';
+	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
 	import ChatItem from './ChatItem.svelte';
