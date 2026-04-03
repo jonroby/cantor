@@ -33,13 +33,14 @@ export function getProviderStream(
 	history: domain.tree.Message[],
 	signal: AbortSignal,
 	runtime: ProviderStreamRuntime = {},
-	tools?: ToolDefinition[]
+	tools?: ToolDefinition[],
+	system?: string
 ) {
 	if (model.provider === 'webllm') return streamWebLLMChat(history, signal);
 	if (model.provider === 'ollama')
 		return streamOllamaChat(model.modelId, history, signal, runtime.ollamaUrl ?? '');
 	if (model.provider === 'claude')
-		return streamClaudeChat(model.modelId, history, runtime.apiKey ?? '', signal, tools);
+		return streamClaudeChat(model.modelId, history, runtime.apiKey ?? '', signal, tools, system);
 	if (model.provider === 'gemini')
 		return streamGeminiChat(model.modelId, history, runtime.apiKey ?? '', signal);
 	const config =

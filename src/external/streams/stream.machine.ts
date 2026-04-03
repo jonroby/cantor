@@ -6,7 +6,8 @@ type StreamFactory = (
 	model: domain.models.ActiveModel,
 	history: domain.tree.Message[],
 	signal: AbortSignal,
-	tools?: providers.stream.ToolDefinition[]
+	tools?: providers.stream.ToolDefinition[],
+	system?: string
 ) => AsyncGenerator<providers.stream.StreamChunk>;
 
 export interface StreamMachineInput {
@@ -15,6 +16,7 @@ export interface StreamMachineInput {
 	history: domain.tree.Message[];
 	getStream: StreamFactory;
 	tools?: providers.stream.ToolDefinition[];
+	system?: string;
 }
 
 export type StreamMachineEvent =
@@ -35,6 +37,7 @@ interface CallbackInput {
 	history: domain.tree.Message[];
 	getStream: StreamFactory;
 	tools?: providers.stream.ToolDefinition[];
+	system?: string;
 }
 
 const streamCallback = fromCallback<StreamMachineEvent, CallbackInput>(({ sendBack, input }) => {
@@ -46,7 +49,8 @@ const streamCallback = fromCallback<StreamMachineEvent, CallbackInput>(({ sendBa
 				input.model,
 				input.history,
 				abortController.signal,
-				input.tools
+				input.tools,
+				input.system
 			);
 			const toolCalls: providers.stream.ToolUseBlock[] = [];
 			let responseText = '';
@@ -99,6 +103,7 @@ export const streamMachine = setup({
 			history: domain.tree.Message[];
 			getStream: StreamFactory;
 			tools: providers.stream.ToolDefinition[] | undefined;
+			system: string | undefined;
 			toolCalls: providers.stream.ToolUseBlock[];
 			turnCount: number;
 		},
@@ -121,6 +126,7 @@ export const streamMachine = setup({
 		history: input.history,
 		getStream: input.getStream,
 		tools: input.tools,
+		system: input.system,
 		toolCalls: [],
 		turnCount: 0
 	}),
@@ -132,7 +138,8 @@ export const streamMachine = setup({
 					model: context.model,
 					history: context.history,
 					getStream: context.getStream,
-					tools: context.tools
+					tools: context.tools,
+					system: context.system
 				})
 			},
 			on: {

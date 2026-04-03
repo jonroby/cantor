@@ -5,6 +5,47 @@ import type * as providers from '@/external/providers';
 
 type StreamActor = Actor<typeof streamMachine>;
 
+const CONTENT_THRESHOLD = 200;
+
+function summarizeToolInput(input: Record<string, unknown>): Record<string, unknown> {
+	const summarized: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(input)) {
+		if (typeof value === 'string' && value.length > CONTENT_THRESHOLD) {
+			summarized[key] = `[${value.length} chars]`;
+		} else {
+			summarized[key] = value;
+		}
+	}
+	return summarized;
+}
+
+function truncateToolResult(content: string): string {
+	if (content.length <= CONTENT_THRESHOLD) return content;
+	return content.slice(0, CONTENT_THRESHOLD) + `… [truncated, ${content.length} chars total]`;
+}
+
+function compressOlderToolTurns(messages: unknown[]): void {
+	for (const msg of messages) {
+		const m = msg as { role: string; content: unknown };
+		if (m.role === 'assistant' && Array.isArray(m.content)) {
+			for (let i = 0; i < m.content.length; i++) {
+				const block = m.content[i] as { type: string; input?: Record<string, unknown> };
+				if (block.type === 'tool_use' && block.input) {
+					block.input = summarizeToolInput(block.input);
+				}
+			}
+		}
+		if (m.role === 'user' && Array.isArray(m.content)) {
+			for (let i = 0; i < m.content.length; i++) {
+				const block = m.content[i] as { type: string; content?: string };
+				if (block.type === 'tool_result' && typeof block.content === 'string') {
+					block.content = truncateToolResult(block.content);
+				}
+			}
+		}
+	}
+}
+
 export interface StreamStore {
 	streamingIds: Set<string>;
 	actors: Map<string, StreamActor>;
@@ -32,7 +73,8 @@ export interface StreamDeps {
 		model: domain.models.ActiveModel,
 		history: domain.tree.Message[],
 		signal: AbortSignal,
-		tools?: providers.stream.ToolDefinition[]
+		tools?: providers.stream.ToolDefinition[],
+		system?: string
 	) => AsyncGenerator<providers.stream.StreamChunk>;
 }
 
@@ -59,18 +101,20 @@ export function startStream(
 		model: domain.models.ActiveModel;
 		history: domain.tree.Message[];
 		tools?: providers.stream.ToolDefinition[];
+		system?: string;
 		toolExecutor?: ToolExecutor;
 		callbacks?: StreamCallbacks;
 	}
 ): void {
-	const { exchangeId, chatId, model, history, tools, toolExecutor, callbacks } = params;
+	const { exchangeId, chatId, model, history, tools, system, toolExecutor, callbacks } = params;
 
 	const input: StreamMachineInput = {
 		exchangeId,
 		model,
 		history,
 		getStream: deps.getProviderStream,
-		tools
+		tools,
+		system
 	};
 
 	const actor = createActor(streamMachine, { input });
@@ -113,6 +157,9 @@ export function startStream(
 				callbacks?.onToolNote?.(exchangeId, lastResponse.trim());
 			}
 			const { results } = toolExecutor.execute(context.toolCalls);
+
+			// Compress older tool turns before appending the new one
+			compressOlderToolTurns(rawMessages);
 
 			// Build structured assistant message
 			const assistantContent: unknown[] = [];

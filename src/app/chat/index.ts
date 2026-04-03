@@ -397,16 +397,7 @@ export function submitPrompt(
 
 	if (toolContext) {
 		const systemPrompt = agent.buildSystemPrompt(options!.liveDocumentContent);
-		history.splice(
-			history.length - 1,
-			0,
-			{ role: 'user', content: systemPrompt },
-			{ role: 'assistant', content: 'Understood.' }
-		);
-	}
-
-	if (toolContext) {
-		agent.startRun(chatId, created.id, model, history, toolContext);
+		agent.startRun(chatId, created.id, model, history, toolContext, systemPrompt);
 	} else {
 		external.streams.startStream(
 			{
@@ -418,7 +409,7 @@ export function submitPrompt(
 			{
 				getTreeByChatId: state.chats.getTreeByChatId,
 				replaceTreeByChatId: state.chats.replaceTreeByChatId,
-				getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
+				getProviderStream: (activeModel, streamHistory, signal, streamTools, streamSystem) =>
 					external.providers.stream.getProviderStream(
 						activeModel,
 						streamHistory,
@@ -427,7 +418,8 @@ export function submitPrompt(
 							apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
 							ollamaUrl: state.providers.providerState.ollamaUrl
 						},
-						streamTools
+						streamTools,
+						streamSystem
 					)
 			}
 		);

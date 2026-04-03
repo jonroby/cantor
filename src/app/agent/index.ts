@@ -1111,7 +1111,8 @@ export function startRun(
 	exchangeId: string,
 	model: domain.models.ActiveModel,
 	history: domain.tree.Message[],
-	toolContext: ToolContext
+	toolContext: ToolContext,
+	system?: string
 ) {
 	state.agent.clearThinking(exchangeId);
 	state.agent.startStreaming(exchangeId);
@@ -1154,6 +1155,7 @@ export function startRun(
 			model,
 			history,
 			tools: TOOLS,
+			system,
 			toolExecutor,
 			callbacks: {
 				onDelta: (eid, fullText) => state.agent.setLiveStatus(eid, fullText),
@@ -1173,7 +1175,7 @@ export function startRun(
 		{
 			getTreeByChatId: state.chats.getTreeByChatId,
 			replaceTreeByChatId: state.chats.replaceTreeByChatId,
-			getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
+			getProviderStream: (activeModel, streamHistory, signal, streamTools, streamSystem) =>
 				external.providers.stream.getProviderStream(
 					activeModel,
 					streamHistory,
@@ -1182,7 +1184,8 @@ export function startRun(
 						apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
 						ollamaUrl: state.providers.providerState.ollamaUrl
 					},
-					streamTools
+					streamTools,
+					streamSystem
 				)
 		}
 	);

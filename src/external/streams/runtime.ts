@@ -36,6 +36,7 @@ export function startStream(
 		model: domain.models.ActiveModel;
 		history: domain.tree.Message[];
 		tools?: providers.stream.ToolDefinition[];
+		system?: string;
 		toolExecutor?: ToolExecutor;
 		callbacks?: StreamCallbacks;
 	},
