@@ -52,13 +52,7 @@
 	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 	let lastScrollAway = false;
 
-	function handleMainScroll() {
-		mainScrollContainer?.classList.add('is-scrolling');
-		if (scrollTimer) clearTimeout(scrollTimer);
-		scrollTimer = setTimeout(() => {
-			mainScrollContainer?.classList.remove('is-scrolling');
-		}, 1000);
-
+	function checkScrollAway() {
 		if (mainScrollContainer && mainChatPath.length > 0) {
 			const lastId = mainChatPath[mainChatPath.length - 1]!.id;
 			const lastEl = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
@@ -72,6 +66,16 @@
 				}
 			}
 		}
+	}
+
+	function handleMainScroll() {
+		mainScrollContainer?.classList.add('is-scrolling');
+		if (scrollTimer) clearTimeout(scrollTimer);
+		scrollTimer = setTimeout(() => {
+			mainScrollContainer?.classList.remove('is-scrolling');
+		}, 1000);
+
+		checkScrollAway();
 	}
 
 	let providerState = $derived(app.providers.getState());
@@ -506,6 +510,12 @@
 		if (sidePanel && focusedPanelId === sidePanel.id && sideChatTailId) {
 			app.chat.selectExchange(sideChatTailId);
 		}
+	});
+
+	// Re-check scroll-away when chat path changes (e.g. opening a chat at the top)
+	$effect(() => {
+		mainChatPath;
+		tick().then(checkScrollAway);
 	});
 </script>
 

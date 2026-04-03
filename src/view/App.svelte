@@ -124,6 +124,7 @@
 			}
 
 			hasHydrated = true;
+			tick().then(() => chatViewRef?.scrollToBottom());
 		});
 
 		return () => {
