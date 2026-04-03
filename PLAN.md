@@ -1,12 +1,29 @@
 # Codebase Audit Plan
 
-## Remaining Issues
+## Completed
 
-### 1. `app/chat` `submitPrompt` Assembles History Inline
-
-The history assembly (flatMap exchanges → messages, splice document context, splice system prompt) is inline in `submitPrompt`. Could extract a private `buildHistory` function in `app/chat` for clarity and testability.
-
----
+- Import violations fixed (33 → 0), `workspace` registered in import checker
+- `state/workspace` dependency on `external` removed (own `WorkspacePanel` type)
+- View same-area import paths fixed
+- "branch" terminology renamed to "side chat" in agent tools
+- `doc`/`docs` identifiers renamed to `document`/`documents`
+- Formatter run, lint errors fixed (unused imports, `let` → `const`, dead code)
+- `AGENT_ARCHITECTURE_PLAN.md` removed
+- A11y warning fixed in `FolderDocumentView`
+- Redundant `addDocumentToChat` guard removed from `App.svelte`
+- `ChatView` constraint functions now delegate to `app.chat` instead of reimplementing
+- Inline SVGs replaced with lucide-svelte across 7 view files
+- `src/assets` moved into `src/view/assets`
+- `plotly.d.ts` moved into `src/view/`
+- `scroll-to-bottom` now calls `chatViewRef?.scrollToBottom()`
+- `importChat`/`importFolder`/`importFolderIntoFolder` converted from `void .then()` to `async/await`
+- Agent loop moved from `app/chat` into `app/agent` (Step 1)
+- Streaming unified: agent uses `external/streams` xstate machine with `ToolExecutor` + `StreamCallbacks` (Step 2)
+- Vault redesigned: single master password, global lock/unlock, session cache (encrypted password in sessionStorage + CryptoKey in IndexedDB, 24h TTL)
+- Active model selection persisted in workspace layout (IndexedDB), restored on init
+- ModelPalette UI updated: global vault lock/unlock bar, per-provider add/remove key (only when unlocked)
+- `submitPrompt` history assembly extracted into private `buildHistory` function in `app/chat`
+- README rewritten to match current architecture (removed stale `src/features/`, `src/routes/`, Canvas View, `src/assets/` references)
 
 ## CSS Cleanup
 
@@ -43,9 +60,7 @@ Establish tokens for the repeated values so both Tailwind classes and any remain
 
 **Phase 2: Port simple components to Tailwind**
 
-Migrate components with small or medium style blocks. These are the ones where scoped CSS is just applying common utilities (flex, gap, padding, colors) and Tailwind would be a direct replacement with less code.
-
-Candidates (roughly ordered by simplicity):
+Migrate components with small or medium style blocks where scoped CSS is just applying common utilities.
 
 | Component                   | Style lines | Notes                                          |
 | --------------------------- | ----------- | ---------------------------------------------- |
@@ -60,8 +75,6 @@ Candidates (roughly ordered by simplicity):
 | `ChatItem.svelte`           | small       | Sidebar chat item                              |
 
 **Phase 3: Leave complex components as scoped CSS (but standardize their tokens)**
-
-These have genuinely complex CSS (diff viewers, code editors, responsive layouts) where utility classes would be worse. Keep scoped CSS, but make them use the shared scale from Phase 1.
 
 | Component             | Style lines | Why keep scoped                               |
 | --------------------- | ----------- | --------------------------------------------- |
@@ -80,7 +93,7 @@ These have genuinely complex CSS (diff viewers, code editors, responsive layouts
 
 **Phase 5: Eliminate `:global()` leaks**
 
-41 usages across 7 files. Most are components styling children they don't own (e.g., `.chatview-doc-wrap > :global(.document)`). For each:
+41 usages across 7 files. Most are components styling children they don't own. For each:
 
 - If the child component can accept a `class` prop, pass it instead
 - If it's a shadcn primitive, use Tailwind on the wrapper
