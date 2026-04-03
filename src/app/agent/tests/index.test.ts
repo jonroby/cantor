@@ -92,7 +92,7 @@ describe('app/agent', () => {
 	});
 
 	it('tells the agent that markdown documents support plot and plotly code fences', () => {
-		const prompt = agent.buildSystemPrompt('# Notes');
+		const prompt = agent.buildSystemPrompt();
 
 		expect(prompt).toContain('Use ```plot for function-plot JSON configs.');
 		expect(prompt).toContain('Use ```plotly for Plotly JSON configs.');

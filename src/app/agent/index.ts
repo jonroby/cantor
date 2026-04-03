@@ -1007,11 +1007,7 @@ export function executeTool(
 	return tool.execute(input, ctx);
 }
 
-export function buildSystemPrompt(documentContent: string | undefined): string {
-	const documentSection = documentContent
-		? `\n\n<current_document>\n${documentContent}\n</current_document>`
-		: '\n\nThere is no active document content.';
-
+export function buildSystemPrompt(): string {
 	return [
 		'You are an agent inside a document workspace chat.',
 		'Your final user-facing answer should be concise and useful.',
@@ -1023,26 +1019,37 @@ export function buildSystemPrompt(documentContent: string | undefined): string {
 		'- If a write did not succeed, try again or explain the failure.',
 		'- Text you emit before tool calls is treated as live agent progress, not the final answer.',
 		'- The final answer should come after your tool work is done.',
-		'',
-		'Capabilities:',
-		describeCapabilities(),
+		'- If you need document content, call inspect_active_document or read_document.',
 		'',
 		'When working in markdown documents, you can create charts directly with fenced code blocks.',
 		'- Use ```plot for function-plot JSON configs.',
 		'- Use ```plotly for Plotly JSON configs.',
 		'- If a user asks for a chart in a document, prefer editing or creating the document with one of those code blocks.',
 		'',
-		'When creating diagrams or SVG assets, create the actual file first and then reference it from the document.',
-		documentSection
+		'When creating diagrams or SVG assets, create the actual file first and then reference it from the document.'
 	].join('\n');
+}
+
+const DOCUMENT_ONLY_TOOLS = new Set([
+	'edit_document',
+	'rename_document',
+	'delete_document',
+	'move_document',
+	'add_document_to_chat',
+	'open_document'
+]);
+
+export function getRelevantTools(ctx: ToolContext): external.providers.stream.ToolDefinition[] {
+	if (ctx.activeDocumentKey) return TOOLS;
+	return TOOLS.filter((t) => !DOCUMENT_ONLY_TOOLS.has(t.name));
 }
 
 export function buildMessages(
 	prompt: string,
-	documentContent: string | undefined,
+	_documentContent: string | undefined,
 	chatTree: domain.tree.ChatTree
 ): Message[] {
-	const systemPrompt = buildSystemPrompt(documentContent);
+	const systemPrompt = buildSystemPrompt();
 	const chatHistory = domain.tree
 		.getMainChat(chatTree)
 		.flatMap((exchange) => [
@@ -1159,7 +1166,7 @@ export function startRun(
 			chatId,
 			model,
 			history,
-			tools: TOOLS,
+			tools: getRelevantTools(toolContext),
 			system,
 			toolExecutor,
 			callbacks: {

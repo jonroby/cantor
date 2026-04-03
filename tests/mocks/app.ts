@@ -102,6 +102,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			dismissResponse: mockFn<typeof app.agent.dismissResponse>(),
 			executeTool: mockFn<typeof app.agent.executeTool>(() => ({ result: '' })),
 			getCapabilities: mockFn<typeof app.agent.getCapabilities>(() => []),
+			getRelevantTools: mockFn<typeof app.agent.getRelevantTools>(() => []),
 			getState: mockFn<typeof app.agent.getState>(() => ({
 				streamingExchangeIds: [],
 				pendingContent: null,
