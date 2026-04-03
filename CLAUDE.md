@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Svelte 5 + Vite single-page app. An LLM interface for power users. Browser-only state.
+Svelte 5 + Vite single-page app. An LLM interface for power users. Browser-only state, persisted to IndexedDB.
 
 Read `rules/` before modifying `src/`. Start with `rules/root.md`, then the rule file for the layer you are changing.
 
@@ -60,7 +60,7 @@ Use `lucide-svelte` for all icons. Do not use inline SVG paths or one-off SVGs f
 
 ## Temporary Rules
 
-- Do not worry about data migration. No migration steps when changing persisted data shapes.
+- When changing persisted data shapes, handle migration from the previous shape in `external/persistence`.
 
 ## Working Rules
 
