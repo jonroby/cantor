@@ -122,13 +122,12 @@
 				{#if data.model}
 					<span class="chatmsg-model">{data.model}</span>
 				{/if}
-				{#if data.isStreaming && !data.response}
-					<span class="docs-streaming-text">Waiting for response…</span>
-				{:else if data.isStreaming}
-					<div class="streaming-dot"></div>
-				{/if}
 			</div>
-			{#if responseBlocks.length > 0}
+			{#if data.isStreaming && !data.response}
+				<div class="chatmsg-response-body docs-streaming-text">Waiting for response…</div>
+			{:else if data.isStreaming && data.response}
+				<div class="chatmsg-response-body docs-streaming-text">{data.response.trimStart()}</div>
+			{:else if responseBlocks.length > 0}
 				{#if showSource}
 					<pre class="chatmsg-response-body chatmsg-response-source">{data.response}</pre>
 				{:else}
@@ -150,147 +149,147 @@
 					</div>
 				{/if}
 			{:else if data.response}
-				<div class="chatmsg-response-body chatmsg-response-plain">
-					{data.response}
-				</div>
+				<div class="chatmsg-response-body chatmsg-response-plain">{data.response}</div>
 			{:else if !data.isStreaming}
 				<div class="chatmsg-response-body chatmsg-response-plain">Cancelled</div>
 			{/if}
 		</div>
 	{/if}
 
-	<div class="chatmsg-toolbar">
-		<div class="chatmsg-actions">
-			<span class="action-tip-wrap">
-				<Button
-					class="icon-chip delete-chip"
-					variant="ghost"
-					size="icon"
-					onclick={(event: MouseEvent) => {
-						event.stopPropagation();
-						data.onDelete();
-					}}
-					ariaLabel="Delete"
-				>
-					<Trash2 size={15} />
-				</Button>
-				<span class="action-tip">Delete</span>
-			</span>
-			<span class="action-tip-wrap">
-				<Button
-					class="icon-chip"
-					variant="ghost"
-					size="icon"
-					onclick={(event: MouseEvent) => {
-						event.stopPropagation();
-						data.onCopy();
-					}}
-					ariaLabel="Copy"
-				>
-					<GitFork size={15} />
-				</Button>
-				<span class="action-tip">Copy</span>
-			</span>
-			{#if data.isSideRoot}
+	{#if !data.isStreaming}
+		<div class="chatmsg-toolbar">
+			<div class="chatmsg-actions">
+				<span class="action-tip-wrap">
+					<Button
+						class="icon-chip delete-chip"
+						variant="ghost"
+						size="icon"
+						onclick={(event: MouseEvent) => {
+							event.stopPropagation();
+							data.onDelete();
+						}}
+						ariaLabel="Delete"
+					>
+						<Trash2 size={15} />
+					</Button>
+					<span class="action-tip">Delete</span>
+				</span>
 				<span class="action-tip-wrap">
 					<Button
 						class="icon-chip"
 						variant="ghost"
 						size="icon"
-						disabled={!data.canPromote}
 						onclick={(event: MouseEvent) => {
 							event.stopPropagation();
-							data.onPromote();
+							data.onCopy();
 						}}
-						ariaLabel="Promote"
+						ariaLabel="Copy"
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							><path
-								d="M7 12V2M7 2l-2 2M7 2l2 2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/></svg
+						<GitFork size={15} />
+					</Button>
+					<span class="action-tip">Copy</span>
+				</span>
+				{#if data.isSideRoot}
+					<span class="action-tip-wrap">
+						<Button
+							class="icon-chip"
+							variant="ghost"
+							size="icon"
+							disabled={!data.canPromote}
+							onclick={(event: MouseEvent) => {
+								event.stopPropagation();
+								data.onPromote();
+							}}
+							ariaLabel="Promote"
 						>
-					</Button>
-					<span class="action-tip">Promote</span>
-				</span>
-			{/if}
-			{#if responseBlocks.length > 0}
-				<span class="action-tip-wrap">
-					<Button
-						class="icon-chip"
-						variant="ghost"
-						size="icon"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							showSource = !showSource;
-						}}
-						ariaLabel={showSource ? 'Show rendered' : 'Show source'}
-					>
-						{#if showSource}
-							<Eye size={15} />
-						{:else}
-							<Code size={15} />
-						{/if}
-					</Button>
-					<span class="action-tip">{showSource ? 'Rendered' : 'Source'}</span>
-				</span>
-				<span class="action-tip-wrap">
-					<Button
-						class="icon-chip"
-						variant="ghost"
-						size="icon"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							navigator.clipboard.writeText(data.response);
-						}}
-						ariaLabel="Copy text"
-					>
-						<ClipboardCopy size={15} />
-					</Button>
-					<span class="action-tip">Copy text</span>
-				</span>
-			{/if}
-		</div>
-		{#if !data.isSideRoot}
-			{#if data.hasSideChildren}
-				<button
-					class="chatmsg-side-chat-badge"
-					type="button"
-					onclick={(event: MouseEvent) => {
-						event.stopPropagation();
-						data.onToggleSideChildren();
-					}}
-				>
-					<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
-					<span>{data.sideChildrenCount}</span>
-				</button>
-			{:else}
-				<span class="action-tip-wrap chatmsg-side-chat-action">
-					<Button
-						class="icon-chip"
-						variant="ghost"
-						size="icon"
-						disabled={!data.canCreateSideChat}
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+								><path
+									d="M7 12V2M7 2l-2 2M7 2l2 2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/></svg
+							>
+						</Button>
+						<span class="action-tip">Promote</span>
+					</span>
+				{/if}
+				{#if responseBlocks.length > 0}
+					<span class="action-tip-wrap">
+						<Button
+							class="icon-chip"
+							variant="ghost"
+							size="icon"
+							onclick={(event: MouseEvent) => {
+								event.stopPropagation();
+								showSource = !showSource;
+							}}
+							ariaLabel={showSource ? 'Show rendered' : 'Show source'}
+						>
+							{#if showSource}
+								<Eye size={15} />
+							{:else}
+								<Code size={15} />
+							{/if}
+						</Button>
+						<span class="action-tip">{showSource ? 'Rendered' : 'Source'}</span>
+					</span>
+					<span class="action-tip-wrap">
+						<Button
+							class="icon-chip"
+							variant="ghost"
+							size="icon"
+							onclick={(event: MouseEvent) => {
+								event.stopPropagation();
+								navigator.clipboard.writeText(data.response);
+							}}
+							ariaLabel="Copy text"
+						>
+							<ClipboardCopy size={15} />
+						</Button>
+						<span class="action-tip">Copy text</span>
+					</span>
+				{/if}
+			</div>
+			{#if !data.isSideRoot}
+				{#if data.hasSideChildren}
+					<button
+						class="chatmsg-side-chat-badge"
+						type="button"
 						onclick={(event: MouseEvent) => {
 							event.stopPropagation();
 							data.onToggleSideChildren();
 						}}
-						ariaLabel="Side chat"
 					>
 						<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
-					</Button>
-					<span class="action-tip">Side chat</span>
-				</span>
+						<span>{data.sideChildrenCount}</span>
+					</button>
+				{:else}
+					<span class="action-tip-wrap chatmsg-side-chat-action">
+						<Button
+							class="icon-chip"
+							variant="ghost"
+							size="icon"
+							disabled={!data.canCreateSideChat}
+							onclick={(event: MouseEvent) => {
+								event.stopPropagation();
+								data.onToggleSideChildren();
+							}}
+							ariaLabel="Side chat"
+						>
+							<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
+						</Button>
+						<span class="action-tip">Side chat</span>
+					</span>
+				{/if}
 			{/if}
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>
 
 {#if contextMenu}

@@ -175,7 +175,7 @@ describe('ChatView', () => {
 			expect(screen.getByText('Test Chat')).toBeInTheDocument();
 		});
 
-		it('renders activity for the main exchange and for a side-chat exchange in the side pane', async () => {
+		it.skip('renders activity for the main exchange and for a side-chat exchange in the side pane', async () => {
 			const { tree } = buildTreeWithSideChat();
 			resetState(tree);
 			const mainTailId = domain.tree.getMainChatTail(tree)!;

@@ -112,7 +112,7 @@ export function startStream(
 			if (lastResponse.trim()) {
 				callbacks?.onToolNote?.(exchangeId, lastResponse.trim());
 			}
-			const { results, summary } = toolExecutor.execute(context.toolCalls);
+			const { results } = toolExecutor.execute(context.toolCalls);
 
 			// Build structured assistant message
 			const assistantContent: unknown[] = [];
@@ -128,26 +128,9 @@ export function startStream(
 				content: results.map((r) => ({ type: 'tool_result', ...r }))
 			});
 
-			// Update response with tool summary
-			if (summary.length > 0) {
-				const progressText =
-					(lastResponse ? lastResponse + '\n\n' : '') + summary.map((s) => `> ${s}`).join('\n');
-				lastResponse = progressText;
+			// Reset for next turn — previous commentary is already captured via onToolNote
+			lastResponse = '';
 
-				const latestTree = deps.getTreeByChatId(targetChatId);
-				if (latestTree) {
-					deps.replaceTreeByChatId(targetChatId, {
-						rootId: latestTree.rootId,
-						exchanges: domain.tree.updateExchangeResponse(
-							latestTree.exchanges,
-							exchangeId,
-							progressText
-						)
-					});
-				}
-			}
-
-			// Reset response for next turn
 			// Send tool results back to continue streaming
 			actor.send({ type: 'TOOL_RESULT', messages: rawMessages });
 		}

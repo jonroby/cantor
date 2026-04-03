@@ -173,7 +173,8 @@ export const streamMachine = setup({
 					target: 'streaming',
 					guard: ({ context }) => context.turnCount < 10,
 					actions: assign({
-						history: ({ event }) => event.messages as domain.tree.Message[]
+						history: ({ event }) => event.messages as domain.tree.Message[],
+						response: () => ''
 					})
 				},
 				CANCEL: {

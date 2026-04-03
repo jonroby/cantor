@@ -373,14 +373,14 @@
 				<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 			{/if}
 			<div class="header-actions">
+				{#if pendingDiff}
+					<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+					<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+				{/if}
 				{#if onSwap}
 					<button class="header-btn" onclick={onSwap} title="Swap panels">
 						<ArrowLeftRight size={14} />
 					</button>
-				{/if}
-				{#if pendingDiff}
-					<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
-					<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
 				{/if}
 				{#if onClose}
 					<button class="header-btn" onclick={requestClose} title="Close">

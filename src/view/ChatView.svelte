@@ -4,7 +4,7 @@
 	import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
-	import AgentActivity from './AgentActivity.svelte';
+	import _AgentActivity from './AgentActivity.svelte';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -93,13 +93,13 @@
 			? activeSideChat[activeSideChat.length - 1]!.id
 			: null
 	);
-	let mainActivityExchangeId = $derived.by(() => {
+	let _mainActivityExchangeId = $derived.by(() => {
 		if (activeExchangeId && mainChatPath.some((exchange) => exchange.id === activeExchangeId)) {
 			return activeExchangeId;
 		}
 		return mainChatTailId;
 	});
-	let sideActivityExchangeId = $derived.by(() => {
+	let _sideActivityExchangeId = $derived.by(() => {
 		if (!sidePanelOpen || isDocumentPanel) return null;
 		if (activeExchangeId && activeSideChat?.some((exchange) => exchange.id === activeExchangeId)) {
 			return activeExchangeId;
@@ -518,7 +518,7 @@
 				{/if}
 			</div>
 			<div class="chatview-main" bind:this={mainScrollContainer} onscroll={handleMainScroll}>
-				<AgentActivity exchangeId={mainActivityExchangeId} />
+				<!-- <AgentActivity exchangeId={mainActivityExchangeId} /> -->
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
 						{@const nodeData = getNodeDataForExchange(exchange.id)}
@@ -655,7 +655,7 @@
 							{/if}
 						</div>
 					{/if}
-					<AgentActivity exchangeId={sideActivityExchangeId} compact={true} />
+					<!-- <AgentActivity exchangeId={sideActivityExchangeId} compact={true} /> -->
 					<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
 						{#if activeSideChat}
 							{#each activeSideChat as exchange (exchange.id)}
