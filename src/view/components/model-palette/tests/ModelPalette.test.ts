@@ -173,6 +173,29 @@ describe('ModelPalette', () => {
 			});
 		});
 
+		it('shows remove key when the provider is already ready', () => {
+			renderPalette({
+				state: {
+					activeModel: null,
+					activeModelLabel: null,
+					contextLength: null,
+					vaultState: 'unlocked',
+					providers: [
+						{
+							id: 'claude',
+							name: 'Claude',
+							kind: 'remote',
+							credentialState: 'ready',
+							models: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', enabled: true }]
+						}
+					]
+				}
+			});
+
+			expect(screen.getByText('Remove key')).toBeInTheDocument();
+			expect(screen.queryByText('Add key')).toBeNull();
+		});
+
 		it('shows unlock flow when vault is locked', async () => {
 			renderPalette({
 				state: {

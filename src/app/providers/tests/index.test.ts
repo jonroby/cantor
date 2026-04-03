@@ -108,6 +108,15 @@ describe('app/providers', () => {
 		);
 	});
 
+	it('treats a provider as ready when its key exists in an unlocked vault', () => {
+		state.providers.providerState.apiKeys = { openai: 'sk-xxx' };
+		state.providers.providerState.vaultProviders = ['claude', 'openai'];
+
+		const claude = getState().providers.find((provider) => provider.id === 'claude');
+
+		expect(claude).toEqual(expect.objectContaining({ credentialState: 'ready' }));
+	});
+
 	it('unlockCredentials loads saved keys through a generic credential action', async () => {
 		await unlockCredentials('password123');
 

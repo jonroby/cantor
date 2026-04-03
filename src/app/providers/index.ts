@@ -195,6 +195,12 @@ function providerName(provider: domain.models.Provider): string {
 function getCredentialState(provider: domain.models.Provider) {
 	if (!domain.models.isKeyBasedProvider(provider)) return 'not-required' as const;
 	if (state.providers.providerState.apiKeys[provider]) return 'ready' as const;
+	if (
+		getVaultState() === 'unlocked' &&
+		state.providers.providerState.vaultProviders.includes(provider)
+	) {
+		return 'ready' as const;
+	}
 	return 'missing' as const;
 }
 
