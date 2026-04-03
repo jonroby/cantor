@@ -493,10 +493,8 @@ agent.buildSystemPrompt(options!.liveDocumentContent);`
     - No `system`, no `tools`
 
 3.  **streamClaudeChat()**
-    (`/Users/jonroby/ai/cantor/src/external/providers/claude.ts:4`)
-    - No system prompt added (line 36: `if (system) { body.system =
-system; }`)
-    - No tools added (line 39: `if (tools?.length) { body.tools = tools;
+    (`/Users/jonroby/ai/cantor/src/external/providers/claude.ts:4`) - No system prompt added (line 36: `if (system) { body.system =
+system; }`) - No tools added (line 39: `if (tools?.length) { body.tools = tools;
 }`)
 
 ---
