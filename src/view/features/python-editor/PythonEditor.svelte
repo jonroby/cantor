@@ -216,9 +216,9 @@
 		text-transform: none;
 		margin-left: 0.25rem;
 		padding: 0.1rem 0.45rem;
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 		background: hsl(var(--muted));
-		font-size: 0.7rem;
+		font-size: var(--text-xs);
 	}
 
 	.code-editor-actions {
@@ -238,7 +238,7 @@
 		background: transparent;
 		color: hsl(var(--muted-foreground));
 		cursor: pointer;
-		transition: background 120ms ease;
+		transition: background var(--duration-fast) ease;
 	}
 
 	.code-editor-btn:hover {
@@ -254,10 +254,10 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--primary));
 		color: hsl(var(--primary-foreground));
-		font-size: 0.75rem;
+		font-size: var(--text-sm);
 		font-weight: 600;
 		cursor: pointer;
-		transition: opacity 120ms ease;
+		transition: opacity var(--duration-fast) ease;
 	}
 
 	.code-editor-run-btn:hover:not(:disabled) {

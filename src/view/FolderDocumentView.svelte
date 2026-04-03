@@ -54,10 +54,9 @@
 		<div class="folderview-file-picker">
 			<button class="folderview-file-btn" onclick={() => (dropdownOpen = !dropdownOpen)}>
 				{activeFile?.name ?? 'No files'}
-				<ChevronDown
-					size={12}
-					class="folderview-chevron{dropdownOpen ? ' folderview-chevron-open' : ''}"
-				/>
+				<span class="folderview-chevron" class:folderview-chevron-open={dropdownOpen}>
+					<ChevronDown size={12} />
+				</span>
 			</button>
 			{#if dropdownOpen}
 				<button
@@ -123,7 +122,7 @@
 		padding: 0 12px;
 		gap: 8px;
 		background: hsl(var(--background) / 0.97);
-		font-size: 13px;
+		font-size: var(--text-base);
 		font-weight: 600;
 		color: hsl(var(--muted-foreground));
 		letter-spacing: 0.02em;
@@ -146,7 +145,7 @@
 		gap: 6px;
 		max-width: 720px;
 		margin: 0 auto;
-		font-size: 13px;
+		font-size: var(--text-base);
 		color: hsl(var(--muted-foreground));
 		letter-spacing: 0.02em;
 		z-index: 1;
@@ -177,24 +176,25 @@
 		gap: 4px;
 		padding: 2px 6px;
 		border: none;
-		border-radius: 4px;
+		border-radius: var(--radius-sm);
 		background: transparent;
 		color: hsl(var(--foreground) / 0.7);
-		font-size: 13px;
+		font-size: var(--text-base);
 		font-weight: 400;
 		cursor: pointer;
-		transition: background 150ms ease;
+		transition: background var(--duration-normal) ease;
 	}
 
 	.folderview-file-btn:hover {
 		background: hsl(var(--muted));
 	}
 
-	:global(.folderview-chevron) {
-		transition: transform 150ms ease;
+	.folderview-chevron {
+		display: inline-flex;
+		transition: transform var(--duration-normal) ease;
 	}
 
-	:global(.folderview-chevron-open) {
+	.folderview-chevron-open {
 		transform: rotate(180deg);
 	}
 
@@ -214,7 +214,7 @@
 		overflow-y: auto;
 		padding: 4px;
 		border: 1px solid hsl(var(--border));
-		border-radius: 8px;
+		border-radius: var(--radius-md);
 		background: hsl(var(--background));
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 	}
@@ -229,10 +229,10 @@
 		border-radius: 6px;
 		background: transparent;
 		color: hsl(var(--foreground));
-		font-size: 13px;
+		font-size: var(--text-base);
 		font-weight: 400;
 		cursor: pointer;
-		transition: background 100ms ease;
+		transition: background var(--duration-fast) ease;
 		text-align: left;
 	}
 

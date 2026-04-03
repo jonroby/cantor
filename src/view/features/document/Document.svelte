@@ -498,7 +498,7 @@
 		max-width: 720px;
 		margin: 0 auto;
 		padding: 12px 0;
-		font-size: 13px;
+		font-size: var(--text-base);
 		font-weight: 600;
 		color: hsl(var(--foreground, 0 0% 9%));
 		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
@@ -506,7 +506,7 @@
 
 	.dirty-indicator {
 		color: hsl(var(--primary, 220 90% 56%));
-		font-size: 20px;
+		font-size: var(--text-xl);
 		line-height: 1;
 		margin-left: -4px;
 	}
@@ -530,8 +530,8 @@
 		color: hsl(var(--muted-foreground, 0 0% 45%));
 		cursor: pointer;
 		transition:
-			background 0.15s,
-			color 0.15s;
+			background var(--duration-normal),
+			color var(--duration-normal);
 	}
 	.header-btn:hover {
 		background: hsl(var(--muted, 0 0% 96%));
@@ -550,7 +550,7 @@
 		padding: 8px 16px;
 		background: hsl(0 72% 51% / 0.1);
 		color: hsl(0 72% 51%);
-		font-size: 12px;
+		font-size: var(--text-sm);
 		border-bottom: 1px solid hsl(0 72% 51% / 0.2);
 		flex-shrink: 0;
 	}
@@ -560,7 +560,7 @@
 		overflow-y: auto;
 		padding: 16px 20px;
 		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
-		font-size: 13px;
+		font-size: var(--text-base);
 		line-height: 1.6;
 	}
 
@@ -595,12 +595,12 @@
 		padding: 3px 10px;
 		border-radius: 5px;
 		border: none;
-		font-size: 12px;
+		font-size: var(--text-sm);
 		font-weight: 500;
 		cursor: pointer;
 		transition:
-			background 120ms ease,
-			color 120ms ease;
+			background var(--duration-fast) ease,
+			color var(--duration-fast) ease;
 	}
 
 	.diff-accept {
@@ -649,7 +649,7 @@
 		outline: none;
 		resize: none;
 		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
-		font-size: 13px;
+		font-size: var(--text-base);
 		line-height: 1.6;
 		color: hsl(var(--foreground, 0 0% 9%));
 		background: transparent;
@@ -720,13 +720,13 @@
 	.docs-content :global(code) {
 		background: hsl(var(--muted, 0 0% 96%));
 		padding: 2px 5px;
-		border-radius: 4px;
-		font-size: 13px;
+		border-radius: var(--radius-sm);
+		font-size: var(--text-base);
 	}
 	.docs-content :global(pre) {
 		background: hsl(var(--muted, 0 0% 96%));
 		padding: 12px 16px;
-		border-radius: 8px;
+		border-radius: var(--radius-md);
 		overflow-x: auto;
 		margin: 0 0 12px 0;
 	}
@@ -754,7 +754,7 @@
 		border: 1px solid hsl(var(--border, 0 0% 85%));
 		padding: 6px 10px;
 		text-align: left;
-		font-size: 13px;
+		font-size: var(--text-base);
 	}
 	.docs-content :global(th) {
 		background: hsl(var(--muted, 0 0% 96%));

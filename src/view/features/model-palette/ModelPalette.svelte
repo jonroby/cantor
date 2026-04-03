@@ -553,7 +553,7 @@
 		gap: 0.375rem;
 		flex: 1;
 		padding: 0.875rem 1rem;
-		font-size: 0.8125rem;
+		font-size: var(--text-base);
 		font-weight: 500;
 		color: hsl(var(--muted-foreground));
 		background: transparent;
@@ -561,8 +561,8 @@
 		border-bottom: 2px solid transparent;
 		cursor: pointer;
 		transition:
-			color 0.15s,
-			border-color 0.15s;
+			color var(--duration-normal),
+			border-color var(--duration-normal);
 		margin-bottom: -1px;
 	}
 
@@ -579,15 +579,5 @@
 		overflow-y: auto;
 		flex: 1;
 		padding: 1rem 1.5rem 1.5rem;
-	}
-
-	@media (max-width: 900px) {
-		:global(.palette-providers-grid) {
-			grid-template-columns: 1fr;
-		}
-
-		:global(.palette-model-grid) {
-			grid-template-columns: 1fr;
-		}
 	}
 </style>

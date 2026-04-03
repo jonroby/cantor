@@ -252,7 +252,7 @@
 	}
 
 	.logo {
-		font-size: 20px;
+		font-size: var(--text-xl);
 		font-weight: 700;
 		letter-spacing: -0.5px;
 		color: #111;
@@ -265,7 +265,7 @@
 	}
 
 	.nav-link {
-		font-size: 14px;
+		font-size: var(--text-md);
 		font-weight: 500;
 		color: #555;
 		text-decoration: none;
@@ -283,9 +283,9 @@
 		background: #111;
 		color: #fff;
 		border: none;
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 		padding: 8px 20px;
-		font-size: 14px;
+		font-size: var(--text-md);
 		font-weight: 600;
 		cursor: pointer;
 		transition: background 0.2s;
@@ -314,8 +314,8 @@
 		padding: 6px 16px;
 		background: rgba(99, 102, 241, 0.08);
 		border: 1px solid rgba(99, 102, 241, 0.2);
-		border-radius: 999px;
-		font-size: 13px;
+		border-radius: var(--radius-full);
+		font-size: var(--text-base);
 		font-weight: 600;
 		color: #6366f1;
 		margin-bottom: 24px;
@@ -360,8 +360,8 @@
 		background: #111;
 		color: #fff;
 		border: none;
-		border-radius: 12px;
-		font-size: 16px;
+		border-radius: var(--radius-lg);
+		font-size: var(--text-lg);
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -377,8 +377,8 @@
 		background: transparent;
 		color: #333;
 		border: 1px solid #ddd;
-		border-radius: 12px;
-		font-size: 16px;
+		border-radius: var(--radius-lg);
+		font-size: var(--text-lg);
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -434,7 +434,7 @@
 	}
 
 	.feature-card p {
-		font-size: 13px;
+		font-size: var(--text-base);
 		line-height: 1.5;
 		color: #777;
 		margin: 0;

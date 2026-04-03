@@ -659,7 +659,7 @@
 	.drawing-board {
 		background: white;
 		border: 1px solid hsl(var(--border, 0 0% 85%));
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 	}
@@ -683,9 +683,9 @@
 		background: transparent;
 		border-radius: 6px;
 		cursor: pointer;
-		font-size: 14px;
+		font-size: var(--text-md);
 		color: hsl(var(--foreground, 0 0% 10%));
-		transition: background 0.15s;
+		transition: background var(--duration-normal);
 	}
 
 	.tool-btn:hover {
@@ -716,7 +716,7 @@
 		cursor: pointer;
 		padding: 0;
 		margin: 0 1px;
-		transition: border-color 0.15s;
+		transition: border-color var(--duration-normal);
 	}
 
 	.color-btn:hover {

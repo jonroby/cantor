@@ -301,10 +301,10 @@
 		width: 100%;
 		padding: 0.375rem 0.75rem 0.375rem 2rem;
 		border-radius: 0.5rem;
-		font-size: 0.8125rem;
+		font-size: var(--text-base);
 		color: hsl(var(--sidebar-foreground));
 		cursor: pointer;
-		transition: background-color 150ms;
+		transition: background-color var(--duration-normal);
 	}
 
 	.subfolder-row:hover {

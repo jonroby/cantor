@@ -766,7 +766,7 @@
 		padding: 0 12px;
 		gap: 8px;
 		background: hsl(var(--background) / 0.97);
-		font-size: 13px;
+		font-size: var(--text-base);
 		font-weight: 600;
 		color: hsl(var(--muted-foreground));
 		letter-spacing: 0.02em;

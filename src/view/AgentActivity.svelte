@@ -244,7 +244,7 @@
 	}
 
 	.agent-activity-title {
-		font-size: 12px;
+		font-size: var(--text-sm);
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -253,10 +253,10 @@
 
 	.agent-activity-badge {
 		padding: 2px 8px;
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 		background: hsl(var(--accent) / 0.15);
 		color: hsl(var(--foreground));
-		font-size: 11px;
+		font-size: var(--text-xs);
 		font-weight: 700;
 	}
 
@@ -269,7 +269,7 @@
 	}
 
 	.agent-activity-last {
-		font-size: 13px;
+		font-size: var(--text-base);
 		line-height: 1.4;
 		color: hsl(var(--foreground));
 		white-space: nowrap;
@@ -280,7 +280,7 @@
 	}
 
 	.agent-activity-count {
-		font-size: 11px;
+		font-size: var(--text-xs);
 		font-weight: 700;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -299,7 +299,7 @@
 		flex-direction: column;
 		gap: 8px;
 		padding: 10px 10px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		background: hsl(var(--muted) / 0.22);
 		border: 1px solid hsl(var(--border) / 0.7);
 	}
@@ -315,7 +315,7 @@
 	.agent-activity-step-title,
 	.agent-activity-event-time,
 	.agent-activity-step-time {
-		font-size: 11px;
+		font-size: var(--text-xs);
 		font-weight: 700;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -324,7 +324,7 @@
 
 	.agent-activity-event {
 		padding: 12px 13px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		background: hsl(var(--background) / 0.92);
 		border: 1px solid hsl(var(--border) / 0.82);
 	}
@@ -355,7 +355,7 @@
 	}
 
 	.agent-activity-event-type {
-		font-size: 11px;
+		font-size: var(--text-xs);
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
@@ -365,7 +365,7 @@
 	.agent-activity-event-text {
 		white-space: pre-wrap;
 		word-break: break-word;
-		font-size: 13px;
+		font-size: var(--text-base);
 		line-height: 1.5;
 		color: hsl(var(--foreground));
 	}

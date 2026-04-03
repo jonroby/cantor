@@ -3,9 +3,9 @@
 .function-plot-wrap {
 	margin: 16px auto;
 	border: 1px solid hsl(var(--border));
-	border-radius: 8px;
+	border-radius: var(--radius-md);
 	overflow: hidden;
-	background: #fff;
+	background: hsl(var(--card));
 	width: fit-content;
 }
 
@@ -23,13 +23,13 @@
 }
 
 .function-plot-chart .tick line {
-	stroke: #000 !important;
+	stroke: hsl(var(--foreground)) !important;
 	stroke-opacity: 0.15 !important;
 }
 
 .function-plot-chart .tick text {
-	fill: #999;
-	font-size: 11px;
+	fill: hsl(var(--muted-foreground));
+	font-size: var(--text-xs);
 }
 
 .function-plot-chart path.line {
@@ -41,7 +41,7 @@
 }
 
 .function-plot-chart circle {
-	fill: #1a1a1a !important;
+	fill: hsl(var(--foreground)) !important;
 	r: 4;
 }
 
@@ -61,7 +61,7 @@
 }
 
 .function-plot-chart .inner-tip circle {
-	fill: #1a1a1a !important;
+	fill: hsl(var(--foreground)) !important;
 	r: 5;
 }
 
@@ -79,11 +79,11 @@
 	position: absolute;
 	pointer-events: none;
 	z-index: 10;
-	background: #1a1a1a;
-	color: #fff;
+	background: hsl(var(--foreground));
+	color: hsl(var(--background));
 	padding: 5px 12px;
-	border-radius: 8px;
-	font-size: 13px;
+	border-radius: var(--radius-md);
+	font-size: var(--text-base);
 	font-weight: 500;
 	white-space: nowrap;
 	transform: translateX(-50%);
