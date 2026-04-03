@@ -49,14 +49,18 @@
       "validateApiKey": true
     },
     "vault": {
+      "cacheSession": true,
       "clearProviderKey": true,
+      "clearSession": true,
       "clearVault": true,
+      "getCachedSession": true,
       "hasProviderKey": true,
       "hasVault": true,
       "loadAllApiKeys": true,
       "loadApiKey": true,
       "saveApiKey": true,
-      "storedProviders": true
+      "storedProviders": true,
+      "verifyPassword": true
     },
     "webllm": {
       "deleteAllModelCaches": true,

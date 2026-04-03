@@ -56,12 +56,23 @@ async function decryptRecord(record: persistence.VaultRecord, password: string):
 	return new TextDecoder().decode(decrypted);
 }
 
+export async function verifyPassword(password: string): Promise<void> {
+	const store = persistence.getVaultStore();
+	const firstKey = Object.keys(store)[0];
+	if (!firstKey) return;
+	await decryptRecord(store[firstKey]!, password);
+}
+
 export async function saveApiKey(
 	provider: string,
 	apiKey: string,
 	password: string
 ): Promise<void> {
 	const store = persistence.getVaultStore();
+	const existingKey = Object.keys(store).find((k) => k !== provider);
+	if (existingKey) {
+		await decryptRecord(store[existingKey]!, password);
+	}
 	store[provider] = await encryptValue(apiKey, password);
 	persistence.setVaultStore(store);
 }
@@ -104,4 +115,117 @@ export function clearProviderKey(provider: string): void {
 	const store = persistence.getVaultStore();
 	delete store[provider];
 	persistence.setVaultStore(store);
+}
+
+// ── Session cache ───────────────────────────────────────────────────────────
+//
+// The password is encrypted with a random session key stored in IndexedDB.
+// The ciphertext goes in sessionStorage. An attacker needs both stores to
+// recover the password, and sessionStorage clears when the tab closes.
+
+const SESSION_STORAGE_KEY = 'vault_session';
+const SESSION_DB_NAME = 'cantor-session';
+const SESSION_DB_STORE = 'keys';
+const SESSION_DB_KEY = 'session-key';
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+function openSessionDB(): Promise<IDBDatabase> {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open(SESSION_DB_NAME, 1);
+		request.onupgradeneeded = () => {
+			request.result.createObjectStore(SESSION_DB_STORE);
+		};
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+async function getOrCreateSessionKey(): Promise<CryptoKey> {
+	const db = await openSessionDB();
+	try {
+		const existing = await new Promise<CryptoKey | undefined>((resolve, reject) => {
+			const tx = db.transaction(SESSION_DB_STORE, 'readonly');
+			const req = tx.objectStore(SESSION_DB_STORE).get(SESSION_DB_KEY);
+			req.onsuccess = () => resolve(req.result as CryptoKey | undefined);
+			req.onerror = () => reject(req.error);
+		});
+		if (existing) return existing;
+
+		const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
+			'encrypt',
+			'decrypt'
+		]);
+		await new Promise<void>((resolve, reject) => {
+			const tx = db.transaction(SESSION_DB_STORE, 'readwrite');
+			const req = tx.objectStore(SESSION_DB_STORE).put(key, SESSION_DB_KEY);
+			req.onsuccess = () => resolve();
+			req.onerror = () => reject(req.error);
+		});
+		return key;
+	} finally {
+		db.close();
+	}
+}
+
+async function deleteSessionKey(): Promise<void> {
+	const db = await openSessionDB();
+	try {
+		await new Promise<void>((resolve, reject) => {
+			const tx = db.transaction(SESSION_DB_STORE, 'readwrite');
+			const req = tx.objectStore(SESSION_DB_STORE).delete(SESSION_DB_KEY);
+			req.onsuccess = () => resolve();
+			req.onerror = () => reject(req.error);
+		});
+	} finally {
+		db.close();
+	}
+}
+
+export async function cacheSession(password: string): Promise<void> {
+	const key = await getOrCreateSessionKey();
+	const iv = crypto.getRandomValues(new Uint8Array(12));
+	const encrypted = await crypto.subtle.encrypt(
+		{ name: 'AES-GCM', iv },
+		key,
+		new TextEncoder().encode(password)
+	);
+	sessionStorage.setItem(
+		SESSION_STORAGE_KEY,
+		JSON.stringify({
+			cipherText: bytesToBase64(new Uint8Array(encrypted)),
+			iv: bytesToBase64(iv),
+			timestamp: Date.now()
+		})
+	);
+}
+
+export async function getCachedSession(): Promise<string | null> {
+	const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+	if (!raw) return null;
+	try {
+		const { cipherText, iv, timestamp } = JSON.parse(raw) as {
+			cipherText: string;
+			iv: string;
+			timestamp: number;
+		};
+		if (Date.now() - timestamp > SESSION_TTL_MS) {
+			sessionStorage.removeItem(SESSION_STORAGE_KEY);
+			return null;
+		}
+		const key = await getOrCreateSessionKey();
+		const decrypted = await crypto.subtle.decrypt(
+			{ name: 'AES-GCM', iv: base64ToBytes(iv) as BufferSource },
+			key,
+			base64ToBytes(cipherText) as BufferSource
+		);
+		return new TextDecoder().decode(decrypted);
+	} catch {
+		sessionStorage.removeItem(SESSION_STORAGE_KEY);
+		return null;
+	}
+}
+
+export async function clearSession(): Promise<void> {
+	sessionStorage.removeItem(SESSION_STORAGE_KEY);
+	await deleteSessionKey();
 }

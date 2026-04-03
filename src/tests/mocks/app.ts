@@ -12,6 +12,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		activeModel: null,
 		activeModelLabel: null,
 		contextLength: null,
+		vaultState: 'empty',
 		providers: [
 			{
 				id: 'claude',
@@ -210,11 +211,11 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		},
 		providers: {
 			clearCachedModels: mockFn<typeof app.providers.clearCachedModels>(),
-			clearCredential: mockFn<typeof app.providers.clearCredential>(),
+			lockAllCredentials: mockFn<typeof app.providers.lockAllCredentials>(async () => {}),
 			connect: mockFn<typeof app.providers.connect>(),
 			getState: mockFn<typeof app.providers.getState>(() => providerStateBacking),
 			initialize: mockFn<typeof app.providers.initialize>(),
-			lockCredential: mockFn<typeof app.providers.lockCredential>(),
+			removeCredential: mockFn<typeof app.providers.removeCredential>(),
 			removeCachedModel: mockFn<typeof app.providers.removeCachedModel>(),
 			resolveModelLabel: mockFn<typeof app.providers.resolveModelLabel>(() => undefined),
 			saveCredential: mockFn<typeof app.providers.saveCredential>(),
@@ -233,6 +234,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			})),
 			rememberOpenDocument: mockFn<typeof app.workspace.rememberOpenDocument>(),
 			selectFolderFile: mockFn<typeof app.workspace.selectFolderFile>(),
+			setActiveModel: mockFn<typeof app.workspace.setActiveModel>(),
 			setExpandedFolders: mockFn<typeof app.workspace.setExpandedFolders>(),
 			setPanels: mockFn<typeof app.workspace.setPanels>(),
 			setSidebarOpen: mockFn<typeof app.workspace.setSidebarOpen>(),

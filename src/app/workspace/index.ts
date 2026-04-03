@@ -49,3 +49,7 @@ export function toggleSidebar() {
 export function selectFolderFile(folderId: string, fileId: string) {
 	state.workspace.setSelectedFile(folderId, fileId);
 }
+
+export function setActiveModel(model: { provider: string; modelId: string } | null) {
+	void persistLayout({ activeModel: model ?? undefined });
+}

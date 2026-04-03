@@ -153,6 +153,7 @@ export interface PersistedLayout {
 	sidebarOpen?: boolean;
 	panels?: PersistedPanel[];
 	expandedFolders?: Record<string, boolean>;
+	activeModel?: { provider: string; modelId: string };
 }
 
 let _layout: PersistedLayout = {};

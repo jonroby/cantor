@@ -2,6 +2,7 @@
 	import './palette.css';
 	import * as app from '@/app';
 	import { toast } from 'svelte-sonner';
+	import { Lock, Unlock } from 'lucide-svelte';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button, Input } from '@/view/components/custom';
 
@@ -13,8 +14,8 @@
 		onSelectModel: (model: app.providers.ActiveModel) => Promise<void> | void;
 		onUnlockCredentials: (password: string) => Promise<void>;
 		onSaveCredential: (provider: string, credential: string, password: string) => Promise<void>;
-		onLockCredential: (provider: string) => void;
-		onClearCredential: (provider: string) => void;
+		onLockVault: () => Promise<void>;
+		onRemoveCredential: (provider: string) => void;
 		onSetContextSize: (size: app.providers.ContextSize) => void;
 		onRemoveCachedModel: (provider: app.providers.Provider, modelId: string) => Promise<void>;
 		onClearCachedModels: (provider: app.providers.Provider) => Promise<void>;
@@ -36,8 +37,8 @@
 		onSelectModel,
 		onUnlockCredentials,
 		onSaveCredential,
-		onLockCredential,
-		onClearCredential,
+		onLockVault,
+		onRemoveCredential,
 		onSetContextSize: _onSetContextSize,
 		onRemoveCachedModel: _onRemoveCachedModel,
 		onClearCachedModels: _onClearCachedModels
@@ -106,14 +107,14 @@
 		confirmPasswordInput = '';
 		const firstEnabled = provider.models.find((m) => m.enabled);
 		const defaultModel = firstEnabled ? { provider: provider.id, modelId: firstEnabled.id } : null;
-		if (provider.credentialState === 'locked') {
+		if (providerState.vaultState === 'locked') {
 			credentialFlow = {
 				provider,
 				mode: 'unlock',
 				pendingModel: defaultModel,
 				returnToPalette: true
 			};
-		} else if (provider.credentialState === 'missing') {
+		} else {
 			credentialFlow = {
 				provider,
 				mode: 'save',
@@ -128,7 +129,7 @@
 		if (!model?.enabled) return;
 
 		const selection = { provider: provider.id, modelId };
-		if (provider.credentialState === 'locked') {
+		if (providerState.vaultState === 'locked') {
 			credentialError = null;
 			credentialInput = '';
 			passwordInput = '';
@@ -160,13 +161,16 @@
 		credentialError = null;
 
 		if (credentialFlow.mode === 'save') {
-			if (passwordInput !== confirmPasswordInput) {
-				credentialError = 'Passwords do not match.';
-				return;
-			}
-			if (passwordInput.length < 8) {
-				credentialError = 'Password must be at least 8 characters.';
-				return;
+			const isNewVault = providerState.vaultState === 'empty';
+			if (isNewVault) {
+				if (passwordInput !== confirmPasswordInput) {
+					credentialError = 'Passwords do not match.';
+					return;
+				}
+				if (passwordInput.length < 8) {
+					credentialError = 'Password must be at least 8 characters.';
+					return;
+				}
 			}
 		}
 
@@ -228,7 +232,7 @@
 					<Input id="password-input" type="password" bind:value={passwordInput} />
 				</div>
 
-				{#if credentialFlow.mode === 'save'}
+				{#if credentialFlow.mode === 'save' && providerState.vaultState === 'empty'}
 					<div class="palette-field">
 						<label class="palette-label" for="confirm-password-input">Confirm Password</label>
 						<Input id="confirm-password-input" type="password" bind:value={confirmPasswordInput} />
@@ -257,7 +261,7 @@
 						class="palette-forget-key"
 						onclick={() => {
 							if (credentialFlow) {
-								onClearCredential(credentialFlow.provider.id);
+								onRemoveCredential(credentialFlow.provider.id);
 								credentialFlow = null;
 							}
 						}}
@@ -294,6 +298,35 @@
 
 				<div class="palette-scroll">
 					{#if activeTab === 'frontier'}
+						{#if providerState.vaultState === 'unlocked'}
+							<div class="palette-vault-bar">
+								<Unlock size={13} />
+								<span class="palette-vault-label">Vault unlocked</span>
+								<button
+									class="palette-vault-btn palette-vault-btn-lock"
+									onclick={async () => {
+										await onLockVault();
+										toast.success('Vault locked');
+									}}
+								>
+									Lock
+								</button>
+							</div>
+						{:else if providerState.vaultState === 'locked'}
+							<div class="palette-vault-bar">
+								<Lock size={13} />
+								<span class="palette-vault-label">Vault locked</span>
+								<button
+									class="palette-vault-btn palette-vault-btn-unlock"
+									onclick={() => {
+										const dummyProvider = enabledRemoteProviders[0];
+										if (dummyProvider) beginAuth(dummyProvider);
+									}}
+								>
+									Unlock
+								</button>
+							</div>
+						{/if}
 						<div class="palette-providers-grid">
 							{#each enabledRemoteProviders as provider (provider.id)}
 								<div class="palette-provider-group">
@@ -306,23 +339,25 @@
 											/>
 										{/if}
 										<span class="palette-provider-name">{provider.name}</span>
-										<span class="palette-provider-auth">
-											{#if provider.credentialState === 'ready'}
-												<button
-													class="palette-auth-btn"
-													onclick={() => {
-														onLockCredential(provider.id);
-														toast.success(`Logged out of ${provider.name}`);
-													}}
-												>
-													Log out
-												</button>
-											{:else}
-												<button class="palette-auth-btn" onclick={() => beginAuth(provider)}>
-													{provider.credentialState === 'locked' ? 'Log in' : 'Add key'}
-												</button>
-											{/if}
-										</span>
+										{#if providerState.vaultState !== 'locked'}
+											<span class="palette-provider-auth">
+												{#if provider.credentialState === 'ready'}
+													<button
+														class="palette-auth-btn"
+														onclick={() => {
+															onRemoveCredential(provider.id);
+															toast.success(`Removed ${provider.name} key`);
+														}}
+													>
+														Remove key
+													</button>
+												{:else}
+													<button class="palette-auth-btn" onclick={() => beginAuth(provider)}>
+														Add key
+													</button>
+												{/if}
+											</span>
+										{/if}
 									</div>
 
 									<div class="palette-provider-models">
