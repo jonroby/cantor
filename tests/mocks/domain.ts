@@ -1,5 +1,5 @@
 import * as domain from '@/domain';
-import domainContract from '@/tests/contracts/domain.json';
+import domainContract from '@tests/contracts/domain.json';
 
 import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
 

@@ -11,7 +11,7 @@ import * as domain from '@/domain';
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks/external');
+	const { createExternalMock } = await import('@tests/mocks/external');
 	return createExternalMock({
 		providers: {
 			webllm: {

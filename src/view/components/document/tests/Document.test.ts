@@ -29,7 +29,7 @@ vi.mock('dompurify', () => ({
 }));
 
 vi.mock('@/app', async () => {
-	const { createAppMock } = await import('@/tests/mocks/app');
+	const { createAppMock } = await import('@tests/mocks/app');
 	return createAppMock({
 		documents: {
 			validateDocumentMarkdown: vi.fn(() => [])

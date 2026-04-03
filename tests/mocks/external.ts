@@ -1,5 +1,5 @@
 import type * as external from '@/external';
-import externalContract from '@/tests/contracts/external.json';
+import externalContract from '@tests/contracts/external.json';
 import { CLAUDE_MODELS, PROVIDER_CONFIG, PROVIDER_MODELS } from '@/external/providers/catalog';
 import { DEFAULT_OLLAMA_URL } from '@/external/providers/ollama';
 import { WEBLLM_CONTEXT_OPTIONS } from '@/external/providers/webllm';

@@ -41,7 +41,7 @@ vi.mock('@/view/primitives/sidebar', async () => ({
 }));
 
 vi.mock('@/app', async () => {
-	const { createAppMock } = await import('@/tests/mocks/app');
+	const { createAppMock } = await import('@tests/mocks/app');
 	const chatState = {
 		chats: [] as {
 			id: string;

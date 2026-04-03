@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import type * as app from '@/app';
 import type * as state from '@/state';
-import appContract from '@/tests/contracts/app.json';
+import appContract from '@tests/contracts/app.json';
 
 import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
 

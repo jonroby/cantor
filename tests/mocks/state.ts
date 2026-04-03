@@ -1,5 +1,5 @@
 import type * as state from '@/state';
-import stateContract from '@/tests/contracts/state.json';
+import stateContract from '@tests/contracts/state.json';
 
 import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
 

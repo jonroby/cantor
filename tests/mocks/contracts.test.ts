@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import appContract from '@/tests/contracts/app.json';
-import domainContract from '@/tests/contracts/domain.json';
-import externalContract from '@/tests/contracts/external.json';
-import libContract from '@/tests/contracts/lib.json';
-import stateContract from '@/tests/contracts/state.json';
-import viewContract from '@/tests/contracts/view.json';
+import appContract from '@tests/contracts/app.json';
+import domainContract from '@tests/contracts/domain.json';
+import externalContract from '@tests/contracts/external.json';
+import libContract from '@tests/contracts/lib.json';
+import stateContract from '@tests/contracts/state.json';
+import viewContract from '@tests/contracts/view.json';
 import {
 	createAppMock,
 	createDomainMock,
@@ -13,7 +13,7 @@ import {
 	createLibMock,
 	createStateMock,
 	createViewMock
-} from '@/tests/mocks';
+} from '@tests/mocks';
 
 function expectShape(actual: unknown, contract: unknown, currentPath: string[] = []) {
 	expect(actual).toBeDefined();

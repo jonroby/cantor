@@ -5,7 +5,9 @@ vi.mock('../ollama', () => ({
 }));
 
 vi.mock('../webllm', () => ({
-	streamWebLLMChat: vi.fn(() => 'webllm-stream')
+	streamWebLLMChat: vi.fn(async function* () {
+		yield 'webllm-stream';
+	})
 }));
 
 vi.mock('../claude', () => ({
@@ -52,11 +54,16 @@ describe('provider stream dispatch', () => {
 		);
 	});
 
-	it('dispatches webllm models to the webllm transport', () => {
+	it('dispatches webllm models to the webllm transport', async () => {
 		const signal = new AbortController().signal;
-		expect(
-			getProviderStream({ provider: 'webllm', modelId: 'Llama-3' }, HISTORY, signal, RUNTIME)
-		).toBe('webllm-stream');
+		const stream = getProviderStream(
+			{ provider: 'webllm', modelId: 'Llama-3' },
+			HISTORY,
+			signal,
+			RUNTIME
+		);
+		const chunk = await stream.next();
+		expect(chunk.value).toBe('webllm-stream');
 		expect(streamWebLLMChat).toHaveBeenCalledWith(HISTORY, signal);
 	});
 

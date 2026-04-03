@@ -1,5 +1,5 @@
 import * as view from '@/view';
-import viewContract from '@/tests/contracts/view.json';
+import viewContract from '@tests/contracts/view.json';
 
 import { mergeMock, type DeepPartial, type PublicApiMock } from './helpers';
 

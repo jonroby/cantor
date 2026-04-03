@@ -2,15 +2,15 @@ import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
 import * as domain from '@/domain';
 
 vi.mock('jszip', async () => {
-	const mocks = await import('@/tests/mocks/jszip');
+	const mocks = await import('@tests/mocks/jszip');
 	return await mocks.mockJSZipModule();
 });
 vi.mock('@/state', async () => {
-	const mocks = await import('@/tests/mocks/state');
+	const mocks = await import('@tests/mocks/state');
 	return await mocks.mockStateModule();
 });
 vi.mock('@/external', async () => {
-	const mocks = await import('@/tests/mocks/external');
+	const mocks = await import('@tests/mocks/external');
 	return await mocks.mockExternalModule();
 });
 
