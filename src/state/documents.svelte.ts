@@ -175,7 +175,10 @@ export function updateDocumentContent(index: number, content: string) {
 	if (openDocument.documentKey) {
 		const { folderId, fileId } = openDocument.documentKey;
 		const file = findFolder(folderId)?.files?.find((f) => f.id === fileId);
-		if (file) file.content = content;
+		if (file) {
+			file.content = content;
+			notifyFoldersChanged();
+		}
 	}
 }
 
