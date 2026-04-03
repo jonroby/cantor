@@ -11,21 +11,26 @@ export interface WorkspaceState {
 }
 
 export const workspaceState: WorkspaceState = $state({
-	panels: [],
+	panels: [{ type: 'chat' }],
 	sidebarOpen: true,
 	expandedFolders: {},
 	selectedFileIdsByFolderId: {}
 });
 
+function ensureChatPanel(panels: WorkspacePanel[]): WorkspacePanel[] {
+	if (panels.some((p) => p.type === 'chat')) return panels;
+	return [{ type: 'chat' }, ...panels.slice(0, 1)];
+}
+
 export function hydrate(layout: Partial<WorkspaceState>) {
-	workspaceState.panels = layout.panels ?? [];
+	workspaceState.panels = ensureChatPanel(layout.panels ?? []);
 	workspaceState.sidebarOpen = layout.sidebarOpen ?? true;
 	workspaceState.expandedFolders = layout.expandedFolders ?? {};
 	workspaceState.selectedFileIdsByFolderId = layout.selectedFileIdsByFolderId ?? {};
 }
 
 export function setPanels(panels: WorkspacePanel[]) {
-	workspaceState.panels = panels;
+	workspaceState.panels = ensureChatPanel(panels);
 }
 
 export function setSidebarOpen(open: boolean) {
