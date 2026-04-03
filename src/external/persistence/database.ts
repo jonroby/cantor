@@ -143,10 +143,17 @@ function idbClear(db: IDBDatabase, storeName: string): Promise<void> {
 
 // --- Layout (in-memory, persisted alongside snapshot) ---
 
+export type PersistedPanel =
+	| { type: 'chat' }
+	| { type: 'document'; folderId: string; fileId: string }
+	| { type: 'folder'; folderId: string };
+
 export interface PersistedLayout {
 	openDocument?: { folderId: string; fileId: string };
 	chatPanelOpen?: boolean;
 	sidebarOpen?: boolean;
+	panels?: PersistedPanel[];
+	expandedFolders?: Record<string, boolean>;
 }
 
 let _layout: PersistedLayout = {};

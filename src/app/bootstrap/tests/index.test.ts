@@ -52,10 +52,14 @@ describe('app/bootstrap', () => {
 			openDocument: { folderId: 'folder-1', fileId: 'file-1' }
 		});
 
-		expect(await initialize()).toEqual({
-			restoredDocument: { folderId: 'folder-1', fileId: 'file-1' },
-			hadDuplicateRenames: false
-		});
+		const result = await initialize();
+		expect(result.restoredDocument).toEqual({ folderId: 'folder-1', fileId: 'file-1' });
+		expect(result.panels).toEqual([
+			{ type: 'chat' },
+			{ type: 'document', folderId: 'folder-1', fileId: 'file-1' }
+		]);
+		expect(result.expandedFolders).toEqual({});
+		expect(result.hadDuplicateRenames).toBe(false);
 		expect(state.documents.selectDocument).toHaveBeenCalledWith('folder-1', 'file-1');
 		expect(providers.initialize).toHaveBeenCalledOnce();
 	});

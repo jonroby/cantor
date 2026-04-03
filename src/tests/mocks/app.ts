@@ -115,7 +115,8 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			emptyTrash: mockFn<typeof app.bootstrap.emptyTrash>(async () => {}),
 			initialize: mockFn<typeof app.bootstrap.initialize>(async () => ({
 				restoredDocument: null,
-				chatPanelOpen: undefined,
+				panels: [{ type: 'chat' as const }],
+				expandedFolders: {},
 				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
@@ -126,6 +127,8 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			restoreFolder: mockFn<typeof app.bootstrap.restoreFolder>(async () => false),
 			save: mockFn<typeof app.bootstrap.save>(async () => {}),
 			setChatPanelOpen: mockFn<typeof app.bootstrap.setChatPanelOpen>(),
+			setExpandedFolders: mockFn<typeof app.bootstrap.setExpandedFolders>(),
+			setPanels: mockFn<typeof app.bootstrap.setPanels>(),
 			setSidebarOpen: mockFn<typeof app.bootstrap.setSidebarOpen>()
 		},
 		chat: {

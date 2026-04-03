@@ -46,7 +46,8 @@ vi.mock('@/app', async () => {
 			emptyTrash: vi.fn(async () => {}),
 			initialize: vi.fn(async () => ({
 				restoredDocument: null,
-				chatPanelOpen: undefined,
+				panels: [{ type: 'chat' as const }],
+				expandedFolders: {},
 				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
@@ -57,6 +58,8 @@ vi.mock('@/app', async () => {
 			restoreFolder: vi.fn(async () => false),
 			save: vi.fn(async () => {}),
 			setChatPanelOpen: vi.fn(),
+			setExpandedFolders: vi.fn(),
+			setPanels: vi.fn(),
 			setSidebarOpen: vi.fn()
 		},
 		chat: {
@@ -167,7 +170,8 @@ describe('App', () => {
 				);
 				return {
 					restoredDocument: null,
-					chatPanelOpen: undefined,
+					panels: [{ type: 'chat' as const }],
+					expandedFolders: {},
 					sidebarOpen: undefined,
 					hadDuplicateRenames: true
 				};
@@ -191,7 +195,8 @@ describe('App', () => {
 				folders.push({ id: 'f1', name: 'Docs' }, { id: 'f2', name: 'Docs (2)' });
 				return {
 					restoredDocument: null,
-					chatPanelOpen: undefined,
+					panels: [{ type: 'chat' as const }],
+					expandedFolders: {},
 					sidebarOpen: undefined,
 					hadDuplicateRenames: true
 				};
@@ -222,7 +227,8 @@ describe('App', () => {
 				});
 				return {
 					restoredDocument: null,
-					chatPanelOpen: undefined,
+					panels: [{ type: 'chat' as const }],
+					expandedFolders: {},
 					sidebarOpen: undefined,
 					hadDuplicateRenames: true
 				};

@@ -100,9 +100,23 @@ export async function initialize() {
 	const layout = external.persistence.getPersistedLayout();
 	void providers.initialize();
 
+	// Migrate legacy layout fields into panels array
+	let panels = layout.panels;
+	if (!panels) {
+		panels = [];
+		if (layout.chatPanelOpen !== false) panels.push({ type: 'chat' });
+		if (restoredDocument)
+			panels.push({
+				type: 'document',
+				folderId: restoredDocument.folderId,
+				fileId: restoredDocument.fileId
+			});
+	}
+
 	return {
-		restoredDocument,
-		chatPanelOpen: layout.chatPanelOpen,
+		restoredDocument: panels.length > 0 ? restoredDocument : null,
+		panels,
+		expandedFolders: layout.expandedFolders ?? {},
 		sidebarOpen: layout.sidebarOpen,
 		hadDuplicateRenames
 	};
@@ -129,6 +143,18 @@ export function setChatPanelOpen(open: boolean) {
 export function setSidebarOpen(open: boolean) {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, sidebarOpen: open });
+	void save();
+}
+
+export function setPanels(panels: external.persistence.PersistedPanel[]) {
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, panels });
+	void save();
+}
+
+export function setExpandedFolders(expandedFolders: Record<string, boolean>) {
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, expandedFolders });
 	void save();
 }
 

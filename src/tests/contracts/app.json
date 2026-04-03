@@ -24,6 +24,8 @@
     "restoreFolder": true,
     "save": true,
     "setChatPanelOpen": true,
+    "setExpandedFolders": true,
+    "setPanels": true,
     "setSidebarOpen": true
   },
   "chat": {
