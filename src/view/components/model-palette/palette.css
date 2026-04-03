@@ -1,9 +1,5 @@
 /* Shared styles for model palette components */
 
-.palette-tab-content {
-	/* wrapper for tab content */
-}
-
 /* Ollama connect */
 .palette-ollama-connect {
 	padding: 0.5rem 0;
@@ -14,13 +10,13 @@
 
 .palette-connect-input {
 	height: 2.25rem;
-	font-size: 0.9375rem;
+	font-size: var(--text-md);
 	flex: 1;
 }
 
 .palette-connect-btn {
 	height: 2.25rem;
-	font-size: 0.9375rem;
+	font-size: var(--text-md);
 	flex-shrink: 0;
 }
 
@@ -188,7 +184,7 @@
 
 .palette-model-row.active {
 	font-weight: 500;
-	background: hsl(210 100% 95%);
+	background: hsl(var(--accent));
 }
 
 .palette-model-row.disabled {
@@ -279,7 +275,7 @@
 }
 
 .palette-actions button {
-	font-size: 0.9375rem;
+	font-size: var(--text-md);
 	border-radius: 0.5rem;
 }
 

@@ -46,23 +46,26 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="composer-anchor"
-	class:composer-left={composerSide === 'left'}
-	class:composer-right={composerSide === 'right'}
+	class="absolute right-0 bottom-4 left-0 z-[25] px-4 transition-[left,right] duration-[250ms] ease-[ease] {composerSide ===
+	'left'
+		? 'right-1/2'
+		: ''} {composerSide === 'right' ? 'left-1/2' : ''}"
 	onmouseenter={() => (composerHovered = true)}
 	onmouseleave={() => (composerHovered = false)}
 >
 	{#if hasChatPanel && chatScrolledAway}
-		<button class="scroll-to-bottom-btn" onclick={onScrollToBottom} aria-label="Scroll to bottom">
+		<button
+			class="mx-auto mb-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-[0_1px_3px_hsl(var(--foreground)/0.1)] hover:bg-muted"
+			onclick={onScrollToBottom}
+			aria-label="Scroll to bottom"
+		>
 			<ArrowDown size={18} />
 		</button>
 	{/if}
-	<div class="composer-wrap">
+	<div class="relative mx-auto max-w-[720px]">
 		{#if composerHovered && isSplit}
 			<button
-				class="composer-move-btn {composerSide === 'right'
-					? 'composer-move-left'
-					: 'composer-move-right'}"
+				class={`absolute top-1/2 z-[30] flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-[0_1px_3px_hsl(var(--foreground)/0.1)] hover:bg-muted ${composerSide === 'right' ? 'left-[calc(-32px-16px)]' : 'right-[calc(-32px-16px)]'}`}
 				onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
 				aria-label={composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
 			>
@@ -82,112 +85,7 @@
 			{toolCallbacks}
 			{onScrollToNode}
 			{onExpandSideChat}
+			anchored={true}
 		/>
 	</div>
 </div>
-
-<style>
-	.scroll-to-bottom-btn {
-		margin: 0 auto 0.5rem;
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
-		background: hsl(var(--background));
-		color: hsl(var(--muted-foreground));
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		box-shadow: 0 1px 3px hsl(var(--foreground) / 0.1);
-	}
-
-	.scroll-to-bottom-btn:hover {
-		background: hsl(var(--muted));
-	}
-
-	.composer-anchor {
-		position: absolute;
-		bottom: 1rem;
-		left: 0;
-		right: 0;
-		z-index: 25;
-		padding: 0 1rem;
-		transition:
-			left 250ms ease,
-			right 250ms ease;
-	}
-
-	.composer-anchor :global(.composer) {
-		position: relative;
-		left: auto;
-		bottom: auto;
-		transform: none;
-		width: 100% !important;
-		max-width: 720px !important;
-		margin: 0 auto;
-		box-sizing: border-box;
-	}
-
-	.composer-left {
-		right: 50%;
-	}
-
-	.composer-right {
-		left: 50%;
-	}
-
-	.composer-wrap {
-		position: relative;
-		max-width: 720px;
-		margin: 0 auto;
-	}
-
-	.composer-move-btn {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
-		background: hsl(var(--background));
-		color: hsl(var(--muted-foreground));
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		box-shadow: 0 1px 3px hsl(var(--foreground) / 0.1);
-		z-index: 30;
-	}
-
-	.composer-move-btn:hover {
-		background: hsl(var(--muted));
-	}
-
-	.composer-move-right {
-		right: calc(-32px - 16px);
-	}
-
-	.composer-move-right::before {
-		content: '';
-		position: absolute;
-		top: -8px;
-		bottom: -8px;
-		left: -16px;
-		right: -8px;
-	}
-
-	.composer-move-left {
-		left: calc(-32px - 16px);
-	}
-
-	.composer-move-left::before {
-		content: '';
-		position: absolute;
-		top: -8px;
-		bottom: -8px;
-		left: -8px;
-		right: -16px;
-	}
-</style>

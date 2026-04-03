@@ -26,6 +26,8 @@
 		agentProvider?: app.providers.Provider | null;
 		pendingContent?: string | null;
 		resolveAsset?: (name: string) => string | null;
+		/** When true, fills its container (no fixed width/height, no border/radius) */
+		embedded?: boolean;
 		onContentChange?: (content: string) => void;
 		onAcceptPending?: () => void;
 		onRejectPending?: () => void;
@@ -41,6 +43,7 @@
 		agentProvider,
 		pendingContent = null,
 		resolveAsset,
+		embedded = false,
 		onContentChange,
 		onAcceptPending,
 		onRejectPending,
@@ -261,7 +264,7 @@
 		try {
 			return processContent(md);
 		} catch {
-			return `<p style="color: red;">Render error</p>`;
+			return `<p style="color: hsl(var(--destructive));">Render error</p>`;
 		}
 	}
 
@@ -360,12 +363,13 @@
 <div
 	class="document"
 	class:drag-over={draggingOver}
+	class:document-embedded={embedded}
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
 	onwheel={(e) => e.stopPropagation()}
 >
-	<div class="docs-header">
+	<div class="docs-header" class:docs-header-embedded={embedded}>
 		<div class="docs-header-inner">
 			<FileText size={16} />
 			<span>{title || 'Document'}</span>
@@ -419,7 +423,7 @@
 		<div class="error-bar">{error}</div>
 	{/if}
 	{#if pendingDiff}
-		<div class="docs-diff panel-body">
+		<div class="docs-diff panel-body" class:panel-body-embedded={embedded}>
 			{#each pendingDiff as line, i (i)}
 				<div
 					class="diff-line"
@@ -431,12 +435,17 @@
 			{/each}
 		</div>
 	{:else if editing}
-		<div class="docs-editor-wrap panel-body">
+		<div class="docs-editor-wrap panel-body" class:panel-body-embedded={embedded}>
 			<textarea class="docs-editor" bind:value={draft} onkeydown={handleKeydown} spellcheck="false"
 			></textarea>
 		</div>
 	{:else}
-		<div class="docs-content panel-body" bind:this={contentEl} onscroll={handleContentScroll}>
+		<div
+			class="docs-content panel-body"
+			class:panel-body-embedded={embedded}
+			bind:this={contentEl}
+			onscroll={handleContentScroll}
+		>
 			<div class="docs-content-inner">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 				{@html renderedHtml}
@@ -477,6 +486,29 @@
 		flex-direction: column;
 		width: 816px;
 		height: 1056px;
+	}
+
+	/* Fills the parent container — no fixed dimensions, no border/radius */
+	.document-embedded {
+		width: 100%;
+		height: 100%;
+		border: none;
+		border-radius: 0;
+	}
+
+	.docs-header-embedded {
+		height: 52px;
+		padding: 0 12px;
+		gap: 8px;
+		background: hsl(var(--background) / 0.97);
+		font-size: var(--text-base);
+		font-weight: 600;
+		color: hsl(var(--muted-foreground));
+		letter-spacing: 0.02em;
+	}
+
+	.panel-body-embedded {
+		padding-bottom: 12rem;
 	}
 	.document.drag-over {
 		outline: 2px dashed hsl(var(--primary, 220 90% 56%));

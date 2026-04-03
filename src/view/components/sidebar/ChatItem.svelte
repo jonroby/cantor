@@ -64,7 +64,10 @@
 				: 'px-3'} py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
 		>
 			<MessageSquare size={16} class="shrink-0" />
-			<span class="sidebar-fade-text">{chat.name}</span>
+			<span
+				class="overflow-hidden text-ellipsis whitespace-nowrap group-hover/menu-item:[mask-image:linear-gradient(to_right,black_40%,transparent_85%)] group-hover/menu-item:[text-overflow:clip] group-hover/menu-item:[-webkit-mask-image:linear-gradient(to_right,black_40%,transparent_85%)]"
+				>{chat.name}</span
+			>
 		</Sidebar.MenuButton>
 	{/if}
 	<DropdownMenu.Root>
@@ -108,16 +111,3 @@
 		</DropdownMenu.Portal>
 	</DropdownMenu.Root>
 </Sidebar.MenuItem>
-
-<style>
-	.sidebar-fade-text {
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-	:global(.group\/menu-item:hover) .sidebar-fade-text {
-		text-overflow: clip;
-		mask-image: linear-gradient(to right, black 40%, transparent 85%) !important;
-		-webkit-mask-image: linear-gradient(to right, black 40%, transparent 85%) !important;
-	}
-</style>

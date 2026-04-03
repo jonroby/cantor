@@ -1,6 +1,18 @@
 // Lazy-loaded to avoid crashing in test environments (jsdom)
-const loadPlotly = () => import('plotly.js-dist-min').then((m) => m.default);
+let plotlyPromise: Promise<typeof import('plotly.js-dist-min').default> | null = null;
+
+const loadPlotly = () => {
+	if (!plotlyPromise) {
+		plotlyPromise = import('plotly.js-dist-min').then((m) => m.default);
+	}
+	return plotlyPromise;
+};
+
 const loadFunctionPlot = () => import('function-plot').then((m) => m.default);
+
+export function preloadPlotly(): Promise<typeof import('plotly.js-dist-min').default> {
+	return loadPlotly();
+}
 
 /**
  * Preprocess markdown: replace ```plotly and ```plot code blocks with placeholder HTML.

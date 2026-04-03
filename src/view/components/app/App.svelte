@@ -10,6 +10,7 @@
 	import { LandingPage } from '@/view/components/landing';
 	import { routerState } from '@/view/routes/router.svelte';
 	import { ChatView } from '@/view/components/chat-view';
+	import { preloadPlotly } from '@/view/components/document';
 	import { DocumentView } from '@/view/components/document-view';
 	import { FolderDocumentView } from '@/view/components/folder-document-view';
 	import ComposerAnchor from './ComposerAnchor.svelte';
@@ -89,6 +90,12 @@
 	});
 
 	onMount(() => {
+		const warmPlotly = () => void preloadPlotly();
+		const supportsIdleCallback = typeof window.requestIdleCallback === 'function';
+		const idleCallback = supportsIdleCallback
+			? window.requestIdleCallback(warmPlotly, { timeout: 2000 })
+			: window.setTimeout(warmPlotly, 1500);
+
 		function handleKeyDown(event: KeyboardEvent) {
 			const target = event.target;
 			const isEditable =
@@ -133,6 +140,11 @@
 		});
 
 		return () => {
+			if (supportsIdleCallback) {
+				window.cancelIdleCallback(idleCallback);
+			} else {
+				window.clearTimeout(idleCallback);
+			}
 			window.removeEventListener('keydown', handleKeyDown);
 			window.removeEventListener('dragover', handleWindowDragOver);
 			window.removeEventListener('drop', handleWindowDrop);
@@ -329,10 +341,12 @@
 			onMoveDocument={app.documents.moveDocument}
 		/>
 		<SidebarPrimitive.Inset>
-			<div class="app-shell">
-				<div class="panel-layout" class:panel-layout-split={isSplit}>
+			<div class="relative flex h-screen flex-col">
+				<div class="flex min-h-0 flex-1" class:panel-layout-split={isSplit}>
 					{#each workspaceState.panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : 'chat')}
-						<div class="panel-slot">
+						<div
+							class="relative flex min-w-0 flex-1 flex-col overflow-hidden transition-[flex] duration-[250ms] ease-[ease]"
+						>
 							{#if panel.type === 'chat'}
 								<ChatView
 									bind:this={chatViewRef}
@@ -390,8 +404,12 @@
 				</div>
 
 				{#if workspaceState.panels.length === 0}
-					<div class="welcome-container">
-						<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
+					<div
+						class="absolute top-[40%] left-1/2 z-[1] -translate-x-1/2 -translate-y-1/2 text-center"
+					>
+						<span class="text-[28px] font-medium text-foreground"
+							>{hasModel ? 'What can I help with?' : 'Welcome!'}</span
+						>
 					</div>
 				{/if}
 				<ComposerAnchor
@@ -436,46 +454,8 @@
 <Toaster position="top-center" />
 
 <style>
-	.app-shell {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		height: 100vh;
-	}
-
-	.panel-layout {
-		display: flex;
-		flex: 1;
-		min-height: 0;
-	}
-
-	.panel-slot {
-		position: relative;
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		min-width: 0;
-		transition: flex 250ms ease;
-	}
-
-	.panel-layout-split .panel-slot:first-child {
+	/* Split layout — border on first panel when two panels are open */
+	.panel-layout-split > :first-child {
 		border-right: 1px solid hsl(var(--border));
-	}
-
-	.welcome-container {
-		position: absolute;
-		top: 40%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		text-align: center;
-		z-index: 1;
-	}
-
-	.welcome-text {
-		font-size: 28px;
-		font-weight: 500;
-		font-feature-settings: normal;
-		color: hsl(var(--foreground));
 	}
 </style>

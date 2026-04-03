@@ -524,19 +524,23 @@
 	<div class="error-banner">{operationError}</div>
 {/if}
 
-<div class="chatview-shell">
-	<div class="chatview-body" class:chatview-body-split={sidePanelOpen}>
+<div class="relative flex h-full min-w-0 flex-col overflow-hidden">
+	<div class="relative flex flex-1 overflow-hidden" class:chatview-body-split={sidePanelOpen}>
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="chatview-pane"
+			class="relative flex flex-1 flex-col overflow-hidden"
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
 			<div class="chatview-main-title">
 				{activeChat.name}
 				{#if onClose}
-					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
+					<button
+						class="ml-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted-foreground transition-[background,color] duration-[150ms] hover:bg-muted hover:text-foreground"
+						onclick={onClose}
+						aria-label="Close chat panel"
+					>
 						<X size={14} />
 					</button>
 				{/if}
@@ -564,17 +568,18 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="chatview-side"
+			class="chatview-side relative flex flex-col overflow-hidden opacity-0 transition-[flex,opacity] duration-[400ms] ease-[ease]"
 			class:chatview-side-open={sidePanelOpen}
 			class:chatview-pane-focused={focusedPane === 'side'}
 			onclick={focusSide}
 		>
 			{#if sidePanelOpen}
 				{#if isDocumentPanel && activeDocumentFile}
-					<div class="chatview-doc-wrap">
+					<div class="flex flex-1 flex-col overflow-hidden">
 						<Document
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
+							embedded={true}
 							agentStreaming={false}
 							agentProvider={providerState.activeModel?.provider}
 							pendingContent={agentState.pendingContent}
@@ -631,72 +636,27 @@
 />
 
 <style>
-	.chatview-shell {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		min-width: 0;
-		overflow: hidden;
-	}
-
-	.chatview-body {
-		position: relative;
-		flex: 1;
-		display: flex;
-		overflow: hidden;
-	}
-
-	.chatview-body-split .chatview-pane:first-child {
+	/* Split layout — border added to first pane when side panel is open */
+	.chatview-body-split > :first-child {
 		border-right: 1px solid hsl(var(--border));
 	}
 
-	.chatview-pane {
-		position: relative;
+	/* Side panel open/closed transition */
+	.chatview-side-open {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
+		opacity: 1;
 	}
 
-	.chatview-main {
-		flex: 1;
-		overflow-x: hidden;
-		overflow-y: auto;
-		padding: 0 calc(1rem - 8px) 0 1rem;
-	}
-
-	.chatview-main::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.chatview-main::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.chatview-main::-webkit-scrollbar-thumb {
-		background: transparent;
-		border-radius: 4px;
-	}
-
-	/* .is-scrolling added dynamically via classList.add() — must be :global() */
-	.chatview-main:global(.is-scrolling)::-webkit-scrollbar-thumb {
-		background: hsl(var(--foreground) / 0.15);
-	}
-
+	/* Title bar — ::after pseudo-element for the bottom border line */
 	.chatview-main-title {
-		height: 52px;
-		box-sizing: border-box;
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 0;
-		position: relative;
-		background: hsl(var(--background) / 0.97);
+		height: 52px;
+		box-sizing: border-box;
 		flex-shrink: 0;
-	}
-
-	.chatview-main-title {
+		background: hsl(var(--background) / 0.97);
 		font-size: var(--text-base);
 		font-weight: 600;
 		color: hsl(var(--muted-foreground));
@@ -720,26 +680,30 @@
 		background: hsl(var(--border));
 	}
 
-	.chatview-close-btn {
-		margin-left: auto;
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		width: 28px;
-		height: 28px;
-		border-radius: 6px;
-		border: none;
-		background: transparent;
-		color: hsl(var(--muted-foreground));
-		cursor: pointer;
-		transition:
-			background var(--duration-normal),
-			color var(--duration-normal);
+	/* Scrollbar — pseudo-elements and dynamic .is-scrolling class */
+	.chatview-main {
+		flex: 1;
+		overflow-x: hidden;
+		overflow-y: auto;
+		padding: 0 calc(1rem - 8px) 0 1rem;
 	}
 
-	.chatview-close-btn:hover {
-		background: hsl(var(--muted));
-		color: hsl(var(--foreground));
+	.chatview-main::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.chatview-main::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.chatview-main::-webkit-scrollbar-thumb {
+		background: transparent;
+		border-radius: 4px;
+	}
+
+	/* .is-scrolling is added dynamically via classList — must use :global() */
+	.chatview-main:global(.is-scrolling)::-webkit-scrollbar-thumb {
+		background: hsl(var(--foreground) / 0.15);
 	}
 
 	.chatview-exchanges {
@@ -764,27 +728,9 @@
 		text-align: center;
 		font-size: 28px;
 		font-weight: 500;
-		font-feature-settings: normal;
 		color: hsl(var(--foreground));
 		max-width: 500px;
 		margin: 0 auto;
-	}
-
-	.chatview-side {
-		position: relative;
-		flex: 0;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		opacity: 0;
-		transition:
-			flex 400ms ease,
-			opacity 400ms ease;
-	}
-
-	.chatview-side-open {
-		flex: 1;
-		opacity: 1;
 	}
 
 	.chatview-side-exchanges {
@@ -796,32 +742,8 @@
 		gap: 1rem;
 	}
 
-	.chatview-doc-wrap {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		overflow: hidden;
-	}
-
-	.chatview-doc-wrap > :global(.document) {
-		width: 100%;
-		height: 100%;
-		border: none;
-		border-radius: 0;
-	}
-
-	.chatview-doc-wrap :global(.docs-header) {
-		height: 52px;
-		padding: 0 12px;
-		gap: 8px;
-		background: hsl(var(--background) / 0.97);
-		font-size: var(--text-base);
-		font-weight: 600;
-		color: hsl(var(--muted-foreground));
-		letter-spacing: 0.02em;
-	}
-
-	.chatview-doc-wrap :global(.panel-body) {
-		padding-bottom: 12rem;
+	/* Focused pane ring — applied via class: directive */
+	.chatview-pane-focused {
+		outline: none;
 	}
 </style>

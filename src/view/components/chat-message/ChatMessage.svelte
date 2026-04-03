@@ -85,9 +85,11 @@
 	let showSource = $state(false);
 </script>
 
-<div class="chatmsg" class:chatmsg-doc-upload={data.label}>
+<div class="relative flex flex-col gap-5 rounded-lg pt-2" class:chatmsg-doc-upload={data.label}>
 	{#if data.label}
-		<div class="chatmsg-doc-label">
+		<div
+			class="flex w-fit items-center gap-2 rounded-lg bg-[hsl(var(--foreground)/0.05)] px-3 py-2 text-[length:var(--text-base)] text-[hsl(var(--foreground)/0.6)]"
+		>
 			<svg
 				width="16"
 				height="16"
@@ -103,24 +105,28 @@
 			<span>{data.label}</span>
 		</div>
 	{:else}
-		<div class="chatmsg-prompt-row">
-			<div class="chatmsg-prompt">
+		<div class="flex justify-end">
+			<div
+				class="max-w-[85%] rounded-xl bg-secondary px-4 py-3 text-[length:var(--text-md)] leading-[1.55] [word-break:break-word]"
+			>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- Sanitized by DOMPurify -->
 				{@html promptHtml}
 			</div>
 		</div>
 
-		<div class="chatmsg-response">
-			<div class="chatmsg-response-header">
+		<div class="flex flex-col gap-2">
+			<div
+				class="flex items-center gap-[0.35rem] text-[length:var(--text-sm)] font-semibold tracking-[0.04em] text-muted-foreground uppercase"
+			>
 				{#if data.provider && PROVIDER_LOGOS[data.provider]}
 					<img
 						src={PROVIDER_LOGOS[data.provider]}
 						alt={data.provider}
-						class="chatmsg-provider-logo"
+						class="h-[1.15rem] w-[1.15rem] object-contain"
 					/>
 				{/if}
 				{#if data.model}
-					<span class="chatmsg-model">{data.model}</span>
+					<span class="font-normal tracking-normal normal-case">{data.model}</span>
 				{/if}
 			</div>
 			{#if data.isStreaming && !data.response}
@@ -129,14 +135,15 @@
 				<div class="chatmsg-response-body docs-streaming-text">{data.response.trimStart()}</div>
 			{:else if responseBlocks.length > 0}
 				{#if showSource}
-					<pre class="chatmsg-response-body chatmsg-response-source">{data.response}</pre>
+					<pre
+						class="chatmsg-response-body chatmsg-response-source m-0 rounded-lg bg-[hsl(var(--muted)/0.4)] p-3 text-[0.85em] leading-[1.6] font-[var(--font-mono,ui-monospace,SFMono-Regular,'SF_Mono',Menlo,monospace)] whitespace-pre-wrap text-[hsl(var(--foreground)/0.85)]">{data.response}</pre>
 				{:else}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div class="chatmsg-response-body" onmousedown={closeContextMenu}>
 						{#each responseBlocks as block, i (i)}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div
-								class="chatmsg-block"
+								class="relative -mx-2 rounded-xl px-2 py-[0.15rem] transition-[background,border-color] duration-[150ms] ease-[ease] first:pt-0 last:pb-0"
 								class:chatmsg-block-askable={data.canQuickAsk}
 								class:chatmsg-block-selected={isBlockSelected(i)}
 								onmousedown={(e) => handleBlockMouseDown(e, i)}
@@ -149,16 +156,20 @@
 					</div>
 				{/if}
 			{:else if data.response}
-				<div class="chatmsg-response-body chatmsg-response-plain">{data.response}</div>
+				<div class="chatmsg-response-body chatmsg-response-plain whitespace-pre-wrap">
+					{data.response}
+				</div>
 			{:else if !data.isStreaming}
-				<div class="chatmsg-response-body chatmsg-response-plain">Cancelled</div>
+				<div class="chatmsg-response-body chatmsg-response-plain whitespace-pre-wrap">
+					Cancelled
+				</div>
 			{/if}
 		</div>
 	{/if}
 
 	{#if !data.isStreaming}
-		<div class="chatmsg-toolbar">
-			<div class="chatmsg-actions">
+		<div class="flex min-h-[1.9rem] items-center justify-end gap-[0.35rem]">
+			<div class="flex gap-[0.2rem]">
 				<span class="action-tip-wrap">
 					<Button
 						class="icon-chip delete-chip"
@@ -259,7 +270,7 @@
 			{#if !data.isSideRoot}
 				{#if data.hasSideChildren}
 					<button
-						class="chatmsg-side-chat-badge"
+						class="flex cursor-pointer items-center gap-[0.3rem] rounded-full border border-[hsl(var(--foreground)/0.25)] bg-transparent px-2 py-1 text-[length:var(--text-sm)] text-[hsl(var(--foreground)/0.7)] transition-[background,color] duration-[120ms] ease-[ease] hover:bg-[hsl(var(--foreground)/0.1)] hover:text-foreground"
 						type="button"
 						onclick={(event: MouseEvent) => {
 							event.stopPropagation();
@@ -270,7 +281,7 @@
 						<span>{data.sideChildrenCount}</span>
 					</button>
 				{:else}
-					<span class="action-tip-wrap chatmsg-side-chat-action">
+					<span class="action-tip-wrap">
 						<Button
 							class="icon-chip"
 							variant="ghost"
@@ -294,11 +305,24 @@
 
 {#if contextMenu}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="chatmsg-context-scrim" onmousedown={closeContextMenu}></div>
-	<div class="chatmsg-context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
-		<button type="button" class="chatmsg-context-item" onclick={handleQuickAsk}> Quick Ask </button>
+	<div class="fixed inset-0 z-[999]" onmousedown={closeContextMenu}></div>
+	<div
+		class="fixed z-[1000] min-w-[160px] rounded-lg border border-border bg-popover p-1 shadow-[0_4px_12px_hsl(0_0%_0%/0.15)]"
+		style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+	>
+		<button
+			type="button"
+			class="block w-full cursor-pointer rounded-[0.35rem] border-none bg-transparent px-3 py-[0.45rem] text-left text-[length:var(--text-base)] text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+			onclick={handleQuickAsk}
+		>
+			Quick Ask
+		</button>
 		{#if data.canQuickAdd}
-			<button type="button" class="chatmsg-context-item" onclick={handleQuickAdd}>
+			<button
+				type="button"
+				class="block w-full cursor-pointer rounded-[0.35rem] border-none bg-transparent px-3 py-[0.45rem] text-left text-[length:var(--text-base)] text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+				onclick={handleQuickAdd}
+			>
 				Quick Add
 			</button>
 		{/if}
@@ -306,213 +330,29 @@
 {/if}
 
 <style>
-	.chatmsg {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-		padding: 0.5rem 0 0 0;
-		border-radius: 0.5rem;
-	}
-
+	/* doc-upload variant — gap/padding override applied via class: directive */
 	.chatmsg-doc-upload {
 		gap: 0;
 		padding: 0.75rem 0;
 	}
 
-	.chatmsg-doc-label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: 0.5rem;
-		background: hsl(var(--foreground) / 0.05);
-		color: hsl(var(--foreground) / 0.6);
-		font-size: var(--text-base);
-		width: fit-content;
-	}
-
-	.chatmsg-toolbar {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		gap: 0.35rem;
-		min-height: 1.9rem;
-	}
-
-	.chatmsg-side-chat-badge {
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		padding: 0.25rem 0.5rem;
-		border: 1px solid hsl(var(--foreground) / 0.25);
-		border-radius: var(--radius-full);
-		background: transparent;
-		color: hsl(var(--foreground) / 0.7);
-		font-size: var(--text-sm);
-		cursor: pointer;
-		transition:
-			background var(--duration-fast) ease,
-			color var(--duration-fast) ease;
-	}
-
-	.chatmsg-side-chat-badge:hover {
-		background: hsl(var(--foreground) / 0.1);
-		color: hsl(var(--foreground));
-	}
-
-	.chatmsg-actions {
-		display: flex;
-		gap: 0.2rem;
-	}
-
-	.chatmsg :global(.icon-chip) {
-		color: hsl(var(--foreground) / 0.5);
-	}
-
-	.chatmsg :global(.icon-chip:hover) {
-		color: hsl(var(--foreground));
-		background: hsl(var(--foreground) / 0.1);
-	}
-
-	.chatmsg-prompt-row {
-		display: flex;
-		justify-content: flex-end;
-	}
-
-	.chatmsg-prompt {
-		max-width: 85%;
-		padding: 0.75rem 1rem;
-		border-radius: 0.75rem;
-		background: hsl(var(--secondary));
-		font-size: 0.95rem;
-		line-height: 1.55;
-		word-break: break-word;
-	}
-
-	.chatmsg-prompt :global(p) {
-		margin: 0.25em 0;
-	}
-
-	.chatmsg-prompt :global(p:first-child) {
-		margin-top: 0;
-	}
-
-	.chatmsg-prompt :global(p:last-child) {
-		margin-bottom: 0;
-	}
-
-	.chatmsg-response {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.chatmsg-response-header {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		font-size: var(--text-sm);
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.chatmsg-provider-logo {
-		height: 1.15rem;
-		width: 1.15rem;
-		object-fit: contain;
-	}
-
-	.chatmsg-model {
-		font-weight: 400;
-		letter-spacing: 0;
-		text-transform: none;
-	}
-
-	.chatmsg-response-plain {
-		white-space: pre-wrap;
-	}
-
-	.chatmsg-response-source {
-		white-space: pre-wrap;
-		font-family: var(--font-mono, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
-		font-size: 0.85rem;
-		line-height: 1.6;
-		padding: 0.75rem;
-		margin: 0;
-		border-radius: 0.5rem;
-		background: hsl(var(--muted) / 0.4);
-		color: hsl(var(--foreground) / 0.85);
-	}
-
-	.chatmsg-block {
-		position: relative;
-		padding: 0.15rem 0.5rem;
-		margin: 0 -0.5rem;
-		border-radius: 0.75rem;
-		transition:
-			background var(--duration-normal) ease,
-			border-color var(--duration-normal) ease;
-	}
-
-	.chatmsg-block:first-child {
-		padding-top: 0;
-	}
-
-	.chatmsg-block:last-child {
-		padding-bottom: 0;
-	}
-
+	/* askable block hover/selected — needs :global-adjacent selector */
 	.chatmsg-block-askable:hover,
 	.chatmsg-block-selected {
 		background: hsl(var(--secondary));
 	}
 
-	.chatmsg-context-scrim {
-		position: fixed;
-		inset: 0;
-		z-index: 999;
+	/* icon-chip colors — passed as class prop to Button, must be :global() */
+	:global(.icon-chip) {
+		color: hsl(var(--foreground) / 0.5);
 	}
 
-	.chatmsg-context-menu {
-		position: fixed;
-		z-index: 1000;
-		min-width: 160px;
-		padding: 0.25rem;
-		border: 1px solid hsl(var(--border));
-		border-radius: 0.5rem;
-		background: hsl(var(--popover));
-		box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15);
-	}
-
-	.chatmsg-context-item {
-		display: block;
-		width: 100%;
-		padding: 0.45rem 0.75rem;
-		border: none;
-		border-radius: 0.35rem;
-		background: transparent;
-		color: hsl(var(--popover-foreground));
-		font-size: var(--text-base);
-		text-align: left;
-		cursor: pointer;
-	}
-
-	.chatmsg-context-item:hover {
-		background: hsl(var(--accent));
-		color: hsl(var(--accent-foreground));
-	}
-
-	/* {@html} rendered markdown — must be :global() */
-	:global(.chatmsg-response-body) {
-		font-size: var(--text-lg);
-		line-height: 1.75;
-		word-break: break-word;
+	:global(.icon-chip:hover) {
 		color: hsl(var(--foreground));
+		background: hsl(var(--foreground) / 0.1);
 	}
 
+	/* prompt paragraph margins — rendered via {@html}, must be :global() */
 	:global(.chatmsg-response-body p) {
 		margin: 0.75em 0;
 	}
@@ -527,6 +367,7 @@
 		margin-bottom: 0;
 	}
 
+	/* Markdown headings — rendered HTML, must be :global() */
 	:global(.chatmsg-response-body h1),
 	:global(.chatmsg-response-body h2),
 	:global(.chatmsg-response-body h3),

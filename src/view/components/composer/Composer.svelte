@@ -12,6 +12,7 @@
 		activeDocumentKey?: { folderId: string; fileId: string } | null;
 		onToggleMode?: () => void;
 		toolCallbacks?: app.chat.SubmitOptions['toolCallbacks'];
+		anchored?: boolean;
 	}
 
 	let {
@@ -21,7 +22,8 @@
 		liveDocumentContent,
 		activeDocumentKey = null,
 		onToggleMode,
-		toolCallbacks
+		toolCallbacks,
+		anchored = false
 	}: Props = $props();
 
 	let composerValue = $state('');
@@ -121,6 +123,7 @@
 	bind:composerValue
 	bind:pendingImages
 	{agentMode}
+	{anchored}
 	inputMessage={null}
 	{submitDisabledReason}
 	streaming={activeNodeStreaming}
@@ -159,6 +162,3 @@
 	onRemoveCachedModel={app.providers.removeCachedModel}
 	onClearCachedModels={app.providers.clearCachedModels}
 />
-
-<style>
-</style>

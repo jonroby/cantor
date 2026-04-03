@@ -107,14 +107,14 @@
 				viewBox="0 0 140 160"
 				xmlns="http://www.w3.org/2000/svg"
 			>
-				<circle cx="70" cy="25" r="8.5" fill="#2b2b2b" />
-				<circle cx="30" cy="60" r="8.5" fill="#4a4a4a" />
-				<circle cx="70" cy="60" r="8.5" fill="#4a4a4a" />
-				<circle cx="110" cy="60" r="8.5" fill="#4a4a4a" />
-				<circle cx="30" cy="95" r="8.5" fill="#6e6e6e" />
-				<circle cx="70" cy="95" r="8.5" fill="#6e6e6e" />
-				<circle cx="110" cy="95" r="8.5" fill="#6e6e6e" />
-				<circle cx="70" cy="130" r="8.5" fill="#949494" />
+				<circle cx="70" cy="25" r="8.5" fill="hsl(var(--foreground))" />
+				<circle cx="30" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
+				<circle cx="70" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
+				<circle cx="110" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
+				<circle cx="30" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
+				<circle cx="70" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
+				<circle cx="110" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
+				<circle cx="70" cy="130" r="8.5" fill="hsl(var(--foreground)/0.2)" />
 			</svg>
 			<span class="logo">Powerset Labs</span>
 		</div>

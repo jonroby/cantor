@@ -1,4 +1,7 @@
-/* function-plot chart styles */
+/* function-plot chart styles
+ * !important flags below are intentional: the function-plot library inlines styles
+ * directly on SVG elements, so higher specificity alone cannot override them.
+ */
 
 .function-plot-wrap {
 	margin: 16px auto;
