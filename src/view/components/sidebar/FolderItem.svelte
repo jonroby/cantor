@@ -132,7 +132,7 @@
 		<Sidebar.MenuButton
 			onclick={onToggle}
 			class="rounded-lg px-3 py-2 group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground {isDragOver
-				? 'ring-primary ring-2 ring-inset'
+				? 'ring-2 ring-primary ring-inset'
 				: ''}"
 		>
 			<span
@@ -161,7 +161,7 @@
 		</Sidebar.MenuButton>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger
-				class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
+				class="absolute top-1/2 right-1 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-sidebar-foreground/40 opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:text-sidebar-foreground data-[state=open]:opacity-100"
 				onclick={(e) => e.stopPropagation()}
 			>
 				<Ellipsis size={14} />
@@ -170,54 +170,54 @@
 				<DropdownMenu.Content
 					align="start"
 					side="right"
-					class="rounded-lg bg-popover p-1 text-popover-foreground shadow-md z-50 min-w-[140px] border"
+					class="z-50 min-w-[140px] rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
 				>
 					<DropdownMenu.Item
-						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
 						onclick={onOpenFolder}
 					>
 						<Folder size={14} strokeWidth={1.5} />
 						Open
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="my-1 bg-border h-px" />
+					<DropdownMenu.Separator class="my-1 h-px bg-border" />
 					<DropdownMenu.Item
-						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
 						onclick={onNewDocument}
 					>
 						<FilePlus size={14} strokeWidth={1.5} />
 						New file
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
-						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
 						onclick={onUploadDocument}
 					>
 						<Upload size={14} strokeWidth={1.5} />
 						Upload file
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
-						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
 						onclick={onUploadFolder}
 					>
 						<FolderUp size={14} strokeWidth={1.5} />
 						Upload folder
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
-						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
 						onclick={startRenameFolder}
 					>
 						<Pencil size={14} strokeWidth={1.5} />
 						Rename
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
-						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
+						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
 						onclick={onDownloadFolder}
 					>
 						<Download size={14} strokeWidth={1.5} />
 						Download
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="my-1 bg-border h-px" />
+					<DropdownMenu.Separator class="my-1 h-px bg-border" />
 					<DropdownMenu.Item
-						class="gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex cursor-pointer items-center"
+						class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10"
 						onclick={onDeleteFolder}
 					>
 						<Trash2 size={14} strokeWidth={1.5} />

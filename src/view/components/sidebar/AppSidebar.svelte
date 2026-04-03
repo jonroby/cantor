@@ -166,27 +166,27 @@
 <Sidebar.Root collapsible="icon">
 	<Sidebar.Header class="p-0">
 		{#if sidebar.state === 'expanded'}
-			<div class="h-14 px-3 flex items-center">
-				<div class="gap-2 flex flex-1 items-center">
+			<div class="flex h-14 items-center px-3">
+				<div class="flex flex-1 items-center gap-2">
 					<img src={powersetLogo} alt="Cantor" width="18" height="20" />
 					<span class="text-sm font-semibold text-sidebar-foreground">Cantor</span>
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							<span
-								class="font-semibold px-1.5 py-0.5 bg-blue-500/15 text-blue-600 rounded-full text-[10px]"
+								class="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600"
 								>Alpha</span
 							>
 						</Tooltip.Trigger>
 						<Tooltip.Content
 							side="bottom"
-							class="bg-neutral-900 text-white text-xs max-w-[200px] border-none"
+							class="max-w-[200px] border-none bg-neutral-900 text-xs text-white"
 						>
 							Some features are still being refined.
 						</Tooltip.Content>
 					</Tooltip.Root>
 				</div>
 				<button
-					class="rounded-lg hover:bg-sidebar-accent p-1 flex cursor-pointer items-center justify-center transition-colors"
+					class="flex cursor-pointer items-center justify-center rounded-lg p-1 transition-colors hover:bg-sidebar-accent"
 					onclick={() => sidebar.toggle()}
 					aria-label="Collapse sidebar"
 				>
@@ -194,13 +194,13 @@
 				</button>
 			</div>
 		{:else}
-			<div class="h-14 flex items-center justify-center">
+			<div class="flex h-14 items-center justify-center">
 				<Tooltip.Root>
 					<Tooltip.Trigger>
 						{#snippet child({ props })}
 							<button
 								{...props}
-								class="group/logo rounded-lg hover:bg-sidebar-accent p-1 flex cursor-pointer items-center justify-center transition-colors"
+								class="group/logo flex cursor-pointer items-center justify-center rounded-lg p-1 transition-colors hover:bg-sidebar-accent"
 								onclick={() => sidebar.toggle()}
 								aria-label="Open sidebar"
 							>
@@ -217,7 +217,7 @@
 							</button>
 						{/snippet}
 					</Tooltip.Trigger>
-					<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
+					<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
 						Open sidebar
 					</Tooltip.Content>
 				</Tooltip.Root>
@@ -266,7 +266,7 @@
 			<!-- Chat list (unfoldered) -->
 			<Sidebar.Group class="p-0">
 				<Sidebar.GroupLabel
-					class="px-3 text-xs text-sidebar-foreground/50 mb-1 flex items-center justify-between"
+					class="mb-1 flex items-center justify-between px-3 text-xs text-sidebar-foreground/50"
 				>
 					<span>Chats</span>
 					<Tooltip.Root>
@@ -274,7 +274,7 @@
 							{#snippet child({ props })}
 								<button
 									{...props}
-									class="rounded-md p-0.5 text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors"
+									class="rounded-md p-0.5 text-sidebar-foreground/40 transition-colors hover:text-sidebar-foreground"
 									onclick={onUploadChat}
 									aria-label="Upload chat"
 								>
@@ -295,7 +295,7 @@
 								</button>
 							{/snippet}
 						</Tooltip.Trigger>
-						<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
+						<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
 							Upload chat
 						</Tooltip.Content>
 					</Tooltip.Root>
@@ -359,9 +359,9 @@
 
 			<!-- Folders list -->
 			{#if folders.length > 0}
-				<Sidebar.Group class="p-0 mt-1">
+				<Sidebar.Group class="mt-1 p-0">
 					<Sidebar.GroupLabel
-						class="px-3 text-xs text-sidebar-foreground/50 mb-1 flex items-center justify-between"
+						class="mb-1 flex items-center justify-between px-3 text-xs text-sidebar-foreground/50"
 					>
 						<span>Folders</span>
 						<Tooltip.Root>
@@ -369,7 +369,7 @@
 								{#snippet child({ props })}
 									<button
 										{...props}
-										class="rounded-md p-0.5 text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors"
+										class="rounded-md p-0.5 text-sidebar-foreground/40 transition-colors hover:text-sidebar-foreground"
 										onclick={onUploadNewFolder}
 										aria-label="Upload folder"
 									>
@@ -390,7 +390,7 @@
 									</button>
 								{/snippet}
 							</Tooltip.Trigger>
-							<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
+							<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
 								Upload folder
 							</Tooltip.Content>
 						</Tooltip.Root>

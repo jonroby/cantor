@@ -19,18 +19,18 @@
 	}}
 >
 	<AlertDialog.Portal>
-		<AlertDialog.Overlay class="inset-0 bg-black/50 fixed z-50" />
+		<AlertDialog.Overlay class="fixed inset-0 z-50 bg-black/50" />
 		<AlertDialog.Content
-			class="max-w-md rounded-xl bg-background p-6 shadow-lg fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 border"
+			class="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-background p-6 shadow-lg"
 		>
 			<AlertDialog.Header>
 				<AlertDialog.Title class="text-lg font-semibold">{title}</AlertDialog.Title>
-				<AlertDialog.Description class="text-sm text-muted-foreground mt-2">
+				<AlertDialog.Description class="mt-2 text-sm text-muted-foreground">
 					{description}
 				</AlertDialog.Description>
 			</AlertDialog.Header>
-			<AlertDialog.Footer class="mt-6 gap-2 flex justify-end">
-				<AlertDialog.Cancel class="rounded-lg px-4 py-2 text-sm hover:bg-muted border"
+			<AlertDialog.Footer class="mt-6 flex justify-end gap-2">
+				<AlertDialog.Cancel class="rounded-lg border px-4 py-2 text-sm hover:bg-muted"
 					>Cancel</AlertDialog.Cancel
 				>
 				<AlertDialog.Action

@@ -25,7 +25,7 @@
 {#if collapsible === 'none'}
 	<div
 		class={cn(
-			'bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col',
+			'flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground',
 			className
 		)}
 		bind:this={ref}
@@ -41,7 +41,7 @@
 			data-slot="sidebar"
 			data-mobile="true"
 			class={cn(
-				'bg-sidebar text-sidebar-foreground p-0 w-(--sidebar-width) [&>button]:hidden',
+				'w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden',
 				className
 			)}
 			style="--sidebar-width: {SIDEBAR_WIDTH_MOBILE};"
@@ -60,7 +60,7 @@
 	<div
 		bind:this={ref}
 		class={cn(
-			'text-sidebar-foreground group peer md:flex hidden h-svh flex-none flex-col',
+			'group peer hidden h-svh flex-none flex-col text-sidebar-foreground md:flex',
 			'transition-[width] duration-200 ease-linear',
 			sidebar.state === 'expanded' ? 'w-(--sidebar-width)' : 'w-(--sidebar-width-icon)',
 			className
@@ -76,7 +76,7 @@
 			data-sidebar="sidebar"
 			data-slot="sidebar-inner"
 			class={cn(
-				'bg-sidebar border-sidebar-border flex size-full flex-col overflow-hidden',
+				'flex size-full flex-col overflow-hidden border-sidebar-border bg-sidebar',
 				side === 'left' ? 'border-e' : 'border-s'
 			)}
 		>

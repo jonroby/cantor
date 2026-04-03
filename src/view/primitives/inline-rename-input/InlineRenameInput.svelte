@@ -27,5 +27,5 @@
 		if (e.key === 'Escape') onCancel();
 	}}
 	onclick={(e) => e.stopPropagation()}
-	class="text-sm text-sidebar-foreground w-full border-none bg-transparent outline-none"
+	class="w-full border-none bg-transparent text-sm text-sidebar-foreground outline-none"
 />

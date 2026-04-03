@@ -30,7 +30,7 @@
 				variant="ghost"
 				size="icon-sm"
 				class={cn(
-					'cn-sidebar-trigger hover:bg-sidebar-accent rounded-lg cursor-pointer',
+					'cn-sidebar-trigger cursor-pointer rounded-lg hover:bg-sidebar-accent',
 					className
 				)}
 				type="button"
@@ -45,7 +45,7 @@
 			</Button>
 		{/snippet}
 	</Tooltip.Trigger>
-	<Tooltip.Content side="right" class="bg-neutral-900 text-white text-xs border-none">
+	<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
 		Close sidebar
 	</Tooltip.Content>
 </Tooltip.Root>
