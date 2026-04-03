@@ -139,3 +139,68 @@ export function save() {
 		folders: state.documents.documentState.folders
 	});
 }
+
+// --- Trash ---
+
+export type TrashItem = external.persistence.TrashItem;
+
+export function loadTrash() {
+	return external.persistence.loadTrash();
+}
+
+export function restoreChat(trashId: string) {
+	return external.persistence.getTrashItem(trashId).then((item) => {
+		if (!item || item.type !== 'chat') return false;
+		const data = item.data as state.chats.ChatRecord;
+		const existingNames = state.chats.chatState.chats.map((c) => c.name);
+		const name =
+			lib.rename.renameWithDedup(data.name, (candidate) => !existingNames.includes(candidate)) ??
+			data.name;
+		state.chats.addChat({ ...data, name });
+		void external.persistence.deleteTrashItem(trashId);
+		return true;
+	});
+}
+
+export function restoreFolder(trashId: string) {
+	return external.persistence.getTrashItem(trashId).then((item) => {
+		if (!item || item.type !== 'folder') return false;
+		const data = item.data as { id: string; name: string; files?: unknown[]; folders?: unknown[] };
+		const existingNames = state.documents.documentState.folders.map((f) => f.name);
+		const name =
+			lib.rename.renameWithDedup(data.name, (candidate) => !existingNames.includes(candidate)) ??
+			data.name;
+		state.documents.documentState.folders = [
+			...state.documents.documentState.folders,
+			{ ...data, name } as state.documents.Folder
+		];
+		void external.persistence.deleteTrashItem(trashId);
+		return true;
+	});
+}
+
+export function restoreDocument(trashId: string) {
+	return external.persistence.getTrashItem(trashId).then((item) => {
+		if (!item || item.type !== 'document') return false;
+		const data = item.data as { folderId: string; file: state.documents.DocumentFile };
+		const folder = state.documents.findFolder(data.folderId);
+		if (!folder) return false;
+		const existingNames = (folder.files ?? []).map((f) => f.name);
+		const name =
+			lib.rename.renameWithDedup(
+				data.file.name,
+				(candidate) => !existingNames.includes(candidate)
+			) ?? data.file.name;
+		folder.files = [...(folder.files ?? []), { ...data.file, name }];
+		void external.persistence.deleteTrashItem(trashId);
+		return true;
+	});
+}
+
+export function deleteTrashItem(trashId: string) {
+	return external.persistence.deleteTrashItem(trashId);
+}
+
+export function emptyTrash() {
+	return external.persistence.emptyTrash();
+}

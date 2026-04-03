@@ -18,7 +18,19 @@ export function supportedExtensionsLabel(): string {
 export const getState = () => state.documents.documentState;
 export const createFolder = state.documents.newFolder;
 export const closeDocument = state.documents.closeDocument;
-export const deleteFolder = state.documents.deleteFolder;
+export function deleteFolder(folderId: string) {
+	const folder = state.documents.findFolder(folderId);
+	if (folder) {
+		void external.persistence.trashItem({
+			id: crypto.randomUUID(),
+			type: 'folder',
+			name: folder.name,
+			deletedAt: Date.now(),
+			data: { id: folder.id, name: folder.name, files: folder.files, folders: folder.folders }
+		});
+	}
+	state.documents.deleteFolder(folderId);
+}
 
 export interface DocumentCommandDeps {
 	getActiveChat: typeof state.chats.getActiveChat;
@@ -98,7 +110,20 @@ export function renameFolder(folderId: string, name: string): string | null {
 		state.documents.renameFolder(folderId, candidate)
 	);
 }
-export const deleteDocument = state.documents.deleteDocumentFromFolder;
+export function deleteDocument(folderId: string, fileId: string) {
+	const folder = state.documents.findFolder(folderId);
+	const file = folder?.files?.find((f) => f.id === fileId);
+	if (file) {
+		void external.persistence.trashItem({
+			id: crypto.randomUUID(),
+			type: 'document',
+			name: file.name,
+			deletedAt: Date.now(),
+			data: { folderId, file: { id: file.id, name: file.name, content: file.content } }
+		});
+	}
+	state.documents.deleteDocumentFromFolder(folderId, fileId);
+}
 export function renameDocument(
 	folderId: string,
 	fileId: string,

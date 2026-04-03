@@ -2,47 +2,66 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import {
 	loadFromStorage,
 	saveToStorage,
+	trashItem,
+	loadTrash,
+	getTrashItem,
+	deleteTrashItem,
+	emptyTrash,
 	getVaultStore,
 	setVaultStore,
 	migrateVaultStorage,
-	clearVaultStorage
+	clearVaultStorage,
+	type TrashItem
 } from '../database';
 import * as state from '@/state';
 import * as domain from '@/domain';
 
 // ── IndexedDB mock ──────────────────────────────────────────────────────────
 
-let idbStore: Record<string, unknown> = {};
+let idbStores: Record<string, Record<string, unknown>> = {};
+
+function mockReq<T>(result: T) {
+	const req = {
+		result,
+		onsuccess: null as (() => void) | null,
+		onerror: null as (() => void) | null
+	};
+	queueMicrotask(() => req.onsuccess?.());
+	return req;
+}
 
 function createMockIDB() {
-	const objectStore = {
-		get: (key: string) => {
-			const req = {
-				result: structuredClone(idbStore[key]),
-				onsuccess: null as (() => void) | null,
-				onerror: null as (() => void) | null
-			};
-			queueMicrotask(() => req.onsuccess?.());
-			return req;
-		},
-		put: (value: unknown, key: string) => {
-			idbStore[key] = structuredClone(value);
-			const req = {
-				result: undefined,
-				onsuccess: null as (() => void) | null,
-				onerror: null as (() => void) | null
-			};
-			queueMicrotask(() => req.onsuccess?.());
-			return req;
-		}
-	};
+	function makeObjectStore(storeName: string) {
+		if (!idbStores[storeName]) idbStores[storeName] = {};
+		const data = () => idbStores[storeName]!;
 
-	const transaction = {
-		objectStore: () => objectStore
-	};
+		return {
+			get: (key: string) => mockReq(structuredClone(data()[key])),
+			put: (value: unknown, key?: string) => {
+				const k =
+					key ??
+					(value && typeof value === 'object' && 'id' in value
+						? (value as { id: string }).id
+						: undefined);
+				if (k != null) data()[k] = structuredClone(value);
+				return mockReq(undefined);
+			},
+			delete: (key: string) => {
+				delete data()[key];
+				return mockReq(undefined);
+			},
+			getAll: () => mockReq(structuredClone(Object.values(data()))),
+			clear: () => {
+				idbStores[storeName] = {};
+				return mockReq(undefined);
+			}
+		};
+	}
 
 	const db = {
-		transaction: () => transaction,
+		transaction: (_stores: string | string[], _mode?: string) => ({
+			objectStore: (name: string) => makeObjectStore(name)
+		}),
 		objectStoreNames: { contains: () => true },
 		createObjectStore: vi.fn(),
 		close: vi.fn()
@@ -106,7 +125,7 @@ function buildChat(name: string): state.chats.ChatRecord {
 }
 
 function resetState() {
-	idbStore = {};
+	idbStores = {};
 	localStore = {};
 	const chat = buildChat('Chat 1');
 	state.chats.chatState.chats = [chat];
@@ -211,51 +230,99 @@ describe('database', () => {
 
 	describe('loadFromStorage throws on duplicate names', () => {
 		it('throws when stored chats have duplicate names', async () => {
-			idbStore['main'] = {
-				snapshot: {
-					chats: [buildChat('Foo'), buildChat('Foo')],
-					activeChatIndex: 0,
-					folders: []
-				},
-				layout: {}
+			idbStores['snapshots'] = {
+				main: {
+					snapshot: {
+						chats: [buildChat('Foo'), buildChat('Foo')],
+						activeChatIndex: 0,
+						folders: []
+					},
+					layout: {}
+				}
 			};
 			await expect(loadFromStorage()).rejects.toThrow('Duplicate chat name');
 		});
 
 		it('throws when stored folders have duplicate names', async () => {
-			idbStore['main'] = {
-				snapshot: {
-					chats: [buildChat('Chat 1')],
-					activeChatIndex: 0,
-					folders: [
-						{ id: 'f1', name: 'Docs' },
-						{ id: 'f2', name: 'Docs' }
-					]
-				},
-				layout: {}
+			idbStores['snapshots'] = {
+				main: {
+					snapshot: {
+						chats: [buildChat('Chat 1')],
+						activeChatIndex: 0,
+						folders: [
+							{ id: 'f1', name: 'Docs' },
+							{ id: 'f2', name: 'Docs' }
+						]
+					},
+					layout: {}
+				}
 			};
 			await expect(loadFromStorage()).rejects.toThrow('Duplicate folder name');
 		});
 
 		it('throws when stored files in a folder have duplicate names', async () => {
-			idbStore['main'] = {
-				snapshot: {
-					chats: [buildChat('Chat 1')],
-					activeChatIndex: 0,
-					folders: [
-						{
-							id: 'f1',
-							name: 'Docs',
-							files: [
-								{ id: 'd1', name: 'readme.md', content: '' },
-								{ id: 'd2', name: 'readme.md', content: '' }
-							]
-						}
-					]
-				},
-				layout: {}
+			idbStores['snapshots'] = {
+				main: {
+					snapshot: {
+						chats: [buildChat('Chat 1')],
+						activeChatIndex: 0,
+						folders: [
+							{
+								id: 'f1',
+								name: 'Docs',
+								files: [
+									{ id: 'd1', name: 'readme.md', content: '' },
+									{ id: 'd2', name: 'readme.md', content: '' }
+								]
+							}
+						]
+					},
+					layout: {}
+				}
 			};
 			await expect(loadFromStorage()).rejects.toThrow('Duplicate file name');
+		});
+	});
+
+	describe('trash', () => {
+		const sampleTrashItem: TrashItem = {
+			id: 'trash-1',
+			type: 'chat',
+			name: 'My Chat',
+			deletedAt: 1000,
+			data: { some: 'data' }
+		};
+
+		it('stores and retrieves a trash item', async () => {
+			await trashItem(sampleTrashItem);
+
+			const retrieved = await getTrashItem('trash-1');
+			expect(retrieved).toEqual(sampleTrashItem);
+		});
+
+		it('lists all trash items', async () => {
+			await trashItem(sampleTrashItem);
+			await trashItem({ ...sampleTrashItem, id: 'trash-2', name: 'Another' });
+
+			const items = await loadTrash();
+			expect(items).toHaveLength(2);
+		});
+
+		it('deletes a single trash item', async () => {
+			await trashItem(sampleTrashItem);
+			await deleteTrashItem('trash-1');
+
+			const retrieved = await getTrashItem('trash-1');
+			expect(retrieved).toBeUndefined();
+		});
+
+		it('empties all trash', async () => {
+			await trashItem(sampleTrashItem);
+			await trashItem({ ...sampleTrashItem, id: 'trash-2' });
+			await emptyTrash();
+
+			const items = await loadTrash();
+			expect(items).toHaveLength(0);
 		});
 	});
 

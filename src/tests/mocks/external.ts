@@ -20,13 +20,18 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 		},
 		persistence: {
 			clearVaultStorage: mockFn<typeof external.persistence.clearVaultStorage>(),
+			deleteTrashItem: mockFn<typeof external.persistence.deleteTrashItem>(async () => {}),
+			emptyTrash: mockFn<typeof external.persistence.emptyTrash>(async () => {}),
 			getPersistedLayout: mockFn<typeof external.persistence.getPersistedLayout>(() => ({})),
+			getTrashItem: mockFn<typeof external.persistence.getTrashItem>(async () => undefined),
 			getVaultStore: mockFn<typeof external.persistence.getVaultStore>(() => ({})),
 			loadFromStorage: mockFn<typeof external.persistence.loadFromStorage>(),
+			loadTrash: mockFn<typeof external.persistence.loadTrash>(async () => []),
 			migrateVaultStorage: mockFn<typeof external.persistence.migrateVaultStorage>(),
 			saveToStorage: mockFn<typeof external.persistence.saveToStorage>(),
 			setPersistedLayout: mockFn<typeof external.persistence.setPersistedLayout>(),
-			setVaultStore: mockFn<typeof external.persistence.setVaultStore>()
+			setVaultStore: mockFn<typeof external.persistence.setVaultStore>(),
+			trashItem: mockFn<typeof external.persistence.trashItem>(async () => {})
 		},
 		providers: {
 			catalog: {

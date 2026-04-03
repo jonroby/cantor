@@ -42,13 +42,19 @@ vi.mock('@/app', async () => {
 	return createAppMock({
 		bootstrap: {
 			clearOpenDocument: vi.fn(),
+			deleteTrashItem: vi.fn(async () => {}),
+			emptyTrash: vi.fn(async () => {}),
 			initialize: vi.fn(async () => ({
 				restoredDocument: null,
 				chatPanelOpen: undefined,
 				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
+			loadTrash: vi.fn(async () => []),
 			rememberOpenDocument: vi.fn(),
+			restoreChat: vi.fn(async () => false),
+			restoreDocument: vi.fn(async () => false),
+			restoreFolder: vi.fn(async () => false),
 			save: vi.fn(async () => {}),
 			setChatPanelOpen: vi.fn(),
 			setSidebarOpen: vi.fn()
