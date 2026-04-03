@@ -504,4 +504,123 @@
 		background: hsl(var(--accent));
 		color: hsl(var(--accent-foreground));
 	}
+
+	/* {@html} rendered markdown — must be :global() */
+	:global(.chatmsg-response-body) {
+		font-size: var(--text-lg);
+		line-height: 1.75;
+		word-break: break-word;
+		color: hsl(var(--foreground));
+	}
+
+	:global(.chatmsg-response-body p) {
+		margin: 0.75em 0;
+	}
+
+	:global(.chatmsg-response-body p:first-child),
+	:global(.chatmsg-response-body .chatmsg-block:first-child p:first-child) {
+		margin-top: 0;
+	}
+
+	:global(.chatmsg-response-body p:last-child),
+	:global(.chatmsg-response-body .chatmsg-block:last-child p:last-child) {
+		margin-bottom: 0;
+	}
+
+	:global(.chatmsg-response-body h1),
+	:global(.chatmsg-response-body h2),
+	:global(.chatmsg-response-body h3),
+	:global(.chatmsg-response-body h4),
+	:global(.chatmsg-response-body h5),
+	:global(.chatmsg-response-body h6) {
+		margin: 1.25em 0 0.5em;
+		font-weight: 700;
+		line-height: 1.3;
+		color: hsl(var(--foreground));
+	}
+
+	:global(.chatmsg-response-body h1:first-child),
+	:global(.chatmsg-response-body h2:first-child),
+	:global(.chatmsg-response-body h3:first-child) {
+		margin-top: 0;
+	}
+
+	:global(.chatmsg-response-body h1) {
+		font-size: 1.35em;
+	}
+
+	:global(.chatmsg-response-body h2) {
+		font-size: 1.2em;
+	}
+
+	:global(.chatmsg-response-body h3) {
+		font-size: 1.08em;
+	}
+
+	:global(.chatmsg-response-body h4) {
+		font-size: 1em;
+	}
+
+	:global(.chatmsg-response-body strong) {
+		font-weight: 650;
+	}
+
+	:global(.chatmsg-response-body ul),
+	:global(.chatmsg-response-body ol) {
+		margin: 0.75em 0;
+		padding-left: 1.5em;
+	}
+
+	:global(.chatmsg-response-body li) {
+		margin: 0.4em 0;
+	}
+
+	:global(.chatmsg-response-body li > ul),
+	:global(.chatmsg-response-body li > ol) {
+		margin: 0.25em 0;
+	}
+
+	:global(.chatmsg-response-body blockquote) {
+		margin: 0.75em 0;
+		padding: 0.5em 1em;
+		border-left: 3px solid hsl(var(--border));
+		color: hsl(var(--muted-foreground));
+	}
+
+	:global(.chatmsg-response-body hr) {
+		margin: 1.25em 0;
+		border: none;
+		border-top: 1px solid hsl(var(--border));
+	}
+
+	:global(.chatmsg-response-body pre) {
+		margin: 1em 0;
+		padding: 0.85em 1em;
+		border-radius: 0.5rem;
+		background: hsl(var(--muted) / 0.5);
+		overflow-x: auto;
+		font-size: 0.85em;
+	}
+
+	:global(.chatmsg-response-body code) {
+		padding: 0.15em 0.35em;
+		border-radius: 0.25rem;
+		background: hsl(var(--muted) / 0.5);
+		font-size: 0.88em;
+	}
+
+	:global(.chatmsg-response-body pre code) {
+		padding: 0;
+		background: none;
+	}
+
+	:global(.chatmsg-response-body .katex-display) {
+		margin: 0.5em 0;
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+
+	:global(.chatmsg-response-body .katex) {
+		font-size: var(--text-xl);
+	}
 </style>

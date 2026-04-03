@@ -288,8 +288,8 @@
 		overflow-y: auto;
 	}
 
-	/* svelte-ignore css_unused_selector -- applied via class string prop on Button, invisible to static analysis */
-	.composer-send {
+	/* Passed as class prop to Button — must be :global() */
+	:global(.composer-send) {
 		height: 2.3rem;
 		width: 2.3rem;
 		min-height: 2.3rem;
@@ -299,8 +299,7 @@
 		flex-shrink: 0;
 	}
 
-	/* svelte-ignore css_unused_selector -- applied via class string prop on Button, invisible to static analysis */
-	.composer-stop {
+	:global(.composer-stop) {
 		background: hsl(var(--foreground) / 0.25);
 		color: hsl(0 0% 0%);
 	}
@@ -333,21 +332,19 @@
 		color: hsl(var(--muted-foreground));
 	}
 
-	/* svelte-ignore css_unused_selector -- applied via class string prop on Button, invisible to static analysis */
-	.model-chip {
+	/* Passed as class prop to Button — must be :global() */
+	:global(.model-chip) {
 		border-radius: var(--radius-full);
 		color: hsl(var(--muted-foreground));
 	}
 
-	/* svelte-ignore css_unused_selector -- applied via class string prop on Button, invisible to static analysis */
-	.model-chip-cta {
+	:global(.model-chip-cta) {
 		background: hsl(var(--foreground)) !important;
 		color: hsl(var(--background)) !important;
 		border-color: hsl(var(--foreground)) !important;
 	}
 
-	/* svelte-ignore css_unused_selector -- applied via class string prop on Button, invisible to static analysis */
-	.model-chip-cta:hover {
+	:global(.model-chip-cta:hover) {
 		opacity: 0.85;
 	}
 

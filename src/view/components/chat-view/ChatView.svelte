@@ -679,8 +679,8 @@
 		border-radius: 4px;
 	}
 
-	/* svelte-ignore css_unused_selector -- class added dynamically via classList.add(), invisible to static analysis */
-	.chatview-main.is-scrolling::-webkit-scrollbar-thumb {
+	/* .is-scrolling added dynamically via classList.add() — must be :global() */
+	.chatview-main:global(.is-scrolling)::-webkit-scrollbar-thumb {
 		background: hsl(var(--foreground) / 0.15);
 	}
 
