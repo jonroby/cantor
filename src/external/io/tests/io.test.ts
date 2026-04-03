@@ -42,19 +42,6 @@ describe('validateChatUpload', () => {
 		expect(chat.activeExchangeId).not.toBeNull();
 	});
 
-	it('supports legacy roots[] format', () => {
-		const data = buildValidUploadData();
-		const legacy = {
-			id: 'legacy-1',
-			name: 'Legacy',
-			roots: [data.exchanges],
-			activeRootIndex: 0
-		};
-		const chat = validateChatUpload(legacy);
-		expect(chat.id).toBe('legacy-1');
-		expect(Object.keys(chat.tree.exchanges).length).toBeGreaterThan(0);
-	});
-
 	it('throws for non-object input', () => {
 		expect(() => validateChatUpload(null)).toThrow('Upload must be a JSON object');
 		expect(() => validateChatUpload('string')).toThrow('Upload must be a JSON object');

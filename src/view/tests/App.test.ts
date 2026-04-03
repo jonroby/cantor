@@ -57,7 +57,6 @@ vi.mock('@/app', async () => {
 			restoreDocument: vi.fn(async () => false),
 			restoreFolder: vi.fn(async () => false),
 			save: vi.fn(async () => {}),
-			setChatPanelOpen: vi.fn(),
 			setExpandedFolders: vi.fn(),
 			setPanels: vi.fn(),
 			setSidebarOpen: vi.fn()
@@ -113,7 +112,8 @@ describe('App', () => {
 			rootId: null,
 			exchanges: {},
 			activeExchangeId: null,
-			contextStrategy: 'full'
+			contextStrategy: 'full',
+			mode: 'chat'
 		});
 		const folders = app.documents.getState().folders;
 		folders.length = 0;
@@ -157,7 +157,8 @@ describe('App', () => {
 						rootId: null,
 						exchanges: {},
 						activeExchangeId: null,
-						contextStrategy: 'full'
+						contextStrategy: 'full',
+						mode: 'chat'
 					},
 					{
 						id: '2',
@@ -165,7 +166,8 @@ describe('App', () => {
 						rootId: null,
 						exchanges: {},
 						activeExchangeId: null,
-						contextStrategy: 'full'
+						contextStrategy: 'full',
+						mode: 'chat'
 					}
 				);
 				return {

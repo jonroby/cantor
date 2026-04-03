@@ -6,6 +6,7 @@ import * as agent from '@/app/agent';
 import { selectExchanges, type ContextBudget } from './context';
 
 export type ContextStrategy = state.chats.ContextStrategy;
+export type ChatMode = state.chats.ChatMode;
 export type ImageAttachment = domain.tree.ImageAttachment;
 
 export interface ChatTransferFeedback {
@@ -31,8 +32,10 @@ const defaultDeps: ChatActionDeps = {
 	setActiveExchangeId: state.chats.setActiveExchangeId,
 	getActiveChat: state.chats.getActiveChat,
 	addChat: state.chats.addChat,
-	cancelStreamsForExchanges: external.streams.cancelStreamsForExchanges,
-	isStreaming: external.streams.isStreaming
+	cancelStreamsForExchanges: (ids) => {
+		for (const id of ids) stopStream(id);
+	},
+	isStreaming
 };
 
 export const getChats = () => state.chats.chatState.chats;
@@ -43,6 +46,8 @@ export const getActiveExchangeId = () => state.chats.getActiveExchangeId();
 export const getContextStrategy = (): state.chats.ContextStrategy =>
 	state.chats.getActiveChat().contextStrategy;
 export const setContextStrategy = state.chats.setContextStrategy;
+export const getMode = (): state.chats.ChatMode => state.chats.getMode();
+export const setMode = state.chats.setMode;
 
 export const createChat = state.chats.newChat;
 export const selectChat = state.chats.selectChat;
@@ -61,7 +66,8 @@ export function removeChat(index: number) {
 			rootId: chat.rootId,
 			exchanges: chat.exchanges,
 			activeExchangeId: chat.activeExchangeId,
-			contextStrategy: chat.contextStrategy
+			contextStrategy: chat.contextStrategy,
+			mode: chat.mode
 		}
 	});
 	state.chats.deleteChat(index);
@@ -72,9 +78,34 @@ export function renameChat(index: number, name: string): string | null {
 }
 
 export const selectExchange = state.chats.setActiveExchangeId;
-export const isStreaming = external.streams.isStreaming;
-export const stopStream = external.streams.cancelStream;
-export const stopChatStreams = external.streams.cancelStreamsForChat;
+
+const agentAbortControllers = new Map<string, AbortController>();
+const agentRunChatIds = new Map<string, string>();
+
+export function isStreaming(exchangeId: string): boolean {
+	return external.streams.isStreaming(exchangeId) || state.agent.isStreaming(exchangeId);
+}
+
+export function stopStream(exchangeId: string): void {
+	const agentAbort = agentAbortControllers.get(exchangeId);
+	if (agentAbort) {
+		agentAbort.abort();
+		agentAbortControllers.delete(exchangeId);
+		agentRunChatIds.delete(exchangeId);
+		state.agent.stopStreaming(exchangeId);
+		return;
+	}
+	external.streams.cancelStream(exchangeId);
+}
+
+export function stopChatStreams(chatId: string): void {
+	for (const [exchangeId, runningChatId] of agentRunChatIds) {
+		if (runningChatId === chatId) {
+			stopStream(exchangeId);
+		}
+	}
+	external.streams.cancelStreamsForChat(chatId);
+}
 
 export function getMainChat(tree: domain.tree.ChatTree): domain.tree.Exchange[] {
 	return domain.tree.getMainChat(tree);
@@ -274,7 +305,8 @@ export function copyChat(
 		rootId: copiedTree.rootId,
 		exchanges: copiedTree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(copiedTree),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	});
 }
 
@@ -350,6 +382,7 @@ export function submitPrompt(
 	const toolContext: agent.ToolContext | null = options?.agentMode
 		? {
 				folderId: options.activeDocumentKey?.folderId ?? null,
+				activeDocumentKey: options.activeDocumentKey,
 				...options.toolCallbacks
 			}
 		: null;
@@ -364,49 +397,207 @@ export function submitPrompt(
 		);
 	}
 
-	external.streams.startStream(
-		{
-			exchangeId: created.id,
-			chatId,
-			model,
-			history,
-			tools: toolContext ? agent.TOOLS : undefined,
-			toolExecutor: toolContext
-				? {
-						execute: (toolCalls) => {
-							const executed = toolCalls.map((tc) => ({
-								id: tc.id,
-								...agent.executeTool(tc.name, tc.input, toolContext)
-							}));
-							return {
-								results: executed.map((t) => ({
-									tool_use_id: t.id,
-									content: t.result
-								})),
-								summary: executed.map((t) => t.result)
-							};
-						}
-					}
-				: undefined
-		},
-		{
-			getTreeByChatId: state.chats.getTreeByChatId,
-			replaceTreeByChatId: state.chats.replaceTreeByChatId,
-			getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
-				external.providers.stream.getProviderStream(
-					activeModel,
-					streamHistory,
-					signal,
-					{
-						apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
-						ollamaUrl: state.providers.providerState.ollamaUrl
-					},
-					streamTools
-				)
-		}
-	);
+	if (toolContext) {
+		startAgentRun(chatId, created.id, model, history, toolContext);
+	} else {
+		external.streams.startStream(
+			{
+				exchangeId: created.id,
+				chatId,
+				model,
+				history
+			},
+			{
+				getTreeByChatId: state.chats.getTreeByChatId,
+				replaceTreeByChatId: state.chats.replaceTreeByChatId,
+				getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
+					external.providers.stream.getProviderStream(
+						activeModel,
+						streamHistory,
+						signal,
+						{
+							apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
+							ollamaUrl: state.providers.providerState.ollamaUrl
+						},
+						streamTools
+					)
+			}
+		);
+	}
 
 	return { id: created.id, parentId, hasSideChildren };
+}
+
+function updateExchangeResponse(
+	chatId: string,
+	exchangeId: string,
+	response: string,
+	promptTokens = 0,
+	responseTokens = 0
+) {
+	const tree = state.chats.getTreeByChatId(chatId);
+	if (!tree) return;
+	let exchanges = domain.tree.updateExchangeResponse(tree.exchanges, exchangeId, response);
+	if (promptTokens > 0 || responseTokens > 0) {
+		exchanges = domain.tree.updateExchangeTokens(exchanges, exchangeId, promptTokens, responseTokens);
+	}
+	state.chats.replaceTreeByChatId(chatId, { rootId: tree.rootId, exchanges });
+}
+
+function summarizeInput(input: Record<string, unknown>): string {
+	const entries = Object.entries(input);
+	if (entries.length === 0) return '{}';
+	return entries
+		.slice(0, 4)
+		.map(([key, value]) => `${key}: ${typeof value === 'string' ? JSON.stringify(value) : String(value)}`)
+		.join(', ');
+}
+
+function buildVerificationSummary(reads: agent.VerificationRead[], ctx: agent.ToolContext): string[] {
+	return reads.map((read) => {
+		const verification = agent.executeTool(read.name, read.input, ctx);
+		return `Verification via ${read.name}: ${verification.result}`;
+	});
+}
+
+function getVerificationLines(
+	toolName: string,
+	executed: agent.ToolExecution,
+	ctx: agent.ToolContext
+): string[] {
+	const definition = agent.getToolDefinition(toolName);
+	const suggestedReads = executed.suggestedVerificationReads ?? [];
+	const lines = suggestedReads.length > 0 ? buildVerificationSummary(suggestedReads, ctx) : [];
+	if (definition?.kind === 'write' && lines.length === 0) {
+		lines.push(`Verification missing for write action ${toolName}.`);
+	}
+	return lines;
+}
+
+function startAgentRun(
+	chatId: string,
+	exchangeId: string,
+	model: domain.models.ActiveModel,
+	history: domain.tree.Message[],
+	toolContext: agent.ToolContext
+) {
+	const abort = new AbortController();
+	agentAbortControllers.set(exchangeId, abort);
+	agentRunChatIds.set(exchangeId, chatId);
+	state.agent.clearThinking(exchangeId);
+	state.agent.startStreaming(exchangeId);
+	state.agent.setExpanded(exchangeId, true);
+
+	void runAgentLoop(chatId, exchangeId, model, history, toolContext, abort).finally(() => {
+		agentAbortControllers.delete(exchangeId);
+		agentRunChatIds.delete(exchangeId);
+		state.agent.stopStreaming(exchangeId);
+	});
+}
+
+async function runAgentLoop(
+	chatId: string,
+	exchangeId: string,
+	model: domain.models.ActiveModel,
+	history: domain.tree.Message[],
+	toolContext: agent.ToolContext,
+	abort: AbortController
+) {
+	try {
+		const rawMessages: unknown[] = history.map((message) => ({ ...message }));
+		const maxToolTurns = 10;
+
+		for (let turn = 0; turn < maxToolTurns; turn++) {
+			let responseText = '';
+			let promptTokens = 0;
+			let responseTokens = 0;
+			let stopReason: string | undefined;
+			const toolCalls: external.providers.stream.ToolUseBlock[] = [];
+
+			const stream = external.providers.stream.getProviderStream(
+				model,
+				rawMessages as domain.tree.Message[],
+				abort.signal,
+				{
+					apiKey: state.providers.providerState.apiKeys[model.provider] ?? '',
+					ollamaUrl: state.providers.providerState.ollamaUrl
+				},
+				agent.TOOLS
+			);
+
+			for await (const chunk of stream) {
+				if (chunk.type === 'delta') {
+					responseText += chunk.delta;
+					state.agent.setLiveStatus(exchangeId, responseText);
+				} else if (chunk.type === 'tool_use') {
+					toolCalls.push(chunk.toolUse);
+				} else if (chunk.type === 'done') {
+					promptTokens = chunk.promptTokens;
+					responseTokens = chunk.responseTokens;
+					stopReason = chunk.stopReason;
+				}
+			}
+
+			if (toolCalls.length === 0) {
+				if (responseText) {
+					updateExchangeResponse(chatId, exchangeId, responseText, promptTokens, responseTokens);
+					state.agent.setLastResponse(responseText);
+				}
+				state.agent.clearLiveStatus(exchangeId);
+				return;
+			}
+
+			if (responseText.trim()) {
+				state.agent.appendThinkingEvent(exchangeId, 'note', responseText.trim());
+			}
+			state.agent.clearLiveStatus(exchangeId);
+
+			const assistantContent: unknown[] = [];
+			if (responseText) assistantContent.push({ type: 'text', text: responseText });
+			const toolResults: Array<{ type: 'tool_result'; tool_use_id: string; content: string }> = [];
+
+			for (const toolCall of toolCalls) {
+				assistantContent.push({
+					type: 'tool_use',
+					id: toolCall.id,
+					name: toolCall.name,
+					input: toolCall.input
+				});
+				state.agent.appendThinkingEvent(
+					exchangeId,
+					'tool_call',
+					`${toolCall.name}(${summarizeInput(toolCall.input)})`
+				);
+				const executed = agent.executeTool(toolCall.name, toolCall.input, toolContext);
+				const verificationLines = getVerificationLines(toolCall.name, executed, toolContext);
+				for (const verificationLine of verificationLines) {
+					state.agent.appendThinkingEvent(exchangeId, 'verification', verificationLine);
+				}
+				const content = [executed.result, ...verificationLines].join('\n');
+				state.agent.appendThinkingEvent(exchangeId, 'tool_result', content);
+				toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, content });
+			}
+
+			rawMessages.push({ role: 'assistant', content: assistantContent });
+			rawMessages.push({ role: 'user', content: toolResults });
+
+			if (stopReason !== 'tool_use') {
+				return;
+			}
+		}
+
+		state.agent.appendThinkingEvent(
+			exchangeId,
+			'status',
+			'Stopped after reaching the maximum tool turns for this run.'
+		);
+	} catch (error) {
+		if (abort.signal.aborted) return;
+		const message = error instanceof Error ? error.message : 'Agent run failed.';
+		updateExchangeResponse(chatId, exchangeId, `Request failed.\n\n${message}`);
+		state.agent.appendThinkingEvent(exchangeId, 'status', `Run failed: ${message}`);
+		state.agent.clearLiveStatus(exchangeId);
+	}
 }
 
 export function quickAsk(
@@ -491,7 +682,8 @@ export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void
 				rootId: upload.tree.rootId,
 				exchanges: upload.tree.exchanges,
 				activeExchangeId: upload.activeExchangeId,
-				contextStrategy: 'full'
+				contextStrategy: 'full',
+				mode: 'chat'
 			};
 			state.chats.chatState.chats = [...state.chats.chatState.chats, chat];
 			state.chats.chatState.activeChatIndex = state.chats.chatState.chats.length - 1;

@@ -5,6 +5,7 @@ import {
 	getActiveChat,
 	getActiveTree,
 	getActiveExchangeId,
+	getMode,
 	getChatById,
 	getTreeByChatId,
 	replaceTreeByChatId,
@@ -14,6 +15,7 @@ import {
 	selectChat,
 	deleteChat,
 	renameChat,
+	setMode,
 	hydrate
 } from '../chats.svelte';
 import * as domain from '@/domain';
@@ -42,7 +44,8 @@ function makeChat(name: string, tree?: domain.tree.ChatTree): import('../chats.s
 		rootId: t.rootId,
 		exchanges: t.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(t),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	};
 }
 
@@ -54,7 +57,8 @@ function resetState() {
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(tree),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	};
 	chatState.chats = [chat];
 	chatState.activeChatIndex = 0;
@@ -100,6 +104,18 @@ describe('chats state', () => {
 			];
 			selectChat(1);
 			expect(getActiveExchangeId()).toBe(chatState.chats[1].activeExchangeId);
+		});
+	});
+
+	describe('mode', () => {
+		it('defaults to chat mode', () => {
+			expect(getMode()).toBe('chat');
+		});
+
+		it('sets mode on the active chat', () => {
+			setMode('agent');
+			expect(getMode()).toBe('agent');
+			expect(chatState.chats[0].mode).toBe('agent');
 		});
 	});
 
@@ -339,7 +355,8 @@ describe('chats state', () => {
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
 					activeExchangeId: domain.tree.getMainChatTail(tree),
-					contextStrategy: 'full'
+					contextStrategy: 'full',
+					mode: 'agent'
 				}
 			];
 			hydrate({ chats, activeChatIndex: 0 });
@@ -355,7 +372,17 @@ describe('chats state', () => {
 		it('ignores chats with no renderable exchanges', () => {
 			const before = chatState.chats[0].name;
 			hydrate({
-				chats: [{ id: 'empty', name: 'Empty', rootId: null, exchanges: {}, activeExchangeId: null }]
+				chats: [
+					{
+						id: 'empty',
+						name: 'Empty',
+						rootId: null,
+						exchanges: {},
+						activeExchangeId: null,
+						contextStrategy: 'full',
+						mode: 'chat'
+					}
+				]
 			});
 			expect(chatState.chats[0].name).toBe(before);
 		});
@@ -369,7 +396,8 @@ describe('chats state', () => {
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
 					activeExchangeId: domain.tree.getMainChatTail(tree),
-					contextStrategy: 'full'
+					contextStrategy: 'full',
+					mode: 'chat'
 				}
 			];
 			hydrate({ chats, activeChatIndex: 99 });
@@ -385,7 +413,8 @@ describe('chats state', () => {
 					rootId: tree.rootId,
 					exchanges: tree.exchanges,
 					activeExchangeId: domain.tree.getMainChatTail(tree),
-					contextStrategy: 'full'
+					contextStrategy: 'full',
+					mode: 'chat'
 				}
 			];
 			hydrate({ chats, activeChatIndex: -3 });

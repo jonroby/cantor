@@ -37,7 +37,9 @@ vi.mock('@/state', async () => {
 				name: 'Test Chat',
 				rootId: tree.rootId,
 				exchanges: tree.exchanges,
-				activeExchangeId: importedDomain.tree.getMainChatTail(tree)
+				activeExchangeId: importedDomain.tree.getMainChatTail(tree),
+				contextStrategy: 'full',
+				mode: 'chat'
 			}
 		],
 		activeChatIndex: 0
@@ -141,7 +143,8 @@ function createDeps(overrides: Partial<DocumentCommandDeps> = {}): DocumentComma
 			rootId: 'root-1',
 			exchanges: {},
 			activeExchangeId: 'root-1',
-			contextStrategy: 'full' as const
+			contextStrategy: 'full' as const,
+			mode: 'chat' as const
 		}),
 		findFolder: () => undefined,
 		createDocumentInFolder: vi.fn(() => null),
@@ -210,7 +213,9 @@ beforeEach(() => {
 			name: 'Test Chat',
 			rootId: defaultData.rootId,
 			activeExchangeId: defaultData.activeExchangeId,
-			exchanges: defaultData.exchanges
+			exchanges: defaultData.exchanges,
+			contextStrategy: 'full',
+			mode: 'chat'
 		}
 	] as typeof state.chats.chatState.chats;
 	state.chats.chatState.activeChatIndex = 0;

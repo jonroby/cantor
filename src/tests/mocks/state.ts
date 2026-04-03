@@ -9,16 +9,24 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 	const base = {
 		agent: {
 			agentState: {
-				history: [],
-				streaming: false,
+				streamingExchangeIds: [],
 				pendingContent: null,
-				lastResponse: null
+				lastResponse: null,
+				liveStatusByExchangeId: {},
+				thinkingByExchangeId: {},
+				expandedByExchangeId: {}
 			},
-			pushMessage: mockFn<typeof state.agent.pushMessage>(),
+			appendThinkingEvent: mockFn<typeof state.agent.appendThinkingEvent>(),
+			clearLiveStatus: mockFn<typeof state.agent.clearLiveStatus>(),
+			clearThinking: mockFn<typeof state.agent.clearThinking>(),
+			isStreaming: mockFn<typeof state.agent.isStreaming>(() => false),
 			reset: mockFn<typeof state.agent.reset>(),
+			setExpanded: mockFn<typeof state.agent.setExpanded>(),
 			setLastResponse: mockFn<typeof state.agent.setLastResponse>(),
+			setLiveStatus: mockFn<typeof state.agent.setLiveStatus>(),
 			setPendingContent: mockFn<typeof state.agent.setPendingContent>(),
-			setStreaming: mockFn<typeof state.agent.setStreaming>()
+			startStreaming: mockFn<typeof state.agent.startStreaming>(),
+			stopStreaming: mockFn<typeof state.agent.stopStreaming>()
 		},
 		chats: {
 			addChat: mockFn<typeof state.chats.addChat>(),
@@ -29,6 +37,7 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			deleteChat: mockFn<typeof state.chats.deleteChat>(),
 			getActiveChat: mockFn<typeof state.chats.getActiveChat>(),
 			getActiveExchangeId: mockFn<typeof state.chats.getActiveExchangeId>(),
+			getMode: mockFn<typeof state.chats.getMode>(() => 'chat'),
 			getActiveTree: mockFn<typeof state.chats.getActiveTree>(() => ({
 				rootId: null,
 				exchanges: {}
@@ -42,7 +51,8 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			replaceTreeByChatId: mockFn<typeof state.chats.replaceTreeByChatId>(),
 			selectChat: mockFn<typeof state.chats.selectChat>(),
 			setActiveExchangeId: mockFn<typeof state.chats.setActiveExchangeId>(),
-			setContextStrategy: mockFn<typeof state.chats.setContextStrategy>()
+			setContextStrategy: mockFn<typeof state.chats.setContextStrategy>(),
+			setMode: mockFn<typeof state.chats.setMode>()
 		},
 		documents: {
 			closeDocument: mockFn<typeof state.documents.closeDocument>(),

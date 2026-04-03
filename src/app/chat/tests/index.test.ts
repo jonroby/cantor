@@ -38,7 +38,8 @@ vi.mock('@/state', async () => {
 				rootId: tree.rootId,
 				exchanges: tree.exchanges,
 				activeExchangeId: importedDomain.tree.getMainChatTail(tree),
-				contextStrategy: 'full'
+				contextStrategy: 'full',
+				mode: 'chat'
 			}
 		],
 		activeChatIndex: 0
@@ -154,7 +155,8 @@ function mockDeps(overrides?: Partial<ChatActionDeps>): ChatActionDeps {
 			rootId: null,
 			exchanges: {},
 			activeExchangeId: null,
-			contextStrategy: 'full' as const
+			contextStrategy: 'full' as const,
+			mode: 'chat' as const
 		})),
 		replaceActiveTree: vi.fn(),
 		setActiveExchangeId: vi.fn(),
@@ -252,7 +254,9 @@ beforeEach(() => {
 			name: 'Test Chat',
 			rootId: defaultData.rootId,
 			activeExchangeId: defaultData.activeExchangeId,
-			exchanges: defaultData.exchanges
+			exchanges: defaultData.exchanges,
+			contextStrategy: 'full',
+			mode: 'chat'
 		}
 	] as typeof state.chats.chatState.chats;
 	state.chats.chatState.activeChatIndex = 0;
@@ -276,6 +280,7 @@ describe('public API', () => {
 			'getChats',
 			'getContextStrategy',
 			'getMainChat',
+			'getMode',
 			'getSideChats',
 			'getUsedTokens',
 			'importChat',
@@ -287,6 +292,7 @@ describe('public API', () => {
 			'selectChat',
 			'selectExchange',
 			'setContextStrategy',
+			'setMode',
 			'stopChatStreams',
 			'stopStream',
 			'submitPrompt'
@@ -403,7 +409,8 @@ describe('copyChat', () => {
 			rootId: tree.rootId,
 			exchanges: tree.exchanges,
 			activeExchangeId: leafId,
-			contextStrategy: 'full'
+			contextStrategy: 'full',
+			mode: 'chat'
 		});
 
 		copyChat(leafId, deps);

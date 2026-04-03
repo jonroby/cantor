@@ -62,9 +62,6 @@ export function validateChatUpload(data: unknown): ValidatedChatUpload {
 	let exchanges: domain.tree.ExchangeMap;
 	if (obj.exchanges && typeof obj.exchanges === 'object' && !Array.isArray(obj.exchanges)) {
 		exchanges = obj.exchanges as domain.tree.ExchangeMap;
-	} else if (Array.isArray(obj.roots) && obj.roots.length > 0) {
-		const rootIndex = typeof obj.activeRootIndex === 'number' ? obj.activeRootIndex : 0;
-		exchanges = obj.roots[rootIndex] as domain.tree.ExchangeMap;
 	} else {
 		throw new Error('Chat must have an "exchanges" map.');
 	}

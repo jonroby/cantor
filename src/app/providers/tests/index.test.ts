@@ -49,7 +49,6 @@ describe('app/providers', () => {
 	it('initialize hydrates provider state for the generic picker', async () => {
 		await initialize();
 
-		expect(external.providers.vault.migrateVault).toHaveBeenCalledOnce();
 		expect(external.providers.vault.storedProviders).toHaveBeenCalledOnce();
 		expect(state.providers.providerState.vaultProviders).toEqual(['claude']);
 		expect(state.providers.providerState.webllmModels).toEqual([

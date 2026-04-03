@@ -60,7 +60,8 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 					rootId: null,
 					exchanges: {},
 					activeExchangeId: null,
-					contextStrategy: 'full' as const
+					contextStrategy: 'full' as const,
+					mode: 'chat' as const
 				}
 			] as state.chats.ChatRecord[],
 			activeChatIndex: 0
@@ -96,18 +97,23 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			acceptPending: mockFn<typeof app.agent.acceptPending>(),
 			buildMessages: mockFn<typeof app.agent.buildMessages>(() => []),
 			buildSystemPrompt: mockFn<typeof app.agent.buildSystemPrompt>(() => ''),
+			describeCapabilities: mockFn<typeof app.agent.describeCapabilities>(() => ''),
 			dismissResponse: mockFn<typeof app.agent.dismissResponse>(),
 			executeTool: mockFn<typeof app.agent.executeTool>(() => ({ result: '' })),
+			getCapabilities: mockFn<typeof app.agent.getCapabilities>(() => []),
 			getState: mockFn<typeof app.agent.getState>(() => ({
-				history: [],
-				streaming: false,
+				streamingExchangeIds: [],
 				pendingContent: null,
-				lastResponse: null
+				lastResponse: null,
+				liveStatusByExchangeId: {},
+				thinkingByExchangeId: {},
+				expandedByExchangeId: {}
 			})),
+			getToolDefinition: mockFn<typeof app.agent.getToolDefinition>(() => undefined),
 			rejectPending: mockFn<typeof app.agent.rejectPending>(),
 			reset: mockFn<typeof app.agent.reset>(),
-			stop: mockFn<typeof app.agent.stop>(),
-			submit: mockFn<typeof app.agent.submit>()
+			setThinkingExpanded: mockFn<typeof app.agent.setThinkingExpanded>(),
+			stop: mockFn<typeof app.agent.stop>()
 		},
 		bootstrap: {
 			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
@@ -126,7 +132,6 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			restoreDocument: mockFn<typeof app.bootstrap.restoreDocument>(async () => false),
 			restoreFolder: mockFn<typeof app.bootstrap.restoreFolder>(async () => false),
 			save: mockFn<typeof app.bootstrap.save>(async () => {}),
-			setChatPanelOpen: mockFn<typeof app.bootstrap.setChatPanelOpen>(),
 			setExpandedFolders: mockFn<typeof app.bootstrap.setExpandedFolders>(),
 			setPanels: mockFn<typeof app.bootstrap.setPanels>(),
 			setSidebarOpen: mockFn<typeof app.bootstrap.setSidebarOpen>()
@@ -152,6 +157,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			}),
 			getChats: mockFn<typeof app.chat.getChats>(() => appStateBacking.chatState.chats),
 			getContextStrategy: mockFn<typeof app.chat.getContextStrategy>(() => 'full'),
+			getMode: mockFn<typeof app.chat.getMode>(() => 'chat'),
 			getMainChat: mockFn<typeof app.chat.getMainChat>(() => []),
 			getSideChats: mockFn<typeof app.chat.getSideChats>(() => []),
 			getUsedTokens: mockFn<typeof app.chat.getUsedTokens>(() => 0),
@@ -164,6 +170,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			selectChat: mockFn<typeof app.chat.selectChat>(),
 			selectExchange: mockFn<typeof app.chat.selectExchange>(),
 			setContextStrategy: mockFn<typeof app.chat.setContextStrategy>(),
+			setMode: mockFn<typeof app.chat.setMode>(),
 			stopChatStreams: mockFn<typeof app.chat.stopChatStreams>(),
 			stopStream: mockFn<typeof app.chat.stopStream>(),
 			submitPrompt: mockFn<typeof app.chat.submitPrompt>()

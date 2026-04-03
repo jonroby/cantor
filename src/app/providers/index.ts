@@ -6,7 +6,6 @@ import type { Provider, ActiveModel, ContextSize, State } from './types';
 export type * from './types';
 
 function initProviders() {
-	external.providers.vault.migrateVault();
 	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 	return hydrateWebLLMModels();
 }

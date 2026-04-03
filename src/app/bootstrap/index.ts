@@ -100,18 +100,8 @@ export async function initialize() {
 	const layout = external.persistence.getPersistedLayout();
 	void providers.initialize();
 
-	// Migrate legacy layout fields into panels array
 	let panels = layout.panels;
-	if (!panels) {
-		panels = [];
-		if (layout.chatPanelOpen !== false) panels.push({ type: 'chat' });
-		if (restoredDocument)
-			panels.push({
-				type: 'document',
-				folderId: restoredDocument.folderId,
-				fileId: restoredDocument.fileId
-			});
-	}
+	if (!panels) panels = [];
 
 	return {
 		restoredDocument: panels.length > 0 ? restoredDocument : null,
@@ -131,12 +121,6 @@ export function rememberOpenDocument(folderId: string, fileId: string) {
 export function clearOpenDocument() {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, openDocument: undefined });
-	void save();
-}
-
-export function setChatPanelOpen(open: boolean) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, chatPanelOpen: open });
 	void save();
 }
 

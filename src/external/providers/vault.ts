@@ -56,10 +56,6 @@ async function decryptRecord(record: persistence.VaultRecord, password: string):
 	return new TextDecoder().decode(decrypted);
 }
 
-export function migrateVault(): void {
-	persistence.migrateVaultStorage();
-}
-
 export async function saveApiKey(
 	provider: string,
 	apiKey: string,

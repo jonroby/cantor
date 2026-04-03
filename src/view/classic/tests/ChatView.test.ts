@@ -126,7 +126,8 @@ function resetState(tree?: domain.tree.ChatTree) {
 		rootId: t.rootId,
 		exchanges: t.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(t),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	};
 	state.chats.chatState.chats = [chat];
 	state.chats.chatState.activeChatIndex = 0;

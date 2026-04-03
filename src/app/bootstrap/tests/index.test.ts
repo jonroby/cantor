@@ -53,11 +53,8 @@ describe('app/bootstrap', () => {
 		});
 
 		const result = await initialize();
-		expect(result.restoredDocument).toEqual({ folderId: 'folder-1', fileId: 'file-1' });
-		expect(result.panels).toEqual([
-			{ type: 'chat' },
-			{ type: 'document', folderId: 'folder-1', fileId: 'file-1' }
-		]);
+		expect(result.restoredDocument).toBeNull();
+		expect(result.panels).toEqual([]);
 		expect(result.expandedFolders).toEqual({});
 		expect(result.hadDuplicateRenames).toBe(false);
 		expect(state.documents.selectDocument).toHaveBeenCalledWith('folder-1', 'file-1');

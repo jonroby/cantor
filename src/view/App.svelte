@@ -36,7 +36,7 @@
 	let _hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
 	let isSplit = $derived(panels.length === 2);
 	let bothDocs = $derived(isSplit && !hasChatPanel);
-	let agentMode = $state(false);
+	let agentMode = $derived(app.chat.getMode() === 'agent');
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let _chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
 	let sideChatSide = $state<'left' | 'right'>('left');
@@ -352,7 +352,7 @@
 									agentStreaming={false}
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={agentState.pendingContent}
-									onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
+									onAcceptPending={() => app.agent.acceptPending(activeDocumentKey)}
 									onRejectPending={() => app.agent.rejectPending()}
 									onSwap={isSplit ? swapPanels : undefined}
 									onClose={() => closePanel(index)}
@@ -374,7 +374,7 @@
 										folderSelectedFiles = { ...folderSelectedFiles, [panel.folderId]: fileId };
 										app.documents.openDocument(panel.folderId, fileId);
 									}}
-									onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
+									onAcceptPending={() => app.agent.acceptPending(activeDocumentKey)}
 									onRejectPending={() => app.agent.rejectPending()}
 									onSwap={isSplit ? swapPanels : undefined}
 									resolveAsset={(name) => app.documents.resolveAsset(panel.folderId, name)}
@@ -421,7 +421,7 @@
 					<Composer
 						bind:this={composerRef}
 						{agentMode}
-						onToggleMode={() => (agentMode = !agentMode)}
+						onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
 						liveDocumentContent={activeDocumentFile?.content}
 						{activeDocumentKey}
 						toolCallbacks={{

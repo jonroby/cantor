@@ -6,9 +6,7 @@ const STORE_NAME = 'snapshots';
 const TRASH_STORE_NAME = 'trash';
 const SNAPSHOT_KEY = 'main';
 
-const LEGACY_STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
-const LEGACY_VAULT_KEY = 'byok_vault';
 
 // --- Invariant checks ---
 
@@ -18,6 +16,8 @@ interface PersistedChat {
 	rootId: string | null;
 	exchanges: domain.tree.ExchangeMap;
 	activeExchangeId: string | null;
+	contextStrategy: 'full' | 'lru' | 'bm25';
+	mode: 'chat' | 'agent';
 }
 
 interface PersistedDocumentFile {
@@ -150,7 +150,6 @@ export type PersistedPanel =
 
 export interface PersistedLayout {
 	openDocument?: { folderId: string; fileId: string };
-	chatPanelOpen?: boolean;
 	sidebarOpen?: boolean;
 	panels?: PersistedPanel[];
 	expandedFolders?: Record<string, boolean>;
@@ -173,36 +172,11 @@ interface StoredData {
 	layout: PersistedLayout;
 }
 
-function migrateFromLocalStorage(): StoredData | null {
-	const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
-	if (!raw) return null;
-	let parsed;
-	try {
-		parsed = JSON.parse(raw);
-	} catch {
-		return null;
-	}
-	const snapshot: PersistedSnapshot = {
-		chats: Array.isArray(parsed.chats) ? (parsed.chats as PersistedChat[]) : [],
-		activeChatIndex: typeof parsed.activeChatIndex === 'number' ? parsed.activeChatIndex : 0,
-		folders: Array.isArray(parsed.folders) ? (parsed.folders as PersistedFolder[]) : []
-	};
-	const layout: PersistedLayout = parsed.layout ?? {};
-	return { snapshot, layout };
-}
-
 export async function loadFromStorage(): Promise<PersistedSnapshot | null> {
 	const db = await openDB();
 	try {
 		let stored = await idbGet<StoredData>(db, STORE_NAME, SNAPSHOT_KEY);
-
-		if (!stored) {
-			const migrated = migrateFromLocalStorage();
-			if (!migrated) return null;
-			await idbPut(db, STORE_NAME, SNAPSHOT_KEY, migrated);
-			localStorage.removeItem(LEGACY_STORAGE_KEY);
-			stored = migrated;
-		}
+		if (!stored) return null;
 
 		if (stored.layout) {
 			_layout = stored.layout;
@@ -333,16 +307,6 @@ export function setVaultStore(store: VaultStore): void {
 	} else {
 		localStorage.setItem(VAULT_KEY, JSON.stringify(store));
 	}
-}
-
-export function migrateVaultStorage(): void {
-	if (localStorage.getItem(VAULT_KEY)) return;
-	const legacy = localStorage.getItem(LEGACY_VAULT_KEY);
-	if (!legacy) return;
-	const record = JSON.parse(legacy) as VaultRecord;
-	const store: VaultStore = { claude: record };
-	localStorage.setItem(VAULT_KEY, JSON.stringify(store));
-	localStorage.removeItem(LEGACY_VAULT_KEY);
 }
 
 export function clearVaultStorage(): void {

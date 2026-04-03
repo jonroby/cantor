@@ -9,7 +9,6 @@ import {
 	emptyTrash,
 	getVaultStore,
 	setVaultStore,
-	migrateVaultStorage,
 	clearVaultStorage,
 	type TrashItem
 } from '../database';
@@ -105,8 +104,6 @@ vi.stubGlobal('localStorage', localStorageMock);
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const VAULT_KEY = 'byok_vault_v2';
-const LEGACY_VAULT_KEY = 'byok_vault';
-
 function buildChat(name: string): state.chats.ChatRecord {
 	let tree = domain.tree.buildEmptyTree();
 	const r = domain.tree.addExchange(tree, 'unused', 'hello', 'claude-sonnet-4-6', 'claude');
@@ -120,7 +117,8 @@ function buildChat(name: string): state.chats.ChatRecord {
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
 		activeExchangeId: r.id,
-		contextStrategy: 'full' as const
+		contextStrategy: 'full' as const,
+		mode: 'chat' as const
 	};
 }
 
@@ -348,41 +346,6 @@ describe('database', () => {
 		it('removes key when store is empty', () => {
 			localStore[VAULT_KEY] = '{"old": "data"}';
 			setVaultStore({});
-			expect(localStore[VAULT_KEY]).toBeUndefined();
-		});
-	});
-
-	describe('migrateVaultStorage', () => {
-		it('migrates legacy vault to new format under "claude" key', () => {
-			const legacyRecord = { cipherText: 'ct', salt: 's', iv: 'i' };
-			localStore[LEGACY_VAULT_KEY] = JSON.stringify(legacyRecord);
-
-			migrateVaultStorage();
-
-			const migrated = JSON.parse(localStore[VAULT_KEY]);
-			expect(migrated).toEqual({ claude: legacyRecord });
-			expect(localStore[LEGACY_VAULT_KEY]).toBeUndefined();
-		});
-
-		it('does nothing if new vault already exists', () => {
-			localStore[VAULT_KEY] = JSON.stringify({
-				existing: { cipherText: 'x', salt: 'y', iv: 'z' }
-			});
-			localStore[LEGACY_VAULT_KEY] = JSON.stringify({
-				cipherText: 'old',
-				salt: 'old',
-				iv: 'old'
-			});
-
-			migrateVaultStorage();
-
-			const result = JSON.parse(localStore[VAULT_KEY]);
-			expect(result.existing).toBeDefined();
-			expect(result.claude).toBeUndefined();
-		});
-
-		it('does nothing if no legacy vault exists', () => {
-			migrateVaultStorage();
 			expect(localStore[VAULT_KEY]).toBeUndefined();
 		});
 	});
