@@ -128,8 +128,8 @@
 
 	:global(li[data-sidebar='menu-item']:hover .document-item-button),
 	:global(li[data-sidebar='menu-item'][data-state='open'] .document-item-button) {
-		background: hsl(var(--sidebar-accent));
-		color: hsl(var(--sidebar-accent-foreground));
+		background: var(--sidebar-surface-tint);
+		color: var(--sidebar-surface-tint-foreground);
 	}
 
 	:global(.document-item-menu-trigger) {
@@ -142,12 +142,16 @@
 		align-items: center;
 		justify-content: center;
 		transform: translateY(-50%);
+		border: none;
 		border-radius: 0.375rem;
-		color: hsl(var(--sidebar-foreground) / 0.4);
+		background: transparent;
+		color: var(--sidebar-icon-muted);
 		opacity: 0;
+		outline: none;
 		transition:
 			opacity 120ms ease,
-			color 120ms ease;
+			color 120ms ease,
+			background 120ms ease;
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .document-item-menu-trigger),
@@ -156,18 +160,23 @@
 	}
 
 	:global(.document-item-menu-trigger:hover) {
-		color: hsl(var(--sidebar-foreground));
+		background: var(--sidebar-surface-tint);
+		color: var(--sidebar-icon-strong);
+	}
+
+	:global(.document-item-menu-trigger:focus-visible) {
+		box-shadow: 0 0 0 2px var(--focus-ring-color);
 	}
 
 	:global(.document-item-menu-content) {
 		z-index: 50;
 		min-width: var(--dropdown-min-w);
 		padding: 0.25rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--surface-floating-border);
 		border-radius: 0.5rem;
-		background: hsl(var(--popover));
-		color: hsl(var(--popover-foreground));
-		box-shadow: 0 10px 24px hsl(var(--foreground) / 0.12);
+		background: var(--surface-floating);
+		color: var(--surface-floating-foreground);
+		box-shadow: var(--surface-floating-shadow);
 	}
 
 	:global(.document-item-menu-action) {
@@ -181,7 +190,7 @@
 	}
 
 	:global(.document-item-menu-action:hover) {
-		background: hsl(var(--accent));
+		background: var(--surface-tint);
 	}
 
 	:global(.document-item-menu-action-destructive) {
@@ -189,7 +198,7 @@
 	}
 
 	:global(.document-item-menu-action-destructive:hover) {
-		background: hsl(var(--destructive) / 0.1);
+		background: var(--surface-tint);
 	}
 
 	:global(.document-item-menu-separator) {

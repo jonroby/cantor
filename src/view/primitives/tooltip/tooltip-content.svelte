@@ -43,10 +43,11 @@
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
 		border-radius: 0.375rem;
-		background: hsl(var(--foreground));
-		color: hsl(var(--background));
+		border: 1px solid var(--surface-floating-border);
+		background: var(--surface-floating);
+		color: var(--surface-floating-foreground);
 		font-size: var(--text-xs);
-		box-shadow: 0 10px 24px hsl(var(--foreground) / 0.18);
+		box-shadow: var(--surface-floating-shadow);
 		transform-origin: var(--bits-tooltip-content-transform-origin);
 	}
 </style>

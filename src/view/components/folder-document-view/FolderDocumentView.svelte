@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Document } from '@/view/components/document';
 	import * as app from '@/app';
-	import { Folder, ChevronDown, File } from 'lucide-svelte';
+	import { Folder, ChevronDown, File, X } from 'lucide-svelte';
 	import { Header } from '@/view/primitives';
 
 	interface Props {
@@ -49,36 +49,43 @@
 
 <div class="folderview-shell">
 	<Header class="folderview-header">
-		<Folder size={16} />
-		<span class="folderview-folder-name">{folderName}</span>
-		<span class="folderview-separator">/</span>
-		<div class="folderview-file-picker">
-			<button class="folderview-file-btn" onclick={() => (dropdownOpen = !dropdownOpen)}>
-				{activeFile?.name ?? 'No files'}
-				<span class="folderview-chevron" class:folderview-chevron-open={dropdownOpen}>
-					<ChevronDown size={12} />
-				</span>
+		<div class="folderview-header-left">
+			<Folder size={16} />
+			<span class="folderview-folder-name">{folderName}</span>
+			<span class="folderview-separator">/</span>
+			<div class="folderview-file-picker">
+				<button class="folderview-file-btn" onclick={() => (dropdownOpen = !dropdownOpen)}>
+					{activeFile?.name ?? 'No files'}
+					<span class="folderview-chevron" class:folderview-chevron-open={dropdownOpen}>
+						<ChevronDown size={12} />
+					</span>
+				</button>
+				{#if dropdownOpen}
+					<button
+						type="button"
+						class="folderview-dropdown-scrim"
+						aria-label="Close dropdown"
+						onclick={() => (dropdownOpen = false)}
+					></button>
+					<div class="folderview-dropdown">
+						{#each files as file (file.id)}
+							<button
+								class="folderview-dropdown-item"
+								class:folderview-dropdown-item-active={file.id === activeFileId}
+								onclick={() => selectFile(file.id)}
+							>
+								<File size={14} />
+								{file.name}
+							</button>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		</div>
+		<div class="folderview-header-actions">
+			<button class="folderview-header-btn" onclick={onClose} title="Close" aria-label="Close">
+				<X size={14} />
 			</button>
-			{#if dropdownOpen}
-				<button
-					type="button"
-					class="folderview-dropdown-scrim"
-					aria-label="Close dropdown"
-					onclick={() => (dropdownOpen = false)}
-				></button>
-				<div class="folderview-dropdown">
-					{#each files as file (file.id)}
-						<button
-							class="folderview-dropdown-item"
-							class:folderview-dropdown-item-active={file.id === activeFileId}
-							onclick={() => selectFile(file.id)}
-						>
-							<File size={14} />
-							{file.name}
-						</button>
-					{/each}
-				</div>
-			{/if}
 		</div>
 	</Header>
 
@@ -145,6 +152,19 @@
 		font-weight: 400;
 	}
 
+	:global(.folderview-header) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.folderview-header-left,
+	.folderview-header-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
 	.folderview-separator {
 		color: hsl(var(--muted-foreground));
 		font-weight: 400;
@@ -152,6 +172,29 @@
 
 	.folderview-file-picker {
 		position: relative;
+	}
+
+	.folderview-header-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		padding: 0;
+		border: none;
+		border-radius: var(--radius-sm);
+		background: transparent;
+		color: var(--icon-muted);
+		cursor: pointer;
+		outline: none;
+		transition:
+			background var(--duration-fast) ease,
+			color var(--duration-fast) ease;
+	}
+
+	.folderview-header-btn:hover {
+		background: var(--surface-tint);
+		color: var(--icon-strong);
 	}
 
 	.folderview-file-btn {
@@ -186,6 +229,10 @@
 		position: fixed;
 		inset: 0;
 		z-index: 49;
+		padding: 0;
+		border: none;
+		background: transparent;
+		cursor: default;
 	}
 
 	.folderview-dropdown {

@@ -53,6 +53,7 @@
 		...buttonProps,
 		...props,
 		class: `${String(buttonProps.class ?? '')} ${String(props?.class ?? '')}`.trim(),
+		title: undefined,
 		onclick: composeHandlers(
 			buttonProps.onclick as ((event: Event) => void) | undefined,
 			props?.onclick as ((event: Event) => void) | undefined
@@ -67,7 +68,7 @@
 	{/if}
 {/snippet}
 
-{#if !tooltipContent}
+{#if !tooltipContent || sidebar.state !== 'collapsed' || sidebar.isMobile}
 	{@render Button({})}
 {:else}
 	<Tooltip.Root>
@@ -117,8 +118,8 @@
 
 	:global(.bits-sidebar-menu-button:hover),
 	:global(.bits-sidebar-menu-button[data-active='true']) {
-		background: hsl(var(--sidebar-accent));
-		color: hsl(var(--sidebar-accent-foreground));
+		background: var(--sidebar-surface-tint);
+		color: var(--sidebar-surface-tint-foreground);
 	}
 
 	:global(.bits-sidebar-menu-button-default) {

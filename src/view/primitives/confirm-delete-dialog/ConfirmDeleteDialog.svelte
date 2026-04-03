@@ -42,7 +42,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 50;
-		background: hsl(0 0% 0% / 0.5);
+		background: var(--surface-overlay-strong);
 	}
 
 	:global(.confirm-delete-content) {
@@ -54,8 +54,8 @@
 		padding: 1.5rem;
 		border: 1px solid hsl(var(--border));
 		border-radius: 0.75rem;
-		background: hsl(var(--background));
-		box-shadow: 0 16px 40px hsl(var(--foreground) / 0.18);
+		background: var(--surface-floating);
+		box-shadow: var(--surface-floating-shadow);
 		transform: translate(-50%, -50%);
 	}
 
@@ -80,16 +80,20 @@
 	:global(.confirm-delete-cancel),
 	:global(.confirm-delete-action) {
 		padding: 0.5rem 1rem;
+		border: 1px solid transparent;
 		border-radius: 0.5rem;
 		font-size: var(--text-sm);
+		outline: none;
 	}
 
 	:global(.confirm-delete-cancel) {
 		border: 1px solid hsl(var(--border));
+		background: hsl(var(--background));
+		color: hsl(var(--foreground));
 	}
 
 	:global(.confirm-delete-cancel:hover) {
-		background: hsl(var(--muted));
+		background: var(--surface-tint);
 	}
 
 	:global(.confirm-delete-action) {
@@ -98,6 +102,11 @@
 	}
 
 	:global(.confirm-delete-action:hover) {
-		background: hsl(var(--destructive) / 0.9);
+		background: hsl(var(--destructive) / 0.92);
+	}
+
+	:global(.confirm-delete-cancel:focus-visible),
+	:global(.confirm-delete-action:focus-visible) {
+		box-shadow: 0 0 0 2px var(--focus-ring-color);
 	}
 </style>

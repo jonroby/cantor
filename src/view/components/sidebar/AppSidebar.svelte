@@ -553,12 +553,12 @@
 		align-items: center;
 		border: 1px solid hsl(var(--sidebar-border));
 		border-radius: 9999px;
-		background: hsl(var(--sidebar-accent) / 0.7);
+		background: var(--sidebar-surface-tint);
 		padding: 0.125rem 0.45rem;
 		font-size: var(--text-xs);
 		font-weight: 600;
 		line-height: 1.2;
-		color: hsl(var(--sidebar-accent-foreground));
+		color: var(--sidebar-surface-tint-foreground);
 	}
 
 	.sidebar-alpha-trigger {
@@ -582,11 +582,13 @@
 		background: transparent;
 		padding: 0.25rem;
 		transition: background 120ms;
-		color: inherit;
+		color: var(--sidebar-icon-muted);
+		outline: none;
 	}
 
 	.sidebar-icon-btn:hover {
-		background: hsl(var(--sidebar-accent));
+		background: var(--sidebar-surface-tint);
+		color: var(--sidebar-icon-strong);
 	}
 
 	.sidebar-collapsed-header {
@@ -606,11 +608,13 @@
 		background: transparent;
 		padding: 0.25rem;
 		transition: background 120ms;
-		color: inherit;
+		color: var(--sidebar-icon-muted);
+		outline: none;
 	}
 
 	.sidebar-logo-btn:hover {
-		background: hsl(var(--sidebar-accent));
+		background: var(--sidebar-surface-tint);
+		color: var(--sidebar-icon-strong);
 	}
 
 	.sidebar-logo-img {
@@ -671,13 +675,17 @@
 		border: none;
 		border-radius: 0.375rem;
 		background: transparent;
-		color: hsl(var(--sidebar-foreground) / 0.4);
+		color: var(--sidebar-icon-muted);
 		cursor: pointer;
-		transition: color 120ms ease;
+		outline: none;
+		transition:
+			color 120ms ease,
+			background 120ms ease;
 	}
 
 	.sidebar-upload-btn:hover {
-		color: hsl(var(--sidebar-foreground));
+		background: var(--sidebar-surface-tint);
+		color: var(--sidebar-icon-strong);
 	}
 
 	:global(.sidebar-tooltip) {

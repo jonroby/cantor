@@ -398,7 +398,7 @@
 	/* askable block hover/selected */
 	.chatmsg-block-askable:hover,
 	.chatmsg-block-selected {
-		background: hsl(var(--secondary));
+		background: var(--surface-tint);
 	}
 
 	.chatmsg-response-source {
@@ -436,19 +436,19 @@
 		align-items: center;
 		gap: 0.3rem;
 		border-radius: 999px;
-		border: 1px solid hsl(var(--foreground) / 0.25);
+		border: 1px solid hsl(var(--border));
 		background: transparent;
 		padding: 0.25rem 0.5rem;
 		font-size: var(--text-sm);
-		color: hsl(var(--foreground) / 0.7);
+		color: var(--icon-muted);
 		transition:
 			background 120ms ease,
 			color 120ms ease;
 	}
 
 	.chatmsg-side-chat-badge:hover {
-		background: hsl(var(--foreground) / 0.1);
-		color: hsl(var(--foreground));
+		background: var(--surface-tint);
+		color: var(--icon-strong);
 	}
 
 	.chatmsg-context-scrim {
@@ -463,9 +463,9 @@
 		min-width: 160px;
 		border-radius: 0.5rem;
 		border: 1px solid hsl(var(--border));
-		background: hsl(var(--popover));
+		background: var(--surface-floating);
 		padding: 0.25rem;
-		box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15);
+		box-shadow: var(--surface-floating-shadow);
 	}
 
 	.chatmsg-context-item {
@@ -482,18 +482,18 @@
 	}
 
 	.chatmsg-context-item:hover {
-		background: hsl(var(--accent));
+		background: var(--surface-tint);
 		color: hsl(var(--accent-foreground));
 	}
 
 	/* icon-chip colors — passed as class prop to Button, must be :global() */
 	:global(.icon-chip) {
-		color: hsl(var(--foreground) / 0.5);
+		color: var(--icon-muted);
 	}
 
 	:global(.icon-chip:hover) {
-		color: hsl(var(--foreground));
-		background: hsl(var(--foreground) / 0.1);
+		color: var(--icon-strong);
+		background: var(--surface-tint);
 	}
 
 	/* prompt paragraph margins — rendered via {@html}, must be :global() */

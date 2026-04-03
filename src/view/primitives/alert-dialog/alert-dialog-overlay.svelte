@@ -20,6 +20,6 @@
 		position: fixed;
 		inset: 0;
 		z-index: 50;
-		background: hsl(0 0% 0% / 0.5);
+		background: var(--surface-overlay-strong);
 	}
 </style>
