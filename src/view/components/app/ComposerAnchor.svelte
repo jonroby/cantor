@@ -1,0 +1,174 @@
+<script lang="ts">
+	import { ArrowDown, ArrowRight, ArrowLeft } from 'lucide-svelte';
+	import { Composer } from '@/view/components/composer';
+
+	interface Props {
+		composerSide: 'left' | 'right' | null;
+		isSplit: boolean;
+		hasChatPanel: boolean;
+		chatScrolledAway: boolean;
+		agentMode: boolean;
+		activeDocumentFile: { content: string } | null;
+		activeDocumentKey: { folderId: string; fileId: string } | null;
+		composerRef: ReturnType<typeof Composer> | undefined;
+		toolCallbacks: {
+			onOpenDocument: (folderId: string, fileId: string) => void;
+			onOpenFolder: (folderId: string) => void;
+			onClosePanel: (index: number) => void;
+			onToggleSidebar: () => void;
+		};
+		onScrollToBottom: () => void;
+		onToggleMode: () => void;
+		onScrollToNode: (nodeId: string | null) => void;
+		onExpandSideChat: (exchangeId: string) => void;
+		onComposerPinChange: (side: 'left' | 'right') => void;
+	}
+
+	let {
+		composerSide,
+		isSplit,
+		hasChatPanel,
+		chatScrolledAway,
+		agentMode,
+		activeDocumentFile,
+		activeDocumentKey,
+		composerRef = $bindable(),
+		toolCallbacks,
+		onScrollToBottom,
+		onToggleMode,
+		onScrollToNode,
+		onExpandSideChat,
+		onComposerPinChange
+	}: Props = $props();
+
+	let composerHovered = $state(false);
+</script>
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+	class="composer-anchor"
+	class:composer-left={composerSide === 'left'}
+	class:composer-right={composerSide === 'right'}
+	onmouseenter={() => (composerHovered = true)}
+	onmouseleave={() => (composerHovered = false)}
+>
+	{#if hasChatPanel && chatScrolledAway}
+		<button class="scroll-to-bottom-btn" onclick={onScrollToBottom} aria-label="Scroll to bottom">
+			<ArrowDown size={18} />
+		</button>
+	{/if}
+	<div class="composer-wrap">
+		{#if composerHovered && isSplit}
+			<button
+				class="composer-move-btn {composerSide === 'right'
+					? 'composer-move-left'
+					: 'composer-move-right'}"
+				onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
+				aria-label={composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
+			>
+				{#if composerSide === 'right'}
+					<ArrowLeft size={18} />
+				{:else}
+					<ArrowRight size={18} />
+				{/if}
+			</button>
+		{/if}
+		<Composer
+			bind:this={composerRef}
+			{agentMode}
+			{onToggleMode}
+			liveDocumentContent={activeDocumentFile?.content}
+			{activeDocumentKey}
+			{toolCallbacks}
+			{onScrollToNode}
+			{onExpandSideChat}
+		/>
+	</div>
+</div>
+
+<style>
+	.composer-anchor {
+		position: absolute;
+		bottom: 1rem;
+		left: 0;
+		right: 0;
+		z-index: 25;
+		padding: 0 1rem;
+		transition:
+			left 250ms ease,
+			right 250ms ease;
+	}
+
+	.composer-anchor :global(.composer) {
+		position: relative;
+		left: auto;
+		bottom: auto;
+		transform: none;
+		width: 100% !important;
+		max-width: 720px !important;
+		margin: 0 auto;
+		box-sizing: border-box;
+	}
+
+	.composer-left {
+		right: 50%;
+	}
+
+	.composer-right {
+		left: 50%;
+	}
+
+	.composer-wrap {
+		position: relative;
+		max-width: 720px;
+		margin: 0 auto;
+	}
+
+	.composer-move-btn {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		border: 1px solid hsl(var(--border));
+		background: hsl(var(--background));
+		color: hsl(var(--muted-foreground));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		box-shadow: 0 1px 3px hsl(var(--foreground) / 0.1);
+		z-index: 30;
+	}
+
+	.composer-move-btn:hover {
+		background: hsl(var(--muted));
+	}
+
+	.composer-move-right {
+		right: calc(-32px - 16px);
+	}
+
+	.composer-move-right::before {
+		content: '';
+		position: absolute;
+		top: -8px;
+		bottom: -8px;
+		left: -16px;
+		right: -8px;
+	}
+
+	.composer-move-left {
+		left: calc(-32px - 16px);
+	}
+
+	.composer-move-left::before {
+		content: '';
+		position: absolute;
+		top: -8px;
+		bottom: -8px;
+		left: -8px;
+		right: -16px;
+	}
+</style>
