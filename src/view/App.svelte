@@ -7,7 +7,7 @@
 	import { AppSidebar, SearchDialog, Composer } from '@/view/shared';
 	import { LandingPage, routerState } from '@/view/routes';
 	import { ChatView, DocumentView, FolderDocumentView } from '@/view/index';
-	import { ArrowDown } from 'lucide-svelte';
+	import { ArrowDown, ArrowRight, ArrowLeft } from 'lucide-svelte';
 	import * as app from '@/app';
 
 	type PanelEntry =
@@ -39,11 +39,12 @@
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let _chatPanelIsFirst = $derived(workspaceState.panels[0]?.type === 'chat');
 	let sideChatSide = $state<'left' | 'right'>('left');
+	let composerPinned = $state<'left' | 'right' | null>(null);
+	let composerHovered = $state(false);
 	let composerSide = $derived.by(() => {
 		if (chatSidePanelOpen) return sideChatSide;
 		if (!isSplit) return null;
-		// TODO: allow moving composer to right panel
-		return 'left';
+		return composerPinned ?? 'left';
 	});
 	let activeDocumentKey = $derived.by(() => {
 		const targetIndex = bothDocs ? (activeDocSide === 'left' ? 0 : 1) : -1;
@@ -389,10 +390,13 @@
 						<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
 					</div>
 				{/if}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
 					class="composer-anchor"
 					class:composer-left={composerSide === 'left'}
 					class:composer-right={composerSide === 'right'}
+					onmouseenter={() => (composerHovered = true)}
+					onmouseleave={() => (composerHovered = false)}
 				>
 					{#if hasChatPanel && chatScrolledAway}
 						<button
@@ -403,24 +407,41 @@
 							<ArrowDown size={18} />
 						</button>
 					{/if}
-					<Composer
-						bind:this={composerRef}
-						{agentMode}
-						onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
-						liveDocumentContent={activeDocumentFile?.content}
-						{activeDocumentKey}
-						toolCallbacks={{
-							onOpenDocument: openDocumentInWorkspace,
-							onOpenFolder: openFolderPanel,
-							onClosePanel: closePanel,
-							onToggleSidebar: app.workspace.toggleSidebar
-						}}
-						onScrollToNode={(nodeId) => {
-							ensureChatPanel();
-							tick().then(() => chatViewRef?.scrollToNode(nodeId));
-						}}
-						onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
-					/>
+					<div class="composer-wrap">
+						{#if composerHovered && isSplit}
+							<button
+								class="composer-move-btn {composerSide === 'right'
+									? 'composer-move-left'
+									: 'composer-move-right'}"
+								onclick={() => (composerPinned = composerSide === 'right' ? 'left' : 'right')}
+								aria-label={composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
+							>
+								{#if composerSide === 'right'}
+									<ArrowLeft size={18} />
+								{:else}
+									<ArrowRight size={18} />
+								{/if}
+							</button>
+						{/if}
+						<Composer
+							bind:this={composerRef}
+							{agentMode}
+							onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
+							liveDocumentContent={activeDocumentFile?.content}
+							{activeDocumentKey}
+							toolCallbacks={{
+								onOpenDocument: openDocumentInWorkspace,
+								onOpenFolder: openFolderPanel,
+								onClosePanel: closePanel,
+								onToggleSidebar: app.workspace.toggleSidebar
+							}}
+							onScrollToNode={(nodeId) => {
+								ensureChatPanel();
+								tick().then(() => chatViewRef?.scrollToNode(nodeId));
+							}}
+							onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
+						/>
+					</div>
 				</div>
 			</div>
 
@@ -512,5 +533,59 @@
 
 	.composer-right {
 		left: 50%;
+	}
+
+	.composer-wrap {
+		position: relative;
+		max-width: 720px;
+		margin: 0 auto;
+	}
+
+	.composer-move-btn {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		border: 1px solid hsl(var(--border));
+		background: hsl(var(--background));
+		color: hsl(var(--muted-foreground));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		box-shadow: 0 1px 3px hsl(var(--foreground) / 0.1);
+		z-index: 30;
+	}
+
+	.composer-move-btn:hover {
+		background: hsl(var(--muted));
+	}
+
+	.composer-move-right {
+		right: calc(-32px - 16px);
+	}
+
+	.composer-move-right::before {
+		content: '';
+		position: absolute;
+		top: -8px;
+		bottom: -8px;
+		left: -16px;
+		right: -8px;
+	}
+
+	.composer-move-left {
+		left: calc(-32px - 16px);
+	}
+
+	.composer-move-left::before {
+		content: '';
+		position: absolute;
+		top: -8px;
+		bottom: -8px;
+		left: -8px;
+		right: -16px;
 	}
 </style>
