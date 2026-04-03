@@ -3,6 +3,8 @@ import * as state from '@/state';
 import * as external from '@/external';
 import * as documents from '@/app/documents';
 import * as chat from '@/app/chat';
+import * as providers from '@/app/providers';
+import * as workspace from '@/app/workspace';
 
 export type Message = domain.tree.Message;
 
@@ -20,10 +22,18 @@ export interface VerificationRead {
 	input: Record<string, unknown>;
 }
 
+export interface ToolVerificationPolicy {
+	required?: boolean;
+	buildReads?: (
+		input: Record<string, unknown>,
+		execution: ToolExecution,
+		ctx: ToolContext
+	) => VerificationRead[];
+}
+
 export interface ToolExecution {
 	result: string;
 	pendingContent?: string;
-	suggestedVerificationReads?: VerificationRead[];
 }
 
 export interface CapabilityTool {
@@ -32,6 +42,7 @@ export interface CapabilityTool {
 	kind: 'read' | 'write' | 'workspace';
 	input_schema: Record<string, unknown>;
 	execute: (input: Record<string, unknown>, ctx: ToolContext) => ToolExecution;
+	verification?: ToolVerificationPolicy;
 }
 
 export interface CapabilityModule {
@@ -66,7 +77,8 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 				result: 'Document edit is now pending user approval.',
 				pendingContent: content
 			};
-		}
+		},
+		verification: { required: false }
 	},
 	{
 		name: 'create_file',
@@ -94,36 +106,37 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			if (!folderId) {
 				return { result: 'Error: no folder context is available. Provide folder_id first.' };
 			}
-
-			let targetFolderId = folderId;
-			if (subfolder) {
-				const folder = documents.getFolder(folderId);
-				if (!folder) return { result: 'Error: parent folder not found' };
-				const existing = folder.folders?.find((f) => f.name === subfolder);
-				if (existing) {
-					targetFolderId = existing.id;
-				} else {
-					targetFolderId = documents.createFolder(folderId);
-					documents.renameFolder(targetFolderId, subfolder);
-				}
-			}
-
-			const created = documents.createDocument(targetFolderId);
+			const { result: created, error } = documents.createFileWithContent(
+				folderId,
+				filename,
+				content,
+				{ subfolder }
+			);
+			if (error) return { result: `Error: ${error}` };
 			if (!created) return { result: `Error: could not create file "${filename}"` };
-			const renameResult = documents.renameDocument(targetFolderId, created.fileId, filename);
-			documents.updateOpenDocumentContent(targetFolderId, created.fileId, content);
-			const actualName = renameResult.result ?? filename;
-			const path = subfolder ? `${subfolder}/${actualName}` : actualName;
 			return {
 				result:
-					actualName === filename
-						? `Created "${path}" in folder ${targetFolderId}.`
-						: `Created "${path}" in folder ${targetFolderId}. The original name "${filename}" was already taken.`,
-				suggestedVerificationReads: [
-					{ name: 'inspect_folder', input: { folder_id: targetFolderId } },
-					{ name: 'read_document', input: { folder_id: targetFolderId, file_id: created.fileId } }
-				]
+					created.name === filename
+						? `Created "${created.path}" in folder ${created.folderId}.`
+						: `Created "${created.path}" in folder ${created.folderId}. The original name "${filename}" was already taken.`
 			};
+		},
+		verification: {
+			required: true,
+			buildReads(input, _execution, ctx) {
+				const folderId = (input.folder_id as string | undefined) ?? ctx.folderId;
+				const subfolder = input.subfolder as string | undefined;
+				if (!folderId) return [];
+				if (!subfolder) return [{ name: 'inspect_folder', input: { folder_id: folderId } }];
+				const folder = documents.getFolder(folderId);
+				const nested = folder?.folders?.find((candidate) => candidate.name === subfolder);
+				return [
+					{
+						name: 'inspect_folder',
+						input: { folder_id: nested?.id ?? folderId }
+					}
+				];
+			}
 		}
 	},
 	{
@@ -142,12 +155,16 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			const name = input.name as string;
 			const parentFolderId = input.parent_folder_id as string | undefined;
 			if (!name) return { result: 'Error: name is required' };
-			const folderId = documents.createFolder(parentFolderId);
-			documents.renameFolder(folderId, name);
-			return {
-				result: `Created folder "${name}" (id: ${folderId}).`,
-				suggestedVerificationReads: [{ name: 'inspect_folder', input: { folder_id: folderId } }]
-			};
+			const created = documents.createNamedFolder(name, parentFolderId);
+			if (!created) return { result: `Error: could not create folder "${name}"` };
+			return { result: `Created folder "${created.name}" (id: ${created.folderId}).` };
+		},
+		verification: {
+			required: true,
+			buildReads(_input, execution) {
+				const match = execution.result.match(/\(id: ([^)]+)\)/);
+				return match ? [{ name: 'inspect_folder', input: { folder_id: match[1] } }] : [];
+			}
 		}
 	},
 	{
@@ -168,10 +185,13 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			if (!folderId || !name) return { result: 'Error: folder_id and name are required' };
 			const result = documents.renameFolder(folderId, name);
 			if (result === null) return { result: `Error: could not rename folder to "${name}"` };
-			return {
-				result: `Renamed folder to "${result}".`,
-				suggestedVerificationReads: [{ name: 'inspect_folder', input: { folder_id: folderId } }]
-			};
+			return { result: `Renamed folder to "${result}".` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [{ name: 'inspect_folder', input: { folder_id: input.folder_id as string } }];
+			}
 		}
 	},
 	{
@@ -197,10 +217,13 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			const { result, error } = documents.renameDocument(folderId, fileId, name);
 			if (error) return { result: `Error: ${error}` };
 			if (result === null) return { result: `Error: could not rename document to "${name}"` };
-			return {
-				result: `Renamed document to "${result}".`,
-				suggestedVerificationReads: [{ name: 'inspect_folder', input: { folder_id: folderId } }]
-			};
+			return { result: `Renamed document to "${result}".` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [{ name: 'inspect_folder', input: { folder_id: input.folder_id as string } }];
+			}
 		}
 	},
 	{
@@ -218,10 +241,13 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			const folderId = input.folder_id as string;
 			if (!folderId) return { result: 'Error: folder_id is required' };
 			documents.deleteFolder(folderId);
-			return {
-				result: `Deleted folder ${folderId}.`,
-				suggestedVerificationReads: [{ name: 'list_folders', input: {} }]
-			};
+			return { result: `Deleted folder ${folderId}.` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'list_folders', input: {} }];
+			}
 		}
 	},
 	{
@@ -241,10 +267,13 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			const fileId = input.file_id as string;
 			if (!folderId || !fileId) return { result: 'Error: folder_id and file_id are required' };
 			documents.deleteDocument(folderId, fileId);
-			return {
-				result: `Deleted document ${fileId}.`,
-				suggestedVerificationReads: [{ name: 'inspect_folder', input: { folder_id: folderId } }]
-			};
+			return { result: `Deleted document ${fileId}.` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [{ name: 'inspect_folder', input: { folder_id: input.folder_id as string } }];
+			}
 		}
 	},
 	{
@@ -269,13 +298,16 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			}
 			const ok = documents.moveDocument(fromFolderId, fileId, toFolderId);
 			if (!ok) return { result: 'Error: could not move document' };
-			return {
-				result: `Moved document ${fileId} to folder ${toFolderId}.`,
-				suggestedVerificationReads: [
-					{ name: 'inspect_folder', input: { folder_id: fromFolderId } },
-					{ name: 'inspect_folder', input: { folder_id: toFolderId } }
-				]
-			};
+			return { result: `Moved document ${fileId} to folder ${toFolderId}.` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [
+					{ name: 'inspect_folder', input: { folder_id: input.from_folder_id as string } },
+					{ name: 'inspect_folder', input: { folder_id: input.to_folder_id as string } }
+				];
+			}
 		}
 	},
 	{
@@ -300,6 +332,44 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 		}
 	},
 	{
+		name: 'add_document_to_chat',
+		description:
+			'Add a document into the active chat as a new exchange. Defaults to the active document when available.',
+		kind: 'write',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: { type: 'string' },
+				file_id: { type: 'string' }
+			},
+			required: []
+		},
+		execute(input, ctx) {
+			const folderId = (input.folder_id as string | undefined) ?? ctx.activeDocumentKey?.folderId;
+			const fileId = (input.file_id as string | undefined) ?? ctx.activeDocumentKey?.fileId;
+			if (!folderId || !fileId) {
+				return { result: 'Error: folder_id and file_id are required when there is no active document.' };
+			}
+			const result = documents.getDocument(folderId, fileId);
+			if (!result) return { result: 'Error: document not found' };
+			const current = chat.getChat();
+			const exchangeId = chat.addDocumentToChat(
+				{ rootId: current.rootId, exchanges: current.exchanges },
+				current.activeExchangeId,
+				result.file.content,
+				result.file.name
+			);
+			return { result: `Added document "${result.file.name}" to the chat as exchange ${exchangeId}.` };
+		},
+		verification: {
+			required: true,
+			buildReads(_input, execution) {
+				const match = execution.result.match(/exchange ([^.]+)\.$/);
+				return match ? [{ name: 'inspect_exchange', input: { exchange_id: match[1] } }] : [];
+			}
+		}
+	},
+	{
 		name: 'open_document',
 		description: 'Open a document in the workspace.',
 		kind: 'workspace',
@@ -318,10 +388,22 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			if (!ctx.onOpenDocument) return { result: 'Error: opening documents is not available here' };
 			documents.openDocument(folderId, fileId);
 			ctx.onOpenDocument(folderId, fileId);
-			return {
-				result: `Opened document ${fileId}.`,
-				suggestedVerificationReads: [{ name: 'inspect_active_document', input: { folder_id: folderId, file_id: fileId } }]
-			};
+			return { result: `Opened document ${fileId}.` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [
+					{
+						name: 'inspect_active_document',
+						input: {
+							folder_id: input.folder_id as string,
+							file_id: input.file_id as string
+						}
+					},
+					{ name: 'inspect_open_documents', input: {} }
+				];
+			}
 		}
 	},
 	{
@@ -340,10 +422,16 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			if (!folderId) return { result: 'Error: folder_id is required' };
 			if (!ctx.onOpenFolder) return { result: 'Error: opening folders is not available here' };
 			ctx.onOpenFolder(folderId);
-			return {
-				result: `Opened folder ${folderId}.`,
-				suggestedVerificationReads: [{ name: 'inspect_folder', input: { folder_id: folderId } }]
-			};
+			return { result: `Opened folder ${folderId}.` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [
+					{ name: 'inspect_folder', input: { folder_id: input.folder_id as string } },
+					{ name: 'inspect_workspace', input: {} }
+				];
+			}
 		}
 	},
 	{
@@ -397,10 +485,13 @@ const CHAT_TOOLS: CapabilityTool[] = [
 			const index = chat.createChat();
 			if (name) chat.renameChat(index, name);
 			const chats = chat.getChats();
-			return {
-				result: `Created chat "${chats[index].name}" (index: ${index}).`,
-				suggestedVerificationReads: [{ name: 'list_chats', input: {} }]
-			};
+			return { result: `Created chat "${chats[index].name}" (index: ${index}).` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'list_chats', input: {} }];
+			}
 		}
 	},
 	{
@@ -421,10 +512,13 @@ const CHAT_TOOLS: CapabilityTool[] = [
 				return { result: `Error: invalid chat index ${String(index)}` };
 			}
 			chat.selectChat(index);
-			return {
-				result: `Selected chat "${chats[index].name}".`,
-				suggestedVerificationReads: [{ name: 'inspect_active_chat', input: {} }]
-			};
+			return { result: `Selected chat "${chats[index].name}".` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'inspect_active_chat', input: {} }];
+			}
 		}
 	},
 	{
@@ -445,10 +539,13 @@ const CHAT_TOOLS: CapabilityTool[] = [
 			if (index === undefined || !name) return { result: 'Error: index and name are required' };
 			const result = chat.renameChat(index, name);
 			if (result === null) return { result: `Error: could not rename chat to "${name}"` };
-			return {
-				result: `Renamed chat to "${result}".`,
-				suggestedVerificationReads: [{ name: 'list_chats', input: {} }]
-			};
+			return { result: `Renamed chat to "${result}".` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'list_chats', input: {} }];
+			}
 		}
 	},
 	{
@@ -466,10 +563,13 @@ const CHAT_TOOLS: CapabilityTool[] = [
 			const index = input.index as number;
 			if (index === undefined) return { result: 'Error: index is required' };
 			chat.removeChat(index);
-			return {
-				result: `Deleted chat ${index}.`,
-				suggestedVerificationReads: [{ name: 'list_chats', input: {} }]
-			};
+			return { result: `Deleted chat ${index}.` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'list_chats', input: {} }];
+			}
 		}
 	},
 	{
@@ -556,13 +656,16 @@ const CHAT_TOOLS: CapabilityTool[] = [
 				current.activeExchangeId
 			);
 			if (result.error) return { result: `Error: ${result.error}` };
-			return {
-				result: `Deleted exchange ${exchangeId} with mode ${mode}.`,
-				suggestedVerificationReads: [
+			return { result: `Deleted exchange ${exchangeId} with mode ${mode}.` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [
 					{ name: 'inspect_active_chat', input: {} },
-					{ name: 'inspect_exchange', input: { exchange_id: exchangeId } }
-				]
-			};
+					{ name: 'inspect_exchange', input: { exchange_id: input.exchange_id as string } }
+				];
+			}
 		}
 	},
 	{
@@ -585,13 +688,16 @@ const CHAT_TOOLS: CapabilityTool[] = [
 				exchangeId
 			);
 			if (result.error) return { result: `Error: ${result.error}` };
-			return {
-				result: `Promoted exchange ${exchangeId} into the main chat path.`,
-				suggestedVerificationReads: [
+			return { result: `Promoted exchange ${exchangeId} into the main chat path.` };
+		},
+		verification: {
+			required: true,
+			buildReads(input) {
+				return [
 					{ name: 'inspect_active_chat', input: {} },
-					{ name: 'inspect_chat_branches', input: { exchange_id: exchangeId } }
-				]
-			};
+					{ name: 'inspect_chat_branches', input: { exchange_id: input.exchange_id as string } }
+				];
+			}
 		}
 	}
 ];
@@ -644,15 +750,29 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 		kind: 'read',
 		input_schema: { type: 'object', properties: {}, required: [] },
 		execute() {
-			const providerState = state.providers.providerState;
+			const providerState = providers.getState();
 			const activeModel = providerState.activeModel;
+			const ollamaProvider = providerState.providers.find((provider) => provider.id === 'ollama');
+			const webllmProvider = providerState.providers.find((provider) => provider.id === 'webllm');
+			const ollamaUrl =
+				ollamaProvider?.kind === 'local' && ollamaProvider.connection
+					? ollamaProvider.connection.value
+					: 'unknown';
+			const ollamaStatus =
+				ollamaProvider?.kind === 'local' && ollamaProvider.connection
+					? ollamaProvider.connection.status
+					: 'unknown';
+			const webllmStatus =
+				webllmProvider?.kind === 'embedded' && webllmProvider.loadState
+					? webllmProvider.loadState.status
+					: 'unknown';
 			return {
 				result:
 					`Active model: ${activeModel ? `${activeModel.provider}/${activeModel.modelId}` : 'none'}\n` +
 					`Context length: ${providerState.contextLength ?? 'default'}\n` +
-					`Ollama URL: ${providerState.ollamaUrl}\n` +
-					`Ollama status: ${providerState.ollamaStatus}\n` +
-					`WebLLM status: ${providerState.webllmStatus}`
+					`Ollama URL: ${ollamaUrl}\n` +
+					`Ollama status: ${ollamaStatus}\n` +
+					`WebLLM status: ${webllmStatus}`
 			};
 		}
 	},
@@ -662,6 +782,7 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 		kind: 'read',
 		input_schema: { type: 'object', properties: {}, required: [] },
 		execute(_input, ctx) {
+			const workspaceState = workspace.getState();
 			const activeDocument = ctx.activeDocumentKey
 				? `${ctx.activeDocumentKey.folderId}/${ctx.activeDocumentKey.fileId}`
 				: 'none';
@@ -670,6 +791,9 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 					`Workspace context\n` +
 					`Current folder context: ${ctx.folderId ?? 'none'}\n` +
 					`Active document: ${activeDocument}\n` +
+					`Sidebar open: ${workspaceState.sidebarOpen ? 'yes' : 'no'}\n` +
+					`Panels: ${workspaceState.panels.map((panel, index) => `${index}:${panel.type}`).join(', ') || 'none'}\n` +
+					`Expanded folders: ${Object.keys(workspaceState.expandedFolders).filter((id) => workspaceState.expandedFolders[id]).join(', ') || 'none'}\n` +
 					`Can open documents: ${ctx.onOpenDocument ? 'yes' : 'no'}\n` +
 					`Can open folders: ${ctx.onOpenFolder ? 'yes' : 'no'}\n` +
 					`Can close panels: ${ctx.onClosePanel ? 'yes' : 'no'}\n` +
@@ -721,10 +845,13 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 			const current = chat.getChat();
 			if (!current.exchanges[exchangeId]) return { result: `Error: exchange ${exchangeId} does not exist` };
 			chat.selectExchange(exchangeId);
-			return {
-				result: `Selected exchange ${exchangeId}.`,
-				suggestedVerificationReads: [{ name: 'inspect_active_chat', input: {} }]
-			};
+			return { result: `Selected exchange ${exchangeId}.` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'inspect_active_chat', input: {} }];
+			}
 		}
 	},
 	{
@@ -742,10 +869,13 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 			const exchangeId = input.exchange_id as string;
 			if (!exchangeId) return { result: 'Error: exchange_id is required' };
 			chat.copyChat(exchangeId);
-			return {
-				result: `Copied the path for exchange ${exchangeId} into a new chat.`,
-				suggestedVerificationReads: [{ name: 'list_chats', input: {} }]
-			};
+			return { result: `Copied the path for exchange ${exchangeId} into a new chat.` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'list_chats', input: {} }];
+			}
 		}
 	},
 	{
@@ -757,6 +887,12 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 			if (!ctx.onToggleSidebar) return { result: 'Error: toggling the sidebar is not available here' };
 			ctx.onToggleSidebar();
 			return { result: 'Toggled sidebar.' };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'inspect_workspace', input: {} }];
+			}
 		}
 	},
 	{
@@ -776,6 +912,12 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 			if (!ctx.onClosePanel) return { result: 'Error: closing panels is not available here' };
 			ctx.onClosePanel(index);
 			return { result: `Closed panel ${index}.` };
+		},
+		verification: {
+			required: true,
+			buildReads() {
+				return [{ name: 'inspect_workspace', input: {} }];
+			}
 		}
 	}
 ];

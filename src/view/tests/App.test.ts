@@ -12,7 +12,7 @@ vi.mock('@/view/shared', async () => ({
 	Composer: (await import('../../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
 
-vi.mock('@/view/classic', async () => ({
+vi.mock('@/view', async () => ({
 	ChatView: (await import('../../../tests/fixtures/ChatViewMock.svelte')).default,
 	DocumentView: (await import('../../../tests/fixtures/PassthroughWrapper.svelte')).default
 }));
@@ -39,27 +39,19 @@ vi.mock('@/app', async () => {
 		activeChatIndex: 0
 	};
 	const documentState = { folders: [], openDocuments: [] };
-	return createAppMock({
+		return createAppMock({
 		bootstrap: {
-			clearOpenDocument: vi.fn(),
 			deleteTrashItem: vi.fn(async () => {}),
 			emptyTrash: vi.fn(async () => {}),
 			initialize: vi.fn(async () => ({
 				restoredDocument: null,
-				panels: [{ type: 'chat' as const }],
-				expandedFolders: {},
-				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
 			loadTrash: vi.fn(async () => []),
-			rememberOpenDocument: vi.fn(),
 			restoreChat: vi.fn(async () => false),
 			restoreDocument: vi.fn(async () => false),
 			restoreFolder: vi.fn(async () => false),
-			save: vi.fn(async () => {}),
-			setExpandedFolders: vi.fn(),
-			setPanels: vi.fn(),
-			setSidebarOpen: vi.fn()
+			save: vi.fn(async () => {})
 		},
 		chat: {
 			createChat: vi.fn(),
@@ -87,6 +79,18 @@ vi.mock('@/app', async () => {
 			openDocument: vi.fn(() => false),
 			renameDocument: vi.fn(),
 			updateDocumentContent: vi.fn()
+		},
+		workspace: {
+			clearOpenDocument: vi.fn(),
+			getState: vi.fn(() => ({
+				panels: [{ type: 'chat' as const }],
+				expandedFolders: {},
+				sidebarOpen: true
+			})),
+			rememberOpenDocument: vi.fn(),
+			setExpandedFolders: vi.fn(),
+			setPanels: vi.fn(),
+			setSidebarOpen: vi.fn()
 		}
 	});
 });
@@ -172,9 +176,6 @@ describe('App', () => {
 				);
 				return {
 					restoredDocument: null,
-					panels: [{ type: 'chat' as const }],
-					expandedFolders: {},
-					sidebarOpen: undefined,
 					hadDuplicateRenames: true
 				};
 			});
@@ -197,9 +198,6 @@ describe('App', () => {
 				folders.push({ id: 'f1', name: 'Docs' }, { id: 'f2', name: 'Docs (2)' });
 				return {
 					restoredDocument: null,
-					panels: [{ type: 'chat' as const }],
-					expandedFolders: {},
-					sidebarOpen: undefined,
 					hadDuplicateRenames: true
 				};
 			});
@@ -229,9 +227,6 @@ describe('App', () => {
 				});
 				return {
 					restoredDocument: null,
-					panels: [{ type: 'chat' as const }],
-					expandedFolders: {},
-					sidebarOpen: undefined,
 					hadDuplicateRenames: true
 				};
 			});

@@ -7,12 +7,11 @@ type ViewMock = PublicApiMock<typeof view, typeof viewContract>;
 
 export function createViewMock(overrides?: DeepPartial<ViewMock>): ViewMock {
 	const base = {
-		classic: {
-			ChatMessage: view.classic.ChatMessage,
-			ChatView: view.classic.ChatView,
-			DocumentView: view.classic.DocumentView,
-			FolderDocumentView: view.classic.FolderDocumentView
-		},
+		AgentActivity: view.AgentActivity,
+		ChatMessage: view.ChatMessage,
+		ChatView: view.ChatView,
+		DocumentView: view.DocumentView,
+		FolderDocumentView: view.FolderDocumentView,
 		shared: {
 			AppSidebar: view.shared.AppSidebar,
 			Composer: view.shared.Composer,

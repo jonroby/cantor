@@ -89,8 +89,25 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 				webllmContextSize: 4_096
 			},
 			selectModel: mockFn<typeof state.providers.selectModel>()
+		},
+		workspace: {
+			hydrate: mockFn<typeof state.workspace.hydrate>(),
+			setExpandedFolders: mockFn<typeof state.workspace.setExpandedFolders>(),
+			setPanels: mockFn<typeof state.workspace.setPanels>(),
+			setSelectedFile: mockFn<typeof state.workspace.setSelectedFile>(),
+			setSidebarOpen: mockFn<typeof state.workspace.setSidebarOpen>(),
+			workspaceState: {
+				panels: [],
+				sidebarOpen: true,
+				expandedFolders: {},
+				selectedFileIdsByFolderId: {}
+			}
 		}
 	} satisfies StateMock;
 
 	return mergeMock<StateMock>(base, overrides);
+}
+
+export async function mockStateModule() {
+	return createStateMock();
 }

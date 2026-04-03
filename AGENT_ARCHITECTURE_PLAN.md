@@ -255,9 +255,15 @@ Actions:
 
 Reads:
 
-- inspect current workspace panels
-- inspect active document key
-- inspect sidebar state if useful
+- [x] inspect current workspace panels
+- [x] inspect active document key
+- [x] inspect sidebar state
+
+## Progress
+
+- [x] Workspace shell state (`panels`, `sidebarOpen`, `expandedFolders`) moved out of `view` local state and into `state.workspace`
+- [x] `app.bootstrap` now hydrates and persists workspace state as an app-owned source of truth
+- [x] Agent workspace inspection reads actual app/state-backed workspace state instead of view-local state
 
 This module should explicitly omit toggling the user-facing chat/agent mode, per product intent.
 
@@ -473,7 +479,7 @@ The goal is:
 - [x] return structured action results
 - [x] add verification read helpers
 - [x] make the tool loop append verification events into thinking history
-- [ ] tighten verification policy so important writes always verify before final response
+- [x] tighten verification policy so important writes always verify before final response
 
 ## Phase 4: Thinking history
 
@@ -481,13 +487,13 @@ The goal is:
 - [x] add live status updates
 - [x] expose a collapsible history model to the UI
 - [x] stop using the main exchange as the live work log
-- [ ] polish agent-history presentation across all relevant chat surfaces
+- [x] polish agent-history presentation across all relevant chat surfaces
 
 ## Phase 5: Cleanup
 
 - [x] update tests and API contracts
 - [x] remove dead `app.agent.submit()` style surfaces if no longer needed
-- [ ] tighten names so the public API reflects ownership clearly
+- [x] tighten names so the public API reflects ownership clearly
 
 ## Non-Goals
 

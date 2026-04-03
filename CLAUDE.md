@@ -45,6 +45,29 @@ Within an area, cross-submodule and subfolder imports must go through the target
 
 `bun run check:imports` enforces dependency rules. `bun run check:contracts` enforces approved public submodules.
 
+### Action Ownership
+
+Use this standard for all user actions and agent tools:
+
+- one app function owns the behavior
+- the UI calls it
+- the agent tool calls it
+- no duplicated semantics in the tool layer
+
+In practice:
+
+- `app.*` owns the real action
+- `view` should mostly pass ids/inputs and render state
+- `app.agent` tools should dispatch to `app.*`, not recreate behavior
+- if a tool needs verification, that should be metadata around the action, not a second implementation of the action
+
+This matters most for workspace actions. If a user action is currently assembled across multiple `view` callbacks or cleanup paths, prefer moving that behavior into a named `app.*` function so both UI and agent tools call the same semantic action.
+
+Current concern:
+
+- some workspace behaviors are still view-composed instead of app-owned
+- when touching those paths, prefer collapsing them into `app.workspace` or another existing `app.*` module instead of adding more callback-specific behavior in `view`
+
 ## Icons
 
 Use `lucide-svelte` for all icons. Do not use inline SVG paths or one-off SVGs for icons. Import named icons from `lucide-svelte` directly in view components.

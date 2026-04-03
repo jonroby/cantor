@@ -16,19 +16,14 @@
     "TOOLS": true
   },
   "bootstrap": {
-    "clearOpenDocument": true,
     "deleteTrashItem": true,
     "emptyTrash": true,
     "initialize": true,
     "loadTrash": true,
-    "rememberOpenDocument": true,
     "restoreChat": true,
     "restoreDocument": true,
     "restoreFolder": true,
-    "save": true,
-    "setExpandedFolders": true,
-    "setPanels": true,
-    "setSidebarOpen": true
+    "save": true
   },
   "chat": {
     "addDocumentToChat": true,
@@ -66,7 +61,9 @@
     "closeDocument": true,
     "closeOpenDocument": true,
     "createDocument": true,
+    "createFileWithContent": true,
     "createFolder": true,
+    "createNamedFolder": true,
     "deleteDocument": true,
     "deleteFolder": true,
     "exportFolder": true,
@@ -103,5 +100,15 @@
     "setContextSize": true,
     "streamText": true,
     "unlockCredentials": true
+  },
+  "workspace": {
+    "clearOpenDocument": true,
+    "getState": true,
+    "rememberOpenDocument": true,
+    "selectFolderFile": true,
+    "setExpandedFolders": true,
+    "setPanels": true,
+    "setSidebarOpen": true,
+    "toggleSidebar": true
   }
 }

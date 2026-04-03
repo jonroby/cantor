@@ -1,4 +1,5 @@
 import * as providers from '@/app/providers';
+import * as workspace from '@/app/workspace';
 import * as external from '@/external';
 import * as state from '@/state';
 import * as lib from '@/lib';
@@ -65,7 +66,7 @@ function restoreOpenDocument(): RestoredDocument | null {
 	);
 	const file = folder?.files?.find((candidate) => candidate.id === openDocument.fileId);
 	if (!folder || !file) {
-		external.persistence.setPersistedLayout({});
+		workspace.clearOpenDocument({ saveSnapshot: false });
 		return null;
 	}
 
@@ -98,48 +99,17 @@ export async function initialize() {
 
 	const restoredDocument = restoreOpenDocument();
 	const layout = external.persistence.getPersistedLayout();
+	state.workspace.hydrate({
+		panels: layout.panels,
+		expandedFolders: layout.expandedFolders,
+		sidebarOpen: layout.sidebarOpen
+	});
 	void providers.initialize();
 
-	let panels = layout.panels;
-	if (!panels) panels = [];
-
 	return {
-		restoredDocument: panels.length > 0 ? restoredDocument : null,
-		panels,
-		expandedFolders: layout.expandedFolders ?? {},
-		sidebarOpen: layout.sidebarOpen,
+		restoredDocument: state.workspace.workspaceState.panels.length > 0 ? restoredDocument : null,
 		hadDuplicateRenames
 	};
-}
-
-export function rememberOpenDocument(folderId: string, fileId: string) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, openDocument: { folderId, fileId } });
-	void save();
-}
-
-export function clearOpenDocument() {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, openDocument: undefined });
-	void save();
-}
-
-export function setSidebarOpen(open: boolean) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, sidebarOpen: open });
-	void save();
-}
-
-export function setPanels(panels: external.persistence.PersistedPanel[]) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, panels });
-	void save();
-}
-
-export function setExpandedFolders(expandedFolders: Record<string, boolean>) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, expandedFolders });
-	void save();
 }
 
 export function save() {

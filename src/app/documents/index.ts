@@ -90,6 +90,76 @@ export function createDocument(
 	return { folderId, fileId };
 }
 
+export interface CreateNamedFolderResult {
+	folderId: string;
+	name: string;
+}
+
+export function createNamedFolder(
+	name: string,
+	parentFolderId?: string
+): CreateNamedFolderResult | null {
+	const folderId = createFolder(parentFolderId);
+	const actualName = renameFolder(folderId, name);
+	if (actualName === null) return null;
+	return { folderId, name: actualName };
+}
+
+export interface CreateFileWithContentResult {
+	folderId: string;
+	fileId: string;
+	name: string;
+	path: string;
+}
+
+export function createFileWithContent(
+	folderId: string,
+	filename: string,
+	content: string,
+	options?: { subfolder?: string }
+): { result: CreateFileWithContentResult | null; error?: string } {
+	if (!isSupportedFileName(filename)) {
+		return { result: null, error: `Cantor only supports: ${supportedExtensionsLabel()}` };
+	}
+
+	let targetFolderId = folderId;
+	const subfolder = options?.subfolder;
+	if (subfolder) {
+		const folder = getFolder(folderId);
+		if (!folder) return { result: null, error: 'Parent folder not found.' };
+		const existing = folder.folders?.find((candidate) => candidate.name === subfolder);
+		if (existing) {
+			targetFolderId = existing.id;
+		} else {
+			const createdFolder = createNamedFolder(subfolder, folderId);
+			if (!createdFolder) return { result: null, error: `Could not create folder "${subfolder}".` };
+			targetFolderId = createdFolder.folderId;
+		}
+	}
+
+	const createdDocument = createDocument(targetFolderId);
+	if (!createdDocument) {
+		return { result: null, error: `Could not create file "${filename}".` };
+	}
+
+	const renameResult = renameDocument(targetFolderId, createdDocument.fileId, filename);
+	if (renameResult.error) return { result: null, error: renameResult.error };
+	if (renameResult.result === null) {
+		return { result: null, error: `Could not rename file to "${filename}".` };
+	}
+
+	updateOpenDocumentContent(targetFolderId, createdDocument.fileId, content);
+	const path = subfolder ? `${subfolder}/${renameResult.result}` : renameResult.result;
+	return {
+		result: {
+			folderId: targetFolderId,
+			fileId: createdDocument.fileId,
+			name: renameResult.result,
+			path
+		}
+	};
+}
+
 export function addDocumentToChat(
 	folderId: string,
 	fileId: string,

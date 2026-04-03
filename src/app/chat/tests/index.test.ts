@@ -1,118 +1,21 @@
 import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
 import * as domain from '@/domain';
 
-vi.mock('jszip', () => {
-	const mockFile = vi.fn();
-	const mockGenerateAsync = vi.fn().mockResolvedValue(new Blob(['zip-content']));
-	class MockJSZip {
-		file = mockFile;
-		generateAsync = mockGenerateAsync;
-	}
-	return {
-		default: MockJSZip
-	};
+vi.mock('jszip', async () => {
+	const mocks = await import('@/tests/mocks/jszip');
+	return await mocks.mockJSZipModule();
 });
-
 vi.mock('@/state', async () => {
-	const actual = await vi.importActual<typeof import('@/state')>('@/state');
-	const importedDomain = await vi.importActual<typeof import('@/domain')>('@/domain');
-	const empty = importedDomain.tree.buildEmptyTree();
-	const result = importedDomain.tree.addExchange(
-		empty,
-		'unused',
-		'hello',
-		'claude-sonnet-4-6',
-		'claude'
-	);
-	const exchanges = importedDomain.tree.updateExchangeResponse(
-		result.tree.exchanges,
-		result.id,
-		'world'
-	);
-	const tree = { rootId: result.tree.rootId, exchanges };
-	const chatState = {
-		chats: [
-			{
-				id: 'chat-1',
-				name: 'Test Chat',
-				rootId: tree.rootId,
-				exchanges: tree.exchanges,
-				activeExchangeId: importedDomain.tree.getMainChatTail(tree),
-				contextStrategy: 'full',
-				mode: 'chat'
-			}
-		],
-		activeChatIndex: 0
-	};
-	const documentState = {
-		folders: [
-			{
-				id: 'folder-1',
-				name: 'Test Folder',
-				files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
-			}
-		]
-	};
-	return {
-		...actual,
-		chatState,
-		documentState,
-		chats: {
-			...actual.chats,
-			chatState
-		},
-		documents: {
-			...actual.documents,
-			documentState
-		}
-	};
+	const mocks = await import('@/tests/mocks/state');
+	return await mocks.mockStateModule();
 });
-
-vi.mock('@/lib', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/lib')>()),
-	validateMd: {
-		validate: vi.fn().mockReturnValue([])
-	}
-}));
-
+vi.mock('@/lib', async (importOriginal) => {
+	const mocks = await import('@/tests/mocks/lib');
+	return await mocks.mockLibModuleFromOriginal(importOriginal);
+});
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks/external');
-	return createExternalMock({
-		io: {
-			validateChatUpload: vi.fn(
-				(data) =>
-					({
-						id: (data as ReturnType<typeof buildValidUploadData>).id,
-						name: (data as ReturnType<typeof buildValidUploadData>).name,
-						tree: {
-							rootId: (data as ReturnType<typeof buildValidUploadData>).rootId,
-							exchanges: (data as ReturnType<typeof buildValidUploadData>).exchanges
-						},
-						activeExchangeId: (data as ReturnType<typeof buildValidUploadData>).activeExchangeId
-					}) as ReturnType<typeof import('@/external').io.validateChatUpload>
-			)
-		},
-		streams: {
-			isStreaming: vi.fn(() => false),
-			cancelStreamsForExchanges: vi.fn(),
-			startStream: vi.fn(),
-			cancelStream: vi.fn(),
-			cancelAllStreams: vi.fn(),
-			cancelStreamsForChat: vi.fn(),
-			isAnyStreaming: vi.fn(() => false)
-		},
-		providers: {
-			webllm: {
-				getWebLLMModels: vi.fn(async () => [])
-			},
-			vault: {
-				storedProviders: vi.fn(() => [])
-			}
-		},
-		persistence: {
-			getPersistedLayout: vi.fn(() => ({}))
-		}
-	});
+	const mocks = await import('@/tests/mocks/external');
+	return await mocks.mockExternalModule();
 });
 
 import * as chat from '../index';
@@ -242,6 +145,18 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	nextPickedFile = null;
 	downloads = [];
+	vi.mocked(external.io.validateChatUpload).mockImplementation(
+		(data) =>
+			({
+				id: (data as ReturnType<typeof buildValidUploadData>).id,
+				name: (data as ReturnType<typeof buildValidUploadData>).name,
+				tree: {
+					rootId: (data as ReturnType<typeof buildValidUploadData>).rootId,
+					exchanges: (data as ReturnType<typeof buildValidUploadData>).exchanges
+				},
+				activeExchangeId: (data as ReturnType<typeof buildValidUploadData>).activeExchangeId
+			}) as ReturnType<typeof external.io.validateChatUpload>
+	);
 	vi.mocked(external.io.pickFile).mockImplementation(async () => nextPickedFile);
 	vi.mocked(external.io.downloadBlob).mockImplementation((blob, filename) => {
 		downloads.push({ blob, filename });

@@ -116,25 +116,17 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			stop: mockFn<typeof app.agent.stop>()
 		},
 		bootstrap: {
-			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
 			deleteTrashItem: mockFn<typeof app.bootstrap.deleteTrashItem>(async () => {}),
 			emptyTrash: mockFn<typeof app.bootstrap.emptyTrash>(async () => {}),
 			initialize: mockFn<typeof app.bootstrap.initialize>(async () => ({
 				restoredDocument: null,
-				panels: [{ type: 'chat' as const }],
-				expandedFolders: {},
-				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
 			loadTrash: mockFn<typeof app.bootstrap.loadTrash>(async () => []),
-			rememberOpenDocument: mockFn<typeof app.bootstrap.rememberOpenDocument>(),
 			restoreChat: mockFn<typeof app.bootstrap.restoreChat>(async () => false),
 			restoreDocument: mockFn<typeof app.bootstrap.restoreDocument>(async () => false),
 			restoreFolder: mockFn<typeof app.bootstrap.restoreFolder>(async () => false),
-			save: mockFn<typeof app.bootstrap.save>(async () => {}),
-			setExpandedFolders: mockFn<typeof app.bootstrap.setExpandedFolders>(),
-			setPanels: mockFn<typeof app.bootstrap.setPanels>(),
-			setSidebarOpen: mockFn<typeof app.bootstrap.setSidebarOpen>()
+			save: mockFn<typeof app.bootstrap.save>(async () => {})
 		},
 		chat: {
 			addDocumentToChat: mockFn<typeof app.chat.addDocumentToChat>(),
@@ -180,7 +172,11 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			closeDocument: mockFn<typeof app.documents.closeDocument>(),
 			closeOpenDocument: mockFn<typeof app.documents.closeOpenDocument>(),
 			createDocument: mockFn<typeof app.documents.createDocument>(),
+			createFileWithContent: mockFn<typeof app.documents.createFileWithContent>(() => ({
+				result: null
+			})),
 			createFolder: mockFn<typeof app.documents.createFolder>(),
+			createNamedFolder: mockFn<typeof app.documents.createNamedFolder>(() => null),
 			deleteDocument: mockFn<typeof app.documents.deleteDocument>(),
 			deleteFolder: mockFn<typeof app.documents.deleteFolder>(),
 			exportFolder: mockFn<typeof app.documents.exportFolder>(),
@@ -219,8 +215,39 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			setContextSize: mockFn<typeof app.providers.setContextSize>(),
 			streamText: mockFn<typeof app.providers.streamText>(),
 			unlockCredentials: mockFn<typeof app.providers.unlockCredentials>()
+		},
+		workspace: {
+			clearOpenDocument: mockFn<typeof app.workspace.clearOpenDocument>(),
+			getState: mockFn<typeof app.workspace.getState>(() => ({
+				panels: [{ type: 'chat' as const }],
+				expandedFolders: {},
+				sidebarOpen: true,
+				selectedFileIdsByFolderId: {}
+			})),
+			rememberOpenDocument: mockFn<typeof app.workspace.rememberOpenDocument>(),
+			selectFolderFile: mockFn<typeof app.workspace.selectFolderFile>(),
+			setExpandedFolders: mockFn<typeof app.workspace.setExpandedFolders>(),
+			setPanels: mockFn<typeof app.workspace.setPanels>(),
+			setSidebarOpen: mockFn<typeof app.workspace.setSidebarOpen>(),
+			toggleSidebar: mockFn<typeof app.workspace.toggleSidebar>()
 		}
 	} satisfies AppMock;
 
 	return mergeMock<AppMock>(base, overrides);
+}
+
+export async function mockAppChatModule() {
+	return createAppMock().chat;
+}
+
+export async function mockAppDocumentsModule() {
+	return createAppMock().documents;
+}
+
+export async function mockAppProvidersModule() {
+	return createAppMock().providers;
+}
+
+export async function mockAppWorkspaceModule() {
+	return createAppMock().workspace;
 }

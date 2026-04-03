@@ -50,5 +50,13 @@
   "providers": {
     "providerState": true,
     "selectModel": true
+  },
+  "workspace": {
+    "hydrate": true,
+    "setExpandedFolders": true,
+    "setPanels": true,
+    "setSelectedFile": true,
+    "setSidebarOpen": true,
+    "workspaceState": true
   }
 }

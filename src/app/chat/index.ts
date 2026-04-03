@@ -462,14 +462,18 @@ function buildVerificationSummary(reads: agent.VerificationRead[], ctx: agent.To
 
 function getVerificationLines(
 	toolName: string,
+	input: Record<string, unknown>,
 	executed: agent.ToolExecution,
 	ctx: agent.ToolContext
 ): string[] {
 	const definition = agent.getToolDefinition(toolName);
-	const suggestedReads = executed.suggestedVerificationReads ?? [];
-	const lines = suggestedReads.length > 0 ? buildVerificationSummary(suggestedReads, ctx) : [];
-	if (definition?.kind === 'write' && lines.length === 0) {
-		lines.push(`Verification missing for write action ${toolName}.`);
+	const reads = definition?.verification?.buildReads?.(input, executed, ctx) ?? [];
+	const lines = reads.length > 0 ? buildVerificationSummary(reads, ctx) : [];
+	const verificationRequired =
+		definition?.verification?.required ??
+		(definition !== undefined && (definition.kind === 'write' || definition.kind === 'workspace'));
+	if (verificationRequired && lines.length === 0) {
+		lines.push(`Verification missing for action ${toolName}.`);
 	}
 	return lines;
 }
@@ -569,7 +573,12 @@ async function runAgentLoop(
 					`${toolCall.name}(${summarizeInput(toolCall.input)})`
 				);
 				const executed = agent.executeTool(toolCall.name, toolCall.input, toolContext);
-				const verificationLines = getVerificationLines(toolCall.name, executed, toolContext);
+				const verificationLines = getVerificationLines(
+					toolCall.name,
+					toolCall.input,
+					executed,
+					toolContext
+				);
 				for (const verificationLine of verificationLines) {
 					state.agent.appendThinkingEvent(exchangeId, 'verification', verificationLine);
 				}

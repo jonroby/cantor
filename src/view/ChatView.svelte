@@ -3,6 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
+	import AgentActivity from './AgentActivity.svelte';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -78,15 +79,6 @@
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
 	let agentState = $derived(app.agent.getState());
-	let activeThinkingEvents = $derived(
-		activeExchangeId ? (agentState.thinkingByExchangeId[activeExchangeId] ?? []) : []
-	);
-	let activeLiveStatus = $derived(
-		activeExchangeId ? (agentState.liveStatusByExchangeId[activeExchangeId] ?? '') : ''
-	);
-	let thinkingExpanded = $derived(
-		activeExchangeId ? agentState.expandedByExchangeId[activeExchangeId] !== false : false
-	);
 	let mainChatPath = $derived(getMainChatPath());
 	let mainChatTailId = $derived(
 		mainChatPath.length > 0 ? mainChatPath[mainChatPath.length - 1]!.id : null
@@ -100,6 +92,19 @@
 			? activeSideChat[activeSideChat.length - 1]!.id
 			: null
 	);
+	let mainActivityExchangeId = $derived.by(() => {
+		if (activeExchangeId && mainChatPath.some((exchange) => exchange.id === activeExchangeId)) {
+			return activeExchangeId;
+		}
+		return mainChatTailId;
+	});
+	let sideActivityExchangeId = $derived.by(() => {
+		if (!sidePanelOpen || isDocumentPanel) return null;
+		if (activeExchangeId && activeSideChat?.some((exchange) => exchange.id === activeExchangeId)) {
+			return activeExchangeId;
+		}
+		return sideChatTailId;
+	});
 	let sidePanelParentExchange = $derived(
 		sidePanelParentId && activeExchanges ? activeExchanges[sidePanelParentId] : null
 	);
@@ -159,11 +164,6 @@
 		focusPanel(mainPanel.id);
 	}
 
-	function toggleThinking() {
-		if (!activeExchangeId) return;
-		app.agent.setThinkingExpanded(activeExchangeId, !thinkingExpanded);
-	}
-
 	function focusSide() {
 		if (sidePanel) focusPanel(sidePanel.id);
 	}
@@ -193,6 +193,14 @@
 	function closeSidePanel() {
 		sidePanel = null;
 		focusPanel(mainPanel.id);
+	}
+
+	function closeSideDocumentPanel() {
+		if (activeDocumentIndex >= 0) {
+			app.documents.closeDocument(activeDocumentIndex);
+		}
+		app.workspace.clearOpenDocument();
+		closeSidePanel();
 	}
 
 	function addCurrentDocumentToChat() {
@@ -477,7 +485,7 @@
 
 	export function resetUIState() {
 		if (sidePanel !== null) {
-			app.bootstrap.clearOpenDocument();
+			app.workspace.clearOpenDocument();
 		}
 		closeSidePanel();
 	}
@@ -560,36 +568,7 @@
 				{/if}
 			</div>
 			<div class="chatview-main" bind:this={mainScrollContainer} onscroll={handleMainScroll}>
-				{#if activeLiveStatus || activeThinkingEvents.length > 0}
-					<div class="agent-runner">
-						<button class="agent-runner-header" onclick={toggleThinking} type="button">
-							<div class="agent-runner-title">Agent activity</div>
-							<div class="agent-runner-status">
-								{#if activeLiveStatus}
-									<span>{activeLiveStatus}</span>
-								{:else}
-									<span>{activeThinkingEvents.length} event{activeThinkingEvents.length === 1 ? '' : 's'}</span>
-								{/if}
-							</div>
-						</button>
-						{#if thinkingExpanded}
-							<div class="agent-runner-body">
-								{#each activeThinkingEvents as event (event.id)}
-									<div class="agent-runner-event">
-										<div class="agent-runner-event-type">{event.type.replace('_', ' ')}</div>
-										<div class="agent-runner-event-text">{event.text}</div>
-									</div>
-								{/each}
-								{#if activeLiveStatus}
-									<div class="agent-runner-event agent-runner-event-live">
-										<div class="agent-runner-event-type">live</div>
-										<div class="agent-runner-event-text">{activeLiveStatus}</div>
-									</div>
-								{/if}
-							</div>
-						{/if}
-					</div>
-				{/if}
+				<AgentActivity exchangeId={mainActivityExchangeId} />
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
 						{@const nodeData = getNodeDataForExchange(exchange.id)}
@@ -644,11 +623,7 @@
 							onRejectPending={() => app.agent.rejectPending()}
 							onClose={() => {
 								app.agent.rejectPending();
-								if (activeDocumentIndex >= 0) {
-									app.documents.closeDocument(activeDocumentIndex);
-								}
-								app.bootstrap.clearOpenDocument();
-								closeSidePanel();
+								closeSideDocumentPanel();
 							}}
 							onAddToChat={addCurrentDocumentToChat}
 						/>
@@ -775,6 +750,7 @@
 							{/if}
 						</div>
 					{/if}
+					<AgentActivity exchangeId={sideActivityExchangeId} compact={true} />
 					<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
 						{#if activeSideChat}
 							{#each activeSideChat as exchange (exchange.id)}
@@ -842,77 +818,6 @@
 {/if}
 
 <style>
-	.agent-runner {
-		margin: 16px 16px 0;
-		border: 1px solid hsl(var(--border));
-		border-radius: 12px;
-		background: hsl(var(--muted) / 0.28);
-		overflow: hidden;
-	}
-
-	.agent-runner-header {
-		width: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 12px 14px;
-		background: transparent;
-		border: 0;
-		color: inherit;
-		text-align: left;
-		cursor: pointer;
-	}
-
-	.agent-runner-title {
-		font-size: 12px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.agent-runner-status {
-		font-size: 13px;
-		color: hsl(var(--foreground));
-		max-width: 70%;
-		text-align: right;
-	}
-
-	.agent-runner-body {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		padding: 0 14px 14px;
-	}
-
-	.agent-runner-event {
-		padding: 10px 12px;
-		border-radius: 10px;
-		background: hsl(var(--background) / 0.8);
-		border: 1px solid hsl(var(--border) / 0.8);
-	}
-
-	.agent-runner-event-live {
-		border-style: dashed;
-	}
-
-	.agent-runner-event-type {
-		margin-bottom: 4px;
-		font-size: 11px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.agent-runner-event-text {
-		white-space: pre-wrap;
-		word-break: break-word;
-		font-size: 13px;
-		line-height: 1.5;
-		color: hsl(var(--foreground));
-	}
-
 	.chatview-doc-wrap {
 		display: flex;
 		flex-direction: column;

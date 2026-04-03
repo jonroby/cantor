@@ -6,7 +6,7 @@
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar';
 	import { AppSidebar, SearchDialog, Composer } from '@/view/shared';
 	import { LandingPage, routerState } from '@/view/routes';
-	import { ChatView, DocumentView, FolderDocumentView } from '@/view/classic';
+	import { ChatView, DocumentView, FolderDocumentView } from '@/view';
 	import { ArrowDown } from 'lucide-svelte';
 	import * as app from '@/app';
 
@@ -19,26 +19,25 @@
 	let searchAllChats = $state(true);
 	let searchOpen = $state(false);
 	let hasHydrated = $state(false);
-	let panels: PanelEntry[] = $state([]);
-	let sidebarOpen = $state(true);
-	let initialExpandedFolders: Record<string, boolean> = $state({});
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let chatSidePanelOpen = $state(false);
 	let chatScrolledAway = $state(false);
-	let folderSelectedFiles: Record<string, string> = $state({});
+	let workspaceState = $derived(app.workspace.getState());
 
 	let providerState = $derived(app.providers.getState());
 	let agentState = $derived(app.agent.getState());
 	let hasModel = $derived(!!providerState.activeModel);
-	let hasChatPanel = $derived(panels.some((p) => p.type === 'chat'));
-	let _hasDocPanel = $derived(panels.some((p) => p.type === 'document' || p.type === 'folder'));
-	let isSplit = $derived(panels.length === 2);
+	let hasChatPanel = $derived(workspaceState.panels.some((p) => p.type === 'chat'));
+	let _hasDocPanel = $derived(
+		workspaceState.panels.some((p) => p.type === 'document' || p.type === 'folder')
+	);
+	let isSplit = $derived(workspaceState.panels.length === 2);
 	let bothDocs = $derived(isSplit && !hasChatPanel);
 	let agentMode = $derived(app.chat.getMode() === 'agent');
 	let activeDocSide = $state<'left' | 'right'>('left');
-	let _chatPanelIsFirst = $derived(panels[0]?.type === 'chat');
+	let _chatPanelIsFirst = $derived(workspaceState.panels[0]?.type === 'chat');
 	let sideChatSide = $state<'left' | 'right'>('left');
 	let composerSide = $derived.by(() => {
 		if (chatSidePanelOpen) return sideChatSide;
@@ -53,18 +52,18 @@
 			if (p.type === 'document') return { folderId: p.folderId, fileId: p.fileId };
 			if (p.type === 'folder') {
 				const folder = app.documents.getState().folders.find((f) => f.id === p.folderId);
-				const selectedFileId = folderSelectedFiles[p.folderId];
+				const selectedFileId = workspaceState.selectedFileIdsByFolderId[p.folderId];
 				const fileId = selectedFileId ?? folder?.files?.[0]?.id;
 				if (fileId) return { folderId: p.folderId, fileId };
 			}
 			return null;
 		}
 
-		if (targetIndex >= 0 && panels[targetIndex]) {
-			return keyFromPanel(panels[targetIndex]);
+		if (targetIndex >= 0 && workspaceState.panels[targetIndex]) {
+			return keyFromPanel(workspaceState.panels[targetIndex]);
 		}
 
-		for (const p of panels) {
+		for (const p of workspaceState.panels) {
 			const key = keyFromPanel(p);
 			if (key) return key;
 		}
@@ -91,18 +90,6 @@
 	$effect(() => {
 		if (hasHydrated) {
 			void app.bootstrap.save();
-		}
-	});
-
-	$effect(() => {
-		if (hasHydrated) {
-			app.bootstrap.setPanels(panels);
-		}
-	});
-
-	$effect(() => {
-		if (hasHydrated) {
-			app.bootstrap.setExpandedFolders(initialExpandedFolders);
 		}
 	});
 
@@ -143,27 +130,13 @@
 
 		void app.bootstrap
 			.initialize()
-			.then(
-				({
-					panels: restoredPanels,
-					expandedFolders: restoredExpandedFolders,
-					sidebarOpen: restoredSidebarOpen,
-					hadDuplicateRenames
-				}) => {
-					if (hadDuplicateRenames) {
-						toast.warning('Some items had duplicate names and were automatically renamed.');
-					}
-
-					if (restoredSidebarOpen === false) {
-						sidebarOpen = false;
-					}
-
-					panels = restoredPanels;
-					initialExpandedFolders = restoredExpandedFolders;
-
-					hasHydrated = true;
+			.then(({ hadDuplicateRenames }) => {
+				if (hadDuplicateRenames) {
+					toast.warning('Some items had duplicate names and were automatically renamed.');
 				}
-			);
+
+				hasHydrated = true;
+			});
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
@@ -180,7 +153,23 @@
 		composerRef?.focus();
 	}
 
+	function getPanelDocumentKey(panel: PanelEntry) {
+		if (panel.type === 'document') {
+			return { folderId: panel.folderId, fileId: panel.fileId };
+		}
+		if (panel.type === 'folder') {
+			const folder = app.documents.getFolder(panel.folderId);
+			const selectedFileId =
+				workspaceState.selectedFileIdsByFolderId[panel.folderId] ?? folder?.files?.[0]?.id;
+			if (selectedFileId) {
+				return { folderId: panel.folderId, fileId: selectedFileId };
+			}
+		}
+		return null;
+	}
+
 	function openDocumentPanel(folderId: string, fileId: string) {
+		const panels = workspaceState.panels;
 		const existingIndex = panels.findIndex(
 			(p) => p.type === 'document' && p.folderId === folderId && p.fileId === fileId
 		);
@@ -189,57 +178,68 @@
 		const docPanel: PanelEntry = { type: 'document', folderId, fileId };
 
 		if (panels.length === 0) {
-			panels = [docPanel];
+			app.workspace.setPanels([docPanel]);
 		} else if (panels.length === 1) {
-			panels = [...panels, docPanel];
+			app.workspace.setPanels([...panels, docPanel]);
 		} else {
-			panels = [panels[0], docPanel];
+			app.workspace.setPanels([panels[0]!, docPanel]);
 		}
 	}
 
 	function openFolderPanel(folderId: string) {
+		const panels = workspaceState.panels;
 		const existingIndex = panels.findIndex((p) => p.type === 'folder' && p.folderId === folderId);
 		if (existingIndex >= 0) return;
 
 		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
 		if (!folder || !folder.files?.length) return;
 
-		const firstFile = folder.files[0];
-		app.documents.openDocument(folderId, firstFile.id);
+		const selectedFileId =
+			workspaceState.selectedFileIdsByFolderId[folderId] ?? folder.files[0]!.id;
+		app.workspace.selectFolderFile(folderId, selectedFileId);
+		app.documents.openDocument(folderId, selectedFileId);
 
 		const folderPanel: PanelEntry = { type: 'folder', folderId };
 
 		if (panels.length === 0) {
-			panels = [folderPanel];
+			app.workspace.setPanels([folderPanel]);
 		} else if (panels.length === 1) {
-			panels = [...panels, folderPanel];
+			app.workspace.setPanels([...panels, folderPanel]);
 		} else {
-			panels = [panels[0], folderPanel];
+			app.workspace.setPanels([panels[0]!, folderPanel]);
 		}
 	}
 
 	function swapPanels() {
-		if (panels.length === 2) {
-			panels = [panels[1], panels[0]];
+		if (workspaceState.panels.length === 2) {
+			app.workspace.setPanels([workspaceState.panels[1]!, workspaceState.panels[0]!]);
 		}
 	}
 
 	function closePanel(index: number) {
-		const panel = panels[index];
-		if (panel?.type === 'chat') {
+		const panel = workspaceState.panels[index];
+		if (!panel) return;
+		if (panel.type === 'chat') {
 			chatSidePanelOpen = false;
+		} else {
+			const documentKey = getPanelDocumentKey(panel);
+			if (documentKey) {
+				app.documents.closeOpenDocument(documentKey.folderId, documentKey.fileId);
+				app.workspace.clearOpenDocument();
+			}
 		}
-		panels = panels.filter((_, i) => i !== index);
+		app.workspace.setPanels(workspaceState.panels.filter((_, i) => i !== index));
 	}
 
 	function ensureChatPanel() {
+		const panels = workspaceState.panels;
 		if (!hasChatPanel) {
 			if (panels.length === 0) {
-				panels = [{ type: 'chat' }];
+				app.workspace.setPanels([{ type: 'chat' }]);
 			} else if (panels.length === 1) {
-				panels = [{ type: 'chat' }, panels[0]];
+				app.workspace.setPanels([{ type: 'chat' }, panels[0]!]);
 			} else {
-				panels = [{ type: 'chat' }, panels[1]];
+				app.workspace.setPanels([{ type: 'chat' }, panels[1]!]);
 			}
 		}
 	}
@@ -291,11 +291,11 @@
 	<LandingPage />
 {:else}
 	<SidebarPrimitive.Provider
-		bind:open={sidebarOpen}
-		onOpenChange={(open) => app.bootstrap.setSidebarOpen(open)}
+		bind:open={workspaceState.sidebarOpen}
+		onOpenChange={(open) => app.workspace.setSidebarOpen(open)}
 	>
 		<AppSidebar
-			bind:expandedFolders={initialExpandedFolders}
+			bind:expandedFolders={workspaceState.expandedFolders}
 			chats={app.chat.getChats()}
 			activeChatIndex={hasChatPanel ? app.chat.getActiveChatIndex() : -1}
 			onSelectChat={selectChat}
@@ -332,12 +332,15 @@
 		<SidebarPrimitive.Inset>
 			<div class="app-shell">
 				<div class="panel-layout" class:panel-layout-split={isSplit}>
-					{#each panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : 'chat')}
+					{#each workspaceState.panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : 'chat')}
 						<div class="panel-slot">
 							{#if panel.type === 'chat'}
 								<ChatView
 									bind:this={chatViewRef}
-									onClose={() => closePanel(index)}
+									onClose={() => {
+										chatSidePanelOpen = false;
+										closePanel(index);
+									}}
 									onFocusComposer={focusComposer}
 									onSidePanelChange={(open) => {
 										chatSidePanelOpen = open;
@@ -361,7 +364,7 @@
 								{@const folder = app.documents.getFolder(panel.folderId)}
 								{@const folderFiles = folder?.files ?? []}
 								{@const activeFileId =
-									folderSelectedFiles[panel.folderId] ?? folderFiles[0]?.id ?? null}
+									workspaceState.selectedFileIdsByFolderId[panel.folderId] ?? folderFiles[0]?.id ?? null}
 								<FolderDocumentView
 									folderId={panel.folderId}
 									folderName={folder?.name ?? 'Folder'}
@@ -371,7 +374,7 @@
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={agentState.pendingContent}
 									onSelectFile={(fileId) => {
-										folderSelectedFiles = { ...folderSelectedFiles, [panel.folderId]: fileId };
+										app.workspace.selectFolderFile(panel.folderId, fileId);
 										app.documents.openDocument(panel.folderId, fileId);
 									}}
 									onAcceptPending={() => app.agent.acceptPending(activeDocumentKey)}
@@ -382,17 +385,14 @@
 										? (c) =>
 												app.documents.updateOpenDocumentContent(panel.folderId, activeFileId, c)
 										: undefined}
-									onClose={() => {
-										if (activeFileId) app.documents.closeOpenDocument(panel.folderId, activeFileId);
-										closePanel(index);
-									}}
+									onClose={() => closePanel(index)}
 								/>
 							{/if}
 						</div>
 					{/each}
 				</div>
 
-				{#if panels.length === 0}
+				{#if workspaceState.panels.length === 0}
 					<div class="welcome-container">
 						<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
 					</div>
@@ -428,7 +428,7 @@
 							onOpenDocument: openDocumentPanel,
 							onOpenFolder: openFolderPanel,
 							onClosePanel: closePanel,
-							onToggleSidebar: () => (sidebarOpen = !sidebarOpen)
+							onToggleSidebar: app.workspace.toggleSidebar
 						}}
 						onScrollToNode={(nodeId) => {
 							ensureChatPanel();

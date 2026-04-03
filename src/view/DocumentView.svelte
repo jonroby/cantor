@@ -42,11 +42,7 @@
 			{onRejectPending}
 			{onSwap}
 			onContentChange={(c) => app.documents.updateOpenDocumentContent(folderId, fileId, c)}
-			onClose={() => {
-				app.documents.closeOpenDocument(folderId, fileId);
-				app.bootstrap.clearOpenDocument();
-				onClose();
-			}}
+			{onClose}
 		/>
 	{/if}
 </div>

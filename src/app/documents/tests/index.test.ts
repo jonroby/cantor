@@ -1,111 +1,25 @@
 import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
 import * as domain from '@/domain';
 
-vi.mock('jszip', () => {
-	const mockFile = vi.fn();
-	const mockGenerateAsync = vi.fn().mockResolvedValue(new Blob(['zip-content']));
-	class MockJSZip {
-		file = mockFile;
-		generateAsync = mockGenerateAsync;
-	}
-	return {
-		default: MockJSZip
-	};
+vi.mock('jszip', async () => {
+	const mocks = await import('@/tests/mocks/jszip');
+	return await mocks.mockJSZipModule();
 });
-
 vi.mock('@/state', async () => {
-	const actual = await vi.importActual<typeof import('@/state')>('@/state');
-	const importedDomain = await vi.importActual<typeof import('@/domain')>('@/domain');
-	const empty = importedDomain.tree.buildEmptyTree();
-	const result = importedDomain.tree.addExchange(
-		empty,
-		'unused',
-		'hello',
-		'claude-sonnet-4-6',
-		'claude'
-	);
-	const exchanges = importedDomain.tree.updateExchangeResponse(
-		result.tree.exchanges,
-		result.id,
-		'world'
-	);
-	const tree = { rootId: result.tree.rootId, exchanges };
-	const chatState = {
-		chats: [
-			{
-				id: 'chat-1',
-				name: 'Test Chat',
-				rootId: tree.rootId,
-				exchanges: tree.exchanges,
-				activeExchangeId: importedDomain.tree.getMainChatTail(tree),
-				contextStrategy: 'full',
-				mode: 'chat'
-			}
-		],
-		activeChatIndex: 0
-	};
-	const documentState: { folders: import('@/state').documents.Folder[] } = {
-		folders: [
-			{
-				id: 'folder-1',
-				name: 'Test Folder',
-				files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
-			}
-		]
-	};
-	return {
-		...actual,
-		chatState,
-		documentState,
-		chats: {
-			...actual.chats,
-			chatState
-		},
-		documents: {
-			...actual.documents,
-			documentState,
-			findFolder: (folderId: string) => {
-				for (const folder of documentState.folders) {
-					if (folder.id === folderId) return folder;
-					const sub = folder.folders?.find((f: { id: string }) => f.id === folderId);
-					if (sub) return sub;
-				}
-				return undefined;
-			}
-		}
-	};
+	const mocks = await import('@/tests/mocks/state');
+	return await mocks.mockStateModule();
 });
-
-vi.mock('@/lib', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@/lib')>()),
-	validateMd: {
-		validate: vi.fn().mockReturnValue([])
-	}
-}));
-
+vi.mock('@/lib', async (importOriginal) => {
+	const mocks = await import('@/tests/mocks/lib');
+	return await mocks.mockLibModuleFromOriginal(importOriginal);
+});
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks/external');
-	return createExternalMock({
-		providers: {
-			webllm: {
-				getWebLLMModels: vi.fn(async () => [])
-			},
-			vault: {
-				storedProviders: vi.fn(() => [])
-			}
-		},
-		persistence: {
-			getPersistedLayout: vi.fn(() => ({}))
-		}
-	});
+	const mocks = await import('@/tests/mocks/external');
+	return await mocks.mockExternalModule();
 });
-
 vi.mock('../../chat/index', async () => {
-	const actual = await import('../../chat/index');
-	return {
-		...actual,
-		addDocumentToChat: vi.fn()
-	};
+	const mocks = await import('@/tests/mocks/app');
+	return await mocks.mockAppChatModule();
 });
 
 import * as documents from '../index';
@@ -117,7 +31,9 @@ import * as external from '@/external';
 import {
 	addDocumentToChat,
 	createDocument,
+	createFileWithContent,
 	createFolder,
+	createNamedFolder,
 	deleteDocument,
 	getDocument,
 	getState,
@@ -227,6 +143,71 @@ beforeEach(() => {
 			files: [{ id: 'file-1', name: 'doc.md', content: '# Hello' }]
 		}
 	] as typeof state.documents.documentState.folders;
+	state.documents.documentState.openDocuments = [];
+	vi.mocked(state.documents.findFolder).mockImplementation((folderId: string) => {
+		const visit = (folders: typeof state.documents.documentState.folders): (typeof folders)[number] | undefined => {
+			for (const folder of folders) {
+				if (folder.id === folderId) return folder;
+				const nested = visit(folder.folders ?? []);
+				if (nested) return nested;
+			}
+			return undefined;
+		};
+		return visit(state.documents.documentState.folders);
+	});
+	vi.mocked(state.documents.newFolder).mockImplementation((parentId?: string) => {
+		const folderId = crypto.randomUUID();
+		const folder = { id: folderId, name: 'New Folder', files: [] as typeof state.documents.documentState.folders[number]['files'] };
+		if (parentId) {
+			const parent = state.documents.findFolder(parentId);
+			if (parent) parent.folders = [...(parent.folders ?? []), folder];
+		} else {
+			state.documents.documentState.folders = [...state.documents.documentState.folders, folder];
+		}
+		return folderId;
+	});
+	vi.mocked(state.documents.renameFolder).mockImplementation((folderId: string, name: string) => {
+		const folder = state.documents.findFolder(folderId);
+		if (!folder) return false;
+		const siblings = state.documents.documentState.folders;
+		if (siblings.some((candidate) => candidate.id !== folderId && candidate.name === name)) return false;
+		folder.name = name;
+		return true;
+	});
+	vi.mocked(state.documents.createDocumentInFolder).mockImplementation((folderId: string) => {
+		const folder = state.documents.findFolder(folderId);
+		if (!folder) return null;
+		const fileId = crypto.randomUUID();
+		folder.files = [...(folder.files ?? []), { id: fileId, name: 'Untitled.md', content: '' }];
+		return fileId;
+	});
+	vi.mocked(state.documents.selectDocument).mockImplementation((folderId: string, fileId: string) => {
+		state.documents.documentState.openDocuments = [
+			...state.documents.documentState.openDocuments,
+			{ id: crypto.randomUUID(), content: '', documentKey: { folderId, fileId } }
+		];
+	});
+	vi.mocked(state.documents.renameDocumentInFolder).mockImplementation(
+		(folderId: string, fileId: string, name: string) => {
+			const folder = state.documents.findFolder(folderId);
+			const file = folder?.files?.find((candidate) => candidate.id === fileId);
+			if (!file) return false;
+			if (folder?.files?.some((candidate) => candidate.id !== fileId && candidate.name === name)) {
+				return false;
+			}
+			file.name = name;
+			return true;
+		}
+	);
+	vi.mocked(state.documents.updateDocumentContent).mockImplementation((index: number, content: string) => {
+		const openDocument = state.documents.documentState.openDocuments[index];
+		if (!openDocument) return;
+		openDocument.content = content;
+		const key = openDocument.documentKey;
+		if (!key) return;
+		const file = state.documents.findFolder(key.folderId)?.files?.find((candidate) => candidate.id === key.fileId);
+		if (file) file.content = content;
+	});
 });
 
 // ── Public API ──────────────────────────────────────────────────────────────
@@ -263,6 +244,44 @@ describe('document app actions', () => {
 		expect(selectDocument).toHaveBeenCalledWith('folder-1', 'file-2');
 	});
 
+	it('creates a named folder through the mocked state layer', () => {
+		const result = createNamedFolder('Specs');
+
+		expect(state.documents.newFolder).toHaveBeenCalledWith(undefined);
+		expect(state.documents.renameFolder).toHaveBeenCalled();
+		expect(result).toEqual({
+			folderId: expect.any(String),
+			name: 'Specs'
+		});
+	});
+
+	it('creates a file with content through the mocked state layer', () => {
+		const result = createFileWithContent('folder-1', 'notes.md', '# Notes');
+
+		expect(state.documents.createDocumentInFolder).toHaveBeenCalledWith('folder-1');
+		expect(state.documents.renameDocumentInFolder).toHaveBeenCalled();
+		expect(state.documents.updateDocumentContent).toHaveBeenCalled();
+		expect(result).toMatchObject({
+			result: {
+				folderId: 'folder-1',
+				name: 'notes.md',
+				path: 'notes.md'
+			}
+		});
+	});
+
+	it('rejects unsupported file names before creating a file', () => {
+		const fileCount = state.documents.documentState.folders[0].files?.length ?? 0;
+
+		const result = createFileWithContent('folder-1', 'notes.txt', '# Notes');
+
+		expect(result).toEqual({
+			result: null,
+			error: 'Cantor only supports: .md, .svg'
+		});
+		expect(state.documents.documentState.folders[0].files).toHaveLength(fileCount);
+	});
+
 	it('adds a folder document to the active chat', () => {
 		const appendDocumentToChat = vi.fn(() => 'exchange-9');
 		const deps = createDeps({
@@ -290,7 +309,9 @@ describe('document app actions', () => {
 			'closeDocument',
 			'closeOpenDocument',
 			'createDocument',
+			'createFileWithContent',
 			'createFolder',
+			'createNamedFolder',
 			'deleteDocument',
 			'deleteFolder',
 			'exportFolder',

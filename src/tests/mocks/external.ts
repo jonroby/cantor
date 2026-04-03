@@ -105,3 +105,7 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 
 	return mergeMock<ExternalMock>(base, overrides);
 }
+
+export async function mockExternalModule() {
+	return createExternalMock();
+}

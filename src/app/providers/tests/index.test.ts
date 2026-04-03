@@ -1,16 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks/external');
-	return createExternalMock({
-		providers: {
-			webllm: {
-				getWebLLMModels: vi.fn(async () => [{ id: 'web-model', label: 'web-model', vramMB: 1024 }])
-			},
-			vault: {
-				storedProviders: vi.fn(() => ['claude'])
-			}
-		}
-	});
+	const mocks = await import('@/tests/mocks/external');
+	return await mocks.mockExternalModule();
 });
 
 import * as state from '@/state';
@@ -30,6 +21,10 @@ import {
 describe('app/providers', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(external.providers.webllm.getWebLLMModels).mockResolvedValue([
+			{ id: 'web-model', label: 'web-model', vramMB: 1024 }
+		]);
+		vi.mocked(external.providers.vault.storedProviders).mockReturnValue(['claude']);
 		state.providers.providerState.activeModel = null;
 		state.providers.providerState.contextLength = null;
 		state.providers.providerState.ollamaUrl = 'http://localhost:11434';
