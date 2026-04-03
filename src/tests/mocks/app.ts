@@ -111,15 +111,24 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		},
 		bootstrap: {
 			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
-			initialize: mockFn<typeof app.bootstrap.initialize>(() => ({
+			deleteTrashItem: mockFn<typeof app.bootstrap.deleteTrashItem>(async () => {}),
+			emptyTrash: mockFn<typeof app.bootstrap.emptyTrash>(async () => {}),
+			initialize: mockFn<typeof app.bootstrap.initialize>(async () => ({
 				restoredDocument: null,
-				chatPanelOpen: undefined,
+				panels: [{ type: 'chat' as const }],
+				expandedFolders: {},
 				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
+			loadTrash: mockFn<typeof app.bootstrap.loadTrash>(async () => []),
 			rememberOpenDocument: mockFn<typeof app.bootstrap.rememberOpenDocument>(),
-			save: mockFn<typeof app.bootstrap.save>(),
+			restoreChat: mockFn<typeof app.bootstrap.restoreChat>(async () => false),
+			restoreDocument: mockFn<typeof app.bootstrap.restoreDocument>(async () => false),
+			restoreFolder: mockFn<typeof app.bootstrap.restoreFolder>(async () => false),
+			save: mockFn<typeof app.bootstrap.save>(async () => {}),
 			setChatPanelOpen: mockFn<typeof app.bootstrap.setChatPanelOpen>(),
+			setExpandedFolders: mockFn<typeof app.bootstrap.setExpandedFolders>(),
+			setPanels: mockFn<typeof app.bootstrap.setPanels>(),
 			setSidebarOpen: mockFn<typeof app.bootstrap.setSidebarOpen>()
 		},
 		chat: {

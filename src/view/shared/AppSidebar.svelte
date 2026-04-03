@@ -39,6 +39,7 @@
 			name: string
 		) => { result: string | null; error?: string };
 		onMoveDocument: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
+		expandedFolders?: Record<string, boolean>;
 	}
 
 	let {
@@ -64,13 +65,11 @@
 		onAddDocumentToChat,
 		onDeleteDocument,
 		onRenameDocument,
-		onMoveDocument
+		onMoveDocument,
+		expandedFolders = $bindable({})
 	}: Props = $props();
 
 	const sidebar = Sidebar.useSidebar();
-
-	// Folder expansion
-	let expandedFolders: Record<string, boolean> = $state({});
 
 	function toggleFolder(folderId: string) {
 		expandedFolders = { ...expandedFolders, [folderId]: !expandedFolders[folderId] };

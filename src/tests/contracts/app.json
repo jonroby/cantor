@@ -1,6 +1,5 @@
 {
   "agent": {
-    "TOOLS": true,
     "acceptPending": true,
     "buildMessages": true,
     "buildSystemPrompt": true,
@@ -10,14 +9,23 @@
     "rejectPending": true,
     "reset": true,
     "stop": true,
-    "submit": true
+    "submit": true,
+    "TOOLS": true
   },
   "bootstrap": {
     "clearOpenDocument": true,
+    "deleteTrashItem": true,
+    "emptyTrash": true,
     "initialize": true,
+    "loadTrash": true,
     "rememberOpenDocument": true,
+    "restoreChat": true,
+    "restoreDocument": true,
+    "restoreFolder": true,
     "save": true,
     "setChatPanelOpen": true,
+    "setExpandedFolders": true,
+    "setPanels": true,
     "setSidebarOpen": true
   },
   "chat": {
@@ -50,9 +58,7 @@
     "submitPrompt": true
   },
   "documents": {
-    "SUPPORTED_EXTENSIONS": true,
     "addDocumentToChat": true,
-    "isSupportedFileName": true,
     "closeDocument": true,
     "closeOpenDocument": true,
     "createDocument": true,
@@ -67,11 +73,13 @@
     "importDocument": true,
     "importFolder": true,
     "importFolderIntoFolder": true,
+    "isSupportedFileName": true,
     "moveDocument": true,
     "openDocument": true,
     "renameDocument": true,
     "renameFolder": true,
     "resolveAsset": true,
+    "SUPPORTED_EXTENSIONS": true,
     "supportedExtensionsLabel": true,
     "updateDocumentContent": true,
     "updateOpenDocumentContent": true,

@@ -46,7 +46,26 @@ export const setContextStrategy = state.chats.setContextStrategy;
 
 export const createChat = state.chats.newChat;
 export const selectChat = state.chats.selectChat;
-export const removeChat = state.chats.deleteChat;
+
+export function removeChat(index: number) {
+	const chat = state.chats.chatState.chats[index];
+	if (!chat) return;
+	void external.persistence.trashItem({
+		id: crypto.randomUUID(),
+		type: 'chat',
+		name: chat.name,
+		deletedAt: Date.now(),
+		data: {
+			id: chat.id,
+			name: chat.name,
+			rootId: chat.rootId,
+			exchanges: chat.exchanges,
+			activeExchangeId: chat.activeExchangeId,
+			contextStrategy: chat.contextStrategy
+		}
+	});
+	state.chats.deleteChat(index);
+}
 
 export function renameChat(index: number, name: string): string | null {
 	return lib.rename.renameWithDedup(name, (candidate) => state.chats.renameChat(index, candidate));

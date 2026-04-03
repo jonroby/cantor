@@ -73,11 +73,11 @@ function restoreOpenDocument(): RestoredDocument | null {
 	return openDocument;
 }
 
-export function initialize() {
+export async function initialize() {
 	let hadDuplicateRenames = false;
 
 	try {
-		const snapshot = external.persistence.loadFromStorage();
+		const snapshot = await external.persistence.loadFromStorage();
 		if (snapshot) {
 			state.chats.hydrate(snapshot);
 			state.documents.documentState.folders = snapshot.folders;
@@ -100,9 +100,23 @@ export function initialize() {
 	const layout = external.persistence.getPersistedLayout();
 	void providers.initialize();
 
+	// Migrate legacy layout fields into panels array
+	let panels = layout.panels;
+	if (!panels) {
+		panels = [];
+		if (layout.chatPanelOpen !== false) panels.push({ type: 'chat' });
+		if (restoredDocument)
+			panels.push({
+				type: 'document',
+				folderId: restoredDocument.folderId,
+				fileId: restoredDocument.fileId
+			});
+	}
+
 	return {
-		restoredDocument,
-		chatPanelOpen: layout.chatPanelOpen,
+		restoredDocument: panels.length > 0 ? restoredDocument : null,
+		panels,
+		expandedFolders: layout.expandedFolders ?? {},
 		sidebarOpen: layout.sidebarOpen,
 		hadDuplicateRenames
 	};
@@ -111,31 +125,108 @@ export function initialize() {
 export function rememberOpenDocument(folderId: string, fileId: string) {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, openDocument: { folderId, fileId } });
-	save();
+	void save();
 }
 
 export function clearOpenDocument() {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, openDocument: undefined });
-	save();
+	void save();
 }
 
 export function setChatPanelOpen(open: boolean) {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, chatPanelOpen: open });
-	save();
+	void save();
 }
 
 export function setSidebarOpen(open: boolean) {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, sidebarOpen: open });
-	save();
+	void save();
+}
+
+export function setPanels(panels: external.persistence.PersistedPanel[]) {
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, panels });
+	void save();
+}
+
+export function setExpandedFolders(expandedFolders: Record<string, boolean>) {
+	const layout = external.persistence.getPersistedLayout();
+	external.persistence.setPersistedLayout({ ...layout, expandedFolders });
+	void save();
 }
 
 export function save() {
-	external.persistence.saveToStorage({
+	return external.persistence.saveToStorage({
 		chats: state.chats.chatState.chats,
 		activeChatIndex: state.chats.chatState.activeChatIndex,
 		folders: state.documents.documentState.folders
 	});
+}
+
+// --- Trash ---
+
+export type TrashItem = external.persistence.TrashItem;
+
+export function loadTrash() {
+	return external.persistence.loadTrash();
+}
+
+export function restoreChat(trashId: string) {
+	return external.persistence.getTrashItem(trashId).then((item) => {
+		if (!item || item.type !== 'chat') return false;
+		const data = item.data as state.chats.ChatRecord;
+		const existingNames = state.chats.chatState.chats.map((c) => c.name);
+		const name =
+			lib.rename.renameWithDedup(data.name, (candidate) => !existingNames.includes(candidate)) ??
+			data.name;
+		state.chats.addChat({ ...data, name });
+		void external.persistence.deleteTrashItem(trashId);
+		return true;
+	});
+}
+
+export function restoreFolder(trashId: string) {
+	return external.persistence.getTrashItem(trashId).then((item) => {
+		if (!item || item.type !== 'folder') return false;
+		const data = item.data as { id: string; name: string; files?: unknown[]; folders?: unknown[] };
+		const existingNames = state.documents.documentState.folders.map((f) => f.name);
+		const name =
+			lib.rename.renameWithDedup(data.name, (candidate) => !existingNames.includes(candidate)) ??
+			data.name;
+		state.documents.documentState.folders = [
+			...state.documents.documentState.folders,
+			{ ...data, name } as state.documents.Folder
+		];
+		void external.persistence.deleteTrashItem(trashId);
+		return true;
+	});
+}
+
+export function restoreDocument(trashId: string) {
+	return external.persistence.getTrashItem(trashId).then((item) => {
+		if (!item || item.type !== 'document') return false;
+		const data = item.data as { folderId: string; file: state.documents.DocumentFile };
+		const folder = state.documents.findFolder(data.folderId);
+		if (!folder) return false;
+		const existingNames = (folder.files ?? []).map((f) => f.name);
+		const name =
+			lib.rename.renameWithDedup(
+				data.file.name,
+				(candidate) => !existingNames.includes(candidate)
+			) ?? data.file.name;
+		folder.files = [...(folder.files ?? []), { ...data.file, name }];
+		void external.persistence.deleteTrashItem(trashId);
+		return true;
+	});
+}
+
+export function deleteTrashItem(trashId: string) {
+	return external.persistence.deleteTrashItem(trashId);
+}
+
+export function emptyTrash() {
+	return external.persistence.emptyTrash();
 }

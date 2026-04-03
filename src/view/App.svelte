@@ -21,6 +21,7 @@
 	let hasHydrated = $state(false);
 	let panels: PanelEntry[] = $state([]);
 	let sidebarOpen = $state(true);
+	let initialExpandedFolders: Record<string, boolean> = $state({});
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
@@ -89,7 +90,19 @@
 
 	$effect(() => {
 		if (hasHydrated) {
-			app.bootstrap.save();
+			void app.bootstrap.save();
+		}
+	});
+
+	$effect(() => {
+		if (hasHydrated) {
+			app.bootstrap.setPanels(panels);
+		}
+	});
+
+	$effect(() => {
+		if (hasHydrated) {
+			app.bootstrap.setExpandedFolders(initialExpandedFolders);
 		}
 	});
 
@@ -128,29 +141,29 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		const {
-			restoredDocument,
-			chatPanelOpen,
-			sidebarOpen: restoredSidebarOpen,
-			hadDuplicateRenames
-		} = app.bootstrap.initialize();
-		if (hadDuplicateRenames) {
-			toast.warning('Some items had duplicate names and were automatically renamed.');
-		}
+		void app.bootstrap
+			.initialize()
+			.then(
+				({
+					panels: restoredPanels,
+					expandedFolders: restoredExpandedFolders,
+					sidebarOpen: restoredSidebarOpen,
+					hadDuplicateRenames
+				}) => {
+					if (hadDuplicateRenames) {
+						toast.warning('Some items had duplicate names and were automatically renamed.');
+					}
 
-		if (restoredSidebarOpen === false) {
-			sidebarOpen = false;
-		}
+					if (restoredSidebarOpen === false) {
+						sidebarOpen = false;
+					}
 
-		if (chatPanelOpen !== false) {
-			panels = [{ type: 'chat' }];
-		}
+					panels = restoredPanels;
+					initialExpandedFolders = restoredExpandedFolders;
 
-		if (restoredDocument) {
-			openDocumentPanel(restoredDocument.folderId, restoredDocument.fileId);
-		}
-
-		hasHydrated = true;
+					hasHydrated = true;
+				}
+			);
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
@@ -215,9 +228,6 @@
 		const panel = panels[index];
 		if (panel?.type === 'chat') {
 			chatSidePanelOpen = false;
-			app.bootstrap.setChatPanelOpen(false);
-		} else if (panel?.type === 'document') {
-			app.bootstrap.clearOpenDocument();
 		}
 		panels = panels.filter((_, i) => i !== index);
 	}
@@ -231,7 +241,6 @@
 			} else {
 				panels = [{ type: 'chat' }, panels[1]];
 			}
-			app.bootstrap.setChatPanelOpen(true);
 		}
 	}
 
@@ -286,6 +295,7 @@
 		onOpenChange={(open) => app.bootstrap.setSidebarOpen(open)}
 	>
 		<AppSidebar
+			bind:expandedFolders={initialExpandedFolders}
 			chats={app.chat.getChats()}
 			activeChatIndex={hasChatPanel ? app.chat.getActiveChatIndex() : -1}
 			onSelectChat={selectChat}
@@ -302,7 +312,6 @@
 			onNewDocument={(folderId) => {
 				const document = app.documents.createDocument(folderId);
 				if (document) {
-					app.bootstrap.rememberOpenDocument(document.folderId, document.fileId);
 					openDocumentPanel(document.folderId, document.fileId);
 				}
 			}}
@@ -312,7 +321,6 @@
 			onOpenFolder={openFolderPanel}
 			onSelectDocument={(folderId, fileId) => {
 				if (app.documents.openDocument(folderId, fileId)) {
-					app.bootstrap.rememberOpenDocument(folderId, fileId);
 					openDocumentPanel(folderId, fileId);
 				}
 			}}
@@ -376,7 +384,6 @@
 										: undefined}
 									onClose={() => {
 										if (activeFileId) app.documents.closeOpenDocument(panel.folderId, activeFileId);
-										app.bootstrap.clearOpenDocument();
 										closePanel(index);
 									}}
 								/>

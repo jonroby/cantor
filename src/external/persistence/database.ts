@@ -1,6 +1,12 @@
 import * as domain from '@/domain';
 
-const STORAGE_KEY = 'chat-tree-store-svelte';
+const DB_NAME = 'cantor-db';
+const DB_VERSION = 2;
+const STORE_NAME = 'snapshots';
+const TRASH_STORE_NAME = 'trash';
+const SNAPSHOT_KEY = 'main';
+
+const LEGACY_STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
 const LEGACY_VAULT_KEY = 'byok_vault';
 
@@ -26,7 +32,7 @@ interface PersistedFolder {
 	files?: PersistedDocumentFile[];
 }
 
-interface PersistedSnapshot {
+export interface PersistedSnapshot {
 	chats: PersistedChat[];
 	activeChatIndex: number;
 	folders: PersistedFolder[];
@@ -56,12 +62,98 @@ function assertValidNames(chats: PersistedChat[], folders: PersistedFolder[]) {
 	}
 }
 
-// --- Chat & folder storage ---
+// --- IndexedDB helpers ---
+
+function openDB(): Promise<IDBDatabase> {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open(DB_NAME, DB_VERSION);
+		request.onupgradeneeded = () => {
+			const db = request.result;
+			if (!db.objectStoreNames.contains(STORE_NAME)) {
+				db.createObjectStore(STORE_NAME);
+			}
+			if (!db.objectStoreNames.contains(TRASH_STORE_NAME)) {
+				db.createObjectStore(TRASH_STORE_NAME, { keyPath: 'id' });
+			}
+		};
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbGet<T>(db: IDBDatabase, storeName: string, key: string): Promise<T | undefined> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(storeName, 'readonly');
+		const store = tx.objectStore(storeName);
+		const request = store.get(key);
+		request.onsuccess = () => resolve(request.result as T | undefined);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbPut(db: IDBDatabase, storeName: string, key: string, value: unknown): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(storeName, 'readwrite');
+		const store = tx.objectStore(storeName);
+		const request = store.put(JSON.parse(JSON.stringify(value)), key);
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbPutAutoKey(db: IDBDatabase, storeName: string, value: unknown): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(storeName, 'readwrite');
+		const store = tx.objectStore(storeName);
+		const request = store.put(JSON.parse(JSON.stringify(value)));
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbDelete(db: IDBDatabase, storeName: string, key: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(storeName, 'readwrite');
+		const store = tx.objectStore(storeName);
+		const request = store.delete(key);
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbGetAll<T>(db: IDBDatabase, storeName: string): Promise<T[]> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(storeName, 'readonly');
+		const store = tx.objectStore(storeName);
+		const request = store.getAll();
+		request.onsuccess = () => resolve(request.result as T[]);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbClear(db: IDBDatabase, storeName: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(storeName, 'readwrite');
+		const store = tx.objectStore(storeName);
+		const request = store.clear();
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
+}
+
+// --- Layout (in-memory, persisted alongside snapshot) ---
+
+export type PersistedPanel =
+	| { type: 'chat' }
+	| { type: 'document'; folderId: string; fileId: string }
+	| { type: 'folder'; folderId: string };
 
 export interface PersistedLayout {
 	openDocument?: { folderId: string; fileId: string };
 	chatPanelOpen?: boolean;
 	sidebarOpen?: boolean;
+	panels?: PersistedPanel[];
+	expandedFolders?: Record<string, boolean>;
 }
 
 let _layout: PersistedLayout = {};
@@ -74,8 +166,15 @@ export function setPersistedLayout(layout: PersistedLayout) {
 	_layout = layout;
 }
 
-export function loadFromStorage(): PersistedSnapshot | null {
-	const raw = localStorage.getItem(STORAGE_KEY);
+// --- Chat & folder storage ---
+
+interface StoredData {
+	snapshot: PersistedSnapshot;
+	layout: PersistedLayout;
+}
+
+function migrateFromLocalStorage(): StoredData | null {
+	const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
 	if (!raw) return null;
 	let parsed;
 	try {
@@ -83,42 +182,133 @@ export function loadFromStorage(): PersistedSnapshot | null {
 	} catch {
 		return null;
 	}
-	if (parsed.layout) {
-		_layout = parsed.layout;
-	} else {
-		_layout = {};
-	}
-
-	const snapshot = {
+	const snapshot: PersistedSnapshot = {
 		chats: Array.isArray(parsed.chats) ? (parsed.chats as PersistedChat[]) : [],
 		activeChatIndex: typeof parsed.activeChatIndex === 'number' ? parsed.activeChatIndex : 0,
 		folders: Array.isArray(parsed.folders) ? (parsed.folders as PersistedFolder[]) : []
 	};
-
-	try {
-		assertValidNames(snapshot.chats, snapshot.folders);
-	} catch (error) {
-		const persistenceError =
-			error instanceof Error
-				? error
-				: new Error(typeof error === 'string' ? error : 'Invalid storage');
-		Object.assign(persistenceError, { snapshot });
-		throw persistenceError;
-	}
-	return snapshot;
+	const layout: PersistedLayout = parsed.layout ?? {};
+	return { snapshot, layout };
 }
 
-export function saveToStorage(snapshot: PersistedSnapshot) {
+export async function loadFromStorage(): Promise<PersistedSnapshot | null> {
+	const db = await openDB();
+	try {
+		let stored = await idbGet<StoredData>(db, STORE_NAME, SNAPSHOT_KEY);
+
+		if (!stored) {
+			const migrated = migrateFromLocalStorage();
+			if (!migrated) return null;
+			await idbPut(db, STORE_NAME, SNAPSHOT_KEY, migrated);
+			localStorage.removeItem(LEGACY_STORAGE_KEY);
+			stored = migrated;
+		}
+
+		if (stored.layout) {
+			_layout = stored.layout;
+		} else {
+			_layout = {};
+		}
+
+		const snapshot = {
+			chats: Array.isArray(stored.snapshot?.chats)
+				? (stored.snapshot.chats as PersistedChat[])
+				: [],
+			activeChatIndex:
+				typeof stored.snapshot?.activeChatIndex === 'number' ? stored.snapshot.activeChatIndex : 0,
+			folders: Array.isArray(stored.snapshot?.folders)
+				? (stored.snapshot.folders as PersistedFolder[])
+				: []
+		};
+
+		try {
+			assertValidNames(snapshot.chats, snapshot.folders);
+		} catch (error) {
+			const persistenceError =
+				error instanceof Error
+					? error
+					: new Error(typeof error === 'string' ? error : 'Invalid storage');
+			Object.assign(persistenceError, { snapshot });
+			throw persistenceError;
+		}
+		return snapshot;
+	} finally {
+		db.close();
+	}
+}
+
+export async function saveToStorage(snapshot: PersistedSnapshot): Promise<void> {
 	assertValidNames(snapshot.chats, snapshot.folders);
-	localStorage.setItem(
-		STORAGE_KEY,
-		JSON.stringify({
-			chats: snapshot.chats,
-			activeChatIndex: snapshot.activeChatIndex,
-			folders: snapshot.folders,
+	const db = await openDB();
+	try {
+		await idbPut(db, STORE_NAME, SNAPSHOT_KEY, {
+			snapshot: {
+				chats: snapshot.chats,
+				activeChatIndex: snapshot.activeChatIndex,
+				folders: snapshot.folders
+			},
 			layout: _layout
-		})
-	);
+		});
+	} finally {
+		db.close();
+	}
+}
+
+// --- Trash storage ---
+
+export type TrashItemType = 'chat' | 'folder' | 'document';
+
+export interface TrashItem {
+	id: string;
+	type: TrashItemType;
+	name: string;
+	deletedAt: number;
+	data: unknown;
+}
+
+export async function trashItem(item: TrashItem): Promise<void> {
+	const db = await openDB();
+	try {
+		await idbPutAutoKey(db, TRASH_STORE_NAME, item);
+	} finally {
+		db.close();
+	}
+}
+
+export async function loadTrash(): Promise<TrashItem[]> {
+	const db = await openDB();
+	try {
+		return await idbGetAll<TrashItem>(db, TRASH_STORE_NAME);
+	} finally {
+		db.close();
+	}
+}
+
+export async function getTrashItem(id: string): Promise<TrashItem | undefined> {
+	const db = await openDB();
+	try {
+		return await idbGet<TrashItem>(db, TRASH_STORE_NAME, id);
+	} finally {
+		db.close();
+	}
+}
+
+export async function deleteTrashItem(id: string): Promise<void> {
+	const db = await openDB();
+	try {
+		await idbDelete(db, TRASH_STORE_NAME, id);
+	} finally {
+		db.close();
+	}
+}
+
+export async function emptyTrash(): Promise<void> {
+	const db = await openDB();
+	try {
+		await idbClear(db, TRASH_STORE_NAME);
+	} finally {
+		db.close();
+	}
 }
 
 // --- Vault (API key) storage ---
