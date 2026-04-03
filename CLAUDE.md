@@ -20,6 +20,13 @@ Always use `bun`.
 
 Do not use `npm`, `pnpm`, or `yarn` unless explicitly asked.
 
+## UI Stack
+
+- UI primitives live in `src/view/primitives`
+- use local primitives first before adding new third-party wrapper layers
+- `bits-ui` is allowed as the headless interaction/accessibility layer
+- `shadcn-svelte` and Tailwind are not part of the app UI stack anymore
+
 ## Architecture
 
 ```text
@@ -83,7 +90,8 @@ Use `lucide-svelte` for all icons. Do not use inline SVG paths or one-off SVGs f
 
 - Make impossible states impossible. But if the trade-off for call-site friction or performance isn't worth it, write imperative code.
 - Write code that is testable. If you can't test it without heavy mocking, it's in the wrong layer. Extract pure logic into Domain. Extract orchestration into App.
-- In tests, prefer the existing shared mocks under `src/tests/mocks`. Do not add ad hoc mock systems or per-suite mock wrappers when the shared mocks can be extended instead.
+- In tests, prefer the existing shared mocks under `tests/mocks`. Do not add ad hoc mock systems or per-suite mock wrappers when the shared mocks can be extended instead.
+- Shared test environment setup belongs under `tests/setup`. Shared rendered harness components belong under `tests/fixtures`.
 - Do not mock `@/lib` in app-layer tests unless there is no reasonable alternative. Prefer spying on the specific real export you need to override.
 - In app-layer tests, avoid importing the `@/app` barrel unless the test actually needs the full root namespace. Prefer the specific module under test to avoid unnecessary import-graph churn.
 - Do not add features, refactor code, or make "improvements" beyond what was asked.
