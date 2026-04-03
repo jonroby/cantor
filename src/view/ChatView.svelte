@@ -514,7 +514,7 @@
 
 	// Re-check scroll-away when chat path changes (e.g. opening a chat at the top)
 	$effect(() => {
-		mainChatPath;
+		void mainChatPath;
 		tick().then(checkScrollAway);
 	});
 </script>
