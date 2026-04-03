@@ -111,14 +111,14 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		},
 		bootstrap: {
 			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
-			initialize: mockFn<typeof app.bootstrap.initialize>(() => ({
+			initialize: mockFn<typeof app.bootstrap.initialize>(async () => ({
 				restoredDocument: null,
 				chatPanelOpen: undefined,
 				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
 			rememberOpenDocument: mockFn<typeof app.bootstrap.rememberOpenDocument>(),
-			save: mockFn<typeof app.bootstrap.save>(),
+			save: mockFn<typeof app.bootstrap.save>(async () => {}),
 			setChatPanelOpen: mockFn<typeof app.bootstrap.setChatPanelOpen>(),
 			setSidebarOpen: mockFn<typeof app.bootstrap.setSidebarOpen>()
 		},

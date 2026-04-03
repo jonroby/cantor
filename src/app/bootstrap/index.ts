@@ -73,11 +73,11 @@ function restoreOpenDocument(): RestoredDocument | null {
 	return openDocument;
 }
 
-export function initialize() {
+export async function initialize() {
 	let hadDuplicateRenames = false;
 
 	try {
-		const snapshot = external.persistence.loadFromStorage();
+		const snapshot = await external.persistence.loadFromStorage();
 		if (snapshot) {
 			state.chats.hydrate(snapshot);
 			state.documents.documentState.folders = snapshot.folders;
@@ -111,29 +111,29 @@ export function initialize() {
 export function rememberOpenDocument(folderId: string, fileId: string) {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, openDocument: { folderId, fileId } });
-	save();
+	void save();
 }
 
 export function clearOpenDocument() {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, openDocument: undefined });
-	save();
+	void save();
 }
 
 export function setChatPanelOpen(open: boolean) {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, chatPanelOpen: open });
-	save();
+	void save();
 }
 
 export function setSidebarOpen(open: boolean) {
 	const layout = external.persistence.getPersistedLayout();
 	external.persistence.setPersistedLayout({ ...layout, sidebarOpen: open });
-	save();
+	void save();
 }
 
 export function save() {
-	external.persistence.saveToStorage({
+	return external.persistence.saveToStorage({
 		chats: state.chats.chatState.chats,
 		activeChatIndex: state.chats.chatState.activeChatIndex,
 		folders: state.documents.documentState.folders

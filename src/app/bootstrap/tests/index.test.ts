@@ -5,8 +5,8 @@ vi.mock('@/external', async () => {
 	return createExternalMock({
 		persistence: {
 			getPersistedLayout: vi.fn(() => ({})),
-			loadFromStorage: vi.fn(),
-			saveToStorage: vi.fn(),
+			loadFromStorage: vi.fn(async () => null),
+			saveToStorage: vi.fn(async () => {}),
 			setPersistedLayout: vi.fn()
 		}
 	});
@@ -40,7 +40,7 @@ describe('app/bootstrap', () => {
 		state.documents.documentState.folders = [];
 	});
 
-	it('restores the last open document when it still exists', () => {
+	it('restores the last open document when it still exists', async () => {
 		state.documents.documentState.folders = [
 			{
 				id: 'folder-1',
@@ -52,7 +52,7 @@ describe('app/bootstrap', () => {
 			openDocument: { folderId: 'folder-1', fileId: 'file-1' }
 		});
 
-		expect(initialize()).toEqual({
+		expect(await initialize()).toEqual({
 			restoredDocument: { folderId: 'folder-1', fileId: 'file-1' },
 			hadDuplicateRenames: false
 		});
@@ -60,12 +60,12 @@ describe('app/bootstrap', () => {
 		expect(providers.initialize).toHaveBeenCalledOnce();
 	});
 
-	it('clears stale last-open-document persistence when the document no longer exists', () => {
+	it('clears stale last-open-document persistence when the document no longer exists', async () => {
 		vi.mocked(external.persistence.getPersistedLayout).mockReturnValue({
 			openDocument: { folderId: 'folder-1', fileId: 'file-1' }
 		});
 
-		expect(initialize().restoredDocument).toBeNull();
+		expect((await initialize()).restoredDocument).toBeNull();
 		expect(external.persistence.setPersistedLayout).toHaveBeenCalledWith({});
 	});
 

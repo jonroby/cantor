@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 vi.mock('@/view/components/shadcn/ui/sonner/sonner.svelte', async () => ({
 	default: (await import('../../../tests/fixtures/PassthroughWrapper.svelte')).default
@@ -42,14 +42,14 @@ vi.mock('@/app', async () => {
 	return createAppMock({
 		bootstrap: {
 			clearOpenDocument: vi.fn(),
-			initialize: vi.fn(() => ({
+			initialize: vi.fn(async () => ({
 				restoredDocument: null,
 				chatPanelOpen: undefined,
 				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
 			rememberOpenDocument: vi.fn(),
-			save: vi.fn(),
+			save: vi.fn(async () => {}),
 			setChatPanelOpen: vi.fn(),
 			setSidebarOpen: vi.fn()
 		},
@@ -111,11 +111,13 @@ describe('App', () => {
 		routerState.route = 'chat';
 	});
 
-	it('loads persisted state and initializes providers on mount', () => {
+	it('loads persisted state and initializes providers on mount', async () => {
 		render(App);
 
 		expect(app.bootstrap.initialize).toHaveBeenCalledOnce();
-		expect(screen.getByTestId('chat-view-mock')).toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getByTestId('chat-view-mock')).toBeInTheDocument();
+		});
 	});
 
 	it('opens search dialog from the keyboard shortcut', async () => {
@@ -135,8 +137,8 @@ describe('App', () => {
 	});
 
 	describe('gracefully renames duplicates on load', () => {
-		it('renames duplicate chat names', () => {
-			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
+		it('renames duplicate chat names', async () => {
+			vi.mocked(app.bootstrap.initialize).mockImplementation(async () => {
 				const chats = app.chat.getChats();
 				chats.length = 0;
 				chats.push(
@@ -168,14 +170,16 @@ describe('App', () => {
 
 			render(App);
 
+			await waitFor(() => {
+				expect(warningSpy).toHaveBeenCalled();
+			});
 			expect(app.chat.getChats()[0].name).toBe('Foo');
 			expect(app.chat.getChats()[1].name).toBe('Foo (2)');
-			expect(warningSpy).toHaveBeenCalled();
 			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 
-		it('renames duplicate folder names', () => {
-			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
+		it('renames duplicate folder names', async () => {
+			vi.mocked(app.bootstrap.initialize).mockImplementation(async () => {
 				const folders = app.documents.getState().folders;
 				folders.length = 0;
 				folders.push({ id: 'f1', name: 'Docs' }, { id: 'f2', name: 'Docs (2)' });
@@ -190,14 +194,16 @@ describe('App', () => {
 
 			render(App);
 
+			await waitFor(() => {
+				expect(warningSpy).toHaveBeenCalled();
+			});
 			expect(app.documents.getState().folders[0].name).toBe('Docs');
 			expect(app.documents.getState().folders[1].name).toBe('Docs (2)');
-			expect(warningSpy).toHaveBeenCalled();
 			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 
-		it('renames duplicate file names within a folder', () => {
-			vi.mocked(app.bootstrap.initialize).mockImplementation(() => {
+		it('renames duplicate file names within a folder', async () => {
+			vi.mocked(app.bootstrap.initialize).mockImplementation(async () => {
 				const folders = app.documents.getState().folders;
 				folders.length = 0;
 				folders.push({
@@ -219,9 +225,11 @@ describe('App', () => {
 
 			render(App);
 
+			await waitFor(() => {
+				expect(warningSpy).toHaveBeenCalled();
+			});
 			expect(app.documents.getState().folders[0].files![0].name).toBe('readme.md');
 			expect(app.documents.getState().folders[0].files![1].name).toBe('readme.md (2)');
-			expect(warningSpy).toHaveBeenCalled();
 			expect(app.bootstrap.save).toHaveBeenCalledOnce();
 		});
 

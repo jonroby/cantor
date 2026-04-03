@@ -1,6 +1,11 @@
 import * as domain from '@/domain';
 
-const STORAGE_KEY = 'chat-tree-store-svelte';
+const DB_NAME = 'cantor-db';
+const DB_VERSION = 1;
+const STORE_NAME = 'snapshots';
+const SNAPSHOT_KEY = 'main';
+
+const LEGACY_STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
 const LEGACY_VAULT_KEY = 'byok_vault';
 
@@ -26,7 +31,7 @@ interface PersistedFolder {
 	files?: PersistedDocumentFile[];
 }
 
-interface PersistedSnapshot {
+export interface PersistedSnapshot {
 	chats: PersistedChat[];
 	activeChatIndex: number;
 	folders: PersistedFolder[];
@@ -56,7 +61,43 @@ function assertValidNames(chats: PersistedChat[], folders: PersistedFolder[]) {
 	}
 }
 
-// --- Chat & folder storage ---
+// --- IndexedDB helpers ---
+
+function openDB(): Promise<IDBDatabase> {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open(DB_NAME, DB_VERSION);
+		request.onupgradeneeded = () => {
+			const db = request.result;
+			if (!db.objectStoreNames.contains(STORE_NAME)) {
+				db.createObjectStore(STORE_NAME);
+			}
+		};
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbGet<T>(db: IDBDatabase, key: string): Promise<T | undefined> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(STORE_NAME, 'readonly');
+		const store = tx.objectStore(STORE_NAME);
+		const request = store.get(key);
+		request.onsuccess = () => resolve(request.result as T | undefined);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function idbPut(db: IDBDatabase, key: string, value: unknown): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const tx = db.transaction(STORE_NAME, 'readwrite');
+		const store = tx.objectStore(STORE_NAME);
+		const request = store.put(JSON.parse(JSON.stringify(value)), key);
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
+}
+
+// --- Layout (in-memory, persisted alongside snapshot) ---
 
 export interface PersistedLayout {
 	openDocument?: { folderId: string; fileId: string };
@@ -74,8 +115,15 @@ export function setPersistedLayout(layout: PersistedLayout) {
 	_layout = layout;
 }
 
-export function loadFromStorage(): PersistedSnapshot | null {
-	const raw = localStorage.getItem(STORAGE_KEY);
+// --- Chat & folder storage ---
+
+interface StoredData {
+	snapshot: PersistedSnapshot;
+	layout: PersistedLayout;
+}
+
+function migrateFromLocalStorage(): StoredData | null {
+	const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
 	if (!raw) return null;
 	let parsed;
 	try {
@@ -83,42 +131,76 @@ export function loadFromStorage(): PersistedSnapshot | null {
 	} catch {
 		return null;
 	}
-	if (parsed.layout) {
-		_layout = parsed.layout;
-	} else {
-		_layout = {};
-	}
-
-	const snapshot = {
+	const snapshot: PersistedSnapshot = {
 		chats: Array.isArray(parsed.chats) ? (parsed.chats as PersistedChat[]) : [],
 		activeChatIndex: typeof parsed.activeChatIndex === 'number' ? parsed.activeChatIndex : 0,
 		folders: Array.isArray(parsed.folders) ? (parsed.folders as PersistedFolder[]) : []
 	};
-
-	try {
-		assertValidNames(snapshot.chats, snapshot.folders);
-	} catch (error) {
-		const persistenceError =
-			error instanceof Error
-				? error
-				: new Error(typeof error === 'string' ? error : 'Invalid storage');
-		Object.assign(persistenceError, { snapshot });
-		throw persistenceError;
-	}
-	return snapshot;
+	const layout: PersistedLayout = parsed.layout ?? {};
+	return { snapshot, layout };
 }
 
-export function saveToStorage(snapshot: PersistedSnapshot) {
+export async function loadFromStorage(): Promise<PersistedSnapshot | null> {
+	const db = await openDB();
+	try {
+		let stored = await idbGet<StoredData>(db, SNAPSHOT_KEY);
+
+		if (!stored) {
+			const migrated = migrateFromLocalStorage();
+			if (!migrated) return null;
+			await idbPut(db, SNAPSHOT_KEY, migrated);
+			localStorage.removeItem(LEGACY_STORAGE_KEY);
+			stored = migrated;
+		}
+
+		if (stored.layout) {
+			_layout = stored.layout;
+		} else {
+			_layout = {};
+		}
+
+		const snapshot = {
+			chats: Array.isArray(stored.snapshot?.chats)
+				? (stored.snapshot.chats as PersistedChat[])
+				: [],
+			activeChatIndex:
+				typeof stored.snapshot?.activeChatIndex === 'number' ? stored.snapshot.activeChatIndex : 0,
+			folders: Array.isArray(stored.snapshot?.folders)
+				? (stored.snapshot.folders as PersistedFolder[])
+				: []
+		};
+
+		try {
+			assertValidNames(snapshot.chats, snapshot.folders);
+		} catch (error) {
+			const persistenceError =
+				error instanceof Error
+					? error
+					: new Error(typeof error === 'string' ? error : 'Invalid storage');
+			Object.assign(persistenceError, { snapshot });
+			throw persistenceError;
+		}
+		return snapshot;
+	} finally {
+		db.close();
+	}
+}
+
+export async function saveToStorage(snapshot: PersistedSnapshot): Promise<void> {
 	assertValidNames(snapshot.chats, snapshot.folders);
-	localStorage.setItem(
-		STORAGE_KEY,
-		JSON.stringify({
-			chats: snapshot.chats,
-			activeChatIndex: snapshot.activeChatIndex,
-			folders: snapshot.folders,
+	const db = await openDB();
+	try {
+		await idbPut(db, SNAPSHOT_KEY, {
+			snapshot: {
+				chats: snapshot.chats,
+				activeChatIndex: snapshot.activeChatIndex,
+				folders: snapshot.folders
+			},
 			layout: _layout
-		})
-	);
+		});
+	} finally {
+		db.close();
+	}
 }
 
 // --- Vault (API key) storage ---

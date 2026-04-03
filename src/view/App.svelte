@@ -89,7 +89,7 @@
 
 	$effect(() => {
 		if (hasHydrated) {
-			app.bootstrap.save();
+			void app.bootstrap.save();
 		}
 	});
 
@@ -128,29 +128,34 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		const {
-			restoredDocument,
-			chatPanelOpen,
-			sidebarOpen: restoredSidebarOpen,
-			hadDuplicateRenames
-		} = app.bootstrap.initialize();
-		if (hadDuplicateRenames) {
-			toast.warning('Some items had duplicate names and were automatically renamed.');
-		}
+		void app.bootstrap
+			.initialize()
+			.then(
+				({
+					restoredDocument,
+					chatPanelOpen,
+					sidebarOpen: restoredSidebarOpen,
+					hadDuplicateRenames
+				}) => {
+					if (hadDuplicateRenames) {
+						toast.warning('Some items had duplicate names and were automatically renamed.');
+					}
 
-		if (restoredSidebarOpen === false) {
-			sidebarOpen = false;
-		}
+					if (restoredSidebarOpen === false) {
+						sidebarOpen = false;
+					}
 
-		if (chatPanelOpen !== false) {
-			panels = [{ type: 'chat' }];
-		}
+					if (chatPanelOpen !== false) {
+						panels = [{ type: 'chat' }];
+					}
 
-		if (restoredDocument) {
-			openDocumentPanel(restoredDocument.folderId, restoredDocument.fileId);
-		}
+					if (restoredDocument) {
+						openDocumentPanel(restoredDocument.folderId, restoredDocument.fileId);
+					}
 
-		hasHydrated = true;
+					hasHydrated = true;
+				}
+			);
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
