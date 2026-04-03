@@ -1,3 +1,51 @@
+/* ── Pane primitives ──────────────────────────────────────────────────────── */
+
+.pane-header {
+	height: var(--pane-header-height);
+	padding: 0 var(--pane-padding-h);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+	background: hsl(var(--background) / 0.97);
+	font-size: var(--text-base);
+	font-weight: 600;
+	color: hsl(var(--muted-foreground));
+	letter-spacing: 0.02em;
+}
+
+.pane-scroll {
+	flex: 1;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding-left: var(--pane-padding-h);
+	padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
+}
+
+.pane-scroll::-webkit-scrollbar {
+	width: var(--pane-scrollbar-width);
+}
+
+.pane-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.pane-scroll::-webkit-scrollbar-thumb {
+	background: transparent;
+	border-radius: 4px;
+}
+
+.pane-scroll:global(.is-scrolling)::-webkit-scrollbar-thumb {
+	background: hsl(var(--foreground) / 0.15);
+}
+
+.pane-column {
+	max-width: var(--pane-content-width);
+	margin: 0 auto;
+}
+
+/* ── End pane primitives ──────────────────────────────────────────────────── */
+
 .error-banner {
 	position: fixed;
 	top: 1rem;

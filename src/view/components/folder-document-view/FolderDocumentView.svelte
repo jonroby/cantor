@@ -2,6 +2,7 @@
 	import { Document } from '@/view/components/document';
 	import * as app from '@/app';
 	import { Folder, ChevronDown, File } from 'lucide-svelte';
+	import { Header } from '@/view/primitives';
 
 	interface Props {
 		folderId: string;
@@ -47,7 +48,7 @@
 </script>
 
 <div class="folderview-shell">
-	<div class="folderview-header">
+	<Header class="folderview-header">
 		<Folder size={16} />
 		<span class="folderview-folder-name">{folderName}</span>
 		<span class="folderview-separator">/</span>
@@ -79,7 +80,7 @@
 				</div>
 			{/if}
 		</div>
-	</div>
+	</Header>
 
 	{#if activeFile}
 		<Document
@@ -117,16 +118,7 @@
 		height: auto;
 	}
 
-	.folderview-shell :global(.docs-header) {
-		height: 52px;
-		padding: 0 12px;
-		gap: 8px;
-		background: hsl(var(--background) / 0.97);
-		font-size: var(--text-base);
-		font-weight: 600;
-		color: hsl(var(--muted-foreground));
-		letter-spacing: 0.02em;
-	}
+	/* .docs-header uses .pane-header from layout.css — no overrides needed */
 
 	/* Hide the Document's default icon and title — we show our own */
 	.folderview-shell :global(.docs-header-inner > svg:first-child),
@@ -134,25 +126,17 @@
 		display: none;
 	}
 
-	.folderview-header {
+	/* Overlays the Document's own header — absolute so it floats on top */
+	:global(.folderview-header) {
 		position: absolute;
 		top: 0;
-		left: 1rem;
-		right: 1rem;
-		height: 52px;
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		max-width: 720px;
-		margin: 0 auto;
-		font-size: var(--text-base);
-		color: hsl(var(--muted-foreground));
-		letter-spacing: 0.02em;
+		left: 0;
+		right: 0;
 		z-index: 1;
 		pointer-events: none;
 	}
 
-	.folderview-header > :global(*) {
+	:global(.folderview-header) > * {
 		pointer-events: auto;
 	}
 

@@ -64,14 +64,5 @@
 		border-radius: 0;
 	}
 
-	.documentview-shell :global(.docs-header) {
-		height: 52px;
-		padding: 0 12px;
-		gap: 8px;
-		background: hsl(var(--background) / 0.97);
-		font-size: var(--text-base);
-		font-weight: 600;
-		color: hsl(var(--muted-foreground));
-		letter-spacing: 0.02em;
-	}
+	/* .docs-header uses .pane-header from layout.css — no overrides needed */
 </style>

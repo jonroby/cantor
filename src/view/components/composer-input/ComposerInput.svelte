@@ -119,7 +119,7 @@
 
 <form
 	class={anchored
-		? 'composer mx-auto box-border w-full max-w-[720px]'
+		? 'composer mx-auto box-border w-full max-w-[var(--pane-content-width)]'
 		: 'composer fixed bottom-6 left-1/2 z-[25] w-[min(768px,calc(100vw-2rem))] -translate-x-1/2'}
 	onsubmit={(e: Event) => {
 		e.preventDefault();

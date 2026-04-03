@@ -67,6 +67,11 @@
 	--duration-fast: 120ms;
 	--duration-normal: 150ms;
 
+	--pane-content-width: 720px;
+	--pane-header-height: 52px;
+	--pane-padding-h: 1rem;
+	--pane-scrollbar-width: 8px;
+
 	--tooltip-bg: hsl(0 0% 12%);
 	--tooltip-fg: hsl(0 0% 98%);
 

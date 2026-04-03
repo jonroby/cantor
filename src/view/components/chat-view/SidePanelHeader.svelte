@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-svelte';
-	import { Button } from '@/view/primitives';
+	import { Button, Header } from '@/view/primitives';
 
 	interface Props {
 		sideChatIndex: number;
@@ -17,7 +17,7 @@
 </script>
 
 {#if sideChatCount > 0}
-	<div class="chatview-side-header">
+	<Header>
 		<Button
 			class="ghost-button"
 			variant="ghost"
@@ -54,7 +54,7 @@
 			<Plus size={14} />
 		</Button>
 		<Button
-			class="ghost-button chatview-side-close"
+			class="ghost-button ml-auto"
 			variant="ghost"
 			size="sm"
 			onclick={onClose}
@@ -62,12 +62,12 @@
 		>
 			<X size={14} />
 		</Button>
-	</div>
+	</Header>
 {:else}
-	<div class="chatview-side-header">
+	<Header>
 		<span class="chatview-side-counter">New side chat</span>
 		<Button
-			class="ghost-button chatview-side-close"
+			class="ghost-button ml-auto"
 			variant="ghost"
 			size="sm"
 			onclick={onClose}
@@ -75,30 +75,14 @@
 		>
 			<X size={14} />
 		</Button>
-	</div>
+	</Header>
 {/if}
 
 <style>
-	.chatview-side-header {
-		height: 52px;
-		box-sizing: border-box;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 0;
-		position: relative;
-		background: hsl(var(--background) / 0.97);
-		flex-shrink: 0;
-	}
-
 	.chatview-side-counter {
 		font-size: var(--text-base);
 		color: hsl(var(--muted-foreground));
 		min-width: 3rem;
 		text-align: center;
-	}
-
-	:global(.chatview-side-close) {
-		margin-left: auto;
 	}
 </style>

@@ -62,7 +62,7 @@
 			<ArrowDown size={18} />
 		</button>
 	{/if}
-	<div class="relative mx-auto max-w-[720px]">
+	<div class="relative mx-auto max-w-[var(--pane-content-width)]">
 		{#if composerHovered && isSplit}
 			<button
 				class={`absolute top-1/2 z-[30] flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-[0_1px_3px_hsl(var(--foreground)/0.1)] hover:bg-muted ${composerSide === 'right' ? 'left-[calc(-32px-16px)]' : 'right-[calc(-32px-16px)]'}`}

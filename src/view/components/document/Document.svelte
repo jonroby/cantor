@@ -18,6 +18,7 @@
 	import * as app from '@/app';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
+	import { Header } from '@/view/primitives';
 
 	interface Props {
 		title?: string;
@@ -369,7 +370,8 @@
 	ondrop={handleDrop}
 	onwheel={(e) => e.stopPropagation()}
 >
-	<div class="docs-header" class:docs-header-embedded={embedded}>
+	<Header class={embedded ? 'docs-header-embedded' : ''}>
+		<!-- inner wrapper retained for centering and border-bottom -->
 		<div class="docs-header-inner">
 			<FileText size={16} />
 			<span>{title || 'Document'}</span>
@@ -418,7 +420,7 @@
 				{/if}
 			</div>
 		</div>
-	</div>
+	</Header>
 	{#if error}
 		<div class="error-bar">{error}</div>
 	{/if}
@@ -496,16 +498,7 @@
 		border-radius: 0;
 	}
 
-	.docs-header-embedded {
-		height: 52px;
-		padding: 0 12px;
-		gap: 8px;
-		background: hsl(var(--background) / 0.97);
-		font-size: var(--text-base);
-		font-weight: 600;
-		color: hsl(var(--muted-foreground));
-		letter-spacing: 0.02em;
-	}
+	/* .docs-header-embedded now uses .pane-header from layout.css */
 
 	.panel-body-embedded {
 		padding-bottom: 12rem;
@@ -516,18 +509,12 @@
 		background: hsl(var(--primary, 220 90% 56%) / 0.04);
 	}
 
-	.docs-header {
-		display: flex;
-		padding: 0 1rem;
-		flex-shrink: 0;
-	}
-
 	.docs-header-inner {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		width: 100%;
-		max-width: 720px;
+		max-width: var(--pane-content-width);
 		margin: 0 auto;
 		padding: 12px 0;
 		font-size: var(--text-base);
@@ -656,7 +643,7 @@
 	}
 
 	.docs-streaming-inner {
-		max-width: 720px;
+		max-width: var(--pane-content-width);
 		margin: 0 auto;
 		padding-top: 16px;
 		border-top: 1px solid hsl(var(--border, 0 0% 85%));
@@ -667,15 +654,17 @@
 		min-height: 0;
 		display: flex;
 		justify-content: center;
-		padding: 16px 1rem 12rem;
-		padding-right: calc(1rem - 8px);
+		padding-top: 16px;
+		padding-bottom: 12rem;
+		padding-left: var(--pane-padding-h);
+		padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
 		overflow-y: auto;
 		overflow-x: hidden;
 	}
 
 	.docs-editor {
 		width: 100%;
-		max-width: 720px;
+		max-width: var(--pane-content-width);
 		min-height: 100%;
 		border: none;
 		outline: none;
@@ -691,8 +680,10 @@
 	.docs-content {
 		flex: 1;
 		min-height: 0;
-		padding: 16px 1rem 12rem 1rem;
-		padding-right: calc(1rem - 8px);
+		padding-top: 16px;
+		padding-bottom: 12rem;
+		padding-left: var(--pane-padding-h);
+		padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
 		overflow-y: auto;
 		overflow-x: hidden;
 		line-height: 1.7;
@@ -700,25 +691,8 @@
 	}
 
 	.docs-content-inner {
-		max-width: 720px;
+		max-width: var(--pane-content-width);
 		margin: 0 auto;
-	}
-
-	.docs-content:global(::-webkit-scrollbar) {
-		width: 8px;
-	}
-
-	.docs-content:global(::-webkit-scrollbar-track) {
-		background: transparent;
-	}
-
-	.docs-content:global(::-webkit-scrollbar-thumb) {
-		background: transparent;
-		border-radius: 4px;
-	}
-
-	.docs-content:global(.is-scrolling):global(::-webkit-scrollbar-thumb) {
-		background: hsl(var(--foreground) / 0.15);
 	}
 
 	.docs-content :global(h1) {

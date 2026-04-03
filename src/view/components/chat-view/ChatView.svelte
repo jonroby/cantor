@@ -2,6 +2,7 @@
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { X } from 'lucide-svelte';
+	import { Header } from '@/view/primitives';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
@@ -533,7 +534,7 @@
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
-			<div class="chatview-main-title">
+			<Header class="chatview-main-title">
 				{activeChat.name}
 				{#if onClose}
 					<button
@@ -544,8 +545,12 @@
 						<X size={14} />
 					</button>
 				{/if}
-			</div>
-			<div class="chatview-main" bind:this={mainScrollContainer} onscroll={handleMainScroll}>
+			</Header>
+			<div
+				class="pane-scroll chatview-main"
+				bind:this={mainScrollContainer}
+				onscroll={handleMainScroll}
+			>
 				<div class="chatview-exchanges">
 					<ExchangeList
 						exchanges={mainChatPath}
@@ -647,67 +652,35 @@
 		opacity: 1;
 	}
 
-	/* Title bar — ::after pseudo-element for the bottom border line */
-	.chatview-main-title {
+	/* Title bar — centers content column and draws bottom border line via ::after */
+	:global(.chatview-main-title) {
 		position: relative;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		height: 52px;
 		box-sizing: border-box;
-		flex-shrink: 0;
-		background: hsl(var(--background) / 0.97);
-		font-size: var(--text-base);
-		font-weight: 600;
-		color: hsl(var(--muted-foreground));
-		letter-spacing: 0.02em;
-		max-width: calc(720px + 2rem);
+		max-width: calc(var(--pane-content-width) + 2 * var(--pane-padding-h));
 		width: 100%;
-		padding: 0 1rem;
 		margin-left: auto;
 		margin-right: auto;
 	}
 
-	.chatview-main-title::after {
+	:global(.chatview-main-title)::after {
 		content: '';
 		position: absolute;
 		bottom: 0;
 		left: 50%;
 		transform: translateX(-50%);
-		width: calc(100% - 2rem);
-		max-width: 720px;
+		width: calc(100% - 2 * var(--pane-padding-h));
+		max-width: var(--pane-content-width);
 		height: 1px;
 		background: hsl(var(--border));
 	}
 
-	/* Scrollbar — pseudo-elements and dynamic .is-scrolling class */
+	/* .chatview-main extends .pane-scroll — no padding/scrollbar overrides needed */
 	.chatview-main {
-		flex: 1;
-		overflow-x: hidden;
-		overflow-y: auto;
-		padding: 0 calc(1rem - 8px) 0 1rem;
-	}
-
-	.chatview-main::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.chatview-main::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.chatview-main::-webkit-scrollbar-thumb {
-		background: transparent;
-		border-radius: 4px;
-	}
-
-	/* .is-scrolling is added dynamically via classList — must use :global() */
-	.chatview-main:global(.is-scrolling)::-webkit-scrollbar-thumb {
-		background: hsl(var(--foreground) / 0.15);
+		min-height: 0;
 	}
 
 	.chatview-exchanges {
-		max-width: 720px;
+		max-width: var(--pane-content-width);
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
