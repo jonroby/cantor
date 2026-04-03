@@ -1,13 +1,22 @@
 import { vi } from 'vitest';
-import * as actualLib from '@/lib';
 import type * as lib from '@/lib';
+import * as bm25 from '@/lib/bm25';
+import * as providerDefaults from '@/lib/provider-defaults';
+import * as providerTypes from '@/lib/provider-types';
+import * as rename from '@/lib/rename';
+import * as tokenEstimate from '@/lib/token-estimate';
+import * as validateMd from '@/lib/validate-md';
 
 export function createLibMock(
-	actual: typeof lib = actualLib,
+	actual?: typeof lib,
 	overrides?: Partial<typeof lib>
 ): typeof lib {
 	const base = {
-		...actual,
+		bm25,
+		providerDefaults,
+		providerTypes,
+		tokenEstimate,
+		...(actual ?? {}),
 		rename: {
 			renameWithDedup: vi.fn((name: string, tryRename: (candidate: string) => boolean) => {
 				const trimmed = name.trim();
@@ -23,7 +32,8 @@ export function createLibMock(
 			})
 		},
 		validateMd: {
-			...actual.validateMd,
+			...validateMd,
+			...(actual?.validateMd ?? {}),
 			validate: vi.fn(() => [])
 		}
 	} satisfies typeof lib;
@@ -35,7 +45,7 @@ export function createLibMock(
 }
 
 export async function mockLibModule() {
-	return createLibMock(actualLib);
+	return createLibMock();
 }
 
 export async function mockLibModuleFromOriginal(

@@ -25,7 +25,6 @@ vi.mock('../../chat/index', async () => {
 import * as documents from '../index';
 import * as state from '@/state';
 import * as lib from '@/lib';
-import * as app from '@/app';
 import * as external from '@/external';
 
 import {
@@ -354,7 +353,7 @@ describe('documents.importDocument', () => {
 	it('does nothing when no file is selected', async () => {
 		const feedback = createFeedback();
 		nextPickedFile = null;
-		app.documents.importDocument('folder-1', feedback);
+		documents.importDocument('folder-1', feedback);
 		await flushAsyncWork();
 
 		expect(feedback.success).not.toHaveBeenCalled();
@@ -366,7 +365,7 @@ describe('documents.importDocument', () => {
 		const feedback = createFeedback();
 		const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
 		nextPickedFile = file;
-		app.documents.importDocument('folder-1', feedback);
+		documents.importDocument('folder-1', feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.success).toHaveBeenCalled();
@@ -384,7 +383,7 @@ describe('documents.importDocument', () => {
 		const feedback = createFeedback();
 		const file = new File(['bad markdown'], 'bad.md', { type: 'text/markdown' });
 		nextPickedFile = file;
-		app.documents.importDocument('folder-1', feedback);
+		documents.importDocument('folder-1', feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.error).toHaveBeenCalledWith(expect.stringContaining('Invalid markdown'));
@@ -400,7 +399,7 @@ describe('documents.importDocument', () => {
 		] as typeof state.documents.documentState.folders;
 		const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
 		nextPickedFile = file;
-		app.documents.importDocument('folder-1', feedback);
+		documents.importDocument('folder-1', feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.success).toHaveBeenCalled();
@@ -414,7 +413,7 @@ describe('documents.importDocument', () => {
 		const feedback = createFeedback();
 		const file = new File(['# Test'], 'doc.md', { type: 'text/markdown' });
 		nextPickedFile = file;
-		app.documents.importDocument('missing-folder', feedback);
+		documents.importDocument('missing-folder', feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.error).toHaveBeenCalledWith('Folder not found');
@@ -428,7 +427,7 @@ describe('documents.importDocument', () => {
 
 describe('documents.exportFolder', () => {
 	it('creates a zip and triggers download', async () => {
-		await app.documents.exportFolder('folder-1');
+		await documents.exportFolder('folder-1');
 
 		expect(external.io.downloadBlob).toHaveBeenCalledOnce();
 		expect(downloads[0]?.filename).toBe('Test Folder.zip');
@@ -440,7 +439,7 @@ describe('documents.exportFolder', () => {
 			{ id: 'empty-folder', name: 'Empty', files: [] }
 		] as typeof state.documents.documentState.folders;
 
-		await app.documents.exportFolder('empty-folder', feedback);
+		await documents.exportFolder('empty-folder', feedback);
 
 		expect(feedback.error).toHaveBeenCalledWith('Folder is empty');
 	});
@@ -451,14 +450,14 @@ describe('documents.exportFolder', () => {
 			{ id: 'no-files', name: 'NoFiles' }
 		] as typeof state.documents.documentState.folders;
 
-		await app.documents.exportFolder('no-files', feedback);
+		await documents.exportFolder('no-files', feedback);
 
 		expect(feedback.error).toHaveBeenCalledWith('Folder is empty');
 	});
 
 	it('shows error for nonexistent folder', async () => {
 		const feedback = createFeedback();
-		await app.documents.exportFolder('nonexistent', feedback);
+		await documents.exportFolder('nonexistent', feedback);
 
 		expect(feedback.error).toHaveBeenCalledWith('Folder is empty');
 	});
@@ -472,7 +471,7 @@ describe('documents.importFolder', () => {
 		const txtFile = new File(['text'], 'readme.txt');
 		Object.defineProperty(txtFile, 'name', { value: 'readme.txt' });
 		nextPickedDirectory = [txtFile];
-		app.documents.importFolder(feedback);
+		documents.importFolder(feedback);
 		await flushAsyncWork();
 
 		expect(feedback.error).toHaveBeenCalledWith(
@@ -483,7 +482,7 @@ describe('documents.importFolder', () => {
 	it('does nothing when no files selected', async () => {
 		const feedback = createFeedback();
 		nextPickedDirectory = [];
-		app.documents.importFolder(feedback);
+		documents.importFolder(feedback);
 		await flushAsyncWork();
 
 		expect(feedback.error).not.toHaveBeenCalled();
@@ -495,7 +494,7 @@ describe('documents.importFolder', () => {
 		const mdFile = new File(['# Doc'], 'doc.md');
 		Object.defineProperty(mdFile, 'webkitRelativePath', { value: 'MyFolder/doc.md' });
 		nextPickedDirectory = [mdFile];
-		app.documents.importFolder(feedback);
+		documents.importFolder(feedback);
 
 		await vi.waitFor(() => {
 			expect(state.documents.documentState.folders.length).toBe(2);
@@ -510,7 +509,7 @@ describe('documents.importFolder', () => {
 		const feedback = createFeedback();
 		const mdFile = new File(['# Doc'], 'doc.md');
 		nextPickedDirectory = [mdFile];
-		app.documents.importFolder(feedback);
+		documents.importFolder(feedback);
 
 		await vi.waitFor(() => {
 			expect(state.documents.documentState.folders.length).toBe(2);
@@ -533,7 +532,7 @@ describe('documents.importFolder', () => {
 		const mdFile = new File(['# Doc'], 'doc.md');
 		Object.defineProperty(mdFile, 'webkitRelativePath', { value: 'MyFolder/doc.md' });
 		nextPickedDirectory = [mdFile];
-		app.documents.importFolder(feedback);
+		documents.importFolder(feedback);
 
 		await vi.waitFor(() => {
 			expect(state.documents.documentState.folders.length).toBe(3);
@@ -551,7 +550,7 @@ describe('documents.importFolder', () => {
 		const second = new File(['# Two'], 'doc.md');
 		Object.defineProperty(second, 'webkitRelativePath', { value: 'Batch/doc.md' });
 		nextPickedDirectory = [first, second];
-		app.documents.importFolder(feedback);
+		documents.importFolder(feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.success).toHaveBeenCalledWith('Uploaded 2 files');
@@ -574,7 +573,7 @@ describe('documents.importFolder', () => {
 		const invalidFile = new File(['bad markdown'], 'bad.md');
 		Object.defineProperty(invalidFile, 'webkitRelativePath', { value: 'Mixed/bad.md' });
 		nextPickedDirectory = [validFile, invalidFile];
-		app.documents.importFolder(feedback);
+		documents.importFolder(feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.error).toHaveBeenCalledWith(expect.stringContaining('Skipped bad.md'));
@@ -593,7 +592,7 @@ describe('documents.importFolderIntoFolder', () => {
 		const feedback = createFeedback();
 		const txtFile = new File(['text'], 'readme.txt');
 		nextPickedDirectory = [txtFile];
-		app.documents.importFolderIntoFolder('folder-1', feedback);
+		documents.importFolderIntoFolder('folder-1', feedback);
 		await flushAsyncWork();
 
 		expect(feedback.error).toHaveBeenCalledWith(
@@ -604,7 +603,7 @@ describe('documents.importFolderIntoFolder', () => {
 	it('does nothing when no files selected', async () => {
 		const feedback = createFeedback();
 		nextPickedDirectory = [];
-		app.documents.importFolderIntoFolder('folder-1', feedback);
+		documents.importFolderIntoFolder('folder-1', feedback);
 		await flushAsyncWork();
 
 		expect(feedback.error).not.toHaveBeenCalled();
@@ -615,7 +614,7 @@ describe('documents.importFolderIntoFolder', () => {
 		const first = new File(['# One'], 'doc.md');
 		const second = new File(['# Two'], 'doc.md');
 		nextPickedDirectory = [first, second];
-		app.documents.importFolderIntoFolder('folder-1', feedback);
+		documents.importFolderIntoFolder('folder-1', feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.success).toHaveBeenCalledWith('Uploaded 2 files');
@@ -631,7 +630,7 @@ describe('documents.importFolderIntoFolder', () => {
 		const feedback = createFeedback();
 		const file = new File(['# One'], 'doc.md');
 		nextPickedDirectory = [file];
-		app.documents.importFolderIntoFolder('missing-folder', feedback);
+		documents.importFolderIntoFolder('missing-folder', feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.error).toHaveBeenCalledWith('Folder not found');

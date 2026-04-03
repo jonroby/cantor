@@ -20,7 +20,6 @@ vi.mock('@/external', async () => {
 
 import * as chat from '../index';
 import * as state from '@/state';
-import * as app from '@/app';
 import * as external from '@/external';
 
 import {
@@ -389,7 +388,7 @@ describe('quickAsk', () => {
 
 describe('chat.exportState', () => {
 	it('creates a JSON blob and triggers download', () => {
-		app.chat.exportState();
+		chat.exportState();
 
 		expect(external.io.downloadBlob).toHaveBeenCalledOnce();
 		expect(downloads[0]?.filename).toMatch(/^chat-tree-\d+\.json$/);
@@ -400,7 +399,7 @@ describe('chat.exportState', () => {
 
 describe('chat.exportChat', () => {
 	it('downloads a single chat as JSON', () => {
-		app.chat.exportChat(0);
+		chat.exportChat(0);
 
 		expect(external.io.downloadBlob).toHaveBeenCalledOnce();
 		expect(downloads[0]?.filename).toBe('Test Chat.json');
@@ -408,7 +407,7 @@ describe('chat.exportChat', () => {
 
 	it('strips invalid filename characters', () => {
 		state.chats.chatState.chats[0].name = 'Chat/With:Bad*Chars?';
-		app.chat.exportChat(0);
+		chat.exportChat(0);
 
 		expect(downloads[0]?.filename).toBe('ChatWithBadChars.json');
 	});
@@ -422,7 +421,7 @@ describe('chat.importChat', () => {
 		const fileContent = JSON.stringify(buildValidUploadData());
 		const file = new File([fileContent], 'Imported Chat.json', { type: 'application/json' });
 		nextPickedFile = file;
-		app.chat.importChat(feedback);
+		chat.importChat(feedback);
 		await vi.waitFor(() => {
 			expect(feedback.success).toHaveBeenCalled();
 		});
@@ -442,7 +441,7 @@ describe('chat.importChat', () => {
 			type: 'application/json'
 		});
 		nextPickedFile = file;
-		app.chat.importChat(feedback);
+		chat.importChat(feedback);
 		await vi.waitFor(() => {
 			expect(feedback.success).toHaveBeenCalled();
 		});
@@ -455,7 +454,7 @@ describe('chat.importChat', () => {
 
 		const file = new File(['not json'], 'bad.json', { type: 'application/json' });
 		nextPickedFile = file;
-		app.chat.importChat(feedback);
+		chat.importChat(feedback);
 
 		await vi.waitFor(() => {
 			expect(feedback.error).toHaveBeenCalled();
@@ -465,7 +464,7 @@ describe('chat.importChat', () => {
 	it('does nothing when no file selected', async () => {
 		const feedback = createFeedback();
 		nextPickedFile = null;
-		app.chat.importChat(feedback);
+		chat.importChat(feedback);
 		await flushAsyncWork();
 
 		expect(feedback.success).not.toHaveBeenCalled();
