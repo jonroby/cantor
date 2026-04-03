@@ -39,6 +39,6 @@ export default defineConfig({
 		expect: { requireAssertions: true },
 		environment: 'node',
 		include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
-		setupFiles: ['src/view/vitest-setup-view.ts']
+		setupFiles: ['tests/setup/view.ts']
 	}
 });
