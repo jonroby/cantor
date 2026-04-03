@@ -111,7 +111,7 @@
 	type="file"
 	accept="image/jpeg,image/png,image/gif,image/webp"
 	multiple
-	style="display: none"
+	class="hidden"
 	onchange={handleFiles}
 />
 
@@ -255,7 +255,7 @@
 		border: 1px solid hsl(var(--border));
 		border-radius: 1.25rem;
 		background: hsl(var(--card) / 1);
-		box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+		box-shadow: 0 12px 40px hsl(var(--foreground) / 0.12);
 	}
 
 	.composer-row {

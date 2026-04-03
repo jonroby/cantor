@@ -384,7 +384,7 @@
 		max-width: 85%;
 		padding: 0.75rem 1rem;
 		border-radius: 0.75rem;
-		background: hsl(0 0% 92%);
+		background: hsl(var(--secondary));
 		font-size: 0.95rem;
 		line-height: 1.55;
 		word-break: break-word;
@@ -467,7 +467,7 @@
 
 	.chatmsg-block-askable:hover,
 	.chatmsg-block-selected {
-		background: hsl(0 0% 92%);
+		background: hsl(var(--secondary));
 	}
 
 	.chatmsg-context-scrim {

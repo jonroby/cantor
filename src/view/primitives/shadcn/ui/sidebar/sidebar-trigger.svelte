@@ -45,7 +45,5 @@
 			</Button>
 		{/snippet}
 	</Tooltip.Trigger>
-	<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
-		Close sidebar
-	</Tooltip.Content>
+	<Tooltip.Content side="right" class="text-xs tooltip-dark">Close sidebar</Tooltip.Content>
 </Tooltip.Root>

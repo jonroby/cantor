@@ -1,10 +1,16 @@
 import * as domain from '@/domain';
 import * as external from '@/external';
 import * as state from '@/state';
+import * as lib from '@/lib';
 import * as workspace from '@/app/workspace';
 import type { Provider, ActiveModel, ContextSize, State } from './types';
 
 export type * from './types';
+
+async function loadWebLLMProvider() {
+	const externalModule = await import('@/external');
+	return externalModule.providers.webllm;
+}
 
 function initProviders() {
 	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
@@ -12,7 +18,8 @@ function initProviders() {
 }
 
 async function hydrateWebLLMModels() {
-	state.providers.providerState.webllmModels = await external.providers.webllm.getWebLLMModels();
+	const webllm = await loadWebLLMProvider();
+	state.providers.providerState.webllmModels = await webllm.getWebLLMModels();
 }
 
 async function autoConnectOllama() {
@@ -64,7 +71,8 @@ async function loadWebLLMModel_(modelId: string) {
 	state.providers.providerState.webllmProgressText = '';
 	state.providers.providerState.webllmError = null;
 	try {
-		await external.providers.webllm.loadWebLLMModel(
+		const webllm = await loadWebLLMProvider();
+		await webllm.loadWebLLMModel(
 			modelId,
 			state.providers.providerState.webllmContextSize,
 			(report) => {
@@ -83,7 +91,8 @@ async function loadWebLLMModel_(modelId: string) {
 }
 
 async function deleteWebLLMCache(modelId: string) {
-	await external.providers.webllm.deleteModelCache(modelId);
+	const webllm = await loadWebLLMProvider();
+	await webllm.deleteModelCache(modelId);
 	if (
 		state.providers.providerState.activeModel?.provider === 'webllm' &&
 		state.providers.providerState.activeModel.modelId === modelId
@@ -94,7 +103,8 @@ async function deleteWebLLMCache(modelId: string) {
 }
 
 async function deleteAllWebLLMCaches() {
-	await external.providers.webllm.deleteAllModelCaches();
+	const webllm = await loadWebLLMProvider();
+	await webllm.deleteAllModelCaches();
 	if (state.providers.providerState.activeModel?.provider === 'webllm') {
 		state.providers.providerState.activeModel = null;
 	}
@@ -255,7 +265,7 @@ function getLocalProviders(): State['providers'] {
 			},
 			context: {
 				value: state.providers.providerState.webllmContextSize,
-				options: external.providers.webllm.WEBLLM_CONTEXT_OPTIONS
+				options: lib.providerDefaults.WEBLLM_CONTEXT_OPTIONS
 			},
 			models: state.providers.providerState.webllmModels.map((model) => ({
 				id: model.id,

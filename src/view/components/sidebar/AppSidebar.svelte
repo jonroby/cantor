@@ -173,14 +173,11 @@
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							<span
-								class="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600"
+								class="rounded-full bg-accent px-1.5 py-0.5 text-xs font-semibold text-accent-foreground"
 								>Alpha</span
 							>
 						</Tooltip.Trigger>
-						<Tooltip.Content
-							side="bottom"
-							class="max-w-[200px] border-none bg-neutral-900 text-xs text-white"
-						>
+						<Tooltip.Content side="bottom" class="max-w-(--dropdown-max-w) text-xs tooltip-dark">
 							Some features are still being refined.
 						</Tooltip.Content>
 					</Tooltip.Root>
@@ -217,9 +214,7 @@
 							</button>
 						{/snippet}
 					</Tooltip.Trigger>
-					<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
-						Open sidebar
-					</Tooltip.Content>
+					<Tooltip.Content side="right" class="text-xs tooltip-dark">Open sidebar</Tooltip.Content>
 				</Tooltip.Root>
 			</div>
 		{/if}
@@ -295,9 +290,7 @@
 								</button>
 							{/snippet}
 						</Tooltip.Trigger>
-						<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
-							Upload chat
-						</Tooltip.Content>
+						<Tooltip.Content side="right" class="text-xs tooltip-dark">Upload chat</Tooltip.Content>
 					</Tooltip.Root>
 				</Sidebar.GroupLabel>
 				<Sidebar.GroupContent>
@@ -390,7 +383,7 @@
 									</button>
 								{/snippet}
 							</Tooltip.Trigger>
-							<Tooltip.Content side="right" class="border-none bg-neutral-900 text-xs text-white">
+							<Tooltip.Content side="right" class="text-xs tooltip-dark">
 								Upload folder
 							</Tooltip.Content>
 						</Tooltip.Root>

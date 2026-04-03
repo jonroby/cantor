@@ -6,6 +6,30 @@ import path from 'path';
 
 export default defineConfig({
 	plugins: [tailwindcss(), svelte(), devtoolsJson()],
+	build: {
+		chunkSizeWarningLimit: 6500,
+		rollupOptions: {
+			output: {
+				manualChunks(id) {
+					if (id.includes('plotly.js-dist-min')) return 'plotly';
+					if (
+						id.includes('@mlc-ai/web-llm') ||
+						id.includes('/src/external/providers/webllm') ||
+						id.includes('/src/external/providers/webllm-worker')
+					) {
+						return 'webllm';
+					}
+					if (id.includes('/node_modules/katex/')) return 'katex';
+					if (id.includes('/node_modules/bits-ui/')) return 'bits-ui';
+					if (id.includes('/node_modules/lucide-svelte/')) return 'lucide';
+					if (id.includes('/node_modules/marked/')) return 'marked';
+					if (id.includes('/node_modules/dompurify/')) return 'dompurify';
+					if (id.includes('/node_modules/jszip/')) return 'jszip';
+					if (id.includes('/node_modules/xstate/')) return 'xstate';
+				}
+			}
+		}
+	},
 	resolve: {
 		alias: {
 			'@': path.resolve(__dirname, 'src')

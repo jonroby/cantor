@@ -193,7 +193,7 @@
 		border-radius: 0.7rem;
 		background: hsl(var(--card));
 		color: hsl(var(--card-foreground));
-		box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+		box-shadow: 0 2px 6px hsl(var(--foreground) / 0.06);
 		overflow: hidden;
 		min-width: 100%;
 	}

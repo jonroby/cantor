@@ -215,7 +215,7 @@
 	.landing {
 		position: relative;
 		min-height: 100vh;
-		background: #fafafa;
+		background: hsl(var(--background));
 		font-family: 'Inter', ui-sans-serif, sans-serif;
 		overflow-x: hidden;
 	}
@@ -242,7 +242,7 @@
 		padding: 16px 40px;
 		z-index: 10;
 		backdrop-filter: blur(12px);
-		background: rgba(250, 250, 250, 0.7);
+		background: hsl(var(--background) / 0.7);
 	}
 
 	.nav-left {
@@ -255,7 +255,7 @@
 		font-size: var(--text-xl);
 		font-weight: 700;
 		letter-spacing: -0.5px;
-		color: #111;
+		color: hsl(var(--foreground));
 	}
 
 	.nav-right {
@@ -267,32 +267,32 @@
 	.nav-link {
 		font-size: var(--text-md);
 		font-weight: 500;
-		color: #555;
+		color: hsl(var(--muted-foreground));
 		text-decoration: none;
 		transition: color 0.2s;
 	}
 
 	.nav-link:hover {
-		color: #111;
+		color: hsl(var(--foreground));
 	}
 
 	.launch-btn {
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background: #111;
-		color: #fff;
+		background: hsl(var(--primary));
+		color: hsl(var(--primary-foreground));
 		border: none;
 		border-radius: var(--radius-full);
 		padding: 8px 20px;
 		font-size: var(--text-md);
 		font-weight: 600;
 		cursor: pointer;
-		transition: background 0.2s;
+		transition: opacity 0.2s;
 	}
 
 	.launch-btn:hover {
-		background: #333;
+		opacity: 0.88;
 	}
 
 	/* Hero */
@@ -312,12 +312,12 @@
 		display: inline-flex;
 		align-items: center;
 		padding: 6px 16px;
-		background: rgba(99, 102, 241, 0.08);
-		border: 1px solid rgba(99, 102, 241, 0.2);
+		background: hsl(var(--accent));
+		border: 1px solid hsl(var(--border));
 		border-radius: var(--radius-full);
 		font-size: var(--text-base);
 		font-weight: 600;
-		color: #6366f1;
+		color: hsl(var(--accent-foreground));
 		margin-bottom: 24px;
 		letter-spacing: 0.02em;
 	}
@@ -327,7 +327,7 @@
 		font-weight: 800;
 		line-height: 1.05;
 		letter-spacing: 0.02em;
-		color: #111;
+		color: hsl(var(--foreground));
 		margin: 0 0 20px;
 	}
 
@@ -341,7 +341,7 @@
 	.hero-subtitle {
 		font-size: 18px;
 		line-height: 1.6;
-		color: #666;
+		color: hsl(var(--muted-foreground));
 		max-width: 560px;
 		margin: 0 0 36px;
 	}
@@ -357,8 +357,8 @@
 		align-items: center;
 		gap: 8px;
 		padding: 14px 32px;
-		background: #111;
-		color: #fff;
+		background: hsl(var(--primary));
+		color: hsl(var(--primary-foreground));
 		border: none;
 		border-radius: var(--radius-lg);
 		font-size: var(--text-lg);
@@ -368,15 +368,15 @@
 	}
 
 	.cta-primary:hover {
-		background: #333;
+		opacity: 0.88;
 		transform: translateY(-1px);
 	}
 
 	.cta-secondary {
 		padding: 14px 32px;
 		background: transparent;
-		color: #333;
-		border: 1px solid #ddd;
+		color: hsl(var(--foreground));
+		border: 1px solid hsl(var(--border));
 		border-radius: var(--radius-lg);
 		font-size: var(--text-lg);
 		font-weight: 600;
@@ -385,8 +385,7 @@
 	}
 
 	.cta-secondary:hover {
-		border-color: #bbb;
-		background: #fff;
+		background: hsl(var(--accent));
 	}
 
 	/* Features */
@@ -399,19 +398,19 @@
 	}
 
 	.feature-card {
-		background: rgba(255, 255, 255, 0.8);
+		background: hsl(var(--card) / 0.8);
 		backdrop-filter: blur(8px);
-		border: 1px solid #e5e5e5;
-		border-radius: 16px;
+		border: 1px solid hsl(var(--border));
+		border-radius: var(--radius-lg);
 		padding: 28px 24px;
 		text-align: left;
 		transition: all 0.25s;
 	}
 
 	.feature-card:hover {
-		border-color: #ccc;
+		border-color: hsl(var(--ring));
 		transform: translateY(-2px);
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+		box-shadow: 0 8px 30px hsl(var(--foreground) / 0.06);
 	}
 
 	.feature-icon {
@@ -420,23 +419,23 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(99, 102, 241, 0.08);
-		border-radius: 10px;
+		background: hsl(var(--accent));
+		border-radius: var(--radius-md);
 		margin-bottom: 14px;
-		color: #6366f1;
+		color: hsl(var(--accent-foreground));
 	}
 
 	.feature-card h3 {
-		font-size: 15px;
+		font-size: var(--text-md);
 		font-weight: 700;
-		color: #111;
+		color: hsl(var(--foreground));
 		margin: 0 0 6px;
 	}
 
 	.feature-card p {
 		font-size: var(--text-base);
 		line-height: 1.5;
-		color: #777;
+		color: hsl(var(--muted-foreground));
 		margin: 0;
 	}
 

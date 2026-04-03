@@ -78,7 +78,7 @@
 			<DropdownMenu.Content
 				align="start"
 				side="right"
-				class="z-50 min-w-[140px] rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
+				class="z-50 min-w-(--dropdown-min-w) rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
 			>
 				<DropdownMenu.Item
 					class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"

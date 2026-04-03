@@ -773,6 +773,6 @@
 		border: 1px solid hsl(var(--border));
 		border-radius: 8px;
 		padding: 16px;
-		background: white;
+		background: hsl(var(--card));
 	}
 </style>

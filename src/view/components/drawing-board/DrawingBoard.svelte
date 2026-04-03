@@ -652,11 +652,11 @@
 
 <style>
 	.drawing-board {
-		background: white;
+		background: hsl(var(--card));
 		border: 1px solid hsl(var(--border, 0 0% 85%));
 		border-radius: var(--radius-lg);
 		overflow: hidden;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+		box-shadow: 0 2px 8px hsl(var(--foreground) / 0.06);
 	}
 
 	.board-toolbar {
