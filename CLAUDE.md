@@ -91,10 +91,6 @@ Use `lucide-svelte` for all icons. Do not use inline SVG paths or one-off SVGs f
 - Do not create helpers or abstractions for one-time operations. Three similar lines is better than a premature abstraction.
 - Prefer small focused Svelte components.
 
-## Temporary Rules
-
-- When changing persisted data shapes, handle migration from the previous shape in `external/persistence`.
-
 ## Working Rules
 
 - Do not confuse copies (new chats from a copied path) with side chats (sibling branches).

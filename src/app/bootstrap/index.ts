@@ -75,27 +75,13 @@ function restoreOpenDocument(): RestoredDocument | null {
 }
 
 export async function initialize() {
-	let hadDuplicateRenames = false;
-
-	try {
-		const snapshot = await external.persistence.loadFromStorage();
-		if (snapshot) {
-			state.chats.hydrate(snapshot);
-			state.documents.documentState.folders = snapshot.folders;
-		}
-	} catch (error) {
-		const snapshot =
-			error && typeof error === 'object' && 'snapshot' in error ? error.snapshot : null;
-		if (snapshot && typeof snapshot === 'object') {
-			state.chats.hydrate(
-				snapshot as { chats: typeof state.chats.chatState.chats; activeChatIndex: number }
-			);
-			state.documents.documentState.folders = (
-				snapshot as { folders: typeof state.documents.documentState.folders }
-			).folders;
-		}
-		hadDuplicateRenames = repairDuplicateNames();
+	const snapshot = await external.persistence.loadFromStorage();
+	if (snapshot) {
+		state.chats.hydrate(snapshot);
+		state.documents.documentState.folders = snapshot.folders;
 	}
+
+	const hadDuplicateRenames = repairDuplicateNames();
 
 	const restoredDocument = restoreOpenDocument();
 	const layout = external.persistence.getPersistedLayout();

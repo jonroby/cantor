@@ -439,7 +439,12 @@ function updateExchangeResponse(
 	if (!tree) return;
 	let exchanges = domain.tree.updateExchangeResponse(tree.exchanges, exchangeId, response);
 	if (promptTokens > 0 || responseTokens > 0) {
-		exchanges = domain.tree.updateExchangeTokens(exchanges, exchangeId, promptTokens, responseTokens);
+		exchanges = domain.tree.updateExchangeTokens(
+			exchanges,
+			exchangeId,
+			promptTokens,
+			responseTokens
+		);
 	}
 	state.chats.replaceTreeByChatId(chatId, { rootId: tree.rootId, exchanges });
 }
@@ -449,11 +454,17 @@ function summarizeInput(input: Record<string, unknown>): string {
 	if (entries.length === 0) return '{}';
 	return entries
 		.slice(0, 4)
-		.map(([key, value]) => `${key}: ${typeof value === 'string' ? JSON.stringify(value) : String(value)}`)
+		.map(
+			([key, value]) =>
+				`${key}: ${typeof value === 'string' ? JSON.stringify(value) : String(value)}`
+		)
 		.join(', ');
 }
 
-function buildVerificationSummary(reads: agent.VerificationRead[], ctx: agent.ToolContext): string[] {
+function buildVerificationSummary(
+	reads: agent.VerificationRead[],
+	ctx: agent.ToolContext
+): string[] {
 	return reads.map((read) => {
 		const verification = agent.executeTool(read.name, read.input, ctx);
 		return `Verification via ${read.name}: ${verification.result}`;

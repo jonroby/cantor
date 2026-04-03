@@ -54,16 +54,14 @@ describe('app/agent', () => {
 	});
 
 	it('creates a file through the shared documents action', () => {
-		const createFileWithContent = vi
-			.spyOn(documents, 'createFileWithContent')
-			.mockReturnValue({
-				result: {
-					folderId: 'folder-1',
-					fileId: 'file-2',
-					name: 'notes.md',
-					path: 'notes.md'
-				}
-			});
+		const createFileWithContent = vi.spyOn(documents, 'createFileWithContent').mockReturnValue({
+			result: {
+				folderId: 'folder-1',
+				fileId: 'file-2',
+				name: 'notes.md',
+				path: 'notes.md'
+			}
+		});
 
 		const result = agent.executeTool(
 			'create_file',

@@ -1,7 +1,10 @@
-import type { PersistedPanel } from '@/external/persistence/database';
+export type WorkspacePanel =
+	| { type: 'chat' }
+	| { type: 'document'; folderId: string; fileId: string }
+	| { type: 'folder'; folderId: string };
 
 export interface WorkspaceState {
-	panels: PersistedPanel[];
+	panels: WorkspacePanel[];
 	sidebarOpen: boolean;
 	expandedFolders: Record<string, boolean>;
 	selectedFileIdsByFolderId: Record<string, string>;
@@ -21,7 +24,7 @@ export function hydrate(layout: Partial<WorkspaceState>) {
 	workspaceState.selectedFileIdsByFolderId = layout.selectedFileIdsByFolderId ?? {};
 }
 
-export function setPanels(panels: PersistedPanel[]) {
+export function setPanels(panels: WorkspacePanel[]) {
 	workspaceState.panels = panels;
 }
 

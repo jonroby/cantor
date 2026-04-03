@@ -1,9 +1,4 @@
-export type ThinkingEventType =
-	| 'status'
-	| 'note'
-	| 'tool_call'
-	| 'tool_result'
-	| 'verification';
+export type ThinkingEventType = 'status' | 'note' | 'tool_call' | 'tool_result' | 'verification';
 
 export interface ThinkingEvent {
 	id: string;
@@ -41,7 +36,9 @@ export function startStreaming(exchangeId: string) {
 }
 
 export function stopStreaming(exchangeId: string) {
-	agentState.streamingExchangeIds = agentState.streamingExchangeIds.filter((id) => id !== exchangeId);
+	agentState.streamingExchangeIds = agentState.streamingExchangeIds.filter(
+		(id) => id !== exchangeId
+	);
 	delete agentState.liveStatusByExchangeId[exchangeId];
 }
 

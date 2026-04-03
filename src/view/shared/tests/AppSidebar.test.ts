@@ -208,8 +208,24 @@ describe('AppSidebar', () => {
 		const user = userEvent.setup();
 		const props = {
 			chats: [
-				{ id: 'chat-1', name: 'Alpha', rootId: null, exchanges: {}, activeExchangeId: null, contextStrategy: 'full', mode: 'chat' },
-				{ id: 'chat-2', name: 'Beta', rootId: null, exchanges: {}, activeExchangeId: null, contextStrategy: 'full', mode: 'chat' }
+				{
+					id: 'chat-1',
+					name: 'Alpha',
+					rootId: null,
+					exchanges: {},
+					activeExchangeId: null,
+					contextStrategy: 'full',
+					mode: 'chat'
+				},
+				{
+					id: 'chat-2',
+					name: 'Beta',
+					rootId: null,
+					exchanges: {},
+					activeExchangeId: null,
+					contextStrategy: 'full',
+					mode: 'chat'
+				}
 			],
 			activeChatIndex: 0,
 			onSelectChat: vi.fn(),

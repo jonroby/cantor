@@ -172,40 +172,87 @@ interface StoredData {
 	layout: PersistedLayout;
 }
 
+function isPersistedPanel(value: unknown): value is PersistedPanel {
+	if (typeof value !== 'object' || value === null) return false;
+	const panel = value as Record<string, unknown>;
+	if (panel.type === 'chat') return true;
+	if (panel.type === 'folder') return typeof panel.folderId === 'string';
+	if (panel.type === 'document') {
+		return typeof panel.folderId === 'string' && typeof panel.fileId === 'string';
+	}
+	return false;
+}
+
+function isPersistedLayout(value: unknown): value is PersistedLayout {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+	const layout = value as Record<string, unknown>;
+	if (
+		'openDocument' in layout &&
+		layout.openDocument !== undefined &&
+		(typeof layout.openDocument !== 'object' ||
+			layout.openDocument === null ||
+			typeof (layout.openDocument as { folderId?: unknown }).folderId !== 'string' ||
+			typeof (layout.openDocument as { fileId?: unknown }).fileId !== 'string')
+	) {
+		return false;
+	}
+	if (
+		'sidebarOpen' in layout &&
+		layout.sidebarOpen !== undefined &&
+		typeof layout.sidebarOpen !== 'boolean'
+	) {
+		return false;
+	}
+	if (
+		'panels' in layout &&
+		layout.panels !== undefined &&
+		(!Array.isArray(layout.panels) || !layout.panels.every(isPersistedPanel))
+	) {
+		return false;
+	}
+	if ('expandedFolders' in layout && layout.expandedFolders !== undefined) {
+		if (
+			typeof layout.expandedFolders !== 'object' ||
+			layout.expandedFolders === null ||
+			Array.isArray(layout.expandedFolders)
+		) {
+			return false;
+		}
+		for (const value of Object.values(layout.expandedFolders as Record<string, unknown>)) {
+			if (typeof value !== 'boolean') return false;
+		}
+	}
+	return true;
+}
+
+function isPersistedSnapshot(value: unknown): value is PersistedSnapshot {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+	const snapshot = value as Record<string, unknown>;
+	return (
+		Array.isArray(snapshot.chats) &&
+		typeof snapshot.activeChatIndex === 'number' &&
+		Array.isArray(snapshot.folders)
+	);
+}
+
+function isStoredData(value: unknown): value is StoredData {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+	const stored = value as Record<string, unknown>;
+	return isPersistedSnapshot(stored.snapshot) && isPersistedLayout(stored.layout);
+}
+
 export async function loadFromStorage(): Promise<PersistedSnapshot | null> {
 	const db = await openDB();
 	try {
-		let stored = await idbGet<StoredData>(db, STORE_NAME, SNAPSHOT_KEY);
+		const stored = await idbGet<StoredData>(db, STORE_NAME, SNAPSHOT_KEY);
 		if (!stored) return null;
-
-		if (stored.layout) {
-			_layout = stored.layout;
-		} else {
-			_layout = {};
+		if (!isStoredData(stored)) {
+			throw new Error('Invalid storage');
 		}
 
-		const snapshot = {
-			chats: Array.isArray(stored.snapshot?.chats)
-				? (stored.snapshot.chats as PersistedChat[])
-				: [],
-			activeChatIndex:
-				typeof stored.snapshot?.activeChatIndex === 'number' ? stored.snapshot.activeChatIndex : 0,
-			folders: Array.isArray(stored.snapshot?.folders)
-				? (stored.snapshot.folders as PersistedFolder[])
-				: []
-		};
-
-		try {
-			assertValidNames(snapshot.chats, snapshot.folders);
-		} catch (error) {
-			const persistenceError =
-				error instanceof Error
-					? error
-					: new Error(typeof error === 'string' ? error : 'Invalid storage');
-			Object.assign(persistenceError, { snapshot });
-			throw persistenceError;
-		}
-		return snapshot;
+		_layout = stored.layout;
+		assertValidNames(stored.snapshot.chats, stored.snapshot.folders);
+		return stored.snapshot;
 	} finally {
 		db.close();
 	}

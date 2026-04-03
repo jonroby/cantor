@@ -6,7 +6,7 @@
 	import * as SidebarPrimitive from '@/view/components/shadcn/ui/sidebar';
 	import { AppSidebar, SearchDialog, Composer } from '@/view/shared';
 	import { LandingPage, routerState } from '@/view/routes';
-	import { ChatView, DocumentView, FolderDocumentView } from '@/view';
+	import { ChatView, DocumentView, FolderDocumentView } from '@/view/index';
 	import { ArrowDown } from 'lucide-svelte';
 	import * as app from '@/app';
 
@@ -76,16 +76,6 @@
 			.folders.find((f) => f.id === activeDocumentKey.folderId);
 		return folder?.files?.find((f) => f.id === activeDocumentKey.fileId) ?? null;
 	});
-	let activeDocumentIndex = $derived.by(() => {
-		if (!activeDocumentKey) return -1;
-		return app.documents
-			.getState()
-			.openDocuments.findIndex(
-				(d) =>
-					d.documentKey?.folderId === activeDocumentKey!.folderId &&
-					d.documentKey?.fileId === activeDocumentKey!.fileId
-			);
-	});
 
 	$effect(() => {
 		if (hasHydrated) {
@@ -128,15 +118,13 @@
 		window.addEventListener('dragover', handleWindowDragOver);
 		window.addEventListener('drop', handleWindowDrop);
 
-		void app.bootstrap
-			.initialize()
-			.then(({ hadDuplicateRenames }) => {
-				if (hadDuplicateRenames) {
-					toast.warning('Some items had duplicate names and were automatically renamed.');
-				}
+		void app.bootstrap.initialize().then(({ hadDuplicateRenames }) => {
+			if (hadDuplicateRenames) {
+				toast.warning('Some items had duplicate names and were automatically renamed.');
+			}
 
-				hasHydrated = true;
-			});
+			hasHydrated = true;
+		});
 
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
@@ -175,14 +163,14 @@
 		);
 		if (existingIndex >= 0) return;
 
-		const docPanel: PanelEntry = { type: 'document', folderId, fileId };
+		const documentPanel: PanelEntry = { type: 'document', folderId, fileId };
 
 		if (panels.length === 0) {
-			app.workspace.setPanels([docPanel]);
+			app.workspace.setPanels([documentPanel]);
 		} else if (panels.length === 1) {
-			app.workspace.setPanels([...panels, docPanel]);
+			app.workspace.setPanels([...panels, documentPanel]);
 		} else {
-			app.workspace.setPanels([panels[0]!, docPanel]);
+			app.workspace.setPanels([panels[0]!, documentPanel]);
 		}
 	}
 
@@ -365,7 +353,9 @@
 								{@const folder = app.documents.getFolder(panel.folderId)}
 								{@const folderFiles = folder?.files ?? []}
 								{@const activeFileId =
-									workspaceState.selectedFileIdsByFolderId[panel.folderId] ?? folderFiles[0]?.id ?? null}
+									workspaceState.selectedFileIdsByFolderId[panel.folderId] ??
+									folderFiles[0]?.id ??
+									null}
 								<FolderDocumentView
 									folderId={panel.folderId}
 									folderName={folder?.name ?? 'Folder'}

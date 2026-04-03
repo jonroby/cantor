@@ -90,7 +90,10 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			properties: {
 				filename: { type: 'string', description: 'File name such as "notes.md" or "diagram.svg".' },
 				content: { type: 'string', description: 'Full file content.' },
-				folder_id: { type: 'string', description: 'Target folder id. Defaults to current folder context.' },
+				folder_id: {
+					type: 'string',
+					description: 'Target folder id. Defaults to current folder context.'
+				},
 				subfolder: { type: 'string', description: 'Optional subfolder name.' }
 			},
 			required: ['filename', 'content']
@@ -348,13 +351,17 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			const folderId = (input.folder_id as string | undefined) ?? ctx.activeDocumentKey?.folderId;
 			const fileId = (input.file_id as string | undefined) ?? ctx.activeDocumentKey?.fileId;
 			if (!folderId || !fileId) {
-				return { result: 'Error: folder_id and file_id are required when there is no active document.' };
+				return {
+					result: 'Error: folder_id and file_id are required when there is no active document.'
+				};
 			}
 			const result = documents.getDocument(folderId, fileId);
 			if (!result) return { result: 'Error: document not found' };
 			const exchangeId = documents.addDocumentToChat(folderId, fileId);
 			if (!exchangeId) return { result: 'Error: could not add document to chat' };
-			return { result: `Added document "${result.file.name}" to the chat as exchange ${exchangeId}.` };
+			return {
+				result: `Added document "${result.file.name}" to the chat as exchange ${exchangeId}.`
+			};
 		},
 		verification: {
 			required: true,
@@ -453,13 +460,14 @@ const DOCUMENT_TOOLS: CapabilityTool[] = [
 			if (!folderId) return { result: 'Error: folder_id is required' };
 			const folder = documents.getFolder(folderId);
 			if (!folder) return { result: `Folder ${folderId} was not found.` };
-			const subfolders = (folder.folders ?? []).map((f) => `${f.name} (${f.id})`).join(', ') || 'none';
+			const subfolders =
+				(folder.folders ?? []).map((f) => `${f.name} (${f.id})`).join(', ') || 'none';
 			const files = (folder.files ?? []).map((f) => `${f.name} (${f.id})`).join(', ') || 'none';
 			return {
 				result: `Folder "${folder.name}" (${folder.id})\nSubfolders: ${subfolders}\nFiles: ${files}`
 			};
 		}
-	},
+	}
 ];
 
 const CHAT_TOOLS: CapabilityTool[] = [
@@ -590,8 +598,9 @@ const CHAT_TOOLS: CapabilityTool[] = [
 		}
 	},
 	{
-		name: 'inspect_chat_branches',
-		description: 'Inspect the child exchanges branching off an exchange. Omit exchange_id to use the active exchange.',
+		name: 'inspect_child_exchanges',
+		description:
+			'Inspect the child exchanges (main and side chats) off an exchange. Omit exchange_id to use the active exchange.',
 		kind: 'read',
 		input_schema: {
 			type: 'object',
@@ -610,15 +619,15 @@ const CHAT_TOOLS: CapabilityTool[] = [
 				.map((childId, index) => {
 					const child = current.exchanges[childId];
 					if (!child) return null;
-					const branchKind = index === 0 ? 'main' : `side ${index}`;
-					return `${branchKind}: ${child.id} -> ${child.prompt.text}`;
+					const chatKind = index === 0 ? 'main' : `side chat ${index}`;
+					return `${chatKind}: ${child.id} -> ${child.prompt.text}`;
 				})
 				.filter((line): line is string => line !== null);
 			return {
 				result:
 					children.length > 0
-						? `Branches from ${exchangeId}\n${children.join('\n')}`
-						: `Exchange ${exchangeId} has no child branches.`
+						? `Children of ${exchangeId}\n${children.join('\n')}`
+						: `Exchange ${exchangeId} has no child exchanges.`
 			};
 		}
 	},
@@ -689,7 +698,7 @@ const CHAT_TOOLS: CapabilityTool[] = [
 			buildReads(input) {
 				return [
 					{ name: 'inspect_active_chat', input: {} },
-					{ name: 'inspect_chat_branches', input: { exchange_id: input.exchange_id as string } }
+					{ name: 'inspect_child_exchanges', input: { exchange_id: input.exchange_id as string } }
 				];
 			}
 		}
@@ -772,7 +781,8 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 	},
 	{
 		name: 'inspect_workspace',
-		description: 'Inspect high-level workspace context such as active document and sidebar/panel capabilities.',
+		description:
+			'Inspect high-level workspace context such as active document and sidebar/panel capabilities.',
 		kind: 'read',
 		input_schema: { type: 'object', properties: {}, required: [] },
 		execute(_input, ctx) {
@@ -787,7 +797,11 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 					`Active document: ${activeDocument}\n` +
 					`Sidebar open: ${workspaceState.sidebarOpen ? 'yes' : 'no'}\n` +
 					`Panels: ${workspaceState.panels.map((panel, index) => `${index}:${panel.type}`).join(', ') || 'none'}\n` +
-					`Expanded folders: ${Object.keys(workspaceState.expandedFolders).filter((id) => workspaceState.expandedFolders[id]).join(', ') || 'none'}\n` +
+					`Expanded folders: ${
+						Object.keys(workspaceState.expandedFolders)
+							.filter((id) => workspaceState.expandedFolders[id])
+							.join(', ') || 'none'
+					}\n` +
 					`Can open documents: ${ctx.onOpenDocument ? 'yes' : 'no'}\n` +
 					`Can open folders: ${ctx.onOpenFolder ? 'yes' : 'no'}\n` +
 					`Can close panels: ${ctx.onClosePanel ? 'yes' : 'no'}\n` +
@@ -797,7 +811,8 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 	},
 	{
 		name: 'inspect_exchange',
-		description: 'Inspect an exchange in the active chat by id. Omit exchange_id to inspect the active exchange.',
+		description:
+			'Inspect an exchange in the active chat by id. Omit exchange_id to inspect the active exchange.',
 		kind: 'read',
 		input_schema: {
 			type: 'object',
@@ -837,7 +852,8 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 			const exchangeId = input.exchange_id as string;
 			if (!exchangeId) return { result: 'Error: exchange_id is required' };
 			const current = chat.getChat();
-			if (!current.exchanges[exchangeId]) return { result: `Error: exchange ${exchangeId} does not exist` };
+			if (!current.exchanges[exchangeId])
+				return { result: `Error: exchange ${exchangeId} does not exist` };
 			chat.selectExchange(exchangeId);
 			return { result: `Selected exchange ${exchangeId}.` };
 		},
@@ -878,7 +894,8 @@ const WORKSPACE_TOOLS: CapabilityTool[] = [
 		kind: 'workspace',
 		input_schema: { type: 'object', properties: {}, required: [] },
 		execute(_input, ctx) {
-			if (!ctx.onToggleSidebar) return { result: 'Error: toggling the sidebar is not available here' };
+			if (!ctx.onToggleSidebar)
+				return { result: 'Error: toggling the sidebar is not available here' };
 			ctx.onToggleSidebar();
 			return { result: 'Toggled sidebar.' };
 		},

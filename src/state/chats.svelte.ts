@@ -129,10 +129,7 @@ export function renameChat(index: number, name: string): boolean {
 	return true;
 }
 
-export function hydrate(parsed: {
-	chats?: ChatRecord[];
-	activeChatIndex?: number;
-}) {
+export function hydrate(parsed: { chats?: ChatRecord[]; activeChatIndex?: number }) {
 	if (parsed.chats?.length) {
 		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
 			chatState.chats = parsed.chats;

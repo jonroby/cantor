@@ -32,7 +32,7 @@ export function setSidebarOpen(open: boolean) {
 	void persistLayout({ sidebarOpen: open });
 }
 
-export function setPanels(panels: external.persistence.PersistedPanel[]) {
+export function setPanels(panels: state.workspace.WorkspacePanel[]) {
 	state.workspace.setPanels(panels);
 	void persistLayout({ panels });
 }

@@ -4,7 +4,7 @@
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button } from '@/view/components/custom';
 	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/lib/katex';
-	import type { ChatCardData } from './chat-card';
+	import type { ChatCardData } from '@/view/chat-card';
 
 	let { data }: { data: ChatCardData } = $props();
 

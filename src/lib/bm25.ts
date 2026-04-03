@@ -19,22 +19,22 @@ export function scoreBM25<T>(
 	const queryTerms = tokenize(query);
 	if (queryTerms.length === 0) return items.map((item) => ({ item, score: 0 }));
 
-	const docs = items.map((item) => tokenize(getText(item)));
-	const avgDl = docs.reduce((sum, d) => sum + d.length, 0) / docs.length;
-	const n = docs.length;
+	const tokenized = items.map((item) => tokenize(getText(item)));
+	const avgDl = tokenized.reduce((sum, d) => sum + d.length, 0) / tokenized.length;
+	const n = tokenized.length;
 
 	const df = new Map<string, number>();
-	for (const doc of docs) {
-		const seen = new Set(doc);
+	for (const tokens of tokenized) {
+		const seen = new Set(tokens);
 		for (const term of seen) {
 			df.set(term, (df.get(term) ?? 0) + 1);
 		}
 	}
 
-	return docs
-		.map((doc, i) => {
+	return tokenized
+		.map((tokens, i) => {
 			const tf = new Map<string, number>();
-			for (const term of doc) {
+			for (const term of tokens) {
 				tf.set(term, (tf.get(term) ?? 0) + 1);
 			}
 
@@ -44,7 +44,8 @@ export function scoreBM25<T>(
 				if (termDf === 0) continue;
 				const idf = Math.log((n - termDf + 0.5) / (termDf + 0.5) + 1);
 				const termTf = tf.get(term) ?? 0;
-				score += idf * ((termTf * (k1 + 1)) / (termTf + k1 * (1 - b + b * (doc.length / avgDl))));
+				score +=
+					idf * ((termTf * (k1 + 1)) / (termTf + k1 * (1 - b + b * (tokens.length / avgDl))));
 			}
 
 			return { item: items[i], score };

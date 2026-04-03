@@ -9,9 +9,15 @@
 	let { exchangeId, compact = false }: Props = $props();
 
 	let agentState = $derived(app.agent.getState());
-	let thinkingEvents = $derived(exchangeId ? (agentState.thinkingByExchangeId[exchangeId] ?? []) : []);
-	let liveStatus = $derived(exchangeId ? (agentState.liveStatusByExchangeId[exchangeId] ?? '') : '');
-	let expanded = $derived(exchangeId ? agentState.expandedByExchangeId[exchangeId] !== false : false);
+	let thinkingEvents = $derived(
+		exchangeId ? (agentState.thinkingByExchangeId[exchangeId] ?? []) : []
+	);
+	let liveStatus = $derived(
+		exchangeId ? (agentState.liveStatusByExchangeId[exchangeId] ?? '') : ''
+	);
+	let expanded = $derived(
+		exchangeId ? agentState.expandedByExchangeId[exchangeId] !== false : false
+	);
 	let hasActivity = $derived(!!liveStatus || thinkingEvents.length > 0);
 	let groupedEvents = $derived(buildGroups(thinkingEvents));
 	let stepCount = $derived(groupedEvents.length + (liveStatus ? 1 : 0));
@@ -31,13 +37,13 @@
 		| {
 				kind: 'tool';
 				id: string;
-				call: typeof thinkingEvents[number];
+				call: (typeof thinkingEvents)[number];
 				followups: typeof thinkingEvents;
 		  }
 		| {
 				kind: 'single';
 				id: string;
-				event: typeof thinkingEvents[number];
+				event: (typeof thinkingEvents)[number];
 		  };
 
 	function buildGroups(events: typeof thinkingEvents): EventGroup[] {
@@ -208,8 +214,7 @@
 		margin: 16px 16px 0;
 		border: 1px solid hsl(var(--border));
 		border-radius: 14px;
-		background:
-			linear-gradient(180deg, hsl(var(--muted) / 0.4), hsl(var(--background) / 0.92));
+		background: linear-gradient(180deg, hsl(var(--muted) / 0.4), hsl(var(--background) / 0.92));
 		overflow: hidden;
 	}
 

@@ -136,13 +136,13 @@ Potentially:
 
 ```ts
 interface ChatRecord {
-  id: string;
-  name: string;
-  rootId: string;
-  exchanges: ExchangeMap;
-  activeExchangeId: string | null;
-  contextStrategy: ContextStrategy;
-  mode: ChatMode;
+	id: string;
+	name: string;
+	rootId: string;
+	exchanges: ExchangeMap;
+	activeExchangeId: string | null;
+	contextStrategy: ContextStrategy;
+	mode: ChatMode;
 }
 ```
 
@@ -183,25 +183,25 @@ Example conceptual shape:
 
 ```ts
 interface AgentCapability {
-  id: string;
-  description: string;
-  actions: AgentAction[];
-  reads: AgentRead[];
+	id: string;
+	description: string;
+	actions: AgentAction[];
+	reads: AgentRead[];
 }
 
 interface AgentAction {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-  run: (input: Record<string, unknown>, ctx: AgentActionContext) => AgentActionResult;
-  verifyWith?: string[];
+	name: string;
+	description: string;
+	inputSchema: Record<string, unknown>;
+	run: (input: Record<string, unknown>, ctx: AgentActionContext) => AgentActionResult;
+	verifyWith?: string[];
 }
 
 interface AgentRead {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-  run: (input: Record<string, unknown>, ctx: AgentReadContext) => string;
+	name: string;
+	description: string;
+	inputSchema: Record<string, unknown>;
+	run: (input: Record<string, unknown>, ctx: AgentReadContext) => string;
 }
 ```
 
@@ -295,14 +295,14 @@ Actions should return structured metadata:
 
 ```ts
 interface AgentActionResult {
-  ok: boolean;
-  message: string;
-  createdIds?: string[];
-  updatedIds?: string[];
-  suggestedVerificationReads?: Array<{
-    name: string;
-    input: Record<string, unknown>;
-  }>;
+	ok: boolean;
+	message: string;
+	createdIds?: string[];
+	updatedIds?: string[];
+	suggestedVerificationReads?: Array<{
+		name: string;
+		input: Record<string, unknown>;
+	}>;
 }
 ```
 
@@ -401,11 +401,11 @@ Conceptual shape:
 
 ```ts
 type ThinkingEvent =
-  | { type: 'note'; text: string; createdAt: number }
-  | { type: 'tool_call'; toolName: string; inputSummary: string; createdAt: number }
-  | { type: 'tool_result'; toolName: string; resultSummary: string; createdAt: number }
-  | { type: 'verification'; text: string; createdAt: number }
-  | { type: 'status'; text: string; createdAt: number };
+	| { type: 'note'; text: string; createdAt: number }
+	| { type: 'tool_call'; toolName: string; inputSummary: string; createdAt: number }
+	| { type: 'tool_result'; toolName: string; resultSummary: string; createdAt: number }
+	| { type: 'verification'; text: string; createdAt: number }
+	| { type: 'status'; text: string; createdAt: number };
 ```
 
 Suggested runtime ownership:

@@ -39,7 +39,7 @@ vi.mock('@/app', async () => {
 		activeChatIndex: 0
 	};
 	const documentState = { folders: [], openDocuments: [] };
-		return createAppMock({
+	return createAppMock({
 		bootstrap: {
 			deleteTrashItem: vi.fn(async () => {}),
 			emptyTrash: vi.fn(async () => {}),

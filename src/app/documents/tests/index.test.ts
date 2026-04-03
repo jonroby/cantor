@@ -140,7 +140,9 @@ beforeEach(() => {
 	] as typeof state.documents.documentState.folders;
 	state.documents.documentState.openDocuments = [];
 	vi.mocked(state.documents.findFolder).mockImplementation((folderId: string) => {
-		const visit = (folders: typeof state.documents.documentState.folders): (typeof folders)[number] | undefined => {
+		const visit = (
+			folders: typeof state.documents.documentState.folders
+		): (typeof folders)[number] | undefined => {
 			for (const folder of folders) {
 				if (folder.id === folderId) return folder;
 				const nested = visit(folder.folders ?? []);
@@ -152,7 +154,11 @@ beforeEach(() => {
 	});
 	vi.mocked(state.documents.newFolder).mockImplementation((parentId?: string) => {
 		const folderId = crypto.randomUUID();
-		const folder = { id: folderId, name: 'New Folder', files: [] as typeof state.documents.documentState.folders[number]['files'] };
+		const folder = {
+			id: folderId,
+			name: 'New Folder',
+			files: [] as (typeof state.documents.documentState.folders)[number]['files']
+		};
 		if (parentId) {
 			const parent = state.documents.findFolder(parentId);
 			if (parent) parent.folders = [...(parent.folders ?? []), folder];
@@ -165,7 +171,8 @@ beforeEach(() => {
 		const folder = state.documents.findFolder(folderId);
 		if (!folder) return false;
 		const siblings = state.documents.documentState.folders;
-		if (siblings.some((candidate) => candidate.id !== folderId && candidate.name === name)) return false;
+		if (siblings.some((candidate) => candidate.id !== folderId && candidate.name === name))
+			return false;
 		folder.name = name;
 		return true;
 	});
@@ -176,12 +183,14 @@ beforeEach(() => {
 		folder.files = [...(folder.files ?? []), { id: fileId, name: 'Untitled.md', content: '' }];
 		return fileId;
 	});
-	vi.mocked(state.documents.selectDocument).mockImplementation((folderId: string, fileId: string) => {
-		state.documents.documentState.openDocuments = [
-			...state.documents.documentState.openDocuments,
-			{ id: crypto.randomUUID(), content: '', documentKey: { folderId, fileId } }
-		];
-	});
+	vi.mocked(state.documents.selectDocument).mockImplementation(
+		(folderId: string, fileId: string) => {
+			state.documents.documentState.openDocuments = [
+				...state.documents.documentState.openDocuments,
+				{ id: crypto.randomUUID(), content: '', documentKey: { folderId, fileId } }
+			];
+		}
+	);
 	vi.mocked(state.documents.renameDocumentInFolder).mockImplementation(
 		(folderId: string, fileId: string, name: string) => {
 			const folder = state.documents.findFolder(folderId);
@@ -194,15 +203,19 @@ beforeEach(() => {
 			return true;
 		}
 	);
-	vi.mocked(state.documents.updateDocumentContent).mockImplementation((index: number, content: string) => {
-		const openDocument = state.documents.documentState.openDocuments[index];
-		if (!openDocument) return;
-		openDocument.content = content;
-		const key = openDocument.documentKey;
-		if (!key) return;
-		const file = state.documents.findFolder(key.folderId)?.files?.find((candidate) => candidate.id === key.fileId);
-		if (file) file.content = content;
-	});
+	vi.mocked(state.documents.updateDocumentContent).mockImplementation(
+		(index: number, content: string) => {
+			const openDocument = state.documents.documentState.openDocuments[index];
+			if (!openDocument) return;
+			openDocument.content = content;
+			const key = openDocument.documentKey;
+			if (!key) return;
+			const file = state.documents
+				.findFolder(key.folderId)
+				?.files?.find((candidate) => candidate.id === key.fileId);
+			if (file) file.content = content;
+		}
+	);
 });
 
 // ── Public API ──────────────────────────────────────────────────────────────

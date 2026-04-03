@@ -280,6 +280,19 @@ describe('database', () => {
 			};
 			await expect(loadFromStorage()).rejects.toThrow('Duplicate file name');
 		});
+
+		it('throws when stored data is missing the current snapshot shape', async () => {
+			idbStores['snapshots'] = {
+				main: {
+					snapshot: {
+						chats: [buildChat('Chat 1')],
+						folders: []
+					},
+					layout: {}
+				}
+			};
+			await expect(loadFromStorage()).rejects.toThrow('Invalid storage');
+		});
 	});
 
 	describe('trash', () => {

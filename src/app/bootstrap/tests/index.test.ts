@@ -61,5 +61,4 @@ describe('app/bootstrap', () => {
 			openDocument: undefined
 		});
 	});
-
 });

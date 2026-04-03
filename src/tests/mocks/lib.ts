@@ -3,14 +3,10 @@ import type * as lib from '@/lib';
 import * as bm25 from '@/lib/bm25';
 import * as providerDefaults from '@/lib/provider-defaults';
 import * as providerTypes from '@/lib/provider-types';
-import * as rename from '@/lib/rename';
 import * as tokenEstimate from '@/lib/token-estimate';
 import * as validateMd from '@/lib/validate-md';
 
-export function createLibMock(
-	actual?: typeof lib,
-	overrides?: Partial<typeof lib>
-): typeof lib {
+export function createLibMock(actual?: typeof lib, overrides?: Partial<typeof lib>): typeof lib {
 	const base = {
 		bm25,
 		providerDefaults,
@@ -48,9 +44,7 @@ export async function mockLibModule() {
 	return createLibMock();
 }
 
-export async function mockLibModuleFromOriginal(
-	importOriginal: <T>() => Promise<T>
-) {
+export async function mockLibModuleFromOriginal(importOriginal: <T>() => Promise<T>) {
 	const actual = await importOriginal<typeof import('@/lib')>();
 	return createLibMock(actual);
 }

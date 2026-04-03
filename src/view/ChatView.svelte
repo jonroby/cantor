@@ -10,9 +10,9 @@
 		createDocumentPanel,
 		isSideChat,
 		withContent
-	} from './panel';
-	import type { Panel } from './panel';
-	import type { ChatCardData } from './chat-card';
+	} from '@/view/panel';
+	import type { Panel } from '@/view/panel';
+	import type { ChatCardData } from '@/view/chat-card';
 	import { Document } from '@/view/features/document';
 	import * as app from '@/app';
 
