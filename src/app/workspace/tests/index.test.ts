@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/external', async () => {
-	const mocks = await import('@/tests/mocks/external');
+	const mocks = await import('@tests/mocks/external');
 	return await mocks.mockExternalModule();
 });
 vi.mock('@/state', async () => {
-	const mocks = await import('@/tests/mocks/state');
+	const mocks = await import('@tests/mocks/state');
 	return await mocks.mockStateModule();
 });
 

@@ -10,7 +10,7 @@ import {
 	relative
 } from './ts-ast-utils.mjs';
 
-const CONTRACTS_DIR = path.join(SRC_DIR, 'tests', 'contracts');
+const CONTRACTS_DIR = path.join(process.cwd(), 'tests', 'contracts');
 const WRITE_MODE = process.argv.includes('--write');
 
 function diffMaps(actual, expected, currentPath = []) {
@@ -78,7 +78,7 @@ for (const area of ROOT_AREAS) {
 }
 
 if (WRITE_MODE) {
-	console.log('Public API contracts written to src/tests/contracts.');
+	console.log('Public API contracts written to tests/contracts.');
 	process.exit(0);
 }
 

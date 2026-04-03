@@ -1,0 +1,88 @@
+{
+	"io": {
+		"downloadBlob": true,
+		"pickDirectory": true,
+		"pickFile": true,
+		"validateChatUpload": true
+	},
+	"persistence": {
+		"clearVaultStorage": true,
+		"deleteTrashItem": true,
+		"emptyTrash": true,
+		"getPersistedLayout": true,
+		"getTrashItem": true,
+		"getVaultStore": true,
+		"loadFromStorage": true,
+		"loadTrash": true,
+		"saveToStorage": true,
+		"setPersistedLayout": true,
+		"setVaultStore": true,
+		"trashItem": true
+	},
+	"providers": {
+		"catalog": {
+			"CLAUDE_MODELS": true,
+			"getModelContextLength": true,
+			"getProviderForModelId": true,
+			"PROVIDER_CONFIG": true,
+			"PROVIDER_MODELS": true
+		},
+		"claude": {
+			"streamClaudeChat": true
+		},
+		"gemini": {
+			"streamGeminiChat": true
+		},
+		"ollama": {
+			"DEFAULT_OLLAMA_URL": true,
+			"fetchAvailableModels": true,
+			"fetchModelContextLength": true,
+			"streamOllamaChat": true
+		},
+		"openAiCompat": {
+			"streamOpenAICompatChat": true
+		},
+		"stream": {
+			"getProviderStream": true
+		},
+		"validate": {
+			"validateApiKey": true
+		},
+		"vault": {
+			"cacheSession": true,
+			"clearProviderKey": true,
+			"clearSession": true,
+			"clearVault": true,
+			"getCachedSession": true,
+			"hasProviderKey": true,
+			"hasVault": true,
+			"loadAllApiKeys": true,
+			"loadApiKey": true,
+			"saveApiKey": true,
+			"storedProviders": true,
+			"verifyPassword": true
+		},
+		"webllm": {
+			"deleteAllModelCaches": true,
+			"deleteModelCache": true,
+			"getLoadedModelId": true,
+			"getWebLLMEngine": true,
+			"getWebLLMModels": true,
+			"isModelCached": true,
+			"isWebLLMReady": true,
+			"loadWebLLMModel": true,
+			"streamWebLLMChat": true,
+			"unloadWebLLM": true,
+			"WEBLLM_CONTEXT_OPTIONS": true
+		}
+	},
+	"streams": {
+		"cancelAllStreams": true,
+		"cancelStream": true,
+		"cancelStreamsForChat": true,
+		"cancelStreamsForExchanges": true,
+		"isAnyStreaming": true,
+		"isStreaming": true,
+		"startStream": true
+	}
+}

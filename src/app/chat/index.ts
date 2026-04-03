@@ -326,31 +326,18 @@ export interface SubmitOptions {
 	};
 }
 
-function buildHistory(
-	exchanges: domain.tree.Exchange[],
-	liveDocumentContent?: string
-): domain.tree.Message[] {
-	const messages = exchanges.flatMap((exchange) => {
+function buildHistory(exchanges: domain.tree.Exchange[]): domain.tree.Message[] {
+	return exchanges.flatMap((exchange, i) => {
 		const userMsg: domain.tree.Message = { role: 'user', content: exchange.prompt.text };
-		if (exchange.prompt.images?.length) userMsg.images = exchange.prompt.images;
+		if (i === exchanges.length - 1 && exchange.prompt.images?.length) {
+			userMsg.images = exchange.prompt.images;
+		}
 		const result: domain.tree.Message[] = [userMsg];
 		if (exchange.response) {
 			result.push({ role: 'assistant', content: exchange.response.text });
 		}
 		return result;
 	});
-	if (liveDocumentContent !== undefined) {
-		messages.splice(
-			messages.length - 1,
-			0,
-			{
-				role: 'user',
-				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocumentContent}`
-			},
-			{ role: 'assistant', content: 'Understood, I have the document.' }
-		);
-	}
-	return messages;
 }
 
 export function submitPrompt(
@@ -382,7 +369,7 @@ export function submitPrompt(
 		currentPrompt: prompt
 	};
 	const selectedPath = selectExchanges(fullPath, budget);
-	const history = buildHistory(selectedPath, options?.liveDocumentContent);
+	const history = buildHistory(selectedPath);
 
 	deps.replaceActiveTree(created.tree);
 	deps.setActiveExchangeId(created.id);
@@ -396,7 +383,7 @@ export function submitPrompt(
 		: null;
 
 	if (toolContext) {
-		const systemPrompt = agent.buildSystemPrompt(options!.liveDocumentContent);
+		const systemPrompt = agent.buildSystemPrompt();
 		agent.startRun(chatId, created.id, model, history, toolContext, systemPrompt);
 	} else {
 		external.streams.startStream(

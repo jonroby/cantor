@@ -1,6 +1,6 @@
 <script lang="ts">
-	import AppSidebar from '@/view/shared/AppSidebar.svelte';
-	import * as Sidebar from '@/view/components/shadcn/ui/sidebar/index.js';
+	import AppSidebar from '@/view/components/sidebar/AppSidebar.svelte';
+	import * as Sidebar from '@/view/primitives/sidebar';
 	import { chatState, newChat, selectChat, deleteChat, renameChat } from '@/state/chats.svelte';
 	import {
 		documentState,

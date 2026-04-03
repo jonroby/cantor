@@ -1,27 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/external', async () => {
-	const mocks = await import('@/tests/mocks/external');
+	const mocks = await import('@tests/mocks/external');
 	return await mocks.mockExternalModule();
 });
 vi.mock('@/state', async () => {
-	const mocks = await import('@/tests/mocks/state');
+	const mocks = await import('@tests/mocks/state');
 	return await mocks.mockStateModule();
 });
 vi.mock('@/app/documents', async () => {
-	const mocks = await import('@/tests/mocks/app');
+	const mocks = await import('@tests/mocks/app');
 	return await mocks.mockAppDocumentsModule();
 });
 vi.mock('@/app/chat', async () => {
-	const mocks = await import('@/tests/mocks/app');
+	const mocks = await import('@tests/mocks/app');
 	return await mocks.mockAppChatModule();
 });
 vi.mock('@/app/providers', async () => {
-	const mocks = await import('@/tests/mocks/app');
+	const mocks = await import('@tests/mocks/app');
 	return await mocks.mockAppProvidersModule();
 });
 vi.mock('@/app/workspace', async () => {
-	const mocks = await import('@/tests/mocks/app');
+	const mocks = await import('@tests/mocks/app');
 	return await mocks.mockAppWorkspaceModule();
 });
 
@@ -89,5 +89,12 @@ describe('app/agent', () => {
 
 		expect(createNamedFolder).toHaveBeenCalledWith('Specs', 'folder-1');
 		expect(result.result).toBe('Created folder "Specs" (id: folder-2).');
+	});
+
+	it('tells the agent that markdown documents support plot and plotly code fences', () => {
+		const prompt = agent.buildSystemPrompt();
+
+		expect(prompt).toContain('Use ```plot for function-plot JSON configs.');
+		expect(prompt).toContain('Use ```plotly for Plotly JSON configs.');
 	});
 });

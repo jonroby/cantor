@@ -1,7 +1,6 @@
 import * as domain from '@/domain';
 import * as catalog from './catalog';
 import { streamOllamaChat } from './ollama';
-import { streamWebLLMChat } from './webllm';
 import { streamClaudeChat } from './claude';
 import { streamGeminiChat } from './gemini';
 import { streamOpenAICompatChat } from './openai-compat';
@@ -36,7 +35,12 @@ export function getProviderStream(
 	tools?: ToolDefinition[],
 	system?: string
 ) {
-	if (model.provider === 'webllm') return streamWebLLMChat(history, signal);
+	if (model.provider === 'webllm') {
+		return (async function* () {
+			const { streamWebLLMChat } = await import('./webllm');
+			yield* streamWebLLMChat(history, signal);
+		})();
+	}
 	if (model.provider === 'ollama')
 		return streamOllamaChat(model.modelId, history, signal, runtime.ollamaUrl ?? '');
 	if (model.provider === 'claude')

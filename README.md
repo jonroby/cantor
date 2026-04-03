@@ -2,6 +2,12 @@
 
 An LLM interface for power users. Svelte 5 + Vite single-page app with browser-only state persisted to IndexedDB.
 
+UI notes:
+
+- local primitives are built in `src/view/primitives/`
+- interactive primitives use `bits-ui` under the hood where helpful
+- `shadcn-svelte` and Tailwind are no longer part of the app UI stack
+
 ## Features
 
 - Chat with Claude (via API), Gemini, local Ollama models, OpenAI-compatible endpoints, or WebLLM (in-browser)
@@ -60,7 +66,7 @@ bun run test             # Vitest suite
 
 Public APIs are frozen in two parts:
 
-- **Contract files** in `src/tests/contracts/` declare the exact public export shape for each root module
+- **Contract files** in `tests/contracts/` declare the exact public export shape for each root module
 - **Public API tests** in `src/*/tests/index.test.ts` import the real module and compare it to the matching contract
 
 If you add an export to a public module and do not update its contract, the public API test will fail.
@@ -107,14 +113,17 @@ src/
 ├── view/          UI and presentation logic
 │   ├── routes/        ChatView
 │   ├── features/      code-editor, document, drawing-board, model-palette, python-editor
-│   ├── components/    shadcn primitives, custom components
+│   ├── components/    app components
+│   ├── primitives/    local UI primitives built on Svelte + bits-ui
 │   ├── shared/        shared view utilities
 │   ├── css/           global stylesheets
 │   ├── lib/           view-specific helpers (katex)
 │   └── assets/        static assets
 │
 └── tests/         shared test infrastructure
+    ├── setup/         shared Vitest/browser setup
     ├── contracts/     public API contract JSON files
     ├── mocks/         shared mock factories
+    ├── fixtures/      Svelte test harness components
     └── public-api/    public API enforcement tests
 ```
