@@ -5,6 +5,47 @@ import type * as providers from '@/external/providers';
 
 type StreamActor = Actor<typeof streamMachine>;
 
+const CONTENT_THRESHOLD = 200;
+
+function summarizeToolInput(input: Record<string, unknown>): Record<string, unknown> {
+	const summarized: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(input)) {
+		if (typeof value === 'string' && value.length > CONTENT_THRESHOLD) {
+			summarized[key] = `[${value.length} chars]`;
+		} else {
+			summarized[key] = value;
+		}
+	}
+	return summarized;
+}
+
+function truncateToolResult(content: string): string {
+	if (content.length <= CONTENT_THRESHOLD) return content;
+	return content.slice(0, CONTENT_THRESHOLD) + `… [truncated, ${content.length} chars total]`;
+}
+
+function compressOlderToolTurns(messages: unknown[]): void {
+	for (const msg of messages) {
+		const m = msg as { role: string; content: unknown };
+		if (m.role === 'assistant' && Array.isArray(m.content)) {
+			for (let i = 0; i < m.content.length; i++) {
+				const block = m.content[i] as { type: string; input?: Record<string, unknown> };
+				if (block.type === 'tool_use' && block.input) {
+					block.input = summarizeToolInput(block.input);
+				}
+			}
+		}
+		if (m.role === 'user' && Array.isArray(m.content)) {
+			for (let i = 0; i < m.content.length; i++) {
+				const block = m.content[i] as { type: string; content?: string };
+				if (block.type === 'tool_result' && typeof block.content === 'string') {
+					block.content = truncateToolResult(block.content);
+				}
+			}
+		}
+	}
+}
+
 export interface StreamStore {
 	streamingIds: Set<string>;
 	actors: Map<string, StreamActor>;
@@ -18,6 +59,13 @@ export interface ToolExecutor {
 	};
 }
 
+export interface StreamCallbacks {
+	onDelta?: (exchangeId: string, fullText: string) => void;
+	onToolNote?: (exchangeId: string, text: string) => void;
+	onComplete?: (exchangeId: string, responseText: string) => void;
+	onError?: (exchangeId: string, message: string) => void;
+}
+
 export interface StreamDeps {
 	getTreeByChatId: (chatId: string) => domain.tree.ChatTree | undefined;
 	replaceTreeByChatId: (chatId: string, tree: domain.tree.ChatTree) => void;
@@ -25,7 +73,8 @@ export interface StreamDeps {
 		model: domain.models.ActiveModel,
 		history: domain.tree.Message[],
 		signal: AbortSignal,
-		tools?: providers.stream.ToolDefinition[]
+		tools?: providers.stream.ToolDefinition[],
+		system?: string
 	) => AsyncGenerator<providers.stream.StreamChunk>;
 }
 
@@ -52,17 +101,20 @@ export function startStream(
 		model: domain.models.ActiveModel;
 		history: domain.tree.Message[];
 		tools?: providers.stream.ToolDefinition[];
+		system?: string;
 		toolExecutor?: ToolExecutor;
+		callbacks?: StreamCallbacks;
 	}
 ): void {
-	const { exchangeId, chatId, model, history, tools, toolExecutor } = params;
+	const { exchangeId, chatId, model, history, tools, system, toolExecutor, callbacks } = params;
 
 	const input: StreamMachineInput = {
 		exchangeId,
 		model,
 		history,
 		getStream: deps.getProviderStream,
-		tools
+		tools,
+		system
 	};
 
 	const actor = createActor(streamMachine, { input });
@@ -96,11 +148,18 @@ export function startStream(
 					context.response
 				)
 			});
+			callbacks?.onDelta?.(exchangeId, context.response);
 		}
 
 		// Handle tool use — execute tools and send results back
 		if (snapshot.value === 'awaiting_tools' && toolExecutor && context.toolCalls.length > 0) {
-			const { results, summary } = toolExecutor.execute(context.toolCalls);
+			if (lastResponse.trim()) {
+				callbacks?.onToolNote?.(exchangeId, lastResponse.trim());
+			}
+			const { results } = toolExecutor.execute(context.toolCalls);
+
+			// Compress older tool turns before appending the new one
+			compressOlderToolTurns(rawMessages);
 
 			// Build structured assistant message
 			const assistantContent: unknown[] = [];
@@ -116,26 +175,9 @@ export function startStream(
 				content: results.map((r) => ({ type: 'tool_result', ...r }))
 			});
 
-			// Update response with tool summary
-			if (summary.length > 0) {
-				const progressText =
-					(lastResponse ? lastResponse + '\n\n' : '') + summary.map((s) => `> ${s}`).join('\n');
-				lastResponse = progressText;
+			// Reset for next turn — previous commentary is already captured via onToolNote
+			lastResponse = '';
 
-				const latestTree = deps.getTreeByChatId(targetChatId);
-				if (latestTree) {
-					deps.replaceTreeByChatId(targetChatId, {
-						rootId: latestTree.rootId,
-						exchanges: domain.tree.updateExchangeResponse(
-							latestTree.exchanges,
-							exchangeId,
-							progressText
-						)
-					});
-				}
-			}
-
-			// Reset response for next turn
 			// Send tool results back to continue streaming
 			actor.send({ type: 'TOOL_RESULT', messages: rawMessages });
 		}
@@ -168,6 +210,9 @@ export function startStream(
 						)
 					});
 				}
+				callbacks?.onError?.(exchangeId, context.error);
+			} else {
+				callbacks?.onComplete?.(exchangeId, context.response);
 			}
 
 			cleanup(store, exchangeId);

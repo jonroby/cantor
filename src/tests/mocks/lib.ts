@@ -1,30 +1,50 @@
-import * as lib from '@/lib';
-import libContract from '@/tests/contracts/lib.json';
+import { vi } from 'vitest';
+import type * as lib from '@/lib';
+import * as bm25 from '@/lib/bm25';
+import * as providerDefaults from '@/lib/provider-defaults';
+import * as providerTypes from '@/lib/provider-types';
+import * as tokenEstimate from '@/lib/token-estimate';
+import * as validateMd from '@/lib/validate-md';
 
-import { mergeMock, mockFn, type DeepPartial, type PublicApiMock } from './helpers';
-
-type LibMock = PublicApiMock<typeof lib, typeof libContract>;
-
-export function createLibMock(overrides?: DeepPartial<LibMock>): LibMock {
+export function createLibMock(actual?: typeof lib, overrides?: Partial<typeof lib>): typeof lib {
 	const base = {
-		bm25: {
-			scoreBM25: mockFn<typeof lib.bm25.scoreBM25>(() => [])
-		},
-		providerDefaults: {
-			DEFAULT_OLLAMA_URL: lib.providerDefaults.DEFAULT_OLLAMA_URL,
-			WEBLLM_CONTEXT_OPTIONS: lib.providerDefaults.WEBLLM_CONTEXT_OPTIONS
-		},
-		providerTypes: {},
+		bm25,
+		providerDefaults,
+		providerTypes,
+		tokenEstimate,
+		...(actual ?? {}),
 		rename: {
-			renameWithDedup: mockFn<typeof lib.rename.renameWithDedup>()
-		},
-		tokenEstimate: {
-			estimateTokens: mockFn<typeof lib.tokenEstimate.estimateTokens>(() => 0)
+			renameWithDedup: vi.fn((name: string, tryRename: (candidate: string) => boolean) => {
+				const trimmed = name.trim();
+				if (!trimmed) return null;
+
+				let candidate = trimmed;
+				let i = 1;
+				while (!tryRename(candidate)) {
+					candidate = `${trimmed} (${i})`;
+					i++;
+				}
+				return candidate;
+			})
 		},
 		validateMd: {
-			validate: mockFn<typeof lib.validateMd.validate>(() => [])
+			...validateMd,
+			...(actual?.validateMd ?? {}),
+			validate: vi.fn(() => [])
 		}
-	} satisfies LibMock;
+	} satisfies typeof lib;
 
-	return mergeMock<LibMock>(base, overrides);
+	return {
+		...base,
+		...overrides
+	};
+}
+
+export async function mockLibModule() {
+	return createLibMock();
+}
+
+export async function mockLibModuleFromOriginal(importOriginal: <T>() => Promise<T>) {
+	const actual = await importOriginal<typeof import('@/lib')>();
+	return createLibMock(actual);
 }

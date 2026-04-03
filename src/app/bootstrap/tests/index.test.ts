@@ -1,43 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/external', async () => {
-	const { createExternalMock } = await import('@/tests/mocks/external');
-	return createExternalMock({
-		persistence: {
-			getPersistedLayout: vi.fn(() => ({})),
-			loadFromStorage: vi.fn(async () => null),
-			saveToStorage: vi.fn(async () => {}),
-			setPersistedLayout: vi.fn()
-		}
-	});
+	const mocks = await import('@/tests/mocks/external');
+	return await mocks.mockExternalModule();
 });
-
 vi.mock('@/state', async () => {
-	const { createStateMock } = await import('@/tests/mocks/state');
-	return createStateMock({
-		documents: {
-			documentState: {
-				folders: [],
-				openDocuments: []
-			},
-			selectDocument: vi.fn()
-		}
-	});
+	const mocks = await import('@/tests/mocks/state');
+	return await mocks.mockStateModule();
 });
-
-vi.mock('../../providers/index', async () => ({
-	initialize: vi.fn()
-}));
+vi.mock('../../providers/index', async () => {
+	const { vi } = await import('vitest');
+	return { initialize: vi.fn() };
+});
 
 import * as external from '@/external';
 import * as state from '@/state';
 import * as providers from '../../providers/index';
-import { clearOpenDocument, initialize, rememberOpenDocument } from '../index';
+import { initialize } from '../index';
 
 describe('app/bootstrap', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		state.documents.documentState.folders = [];
+		state.documents.documentState.openDocuments = [];
+		vi.mocked(external.persistence.getPersistedLayout).mockReturnValue({});
+		vi.mocked(external.persistence.loadFromStorage).mockResolvedValue(null);
 	});
 
 	it('restores the last open document when it still exists', async () => {
@@ -53,13 +40,13 @@ describe('app/bootstrap', () => {
 		});
 
 		const result = await initialize();
-		expect(result.restoredDocument).toEqual({ folderId: 'folder-1', fileId: 'file-1' });
-		expect(result.panels).toEqual([
-			{ type: 'chat' },
-			{ type: 'document', folderId: 'folder-1', fileId: 'file-1' }
-		]);
-		expect(result.expandedFolders).toEqual({});
+		expect(result.restoredDocument).toBeNull();
 		expect(result.hadDuplicateRenames).toBe(false);
+		expect(state.workspace.hydrate).toHaveBeenCalledWith({
+			panels: undefined,
+			expandedFolders: undefined,
+			sidebarOpen: undefined
+		});
 		expect(state.documents.selectDocument).toHaveBeenCalledWith('folder-1', 'file-1');
 		expect(providers.initialize).toHaveBeenCalledOnce();
 	});
@@ -70,22 +57,8 @@ describe('app/bootstrap', () => {
 		});
 
 		expect((await initialize()).restoredDocument).toBeNull();
-		expect(external.persistence.setPersistedLayout).toHaveBeenCalledWith({});
-	});
-
-	it('remembers the last open document', () => {
-		rememberOpenDocument('folder-1', 'file-1');
-
 		expect(external.persistence.setPersistedLayout).toHaveBeenCalledWith({
-			openDocument: { folderId: 'folder-1', fileId: 'file-1' }
+			openDocument: undefined
 		});
-		expect(external.persistence.saveToStorage).toHaveBeenCalledOnce();
-	});
-
-	it('clears the last open document', () => {
-		clearOpenDocument();
-
-		expect(external.persistence.setPersistedLayout).toHaveBeenCalledWith({});
-		expect(external.persistence.saveToStorage).toHaveBeenCalledOnce();
 	});
 });

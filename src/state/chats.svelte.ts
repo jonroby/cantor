@@ -1,12 +1,14 @@
 import * as domain from '@/domain';
 
 export type ContextStrategy = 'full' | 'lru' | 'bm25';
+export type ChatMode = 'chat' | 'agent';
 
 export interface ChatRecord extends domain.tree.ChatTree {
 	id: string;
 	name: string;
 	activeExchangeId: string | null;
 	contextStrategy: ContextStrategy;
+	mode: ChatMode;
 }
 
 function makeDefaultChat(): ChatRecord {
@@ -17,7 +19,8 @@ function makeDefaultChat(): ChatRecord {
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(tree),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	};
 }
 
@@ -50,10 +53,9 @@ export function getTreeByChatId(chatId: string): domain.tree.ChatTree | undefine
 }
 
 export function replaceTreeByChatId(chatId: string, nextTree: domain.tree.ChatTree) {
-	const chat = chatState.chats.find((c) => c.id === chatId);
-	if (!chat) return;
-	chat.rootId = nextTree.rootId;
-	chat.exchanges = nextTree.exchanges;
+	chatState.chats = chatState.chats.map((c) =>
+		c.id === chatId ? { ...c, rootId: nextTree.rootId, exchanges: nextTree.exchanges } : c
+	);
 }
 
 function hasRenderableExchanges(exchanges: domain.tree.ExchangeMap) {
@@ -61,9 +63,10 @@ function hasRenderableExchanges(exchanges: domain.tree.ExchangeMap) {
 }
 
 export function replaceActiveTree(nextTree: domain.tree.ChatTree) {
-	const chat = chatState.chats[chatState.activeChatIndex];
-	chat.rootId = nextTree.rootId;
-	chat.exchanges = nextTree.exchanges;
+	const i = chatState.activeChatIndex;
+	chatState.chats = chatState.chats.map((c, idx) =>
+		idx === i ? { ...c, rootId: nextTree.rootId, exchanges: nextTree.exchanges } : c
+	);
 }
 
 export function addChat(chat: ChatRecord): number {
@@ -73,7 +76,11 @@ export function addChat(chat: ChatRecord): number {
 }
 
 export function setActiveExchangeId(exchangeId: string | null) {
-	chatState.chats[chatState.activeChatIndex].activeExchangeId = exchangeId;
+	const i = chatState.activeChatIndex;
+	if (chatState.chats[i]?.activeExchangeId === exchangeId) return;
+	chatState.chats = chatState.chats.map((c, idx) =>
+		idx === i ? { ...c, activeExchangeId: exchangeId } : c
+	);
 }
 
 function nextChatName(): string {
@@ -91,7 +98,8 @@ export function newChat(): number {
 		rootId: tree.rootId,
 		exchanges: tree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(tree),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	};
 	return addChat(chat);
 }
@@ -110,6 +118,14 @@ export function setContextStrategy(strategy: ContextStrategy) {
 	chatState.chats[chatState.activeChatIndex].contextStrategy = strategy;
 }
 
+export function getMode(): ChatMode {
+	return getActiveChat().mode;
+}
+
+export function setMode(mode: ChatMode) {
+	chatState.chats[chatState.activeChatIndex].mode = mode;
+}
+
 export function renameChat(index: number, name: string): boolean {
 	const conflict = chatState.chats.some((c, i) => i !== index && c.name === name);
 	if (conflict) return false;
@@ -117,16 +133,10 @@ export function renameChat(index: number, name: string): boolean {
 	return true;
 }
 
-export function hydrate(parsed: {
-	chats?: Omit<ChatRecord, 'contextStrategy'>[] | ChatRecord[];
-	activeChatIndex?: number;
-}) {
+export function hydrate(parsed: { chats?: ChatRecord[]; activeChatIndex?: number }) {
 	if (parsed.chats?.length) {
 		if (parsed.chats.some((c) => hasRenderableExchanges(c.exchanges))) {
-			chatState.chats = parsed.chats.map((c) => ({
-				...c,
-				contextStrategy: ('contextStrategy' in c ? c.contextStrategy : null) ?? 'full'
-			}));
+			chatState.chats = parsed.chats;
 			if (typeof parsed.activeChatIndex === 'number') {
 				chatState.activeChatIndex = Math.min(
 					Math.max(parsed.activeChatIndex, 0),

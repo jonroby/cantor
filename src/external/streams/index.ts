@@ -8,4 +8,4 @@ export {
 	isAnyStreaming
 } from './runtime';
 
-export type { ToolExecutor } from './streams';
+export type { ToolExecutor, StreamCallbacks } from './streams';

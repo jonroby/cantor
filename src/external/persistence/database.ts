@@ -6,9 +6,7 @@ const STORE_NAME = 'snapshots';
 const TRASH_STORE_NAME = 'trash';
 const SNAPSHOT_KEY = 'main';
 
-const LEGACY_STORAGE_KEY = 'chat-tree-store-svelte';
 const VAULT_KEY = 'byok_vault_v2';
-const LEGACY_VAULT_KEY = 'byok_vault';
 
 // --- Invariant checks ---
 
@@ -18,6 +16,8 @@ interface PersistedChat {
 	rootId: string | null;
 	exchanges: domain.tree.ExchangeMap;
 	activeExchangeId: string | null;
+	contextStrategy: 'full' | 'lru' | 'bm25';
+	mode: 'chat' | 'agent';
 }
 
 interface PersistedDocumentFile {
@@ -150,10 +150,10 @@ export type PersistedPanel =
 
 export interface PersistedLayout {
 	openDocument?: { folderId: string; fileId: string };
-	chatPanelOpen?: boolean;
 	sidebarOpen?: boolean;
 	panels?: PersistedPanel[];
 	expandedFolders?: Record<string, boolean>;
+	activeModel?: { provider: string; modelId: string };
 }
 
 let _layout: PersistedLayout = {};
@@ -173,65 +173,87 @@ interface StoredData {
 	layout: PersistedLayout;
 }
 
-function migrateFromLocalStorage(): StoredData | null {
-	const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
-	if (!raw) return null;
-	let parsed;
-	try {
-		parsed = JSON.parse(raw);
-	} catch {
-		return null;
+function isPersistedPanel(value: unknown): value is PersistedPanel {
+	if (typeof value !== 'object' || value === null) return false;
+	const panel = value as Record<string, unknown>;
+	if (panel.type === 'chat') return true;
+	if (panel.type === 'folder') return typeof panel.folderId === 'string';
+	if (panel.type === 'document') {
+		return typeof panel.folderId === 'string' && typeof panel.fileId === 'string';
 	}
-	const snapshot: PersistedSnapshot = {
-		chats: Array.isArray(parsed.chats) ? (parsed.chats as PersistedChat[]) : [],
-		activeChatIndex: typeof parsed.activeChatIndex === 'number' ? parsed.activeChatIndex : 0,
-		folders: Array.isArray(parsed.folders) ? (parsed.folders as PersistedFolder[]) : []
-	};
-	const layout: PersistedLayout = parsed.layout ?? {};
-	return { snapshot, layout };
+	return false;
+}
+
+function isPersistedLayout(value: unknown): value is PersistedLayout {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+	const layout = value as Record<string, unknown>;
+	if (
+		'openDocument' in layout &&
+		layout.openDocument !== undefined &&
+		(typeof layout.openDocument !== 'object' ||
+			layout.openDocument === null ||
+			typeof (layout.openDocument as { folderId?: unknown }).folderId !== 'string' ||
+			typeof (layout.openDocument as { fileId?: unknown }).fileId !== 'string')
+	) {
+		return false;
+	}
+	if (
+		'sidebarOpen' in layout &&
+		layout.sidebarOpen !== undefined &&
+		typeof layout.sidebarOpen !== 'boolean'
+	) {
+		return false;
+	}
+	if (
+		'panels' in layout &&
+		layout.panels !== undefined &&
+		(!Array.isArray(layout.panels) || !layout.panels.every(isPersistedPanel))
+	) {
+		return false;
+	}
+	if ('expandedFolders' in layout && layout.expandedFolders !== undefined) {
+		if (
+			typeof layout.expandedFolders !== 'object' ||
+			layout.expandedFolders === null ||
+			Array.isArray(layout.expandedFolders)
+		) {
+			return false;
+		}
+		for (const value of Object.values(layout.expandedFolders as Record<string, unknown>)) {
+			if (typeof value !== 'boolean') return false;
+		}
+	}
+	return true;
+}
+
+function isPersistedSnapshot(value: unknown): value is PersistedSnapshot {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+	const snapshot = value as Record<string, unknown>;
+	return (
+		Array.isArray(snapshot.chats) &&
+		typeof snapshot.activeChatIndex === 'number' &&
+		Array.isArray(snapshot.folders)
+	);
+}
+
+function isStoredData(value: unknown): value is StoredData {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+	const stored = value as Record<string, unknown>;
+	return isPersistedSnapshot(stored.snapshot) && isPersistedLayout(stored.layout);
 }
 
 export async function loadFromStorage(): Promise<PersistedSnapshot | null> {
 	const db = await openDB();
 	try {
-		let stored = await idbGet<StoredData>(db, STORE_NAME, SNAPSHOT_KEY);
-
-		if (!stored) {
-			const migrated = migrateFromLocalStorage();
-			if (!migrated) return null;
-			await idbPut(db, STORE_NAME, SNAPSHOT_KEY, migrated);
-			localStorage.removeItem(LEGACY_STORAGE_KEY);
-			stored = migrated;
+		const stored = await idbGet<StoredData>(db, STORE_NAME, SNAPSHOT_KEY);
+		if (!stored) return null;
+		if (!isStoredData(stored)) {
+			throw new Error('Invalid storage');
 		}
 
-		if (stored.layout) {
-			_layout = stored.layout;
-		} else {
-			_layout = {};
-		}
-
-		const snapshot = {
-			chats: Array.isArray(stored.snapshot?.chats)
-				? (stored.snapshot.chats as PersistedChat[])
-				: [],
-			activeChatIndex:
-				typeof stored.snapshot?.activeChatIndex === 'number' ? stored.snapshot.activeChatIndex : 0,
-			folders: Array.isArray(stored.snapshot?.folders)
-				? (stored.snapshot.folders as PersistedFolder[])
-				: []
-		};
-
-		try {
-			assertValidNames(snapshot.chats, snapshot.folders);
-		} catch (error) {
-			const persistenceError =
-				error instanceof Error
-					? error
-					: new Error(typeof error === 'string' ? error : 'Invalid storage');
-			Object.assign(persistenceError, { snapshot });
-			throw persistenceError;
-		}
-		return snapshot;
+		_layout = stored.layout;
+		assertValidNames(stored.snapshot.chats, stored.snapshot.folders);
+		return stored.snapshot;
 	} finally {
 		db.close();
 	}
@@ -333,16 +355,6 @@ export function setVaultStore(store: VaultStore): void {
 	} else {
 		localStorage.setItem(VAULT_KEY, JSON.stringify(store));
 	}
-}
-
-export function migrateVaultStorage(): void {
-	if (localStorage.getItem(VAULT_KEY)) return;
-	const legacy = localStorage.getItem(LEGACY_VAULT_KEY);
-	if (!legacy) return;
-	const record = JSON.parse(legacy) as VaultRecord;
-	const store: VaultStore = { claude: record };
-	localStorage.setItem(VAULT_KEY, JSON.stringify(store));
-	localStorage.removeItem(LEGACY_VAULT_KEY);
 }
 
 export function clearVaultStorage(): void {

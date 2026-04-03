@@ -14,7 +14,6 @@
     "getVaultStore": true,
     "loadFromStorage": true,
     "loadTrash": true,
-    "migrateVaultStorage": true,
     "saveToStorage": true,
     "setPersistedLayout": true,
     "setVaultStore": true,
@@ -50,15 +49,18 @@
       "validateApiKey": true
     },
     "vault": {
+      "cacheSession": true,
       "clearProviderKey": true,
+      "clearSession": true,
       "clearVault": true,
+      "getCachedSession": true,
       "hasProviderKey": true,
       "hasVault": true,
       "loadAllApiKeys": true,
       "loadApiKey": true,
-      "migrateVault": true,
       "saveApiKey": true,
-      "storedProviders": true
+      "storedProviders": true,
+      "verifyPassword": true
     },
     "webllm": {
       "deleteAllModelCaches": true,

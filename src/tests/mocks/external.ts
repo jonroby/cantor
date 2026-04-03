@@ -27,7 +27,6 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 			getVaultStore: mockFn<typeof external.persistence.getVaultStore>(() => ({})),
 			loadFromStorage: mockFn<typeof external.persistence.loadFromStorage>(),
 			loadTrash: mockFn<typeof external.persistence.loadTrash>(async () => []),
-			migrateVaultStorage: mockFn<typeof external.persistence.migrateVaultStorage>(),
 			saveToStorage: mockFn<typeof external.persistence.saveToStorage>(),
 			setPersistedLayout: mockFn<typeof external.persistence.setPersistedLayout>(),
 			setVaultStore: mockFn<typeof external.persistence.setVaultStore>(),
@@ -68,15 +67,20 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 				validateApiKey: mockFn<typeof external.providers.validate.validateApiKey>(async () => {})
 			},
 			vault: {
+				cacheSession: mockFn<typeof external.providers.vault.cacheSession>(async () => {}),
 				clearProviderKey: mockFn<typeof external.providers.vault.clearProviderKey>(),
+				clearSession: mockFn<typeof external.providers.vault.clearSession>(async () => {}),
 				clearVault: mockFn<typeof external.providers.vault.clearVault>(),
+				getCachedSession: mockFn<typeof external.providers.vault.getCachedSession>(
+					async () => null
+				),
 				hasProviderKey: mockFn<typeof external.providers.vault.hasProviderKey>(() => false),
 				hasVault: mockFn<typeof external.providers.vault.hasVault>(() => false),
 				loadAllApiKeys: mockFn<typeof external.providers.vault.loadAllApiKeys>(async () => ({})),
 				loadApiKey: mockFn<typeof external.providers.vault.loadApiKey>(async () => ''),
-				migrateVault: mockFn<typeof external.providers.vault.migrateVault>(),
 				saveApiKey: mockFn<typeof external.providers.vault.saveApiKey>(async () => {}),
-				storedProviders: mockFn<typeof external.providers.vault.storedProviders>(() => [])
+				storedProviders: mockFn<typeof external.providers.vault.storedProviders>(() => []),
+				verifyPassword: mockFn<typeof external.providers.vault.verifyPassword>(async () => {})
 			},
 			webllm: {
 				deleteAllModelCaches: mockFn<typeof external.providers.webllm.deleteAllModelCaches>(
@@ -106,4 +110,8 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 	} satisfies ExternalMock;
 
 	return mergeMock<ExternalMock>(base, overrides);
+}
+
+export async function mockExternalModule() {
+	return createExternalMock();
 }

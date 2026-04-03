@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
+	import _AgentActivity from './AgentActivity.svelte';
 	import {
 		createMainChatPanel,
 		createSideChatPanel,
 		createDocumentPanel,
 		isSideChat,
 		withContent
-	} from './panel';
-	import type { Panel } from './panel';
-	import type { ChatCardData } from './chat-card';
+	} from '@/view/panel';
+	import type { Panel } from '@/view/panel';
+	import type { ChatCardData } from '@/view/chat-card';
 	import { Document } from '@/view/features/document';
 	import * as app from '@/app';
 
@@ -46,16 +48,11 @@
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
 	let sideScrollContainer: HTMLDivElement | null = $state(null);
+	let bottomSpacerEl: HTMLDivElement | null = $state(null);
 	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 	let lastScrollAway = false;
 
-	function handleMainScroll() {
-		mainScrollContainer?.classList.add('is-scrolling');
-		if (scrollTimer) clearTimeout(scrollTimer);
-		scrollTimer = setTimeout(() => {
-			mainScrollContainer?.classList.remove('is-scrolling');
-		}, 1000);
-
+	function checkScrollAway() {
 		if (mainScrollContainer && mainChatPath.length > 0) {
 			const lastId = mainChatPath[mainChatPath.length - 1]!.id;
 			const lastEl = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
@@ -69,6 +66,16 @@
 				}
 			}
 		}
+	}
+
+	function handleMainScroll() {
+		mainScrollContainer?.classList.add('is-scrolling');
+		if (scrollTimer) clearTimeout(scrollTimer);
+		scrollTimer = setTimeout(() => {
+			mainScrollContainer?.classList.remove('is-scrolling');
+		}, 1000);
+
+		checkScrollAway();
 	}
 
 	let providerState = $derived(app.providers.getState());
@@ -91,6 +98,19 @@
 			? activeSideChat[activeSideChat.length - 1]!.id
 			: null
 	);
+	let _mainActivityExchangeId = $derived.by(() => {
+		if (activeExchangeId && mainChatPath.some((exchange) => exchange.id === activeExchangeId)) {
+			return activeExchangeId;
+		}
+		return mainChatTailId;
+	});
+	let _sideActivityExchangeId = $derived.by(() => {
+		if (!sidePanelOpen || isDocumentPanel) return null;
+		if (activeExchangeId && activeSideChat?.some((exchange) => exchange.id === activeExchangeId)) {
+			return activeExchangeId;
+		}
+		return sideChatTailId;
+	});
 	let sidePanelParentExchange = $derived(
 		sidePanelParentId && activeExchanges ? activeExchanges[sidePanelParentId] : null
 	);
@@ -179,6 +199,14 @@
 	function closeSidePanel() {
 		sidePanel = null;
 		focusPanel(mainPanel.id);
+	}
+
+	function closeSideDocumentPanel() {
+		if (activeDocumentIndex >= 0) {
+			app.documents.closeDocument(activeDocumentIndex);
+		}
+		app.workspace.clearOpenDocument();
+		closeSidePanel();
 	}
 
 	function addCurrentDocumentToChat() {
@@ -284,46 +312,12 @@
 			.filter((child): child is app.chat.Exchange => child !== undefined);
 	}
 
-	function isInSideChat(exchangeId: string): boolean {
-		if (!activeExchanges) return false;
-		let current = activeExchanges[exchangeId];
-		while (current) {
-			if (current.parentId === null) return false;
-			const parent = activeExchanges[current.parentId];
-			if (!parent) return false;
-			if ((parent.childIds[0] ?? null) !== current.id) return true;
-			current = parent;
-		}
-		return false;
-	}
-
 	function canCreateSideChat(exchangeId: string): boolean {
-		if (isInSideChat(exchangeId)) return false;
-		return getChildren(exchangeId).length > 0;
-	}
-
-	function hasSplitDescendant(exchangeId: string): boolean {
-		const queue = [exchangeId];
-		while (queue.length > 0) {
-			const currentId = queue.shift()!;
-			const children = getChildren(currentId);
-			if (children.length > 1) return true;
-			for (const child of children) queue.push(child.id);
-		}
-		return false;
+		return app.chat.canCreateSideChat(activeTree, exchangeId);
 	}
 
 	function canPromoteSideChat(exchangeId: string): boolean {
-		if (!activeExchanges) return false;
-		const exchange = activeExchanges[exchangeId];
-		if (!exchange || exchange.parentId === null) return false;
-		const parent = activeExchanges[exchange.parentId];
-		if (!parent) return false;
-		const index = parent.childIds.indexOf(exchangeId);
-		if (index <= 0) return false;
-		const mainChildId = parent.childIds[0];
-		if (!mainChildId) return false;
-		return !hasSplitDescendant(mainChildId);
+		return app.chat.canPromoteSideChat(activeTree, exchangeId);
 	}
 
 	function getNodeDataForExchange(exchangeId: string) {
@@ -372,6 +366,12 @@
 		return data;
 	}
 
+	function resizeSpacer(el: Element) {
+		if (!mainScrollContainer || !bottomSpacerEl) return;
+		const needed = mainScrollContainer.clientHeight - (el as HTMLElement).offsetHeight;
+		bottomSpacerEl.style.height = `${Math.max(128, needed)}px`;
+	}
+
 	export async function scrollToNode(nodeId: string | null) {
 		if (!nodeId) return;
 		await tick();
@@ -383,17 +383,23 @@
 			if (!container) continue;
 			const el = container.querySelector(`[data-exchange-id="${nodeId}"]`);
 			if (el) {
+				if (container === mainScrollContainer) resizeSpacer(el);
+				await tick();
 				el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				return;
 			}
 		}
 	}
 
-	export function scrollToBottom() {
+	export async function scrollToBottom() {
 		if (!mainScrollContainer || mainChatPath.length === 0) return;
 		const lastId = mainChatPath[mainChatPath.length - 1]!.id;
 		const el = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
-		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		if (el) {
+			resizeSpacer(el);
+			await tick();
+			el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 	}
 
 	export function expandSideChat(exchangeId: string) {
@@ -409,15 +415,7 @@
 	}
 
 	function getExchangePath(exchangeId: string): app.chat.Exchange[] {
-		if (!activeExchanges || !activeExchanges[exchangeId]) return [];
-
-		const path: app.chat.Exchange[] = [];
-		let current: app.chat.Exchange | undefined = activeExchanges[exchangeId];
-		while (current) {
-			path.push(current);
-			current = current.parentId ? activeExchanges[current.parentId] : undefined;
-		}
-		return path.reverse();
+		return app.chat.getExchangePath(activeTree, exchangeId);
 	}
 
 	function getSidePanelTarget(
@@ -463,7 +461,7 @@
 
 	export function resetUIState() {
 		if (sidePanel !== null) {
-			app.bootstrap.clearOpenDocument();
+			app.workspace.clearOpenDocument();
 		}
 		closeSidePanel();
 	}
@@ -513,6 +511,12 @@
 			app.chat.selectExchange(sideChatTailId);
 		}
 	});
+
+	// Re-check scroll-away when chat path changes (e.g. opening a chat at the top)
+	$effect(() => {
+		void mainChatPath;
+		tick().then(checkScrollAway);
+	});
 </script>
 
 {#if operationError}
@@ -532,20 +536,12 @@
 				{activeChat.name}
 				{#if onClose}
 					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-						</svg>
+						<X size={14} />
 					</button>
 				{/if}
 			</div>
 			<div class="chatview-main" bind:this={mainScrollContainer} onscroll={handleMainScroll}>
+				<!-- <AgentActivity exchangeId={mainActivityExchangeId} /> -->
 				<div class="chatview-exchanges">
 					{#each mainChatPath as exchange (exchange.id)}
 						{@const nodeData = getNodeDataForExchange(exchange.id)}
@@ -567,6 +563,7 @@
 						</div>
 					{/if}
 				</div>
+				<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>
 			</div>
 		</div>
 
@@ -591,15 +588,16 @@
 								if (activeDocumentIndex >= 0)
 									app.documents.updateDocumentContent(activeDocumentIndex, c);
 							}}
-							onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
+							onAcceptPending={() =>
+								app.agent.acceptPending(
+									documentContent
+										? { folderId: documentContent.folderId, fileId: documentContent.fileId }
+										: null
+								)}
 							onRejectPending={() => app.agent.rejectPending()}
 							onClose={() => {
 								app.agent.rejectPending();
-								if (activeDocumentIndex >= 0) {
-									app.documents.closeDocument(activeDocumentIndex);
-								}
-								app.bootstrap.clearOpenDocument();
-								closeSidePanel();
+								closeSideDocumentPanel();
 							}}
 							onAddToChat={addCurrentDocumentToChat}
 						/>
@@ -615,16 +613,7 @@
 								disabled={sideChatIndex <= 0}
 								onclick={prevSideChat}
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M8.5 3L4.5 7l4 4" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
+								<ChevronLeft size={14} />
 							</Button>
 							<span class="chatview-side-counter">
 								{#if isNewSideChat}
@@ -640,16 +629,7 @@
 								disabled={sideChatIndex >= sideChats.length - 1}
 								onclick={nextSideChat}
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M5.5 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
+								<ChevronRight size={14} />
 							</Button>
 							<Button
 								class="ghost-button"
@@ -659,16 +639,7 @@
 								onclick={newSideChat}
 								ariaLabel="New side chat"
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M7 2v10M2 7h10" stroke-linecap="round" />
-								</svg>
+								<Plus size={14} />
 							</Button>
 							<Button
 								class="ghost-button chatview-side-close"
@@ -677,16 +648,7 @@
 								onclick={closeSidePanel}
 								ariaLabel="Close side panel"
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-								</svg>
+								<X size={14} />
 							</Button>
 						</div>
 					{:else}
@@ -699,16 +661,7 @@
 								onclick={closeSidePanel}
 								ariaLabel="Close side panel"
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-								</svg>
+								<X size={14} />
 							</Button>
 						</div>
 					{/if}
@@ -726,6 +679,7 @@
 							{/if}
 						</div>
 					{/if}
+					<!-- <AgentActivity exchangeId={sideActivityExchangeId} compact={true} /> -->
 					<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
 						{#if activeSideChat}
 							{#each activeSideChat as exchange (exchange.id)}

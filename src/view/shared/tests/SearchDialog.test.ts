@@ -24,7 +24,8 @@ const CHATS: app.chat.Chat[] = [
 				response: { text: 'matching snippet here', tokenCount: 0 }
 			}
 		},
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	}
 ];
 

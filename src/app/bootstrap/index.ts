@@ -1,4 +1,5 @@
 import * as providers from '@/app/providers';
+import * as workspace from '@/app/workspace';
 import * as external from '@/external';
 import * as state from '@/state';
 import * as lib from '@/lib';
@@ -65,7 +66,7 @@ function restoreOpenDocument(): RestoredDocument | null {
 	);
 	const file = folder?.files?.find((candidate) => candidate.id === openDocument.fileId);
 	if (!folder || !file) {
-		external.persistence.setPersistedLayout({});
+		workspace.clearOpenDocument({ saveSnapshot: false });
 		return null;
 	}
 
@@ -74,88 +75,27 @@ function restoreOpenDocument(): RestoredDocument | null {
 }
 
 export async function initialize() {
-	let hadDuplicateRenames = false;
-
-	try {
-		const snapshot = await external.persistence.loadFromStorage();
-		if (snapshot) {
-			state.chats.hydrate(snapshot);
-			state.documents.documentState.folders = snapshot.folders;
-		}
-	} catch (error) {
-		const snapshot =
-			error && typeof error === 'object' && 'snapshot' in error ? error.snapshot : null;
-		if (snapshot && typeof snapshot === 'object') {
-			state.chats.hydrate(
-				snapshot as { chats: typeof state.chats.chatState.chats; activeChatIndex: number }
-			);
-			state.documents.documentState.folders = (
-				snapshot as { folders: typeof state.documents.documentState.folders }
-			).folders;
-		}
-		hadDuplicateRenames = repairDuplicateNames();
+	const snapshot = await external.persistence.loadFromStorage();
+	if (snapshot) {
+		state.chats.hydrate(snapshot);
+		state.documents.documentState.folders = snapshot.folders;
 	}
+
+	const hadDuplicateRenames = repairDuplicateNames();
 
 	const restoredDocument = restoreOpenDocument();
 	const layout = external.persistence.getPersistedLayout();
+	state.workspace.hydrate({
+		panels: layout.panels,
+		expandedFolders: layout.expandedFolders,
+		sidebarOpen: layout.sidebarOpen
+	});
 	void providers.initialize();
 
-	// Migrate legacy layout fields into panels array
-	let panels = layout.panels;
-	if (!panels) {
-		panels = [];
-		if (layout.chatPanelOpen !== false) panels.push({ type: 'chat' });
-		if (restoredDocument)
-			panels.push({
-				type: 'document',
-				folderId: restoredDocument.folderId,
-				fileId: restoredDocument.fileId
-			});
-	}
-
 	return {
-		restoredDocument: panels.length > 0 ? restoredDocument : null,
-		panels,
-		expandedFolders: layout.expandedFolders ?? {},
-		sidebarOpen: layout.sidebarOpen,
+		restoredDocument: state.workspace.workspaceState.panels.length > 0 ? restoredDocument : null,
 		hadDuplicateRenames
 	};
-}
-
-export function rememberOpenDocument(folderId: string, fileId: string) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, openDocument: { folderId, fileId } });
-	void save();
-}
-
-export function clearOpenDocument() {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, openDocument: undefined });
-	void save();
-}
-
-export function setChatPanelOpen(open: boolean) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, chatPanelOpen: open });
-	void save();
-}
-
-export function setSidebarOpen(open: boolean) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, sidebarOpen: open });
-	void save();
-}
-
-export function setPanels(panels: external.persistence.PersistedPanel[]) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, panels });
-	void save();
-}
-
-export function setExpandedFolders(expandedFolders: Record<string, boolean>) {
-	const layout = external.persistence.getPersistedLayout();
-	external.persistence.setPersistedLayout({ ...layout, expandedFolders });
-	void save();
 }
 
 export function save() {

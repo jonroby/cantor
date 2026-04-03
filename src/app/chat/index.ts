@@ -6,6 +6,7 @@ import * as agent from '@/app/agent';
 import { selectExchanges, type ContextBudget } from './context';
 
 export type ContextStrategy = state.chats.ContextStrategy;
+export type ChatMode = state.chats.ChatMode;
 export type ImageAttachment = domain.tree.ImageAttachment;
 
 export interface ChatTransferFeedback {
@@ -31,8 +32,10 @@ const defaultDeps: ChatActionDeps = {
 	setActiveExchangeId: state.chats.setActiveExchangeId,
 	getActiveChat: state.chats.getActiveChat,
 	addChat: state.chats.addChat,
-	cancelStreamsForExchanges: external.streams.cancelStreamsForExchanges,
-	isStreaming: external.streams.isStreaming
+	cancelStreamsForExchanges: (ids) => {
+		for (const id of ids) stopStream(id);
+	},
+	isStreaming
 };
 
 export const getChats = () => state.chats.chatState.chats;
@@ -43,6 +46,8 @@ export const getActiveExchangeId = () => state.chats.getActiveExchangeId();
 export const getContextStrategy = (): state.chats.ContextStrategy =>
 	state.chats.getActiveChat().contextStrategy;
 export const setContextStrategy = state.chats.setContextStrategy;
+export const getMode = (): state.chats.ChatMode => state.chats.getMode();
+export const setMode = state.chats.setMode;
 
 export const createChat = state.chats.newChat;
 export const selectChat = state.chats.selectChat;
@@ -61,7 +66,8 @@ export function removeChat(index: number) {
 			rootId: chat.rootId,
 			exchanges: chat.exchanges,
 			activeExchangeId: chat.activeExchangeId,
-			contextStrategy: chat.contextStrategy
+			contextStrategy: chat.contextStrategy,
+			mode: chat.mode
 		}
 	});
 	state.chats.deleteChat(index);
@@ -72,9 +78,23 @@ export function renameChat(index: number, name: string): string | null {
 }
 
 export const selectExchange = state.chats.setActiveExchangeId;
-export const isStreaming = external.streams.isStreaming;
-export const stopStream = external.streams.cancelStream;
-export const stopChatStreams = external.streams.cancelStreamsForChat;
+
+export function isStreaming(exchangeId: string): boolean {
+	return external.streams.isStreaming(exchangeId) || agent.isRunning(exchangeId);
+}
+
+export function stopStream(exchangeId: string): void {
+	if (agent.isRunning(exchangeId)) {
+		agent.stopRun(exchangeId);
+		return;
+	}
+	external.streams.cancelStream(exchangeId);
+}
+
+export function stopChatStreams(chatId: string): void {
+	agent.stopRunsForChat(chatId);
+	external.streams.cancelStreamsForChat(chatId);
+}
 
 export function getMainChat(tree: domain.tree.ChatTree): domain.tree.Exchange[] {
 	return domain.tree.getMainChat(tree);
@@ -102,6 +122,18 @@ export function getSideChats(
 
 export function canSubmitPrompt(tree: domain.tree.ChatTree, activeExchangeId: string): boolean {
 	return domain.tree.constraints.canAcceptNewChat(tree, activeExchangeId);
+}
+
+export function canCreateSideChat(tree: domain.tree.ChatTree, exchangeId: string): boolean {
+	return domain.tree.constraints.canCreateSideChats(tree, exchangeId);
+}
+
+export function canPromoteSideChat(tree: domain.tree.ChatTree, exchangeId: string): boolean {
+	return domain.tree.constraints.canPromoteSideChatToMainChat(tree, exchangeId);
+}
+
+export function getExchangePath(tree: domain.tree.ChatTree, exchangeId: string): Exchange[] {
+	return domain.tree.getPath(tree, exchangeId);
 }
 
 export function getUsedTokens(tree: domain.tree.ChatTree, activeExchangeId: string): number {
@@ -274,7 +306,8 @@ export function copyChat(
 		rootId: copiedTree.rootId,
 		exchanges: copiedTree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(copiedTree),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	});
 }
 
@@ -291,6 +324,33 @@ export interface SubmitOptions {
 		onClosePanel?: (index: number) => void;
 		onToggleSidebar?: () => void;
 	};
+}
+
+function buildHistory(
+	exchanges: domain.tree.Exchange[],
+	liveDocumentContent?: string
+): domain.tree.Message[] {
+	const messages = exchanges.flatMap((exchange) => {
+		const userMsg: domain.tree.Message = { role: 'user', content: exchange.prompt.text };
+		if (exchange.prompt.images?.length) userMsg.images = exchange.prompt.images;
+		const result: domain.tree.Message[] = [userMsg];
+		if (exchange.response) {
+			result.push({ role: 'assistant', content: exchange.response.text });
+		}
+		return result;
+	});
+	if (liveDocumentContent !== undefined) {
+		messages.splice(
+			messages.length - 1,
+			0,
+			{
+				role: 'user',
+				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${liveDocumentContent}`
+			},
+			{ role: 'assistant', content: 'Understood, I have the document.' }
+		);
+	}
+	return messages;
 }
 
 export function submitPrompt(
@@ -322,27 +382,7 @@ export function submitPrompt(
 		currentPrompt: prompt
 	};
 	const selectedPath = selectExchanges(fullPath, budget);
-
-	const history = selectedPath.flatMap((exchange) => {
-		const userMsg: domain.tree.Message = { role: 'user', content: exchange.prompt.text };
-		if (exchange.prompt.images?.length) userMsg.images = exchange.prompt.images;
-		const messages: domain.tree.Message[] = [userMsg];
-		if (exchange.response) {
-			messages.push({ role: 'assistant', content: exchange.response.text });
-		}
-		return messages;
-	});
-	if (options?.liveDocumentContent !== undefined) {
-		history.splice(
-			history.length - 1,
-			0,
-			{
-				role: 'user',
-				content: `The user is working on this document in tandem with this chat. Remember this for context:\n\n${options.liveDocumentContent}`
-			},
-			{ role: 'assistant', content: 'Understood, I have the document.' }
-		);
-	}
+	const history = buildHistory(selectedPath, options?.liveDocumentContent);
 
 	deps.replaceActiveTree(created.tree);
 	deps.setActiveExchangeId(created.id);
@@ -350,61 +390,40 @@ export function submitPrompt(
 	const toolContext: agent.ToolContext | null = options?.agentMode
 		? {
 				folderId: options.activeDocumentKey?.folderId ?? null,
+				activeDocumentKey: options.activeDocumentKey,
 				...options.toolCallbacks
 			}
 		: null;
 
 	if (toolContext) {
 		const systemPrompt = agent.buildSystemPrompt(options!.liveDocumentContent);
-		history.splice(
-			history.length - 1,
-			0,
-			{ role: 'user', content: systemPrompt },
-			{ role: 'assistant', content: 'Understood.' }
+		agent.startRun(chatId, created.id, model, history, toolContext, systemPrompt);
+	} else {
+		external.streams.startStream(
+			{
+				exchangeId: created.id,
+				chatId,
+				model,
+				history
+			},
+			{
+				getTreeByChatId: state.chats.getTreeByChatId,
+				replaceTreeByChatId: state.chats.replaceTreeByChatId,
+				getProviderStream: (activeModel, streamHistory, signal, streamTools, streamSystem) =>
+					external.providers.stream.getProviderStream(
+						activeModel,
+						streamHistory,
+						signal,
+						{
+							apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
+							ollamaUrl: state.providers.providerState.ollamaUrl
+						},
+						streamTools,
+						streamSystem
+					)
+			}
 		);
 	}
-
-	external.streams.startStream(
-		{
-			exchangeId: created.id,
-			chatId,
-			model,
-			history,
-			tools: toolContext ? agent.TOOLS : undefined,
-			toolExecutor: toolContext
-				? {
-						execute: (toolCalls) => {
-							const executed = toolCalls.map((tc) => ({
-								id: tc.id,
-								...agent.executeTool(tc.name, tc.input, toolContext)
-							}));
-							return {
-								results: executed.map((t) => ({
-									tool_use_id: t.id,
-									content: t.result
-								})),
-								summary: executed.map((t) => t.result)
-							};
-						}
-					}
-				: undefined
-		},
-		{
-			getTreeByChatId: state.chats.getTreeByChatId,
-			replaceTreeByChatId: state.chats.replaceTreeByChatId,
-			getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
-				external.providers.stream.getProviderStream(
-					activeModel,
-					streamHistory,
-					signal,
-					{
-						apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
-						ollamaUrl: state.providers.providerState.ollamaUrl
-					},
-					streamTools
-				)
-		}
-	);
 
 	return { id: created.id, parentId, hasSideChildren };
 }
@@ -474,32 +493,32 @@ export function exportChat(index: number) {
 	external.io.downloadBlob(blob, `${chat.name.replace(/[^a-zA-Z0-9-_ ]/g, '')}.json`);
 }
 
-export function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): void {
-	void external.io.pickFile('.json').then(async (file) => {
-		if (!file) return;
-		try {
-			const text = await file.text();
-			const data = JSON.parse(text);
-			const upload = external.io.validateChatUpload(data);
-			const baseName = file.name.replace(/\.json$/i, '');
-			const existingNames = state.chats.chatState.chats.map((chat) => chat.name);
-			const chat: state.chats.ChatRecord = {
-				id: crypto.randomUUID(),
-				name:
-					lib.rename.renameWithDedup(baseName, (candidate) => !existingNames.includes(candidate)) ??
-					baseName,
-				rootId: upload.tree.rootId,
-				exchanges: upload.tree.exchanges,
-				activeExchangeId: upload.activeExchangeId,
-				contextStrategy: 'full'
-			};
-			state.chats.chatState.chats = [...state.chats.chatState.chats, chat];
-			state.chats.chatState.activeChatIndex = state.chats.chatState.chats.length - 1;
-			feedback.success?.(`Imported "${chat.name}"`);
-		} catch (e) {
-			feedback.error?.(e instanceof Error ? e.message : 'Invalid chat file');
-		}
-	});
+export async function importChat(feedback: ChatTransferFeedback = NOOP_FEEDBACK): Promise<void> {
+	const file = await external.io.pickFile('.json');
+	if (!file) return;
+	try {
+		const text = await file.text();
+		const data = JSON.parse(text);
+		const upload = external.io.validateChatUpload(data);
+		const baseName = file.name.replace(/\.json$/i, '');
+		const existingNames = state.chats.chatState.chats.map((chat) => chat.name);
+		const chat: state.chats.ChatRecord = {
+			id: crypto.randomUUID(),
+			name:
+				lib.rename.renameWithDedup(baseName, (candidate) => !existingNames.includes(candidate)) ??
+				baseName,
+			rootId: upload.tree.rootId,
+			exchanges: upload.tree.exchanges,
+			activeExchangeId: upload.activeExchangeId,
+			contextStrategy: 'full',
+			mode: 'chat'
+		};
+		state.chats.chatState.chats = [...state.chats.chatState.chats, chat];
+		state.chats.chatState.activeChatIndex = state.chats.chatState.chats.length - 1;
+		feedback.success?.(`Imported "${chat.name}"`);
+	} catch (e) {
+		feedback.error?.(e instanceof Error ? e.message : 'Invalid chat file');
+	}
 }
 
 export type Chat = state.chats.ChatRecord;

@@ -11,6 +11,7 @@ function renderPalette(overrides: Partial<Parameters<typeof ModelPalette>[1]> = 
 		activeModel: null,
 		activeModelLabel: null,
 		contextLength: null,
+		vaultState: 'empty',
 		providers: [
 			{
 				id: 'claude',
@@ -64,8 +65,8 @@ function renderPalette(overrides: Partial<Parameters<typeof ModelPalette>[1]> = 
 		onSelectModel: vi.fn(),
 		onUnlockCredentials: vi.fn(),
 		onSaveCredential: vi.fn(),
-		onLockCredential: vi.fn(),
-		onClearCredential: vi.fn(),
+		onLockVault: vi.fn(async () => {}),
+		onRemoveCredential: vi.fn(),
 		onSetContextSize: vi.fn(),
 		onRemoveCachedModel: vi.fn(),
 		onClearCachedModels: vi.fn(),
@@ -90,8 +91,6 @@ describe('ModelPalette', () => {
 	describe('current model indicator', () => {
 		it('shows "No model selected" when no active model', () => {
 			renderPalette();
-			// When no model is selected, the Frontier tab is active by default
-			// and models are shown but none is highlighted as active
 			const tab = screen.getByText('Frontier');
 			expect(tab).toBeInTheDocument();
 			expect(tab.classList.contains('active')).toBe(true);
@@ -103,6 +102,7 @@ describe('ModelPalette', () => {
 					activeModel: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
 					activeModelLabel: 'Claude Sonnet 4.6',
 					contextLength: 1_000_000,
+					vaultState: 'unlocked',
 					providers: [
 						{
 							id: 'claude',
@@ -154,6 +154,7 @@ describe('ModelPalette', () => {
 					activeModel: null,
 					activeModelLabel: null,
 					contextLength: null,
+					vaultState: 'unlocked',
 					providers: [
 						{
 							id: 'claude',
@@ -172,24 +173,25 @@ describe('ModelPalette', () => {
 			});
 		});
 
-		it('shows unlock flow when provider is locked', async () => {
+		it('shows unlock flow when vault is locked', async () => {
 			renderPalette({
 				state: {
 					activeModel: null,
 					activeModelLabel: null,
 					contextLength: null,
+					vaultState: 'locked',
 					providers: [
 						{
 							id: 'claude',
 							name: 'Claude',
 							kind: 'remote',
-							credentialState: 'locked',
+							credentialState: 'missing',
 							models: [{ id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', enabled: true }]
 						}
 					]
 				}
 			});
-			await userEvent.click(screen.getByText('Log in'));
+			await userEvent.click(screen.getByText('Unlock'));
 			await tick();
 			expect(screen.getByText('Unlock credentials')).toBeInTheDocument();
 		});
@@ -200,6 +202,7 @@ describe('ModelPalette', () => {
 					activeModel: null,
 					activeModelLabel: null,
 					contextLength: null,
+					vaultState: 'empty',
 					providers: [
 						{
 							id: 'claude',

@@ -1,12 +1,12 @@
 import * as domain from '@/domain';
 import * as external from '@/external';
 import * as state from '@/state';
+import * as workspace from '@/app/workspace';
 import type { Provider, ActiveModel, ContextSize, State } from './types';
 
 export type * from './types';
 
 function initProviders() {
-	external.providers.vault.migrateVault();
 	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 	return hydrateWebLLMModels();
 }
@@ -101,8 +101,19 @@ async function deleteAllWebLLMCaches() {
 	state.providers.providerState.webllmStatus = 'idle';
 }
 
-async function unlockKeys(password: string) {
+async function unlockVault(password: string) {
 	state.providers.providerState.apiKeys = await external.providers.vault.loadAllApiKeys(password);
+	await external.providers.vault.cacheSession(password);
+}
+
+async function autoUnlockFromSession() {
+	const cachedPassword = await external.providers.vault.getCachedSession();
+	if (!cachedPassword || state.providers.providerState.vaultProviders.length === 0) return;
+	try {
+		await unlockVault(cachedPassword);
+	} catch {
+		await external.providers.vault.clearSession();
+	}
 }
 
 async function saveKey(provider: string, apiKey: string, password: string) {
@@ -112,21 +123,32 @@ async function saveKey(provider: string, apiKey: string, password: string) {
 		[provider]: apiKey
 	};
 	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
+	await external.providers.vault.cacheSession(password);
 }
 
-function lockKey(provider: string) {
+async function lockVault() {
+	state.providers.providerState.apiKeys = {};
+	state.providers.providerState.activeModel = null;
+	workspace.setActiveModel(null);
+	await external.providers.vault.clearSession();
+}
+
+function removeKey(provider: string) {
+	external.providers.vault.clearProviderKey(provider);
 	const { [provider]: _removed, ...rest } = state.providers.providerState.apiKeys;
 	void _removed;
 	state.providers.providerState.apiKeys = rest;
+	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
 	if (state.providers.providerState.activeModel?.provider === provider) {
 		state.providers.providerState.activeModel = null;
+		workspace.setActiveModel(null);
 	}
 }
 
-function forgetKey(provider: string) {
-	external.providers.vault.clearProviderKey(provider);
-	lockKey(provider);
-	state.providers.providerState.vaultProviders = external.providers.vault.storedProviders();
+function getVaultState(): 'empty' | 'locked' | 'unlocked' {
+	if (state.providers.providerState.vaultProviders.length === 0) return 'empty';
+	if (Object.keys(state.providers.providerState.apiKeys).length > 0) return 'unlocked';
+	return 'locked';
 }
 
 async function fetchOllamaContextLength() {
@@ -163,7 +185,6 @@ function providerName(provider: domain.models.Provider): string {
 function getCredentialState(provider: domain.models.Provider) {
 	if (!domain.models.isKeyBasedProvider(provider)) return 'not-required' as const;
 	if (state.providers.providerState.apiKeys[provider]) return 'ready' as const;
-	if (state.providers.providerState.vaultProviders.includes(provider)) return 'locked' as const;
 	return 'missing' as const;
 }
 
@@ -273,13 +294,30 @@ export function getState(): State {
 		activeModel,
 		activeModelLabel: getActiveModelLabel(activeModel),
 		contextLength: getContextLength(activeModel),
+		vaultState: getVaultState(),
 		providers: [...getRemoteProviders(), ...getLocalProviders()]
 	};
 }
 
 export async function initialize() {
 	await initProviders();
+
+	await autoUnlockFromSession();
+
 	await autoConnectOllama();
+
+	const layout = external.persistence.getPersistedLayout();
+	const savedModel = layout.activeModel as ActiveModel | undefined;
+	if (savedModel) {
+		const credState = getCredentialState(savedModel.provider);
+		const ollamaReady =
+			savedModel.provider !== 'ollama' ||
+			state.providers.providerState.ollamaModels.includes(savedModel.modelId);
+		if ((credState === 'ready' || credState === 'not-required') && ollamaReady) {
+			state.providers.selectModel(savedModel);
+		}
+	}
+
 	if (state.providers.providerState.activeModel?.provider === 'ollama') {
 		await fetchOllamaContextLength();
 	}
@@ -298,10 +336,12 @@ export async function selectModel(model: ActiveModel) {
 	if (model.provider === 'webllm') {
 		await loadWebLLMModel_(model.modelId);
 		syncContextLength(state.providers.providerState.activeModel);
+		workspace.setActiveModel(model);
 		return;
 	}
 
 	state.providers.selectModel(model);
+	workspace.setActiveModel(model);
 	if (model.provider === 'ollama') {
 		await fetchOllamaContextLength();
 	} else {
@@ -315,7 +355,7 @@ export function setContextSize(size: ContextSize) {
 }
 
 export async function unlockCredentials(password: string) {
-	await unlockKeys(password);
+	await unlockVault(password);
 }
 
 export async function saveCredential(provider: string, credential: string, password: string) {
@@ -328,12 +368,12 @@ export async function saveCredential(provider: string, credential: string, passw
 	await saveKey(provider, credential, password);
 }
 
-export function lockCredential(provider: string) {
-	lockKey(provider);
+export async function lockAllCredentials() {
+	await lockVault();
 }
 
-export function clearCredential(provider: string) {
-	forgetKey(provider);
+export function removeCredential(provider: string) {
+	removeKey(provider);
 }
 
 export async function removeCachedModel(provider: Provider, modelId: string) {

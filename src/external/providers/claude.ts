@@ -6,7 +6,8 @@ export async function* streamClaudeChat(
 	messages: domain.tree.Message[],
 	apiKey: string,
 	signal: AbortSignal,
-	tools?: ToolDefinition[]
+	tools?: ToolDefinition[],
+	system?: string
 ): AsyncGenerator<StreamChunk> {
 	const body: Record<string, unknown> = {
 		model,
@@ -32,6 +33,9 @@ export async function* streamClaudeChat(
 			};
 		})
 	};
+	if (system) {
+		body.system = system;
+	}
 	if (tools?.length) {
 		body.tools = tools;
 	}

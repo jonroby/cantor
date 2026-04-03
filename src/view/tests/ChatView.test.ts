@@ -126,7 +126,8 @@ function resetState(tree?: domain.tree.ChatTree) {
 		rootId: t.rootId,
 		exchanges: t.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(t),
-		contextStrategy: 'full'
+		contextStrategy: 'full',
+		mode: 'chat'
 	};
 	state.chats.chatState.chats = [chat];
 	state.chats.chatState.activeChatIndex = 0;
@@ -172,6 +173,47 @@ describe('ChatView', () => {
 		it('shows chat name', () => {
 			render(ChatView);
 			expect(screen.getByText('Test Chat')).toBeInTheDocument();
+		});
+
+		it.skip('renders activity for the main exchange and for a side-chat exchange in the side pane', async () => {
+			const { tree } = buildTreeWithSideChat();
+			resetState(tree);
+			const mainTailId = domain.tree.getMainChatTail(tree)!;
+			const sideExchangeId = Object.values(tree.exchanges).find(
+				(exchange) => exchange.prompt.text === 'Side prompt 1'
+			)!.id;
+			state.agent.agentState.thinkingByExchangeId = {
+				[mainTailId]: [
+					{
+						id: 'main-note',
+						exchangeId: mainTailId,
+						type: 'note',
+						text: 'Main agent step',
+						createdAt: Date.now()
+					}
+				],
+				[sideExchangeId]: [
+					{
+						id: 'side-call',
+						exchangeId: sideExchangeId,
+						type: 'tool_call',
+						text: 'inspect_workspace({})',
+						createdAt: Date.now()
+					}
+				]
+			};
+			state.agent.agentState.expandedByExchangeId = {
+				[mainTailId]: true,
+				[sideExchangeId]: true
+			};
+
+			render(ChatView);
+			expect(screen.getAllByText('Main agent step').length).toBeGreaterThan(0);
+
+			await userEvent.click(screen.getByText('1'));
+			await tick();
+
+			expect(screen.getAllByText('inspect_workspace({})').length).toBeGreaterThan(0);
 		});
 	});
 

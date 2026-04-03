@@ -1,6 +1,17 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import {
+		ChevronRight,
+		Ellipsis,
+		Folder,
+		FilePlus,
+		Upload,
+		FolderUp,
+		Pencil,
+		Download,
+		Trash2
+	} from 'lucide-svelte';
 	import * as app from '@/app';
 	import * as Sidebar from '@/view/components/shadcn/ui/sidebar';
 	import * as DropdownMenu from '@/view/components/shadcn/ui/dropdown-menu';
@@ -124,20 +135,12 @@
 				? 'ring-primary ring-2 ring-inset'
 				: ''}"
 		>
-			<svg
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.5"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				class="shrink-0 transition-transform"
+			<span
+				class="inline-flex shrink-0 transition-transform"
 				style:transform={expanded ? 'rotate(90deg)' : 'rotate(0deg)'}
 			>
-				<path d="M9 6l6 6-6 6" />
-			</svg>
+				<ChevronRight size={16} strokeWidth={1.5} />
+			</span>
 			{#if isEditingFolder}
 				<InlineRenameInput
 					bind:value={editingFolderName}
@@ -161,19 +164,7 @@
 				class="right-1 w-6 h-6 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground absolute top-1/2 flex -translate-y-1/2 items-center justify-center opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
 				onclick={(e) => e.stopPropagation()}
 			>
-				<svg
-					width="14"
-					height="14"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-				>
-					<circle cx="5" cy="12" r="1" />
-					<circle cx="12" cy="12" r="1" />
-					<circle cx="19" cy="12" r="1" />
-				</svg>
+				<Ellipsis size={14} />
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Portal>
 				<DropdownMenu.Content
@@ -185,20 +176,7 @@
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 						onclick={onOpenFolder}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path
-								d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-							/>
-						</svg>
+						<Folder size={14} strokeWidth={1.5} />
 						Open
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator class="my-1 bg-border h-px" />
@@ -206,102 +184,35 @@
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 						onclick={onNewDocument}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-							<polyline points="14 2 14 8 20 8" />
-							<line x1="12" y1="18" x2="12" y2="12" />
-							<line x1="9" y1="15" x2="15" y2="15" />
-						</svg>
+						<FilePlus size={14} strokeWidth={1.5} />
 						New file
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 						onclick={onUploadDocument}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-							<polyline points="17 8 12 3 7 8" />
-							<line x1="12" y1="3" x2="12" y2="15" />
-						</svg>
+						<Upload size={14} strokeWidth={1.5} />
 						Upload file
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 						onclick={onUploadFolder}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M2 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" />
-							<path d="M12 11v6" />
-							<polyline points="9 14 12 11 15 14" />
-						</svg>
+						<FolderUp size={14} strokeWidth={1.5} />
 						Upload folder
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 						onclick={startRenameFolder}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M12 20h9" />
-							<path
-								d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
-							/>
-						</svg>
+						<Pencil size={14} strokeWidth={1.5} />
 						Rename
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent flex cursor-pointer items-center"
 						onclick={onDownloadFolder}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-							<polyline points="7 10 12 15 17 10" />
-							<line x1="12" y1="15" x2="12" y2="3" />
-						</svg>
+						<Download size={14} strokeWidth={1.5} />
 						Download
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator class="my-1 bg-border h-px" />
@@ -309,19 +220,7 @@
 						class="gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex cursor-pointer items-center"
 						onclick={onDeleteFolder}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-						>
-							<path
-								d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-							/>
-						</svg>
+						<Trash2 size={14} strokeWidth={1.5} />
 						Delete
 					</DropdownMenu.Item>
 				</DropdownMenu.Content>
@@ -357,35 +256,13 @@
 							[subfolder.id]: !expandedSubfolders[subfolder.id]
 						})}
 				>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="shrink-0 transition-transform"
+					<span
+						class="inline-flex shrink-0 transition-transform"
 						style:transform={expandedSubfolders[subfolder.id] ? 'rotate(90deg)' : 'rotate(0deg)'}
 					>
-						<path d="M9 6l6 6-6 6" />
-					</svg>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="shrink-0"
-					>
-						<path
-							d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-						/>
-					</svg>
+						<ChevronRight size={14} strokeWidth={1.5} />
+					</span>
+					<Folder size={14} strokeWidth={1.5} class="shrink-0" />
 					<span class="truncate">{subfolder.name}</span>
 				</button>
 			</Sidebar.MenuItem>

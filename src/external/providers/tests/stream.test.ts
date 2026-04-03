@@ -70,6 +70,7 @@ describe('provider stream dispatch', () => {
 			HISTORY,
 			'claude-key',
 			signal,
+			undefined,
 			undefined
 		);
 	});

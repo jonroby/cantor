@@ -31,7 +31,8 @@ export interface ProviderContext {
 	options: ReadonlyArray<{ label: string; value: ContextSize }>;
 }
 
-export type CredentialState = 'ready' | 'locked' | 'missing' | 'not-required';
+export type VaultState = 'empty' | 'locked' | 'unlocked';
+export type CredentialState = 'ready' | 'missing' | 'not-required';
 
 export interface ProviderEntry {
 	id: Provider;
@@ -48,5 +49,6 @@ export interface State {
 	activeModel: ActiveModel | null;
 	activeModelLabel: string | null;
 	contextLength: number | null;
+	vaultState: VaultState;
 	providers: ProviderEntry[];
 }

@@ -9,7 +9,7 @@
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from './ConfirmDeleteDialog.svelte';
-	import powersetLogo from '@/assets/powerset-logo.svg';
+	import powersetLogo from '@/view/assets/powerset-logo.svg';
 
 	interface Props {
 		chats: app.chat.Chat[];

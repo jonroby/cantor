@@ -1,10 +1,9 @@
 {
-  "classic": {
-    "ChatMessage": true,
-    "ChatView": true,
-    "DocumentView": true,
-    "FolderDocumentView": true
-  },
+  "AgentActivity": true,
+  "ChatMessage": true,
+  "ChatView": true,
+  "DocumentView": true,
+  "FolderDocumentView": true,
   "shared": {
     "AppSidebar": true,
     "Composer": true,

@@ -12,6 +12,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		activeModel: null,
 		activeModelLabel: null,
 		contextLength: null,
+		vaultState: 'empty',
 		providers: [
 			{
 				id: 'claude',
@@ -60,7 +61,8 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 					rootId: null,
 					exchanges: {},
 					activeExchangeId: null,
-					contextStrategy: 'full' as const
+					contextStrategy: 'full' as const,
+					mode: 'chat' as const
 				}
 			] as state.chats.ChatRecord[],
 			activeChatIndex: 0
@@ -96,49 +98,52 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			acceptPending: mockFn<typeof app.agent.acceptPending>(),
 			buildMessages: mockFn<typeof app.agent.buildMessages>(() => []),
 			buildSystemPrompt: mockFn<typeof app.agent.buildSystemPrompt>(() => ''),
+			describeCapabilities: mockFn<typeof app.agent.describeCapabilities>(() => ''),
 			dismissResponse: mockFn<typeof app.agent.dismissResponse>(),
 			executeTool: mockFn<typeof app.agent.executeTool>(() => ({ result: '' })),
+			getCapabilities: mockFn<typeof app.agent.getCapabilities>(() => []),
 			getState: mockFn<typeof app.agent.getState>(() => ({
-				history: [],
-				streaming: false,
+				streamingExchangeIds: [],
 				pendingContent: null,
-				lastResponse: null
+				lastResponse: null,
+				liveStatusByExchangeId: {},
+				thinkingByExchangeId: {},
+				expandedByExchangeId: {}
 			})),
+			getToolDefinition: mockFn<typeof app.agent.getToolDefinition>(() => undefined),
+			isRunning: mockFn<typeof app.agent.isRunning>(() => false),
 			rejectPending: mockFn<typeof app.agent.rejectPending>(),
 			reset: mockFn<typeof app.agent.reset>(),
+			setThinkingExpanded: mockFn<typeof app.agent.setThinkingExpanded>(),
+			startRun: mockFn<typeof app.agent.startRun>(),
 			stop: mockFn<typeof app.agent.stop>(),
-			submit: mockFn<typeof app.agent.submit>()
+			stopRun: mockFn<typeof app.agent.stopRun>(),
+			stopRunsForChat: mockFn<typeof app.agent.stopRunsForChat>()
 		},
 		bootstrap: {
-			clearOpenDocument: mockFn<typeof app.bootstrap.clearOpenDocument>(),
 			deleteTrashItem: mockFn<typeof app.bootstrap.deleteTrashItem>(async () => {}),
 			emptyTrash: mockFn<typeof app.bootstrap.emptyTrash>(async () => {}),
 			initialize: mockFn<typeof app.bootstrap.initialize>(async () => ({
 				restoredDocument: null,
-				panels: [{ type: 'chat' as const }],
-				expandedFolders: {},
-				sidebarOpen: undefined,
 				hadDuplicateRenames: false
 			})),
 			loadTrash: mockFn<typeof app.bootstrap.loadTrash>(async () => []),
-			rememberOpenDocument: mockFn<typeof app.bootstrap.rememberOpenDocument>(),
 			restoreChat: mockFn<typeof app.bootstrap.restoreChat>(async () => false),
 			restoreDocument: mockFn<typeof app.bootstrap.restoreDocument>(async () => false),
 			restoreFolder: mockFn<typeof app.bootstrap.restoreFolder>(async () => false),
-			save: mockFn<typeof app.bootstrap.save>(async () => {}),
-			setChatPanelOpen: mockFn<typeof app.bootstrap.setChatPanelOpen>(),
-			setExpandedFolders: mockFn<typeof app.bootstrap.setExpandedFolders>(),
-			setPanels: mockFn<typeof app.bootstrap.setPanels>(),
-			setSidebarOpen: mockFn<typeof app.bootstrap.setSidebarOpen>()
+			save: mockFn<typeof app.bootstrap.save>(async () => {})
 		},
 		chat: {
 			addDocumentToChat: mockFn<typeof app.chat.addDocumentToChat>(),
+			canCreateSideChat: mockFn<typeof app.chat.canCreateSideChat>(() => false),
+			canPromoteSideChat: mockFn<typeof app.chat.canPromoteSideChat>(() => false),
 			canSubmitPrompt: mockFn<typeof app.chat.canSubmitPrompt>(() => false),
 			copyChat: mockFn<typeof app.chat.copyChat>(),
 			createChat: mockFn<typeof app.chat.createChat>(),
 			deleteExchange: mockFn<typeof app.chat.deleteExchange>(),
 			exportChat: mockFn<typeof app.chat.exportChat>(),
 			exportState: mockFn<typeof app.chat.exportState>(),
+			getExchangePath: mockFn<typeof app.chat.getExchangePath>(() => []),
 			getActiveChatIndex: mockFn<typeof app.chat.getActiveChatIndex>(
 				() => appStateBacking.chatState.activeChatIndex
 			),
@@ -152,6 +157,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			}),
 			getChats: mockFn<typeof app.chat.getChats>(() => appStateBacking.chatState.chats),
 			getContextStrategy: mockFn<typeof app.chat.getContextStrategy>(() => 'full'),
+			getMode: mockFn<typeof app.chat.getMode>(() => 'chat'),
 			getMainChat: mockFn<typeof app.chat.getMainChat>(() => []),
 			getSideChats: mockFn<typeof app.chat.getSideChats>(() => []),
 			getUsedTokens: mockFn<typeof app.chat.getUsedTokens>(() => 0),
@@ -164,6 +170,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			selectChat: mockFn<typeof app.chat.selectChat>(),
 			selectExchange: mockFn<typeof app.chat.selectExchange>(),
 			setContextStrategy: mockFn<typeof app.chat.setContextStrategy>(),
+			setMode: mockFn<typeof app.chat.setMode>(),
 			stopChatStreams: mockFn<typeof app.chat.stopChatStreams>(),
 			stopStream: mockFn<typeof app.chat.stopStream>(),
 			submitPrompt: mockFn<typeof app.chat.submitPrompt>()
@@ -173,7 +180,11 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			closeDocument: mockFn<typeof app.documents.closeDocument>(),
 			closeOpenDocument: mockFn<typeof app.documents.closeOpenDocument>(),
 			createDocument: mockFn<typeof app.documents.createDocument>(),
+			createFileWithContent: mockFn<typeof app.documents.createFileWithContent>(() => ({
+				result: null
+			})),
 			createFolder: mockFn<typeof app.documents.createFolder>(),
+			createNamedFolder: mockFn<typeof app.documents.createNamedFolder>(() => null),
 			deleteDocument: mockFn<typeof app.documents.deleteDocument>(),
 			deleteFolder: mockFn<typeof app.documents.deleteFolder>(),
 			exportFolder: mockFn<typeof app.documents.exportFolder>(),
@@ -200,11 +211,11 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		},
 		providers: {
 			clearCachedModels: mockFn<typeof app.providers.clearCachedModels>(),
-			clearCredential: mockFn<typeof app.providers.clearCredential>(),
+			lockAllCredentials: mockFn<typeof app.providers.lockAllCredentials>(async () => {}),
 			connect: mockFn<typeof app.providers.connect>(),
 			getState: mockFn<typeof app.providers.getState>(() => providerStateBacking),
 			initialize: mockFn<typeof app.providers.initialize>(),
-			lockCredential: mockFn<typeof app.providers.lockCredential>(),
+			removeCredential: mockFn<typeof app.providers.removeCredential>(),
 			removeCachedModel: mockFn<typeof app.providers.removeCachedModel>(),
 			resolveModelLabel: mockFn<typeof app.providers.resolveModelLabel>(() => undefined),
 			saveCredential: mockFn<typeof app.providers.saveCredential>(),
@@ -212,8 +223,40 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			setContextSize: mockFn<typeof app.providers.setContextSize>(),
 			streamText: mockFn<typeof app.providers.streamText>(),
 			unlockCredentials: mockFn<typeof app.providers.unlockCredentials>()
+		},
+		workspace: {
+			clearOpenDocument: mockFn<typeof app.workspace.clearOpenDocument>(),
+			getState: mockFn<typeof app.workspace.getState>(() => ({
+				panels: [{ type: 'chat' as const }],
+				expandedFolders: {},
+				sidebarOpen: true,
+				selectedFileIdsByFolderId: {}
+			})),
+			rememberOpenDocument: mockFn<typeof app.workspace.rememberOpenDocument>(),
+			selectFolderFile: mockFn<typeof app.workspace.selectFolderFile>(),
+			setActiveModel: mockFn<typeof app.workspace.setActiveModel>(),
+			setExpandedFolders: mockFn<typeof app.workspace.setExpandedFolders>(),
+			setPanels: mockFn<typeof app.workspace.setPanels>(),
+			setSidebarOpen: mockFn<typeof app.workspace.setSidebarOpen>(),
+			toggleSidebar: mockFn<typeof app.workspace.toggleSidebar>()
 		}
 	} satisfies AppMock;
 
 	return mergeMock<AppMock>(base, overrides);
+}
+
+export async function mockAppChatModule() {
+	return createAppMock().chat;
+}
+
+export async function mockAppDocumentsModule() {
+	return createAppMock().documents;
+}
+
+export async function mockAppProvidersModule() {
+	return createAppMock().providers;
+}
+
+export async function mockAppWorkspaceModule() {
+	return createAppMock().workspace;
 }

@@ -11,6 +11,7 @@ import {
 	cancelStreamsForChat as _cancelStreamsForChat,
 	type StreamStore,
 	type StreamDeps,
+	type StreamCallbacks,
 	type ToolExecutor
 } from './streams';
 
@@ -35,7 +36,9 @@ export function startStream(
 		model: domain.models.ActiveModel;
 		history: domain.tree.Message[];
 		tools?: providers.stream.ToolDefinition[];
+		system?: string;
 		toolExecutor?: ToolExecutor;
+		callbacks?: StreamCallbacks;
 	},
 	deps: StreamDeps
 ): void {

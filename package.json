@@ -8,6 +8,7 @@
 		"check:imports": "bun ./scripts/check-imports.mjs",
 		"check:contracts": "bun ./scripts/check-public-api-contracts.mjs",
 		"update:contracts": "bun ./scripts/check-public-api-contracts.mjs --write",
+		"check:all": "bun run check:imports && bun run check:contracts && bun run typecheck && bun run lint && bun run test && bun run build",
 		"prebuild": "bun run check:imports && bun run check:contracts && bun run typecheck && bun run lint",
 		"build": "vite build",
 		"preview": "vite preview",

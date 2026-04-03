@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { ArrowRight, GitBranch, Shield } from 'lucide-svelte';
 
 	let canvas: HTMLCanvasElement;
 	let animationId: number;
@@ -122,19 +123,7 @@
 			<a href="https://github.com" class="nav-link" target="_blank" rel="noopener">GitHub</a>
 			<button class="launch-btn" onclick={goToApp}>
 				Launch App
-				<svg
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M5 12h14" />
-					<path d="m12 5 7 7-7 7" />
-				</svg>
+				<ArrowRight size={16} />
 			</button>
 		</div>
 	</nav>
@@ -151,19 +140,7 @@
 		<div class="hero-actions">
 			<button class="cta-primary" onclick={goToApp}>
 				Start Chatting
-				<svg
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M5 12h14" />
-					<path d="m12 5 7 7-7 7" />
-				</svg>
+				<ArrowRight size={18} strokeWidth={2.5} />
 			</button>
 			<button class="cta-secondary" onclick={goToApp}>See Features</button>
 		</div>
@@ -171,21 +148,7 @@
 		<div class="features-grid">
 			<div class="feature-card">
 				<div class="feature-icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M6 3v12" />
-						<circle cx="18" cy="6" r="3" />
-						<circle cx="6" cy="18" r="3" />
-						<path d="M18 9a9 9 0 0 1-9 9" />
-					</svg>
+					<GitBranch size={24} />
 				</div>
 				<h3>Side Chat Conversations</h3>
 				<p>Copy any message to explore alternative directions without losing context.</p>
@@ -239,18 +202,7 @@
 			</div>
 			<div class="feature-card">
 				<div class="feature-icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-					</svg>
+					<Shield size={24} />
 				</div>
 				<h3>Local-First</h3>
 				<p>All data stays in your browser. No accounts, no servers, no tracking.</p>
