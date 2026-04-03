@@ -90,4 +90,11 @@ describe('app/agent', () => {
 		expect(createNamedFolder).toHaveBeenCalledWith('Specs', 'folder-1');
 		expect(result.result).toBe('Created folder "Specs" (id: folder-2).');
 	});
+
+	it('tells the agent that markdown documents support plot and plotly code fences', () => {
+		const prompt = agent.buildSystemPrompt('# Notes');
+
+		expect(prompt).toContain('Use ```plot for function-plot JSON configs.');
+		expect(prompt).toContain('Use ```plotly for Plotly JSON configs.');
+	});
 });

@@ -1027,6 +1027,11 @@ export function buildSystemPrompt(documentContent: string | undefined): string {
 		'Capabilities:',
 		describeCapabilities(),
 		'',
+		'When working in markdown documents, you can create charts directly with fenced code blocks.',
+		'- Use ```plot for function-plot JSON configs.',
+		'- Use ```plotly for Plotly JSON configs.',
+		'- If a user asks for a chart in a document, prefer editing or creating the document with one of those code blocks.',
+		'',
 		'When creating diagrams or SVG assets, create the actual file first and then reference it from the document.',
 		documentSection
 	].join('\n');
