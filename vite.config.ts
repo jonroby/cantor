@@ -1,11 +1,10 @@
 import devtoolsJson from 'vite-plugin-devtools-json';
-import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import path from 'path';
 
 export default defineConfig({
-	plugins: [tailwindcss(), svelte(), devtoolsJson()],
+	plugins: [svelte(), devtoolsJson()],
 	build: {
 		chunkSizeWarningLimit: 6500,
 		rollupOptions: {

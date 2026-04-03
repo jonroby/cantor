@@ -15,5 +15,6 @@
 <style>
 	:global(.bits-sidebar-menu-item) {
 		position: relative;
+		list-style: none;
 	}
 </style>

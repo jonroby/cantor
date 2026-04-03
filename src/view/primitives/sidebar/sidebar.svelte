@@ -51,17 +51,18 @@
 	}
 
 	:global(.bits-sidebar-inner) {
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
 		background: hsl(var(--sidebar));
-		border-right: 1px solid hsl(var(--sidebar-border));
+		border-right: 1px solid hsl(var(--border));
 	}
 
 	:global(.bits-sidebar-root[data-side='right'] .bits-sidebar-inner) {
 		border-right: none;
-		border-left: 1px solid hsl(var(--sidebar-border));
+		border-left: 1px solid hsl(var(--border));
 	}
 </style>

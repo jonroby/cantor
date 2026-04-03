@@ -23,5 +23,8 @@
 		min-width: 0;
 		flex-direction: column;
 		gap: 0;
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 </style>

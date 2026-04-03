@@ -173,7 +173,11 @@
 						<span class="sidebar-brand-name">Cantor</span>
 						<Tooltip.Root>
 							<Tooltip.Trigger>
-								<span class="sidebar-alpha-badge">Alpha</span>
+								{#snippet child({ props })}
+									<button {...props} type="button" class="sidebar-alpha-trigger">
+										<span class="sidebar-alpha-badge">Alpha</span>
+									</button>
+								{/snippet}
 							</Tooltip.Trigger>
 							<Tooltip.Content side="bottom" class="sidebar-tooltip sidebar-tooltip-wide">
 								Some features are still being refined.
@@ -545,12 +549,27 @@
 	}
 
 	.sidebar-alpha-badge {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid hsl(var(--sidebar-border));
 		border-radius: 9999px;
-		background: hsl(var(--accent));
-		padding: 0.125rem 0.375rem;
+		background: hsl(var(--sidebar-accent) / 0.7);
+		padding: 0.125rem 0.45rem;
 		font-size: var(--text-xs);
 		font-weight: 600;
-		color: hsl(var(--accent-foreground));
+		line-height: 1.2;
+		color: hsl(var(--sidebar-accent-foreground));
+	}
+
+	.sidebar-alpha-trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: none;
+		background: transparent;
+		cursor: default;
+		color: inherit;
 	}
 
 	.sidebar-icon-btn {
