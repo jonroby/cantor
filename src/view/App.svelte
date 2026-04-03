@@ -26,7 +26,6 @@
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let chatSidePanelOpen = $state(false);
 	let chatScrolledAway = $state(false);
-	let composerFocus: 'chat' | 'agent' = $state('chat');
 	let folderSelectedFiles: Record<string, string> = $state({});
 
 	let providerState = $derived(app.providers.getState());
@@ -43,9 +42,8 @@
 	let composerSide = $derived.by(() => {
 		if (chatSidePanelOpen) return sideChatSide;
 		if (!isSplit) return null;
-		if (bothDocs) return activeDocSide;
-		if (agentMode) return chatPanelIsFirst ? 'right' : 'left';
-		return chatPanelIsFirst ? 'left' : 'right';
+		// TODO: allow moving composer to right panel
+		return 'left';
 	});
 	let activeDocumentKey = $derived.by(() => {
 		const targetIndex = bothDocs ? (activeDocSide === 'left' ? 0 : 1) : -1;
@@ -247,7 +245,6 @@
 	function selectChat(index: number) {
 		app.chat.selectChat(index);
 		ensureChatPanel();
-		composerFocus = 'chat';
 		resetUIState();
 	}
 
@@ -344,7 +341,7 @@
 								<DocumentView
 									folderId={panel.folderId}
 									fileId={panel.fileId}
-									agentStreaming={agentState.streaming}
+									agentStreaming={false}
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={agentState.pendingContent}
 									onAcceptPending={() => app.agent.acceptPending(activeDocumentIndex)}
@@ -361,7 +358,7 @@
 									folderName={folder?.name ?? 'Folder'}
 									files={folderFiles}
 									{activeFileId}
-									agentStreaming={agentState.streaming}
+									agentStreaming={false}
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={agentState.pendingContent}
 									onSelectFile={(fileId) => {
@@ -415,15 +412,15 @@
 					<Composer
 						bind:this={composerRef}
 						{agentMode}
-						onToggleMode={chatSidePanelOpen
-							? () => (sideChatSide = sideChatSide === 'left' ? 'right' : 'left')
-							: bothDocs
-								? () => (activeDocSide = activeDocSide === 'left' ? 'right' : 'left')
-								: isSplit
-									? () => (composerFocus = composerFocus === 'chat' ? 'agent' : 'chat')
-									: undefined}
+						onToggleMode={() => (agentMode = !agentMode)}
 						liveDocumentContent={activeDocumentFile?.content}
-						activeFolderId={activeDocumentKey?.folderId ?? null}
+						{activeDocumentKey}
+						toolCallbacks={{
+							onOpenDocument: openDocumentPanel,
+							onOpenFolder: openFolderPanel,
+							onClosePanel: closePanel,
+							onToggleSidebar: () => (sidebarOpen = !sidebarOpen)
+						}}
 						onScrollToNode={(nodeId) => {
 							ensureChatPanel();
 							tick().then(() => chatViewRef?.scrollToNode(nodeId));

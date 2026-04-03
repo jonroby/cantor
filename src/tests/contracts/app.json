@@ -1,8 +1,11 @@
 {
   "agent": {
+    "TOOLS": true,
     "acceptPending": true,
     "buildMessages": true,
+    "buildSystemPrompt": true,
     "dismissResponse": true,
+    "executeTool": true,
     "getState": true,
     "rejectPending": true,
     "reset": true,

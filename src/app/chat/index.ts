@@ -2,6 +2,7 @@ import * as domain from '@/domain';
 import * as state from '@/state';
 import * as external from '@/external';
 import * as lib from '@/lib';
+import * as agent from '@/app/agent';
 import { selectExchanges, type ContextBudget } from './context';
 
 export type ContextStrategy = state.chats.ContextStrategy;
@@ -263,6 +264,14 @@ export interface SubmitOptions {
 	contextStrategy?: state.chats.ContextStrategy;
 	contextLength?: number | null;
 	images?: domain.tree.ImageAttachment[];
+	agentMode?: boolean;
+	activeDocumentKey?: { folderId: string; fileId: string } | null;
+	toolCallbacks?: {
+		onOpenDocument?: (folderId: string, fileId: string) => void;
+		onOpenFolder?: (folderId: string) => void;
+		onClosePanel?: (index: number) => void;
+		onToggleSidebar?: () => void;
+	};
 }
 
 export function submitPrompt(
@@ -319,21 +328,56 @@ export function submitPrompt(
 	deps.replaceActiveTree(created.tree);
 	deps.setActiveExchangeId(created.id);
 
+	const toolContext: agent.ToolContext | null = options?.agentMode
+		? {
+				folderId: options.activeDocumentKey?.folderId ?? null,
+				...options.toolCallbacks
+			}
+		: null;
+
+	if (toolContext) {
+		const systemPrompt = agent.buildSystemPrompt(options!.liveDocumentContent);
+		history.splice(
+			history.length - 1,
+			0,
+			{ role: 'user', content: systemPrompt },
+			{ role: 'assistant', content: 'Understood.' }
+		);
+	}
+
 	external.streams.startStream(
 		{
 			exchangeId: created.id,
 			chatId,
 			model,
-			history
+			history,
+			tools: toolContext ? agent.TOOLS : undefined,
+			toolExecutor: toolContext
+				? {
+						execute: (toolCalls) => {
+							const executed = toolCalls.map((tc) => ({
+								id: tc.id,
+								...agent.executeTool(tc.name, tc.input, toolContext)
+							}));
+							return {
+								results: executed.map((t) => ({
+									tool_use_id: t.id,
+									content: t.result
+								})),
+								summary: executed.map((t) => t.result)
+							};
+						}
+					}
+				: undefined
 		},
 		{
 			getTreeByChatId: state.chats.getTreeByChatId,
 			replaceTreeByChatId: state.chats.replaceTreeByChatId,
-			getProviderStream: (activeModel, streamHistory, signal) =>
+			getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
 				external.providers.stream.getProviderStream(activeModel, streamHistory, signal, {
 					apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
 					ollamaUrl: state.providers.providerState.ollamaUrl
-				})
+				}, streamTools)
 		}
 	);
 

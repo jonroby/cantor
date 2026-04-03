@@ -7,3 +7,5 @@ export {
 	isStreaming,
 	isAnyStreaming
 } from './runtime';
+
+export type { ToolExecutor } from './streams';

@@ -92,9 +92,12 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 
 	const base = {
 		agent: {
+			TOOLS: [] as typeof app.agent.TOOLS,
 			acceptPending: mockFn<typeof app.agent.acceptPending>(),
 			buildMessages: mockFn<typeof app.agent.buildMessages>(() => []),
+			buildSystemPrompt: mockFn<typeof app.agent.buildSystemPrompt>(() => ''),
 			dismissResponse: mockFn<typeof app.agent.dismissResponse>(),
+			executeTool: mockFn<typeof app.agent.executeTool>(() => ({ result: '' })),
 			getState: mockFn<typeof app.agent.getState>(() => ({
 				history: [],
 				streaming: false,

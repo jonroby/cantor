@@ -584,7 +584,7 @@
 						<Document
 							title={activeDocumentFile.name}
 							content={activeDocumentFile.content}
-							agentStreaming={agentState.streaming}
+							agentStreaming={false}
 							agentProvider={providerState.activeModel?.provider}
 							pendingContent={agentState.pendingContent}
 							onContentChange={(c) => {

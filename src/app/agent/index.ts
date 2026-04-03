@@ -12,22 +12,22 @@ export function getState() {
 
 // ── Tool definitions ───────────────────────────────────────────────────────
 
-const TOOLS: external.providers.stream.ToolDefinition[] = [
+export const TOOLS: external.providers.stream.ToolDefinition[] = [
 	{
-		name: 'respond',
+		name: 'edit_document',
 		description:
-			'Send a message to the user without editing the document. ' +
-			'Use this when you need to ask a clarifying question, confirm something, or communicate with the user. ' +
-			'Do NOT use this when you can directly edit the document.',
+			'Replace the content of the currently open document. ' +
+			'Use this when the user asks you to edit, update, or rewrite the document they are viewing. ' +
+			'The content you provide will be shown as a pending edit that the user can accept or reject.',
 		input_schema: {
 			type: 'object',
 			properties: {
-				message: {
+				content: {
 					type: 'string',
-					description: 'The message to show to the user'
+					description: 'The full new content of the document (markdown)'
 				}
 			},
-			required: ['message']
+			required: ['content']
 		}
 	},
 	{
@@ -105,21 +105,210 @@ const TOOLS: external.providers.stream.ToolDefinition[] = [
 			},
 			required: []
 		}
+	},
+	{
+		name: 'rename_folder',
+		description: 'Rename an existing folder.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: {
+					type: 'string',
+					description: 'ID of the folder to rename'
+				},
+				name: {
+					type: 'string',
+					description: 'New name for the folder'
+				}
+			},
+			required: ['folder_id', 'name']
+		}
+	},
+	{
+		name: 'rename_document',
+		description: 'Rename an existing document file in a folder.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: {
+					type: 'string',
+					description: 'ID of the folder containing the document'
+				},
+				file_id: {
+					type: 'string',
+					description: 'ID of the file to rename'
+				},
+				name: {
+					type: 'string',
+					description: 'New name for the file (must end in .md or .svg)'
+				}
+			},
+			required: ['folder_id', 'file_id', 'name']
+		}
+	},
+	{
+		name: 'delete_folder',
+		description: 'Delete a folder and all its contents.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: {
+					type: 'string',
+					description: 'ID of the folder to delete'
+				}
+			},
+			required: ['folder_id']
+		}
+	},
+	{
+		name: 'delete_document',
+		description: 'Delete a document file from a folder.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: {
+					type: 'string',
+					description: 'ID of the folder containing the document'
+				},
+				file_id: {
+					type: 'string',
+					description: 'ID of the file to delete'
+				}
+			},
+			required: ['folder_id', 'file_id']
+		}
+	},
+	{
+		name: 'move_document',
+		description: 'Move a document from one folder to another.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				from_folder_id: { type: 'string', description: 'Source folder ID' },
+				file_id: { type: 'string', description: 'File ID to move' },
+				to_folder_id: { type: 'string', description: 'Destination folder ID' }
+			},
+			required: ['from_folder_id', 'file_id', 'to_folder_id']
+		}
+	},
+	{
+		name: 'read_document',
+		description: 'Read the content of a document file. Use this to inspect a file before editing or to answer questions about it.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: { type: 'string', description: 'Folder ID' },
+				file_id: { type: 'string', description: 'File ID' }
+			},
+			required: ['folder_id', 'file_id']
+		}
+	},
+	{
+		name: 'open_document',
+		description: 'Open a document in the UI panel so the user can see it.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: { type: 'string', description: 'Folder ID' },
+				file_id: { type: 'string', description: 'File ID' }
+			},
+			required: ['folder_id', 'file_id']
+		}
+	},
+	{
+		name: 'open_folder',
+		description: 'Open a folder in the UI panel so the user can browse its files.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				folder_id: { type: 'string', description: 'Folder ID' }
+			},
+			required: ['folder_id']
+		}
+	},
+	{
+		name: 'list_chats',
+		description: 'List all chat conversations with their names and indices.',
+		input_schema: {
+			type: 'object',
+			properties: {},
+			required: []
+		}
+	},
+	{
+		name: 'select_chat',
+		description: 'Switch to a different chat conversation by index.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				index: { type: 'number', description: 'Chat index (from list_chats)' }
+			},
+			required: ['index']
+		}
+	},
+	{
+		name: 'rename_chat',
+		description: 'Rename a chat conversation.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				index: { type: 'number', description: 'Chat index' },
+				name: { type: 'string', description: 'New name' }
+			},
+			required: ['index', 'name']
+		}
+	},
+	{
+		name: 'delete_chat',
+		description: 'Delete a chat conversation.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				index: { type: 'number', description: 'Chat index' }
+			},
+			required: ['index']
+		}
+	},
+	{
+		name: 'toggle_sidebar',
+		description: 'Toggle the sidebar open or closed.',
+		input_schema: {
+			type: 'object',
+			properties: {},
+			required: []
+		}
+	},
+	{
+		name: 'close_panel',
+		description: 'Close a panel by index (0 = left panel, 1 = right panel). Use this to close an open document or chat panel.',
+		input_schema: {
+			type: 'object',
+			properties: {
+				index: { type: 'number', description: 'Panel index (0 for left, 1 for right)' }
+			},
+			required: ['index']
+		}
 	}
 ];
 
-interface ToolContext {
+export interface ToolContext {
 	folderId: string | null;
+	onOpenDocument?: (folderId: string, fileId: string) => void;
+	onOpenFolder?: (folderId: string) => void;
+	onClosePanel?: (index: number) => void;
+	onToggleSidebar?: () => void;
 }
 
-function executeTool(
+export function executeTool(
 	name: string,
 	input: Record<string, unknown>,
 	ctx: ToolContext
-): { result: string; isResponse?: boolean } {
-	if (name === 'respond') {
-		const message = input.message as string;
-		return { result: 'Message delivered.', isResponse: true };
+): { result: string; pendingContent?: string } {
+	if (name === 'edit_document') {
+		const content = input.content as string;
+		if (!content) return { result: 'Error: content is required' };
+		state.agent.setPendingContent(content);
+		return { result: 'Document edit pending — waiting for user to accept or reject.', pendingContent: content };
 	}
 	if (name === 'create_file') {
 		return { result: executeCreateFile(input, ctx) };
@@ -132,6 +321,48 @@ function executeTool(
 	}
 	if (name === 'create_chat') {
 		return { result: executeCreateChat(input) };
+	}
+	if (name === 'rename_folder') {
+		return { result: executeRenameFolder(input) };
+	}
+	if (name === 'rename_document') {
+		return { result: executeRenameDocument(input) };
+	}
+	if (name === 'delete_folder') {
+		return { result: executeDeleteFolder(input) };
+	}
+	if (name === 'delete_document') {
+		return { result: executeDeleteDocument(input) };
+	}
+	if (name === 'move_document') {
+		return { result: executeMoveDocument(input) };
+	}
+	if (name === 'read_document') {
+		return { result: executeReadDocument(input) };
+	}
+	if (name === 'open_document') {
+		return { result: executeOpenDocument(input, ctx) };
+	}
+	if (name === 'open_folder') {
+		return { result: executeOpenFolder(input, ctx) };
+	}
+	if (name === 'list_chats') {
+		return { result: executeListChats() };
+	}
+	if (name === 'select_chat') {
+		return { result: executeSelectChat(input) };
+	}
+	if (name === 'rename_chat') {
+		return { result: executeRenameChat(input) };
+	}
+	if (name === 'delete_chat') {
+		return { result: executeDeleteChat(input) };
+	}
+	if (name === 'toggle_sidebar') {
+		return { result: executeToggleSidebar(ctx) };
+	}
+	if (name === 'close_panel') {
+		return { result: executeClosePanel(input, ctx) };
 	}
 	return { result: `Unknown tool: ${name}` };
 }
@@ -208,7 +439,7 @@ function executeListFolders(): string {
 		const files = folder.files ?? [];
 		const fileList =
 			files.length > 0
-				? files.map((f) => `${prefix}  - ${f.name}`).join('\n')
+				? files.map((f) => `${prefix}  - ${f.name} (id: ${f.id})`).join('\n')
 				: `${prefix}  (empty)`;
 		let result = `${prefix}📁 ${folder.name} (id: ${folder.id})\n${fileList}`;
 		for (const sub of folder.folders ?? []) {
@@ -230,37 +461,170 @@ function executeCreateChat(input: Record<string, unknown>): string {
 	return `Created chat "${chats[index].name}" (index: ${index})`;
 }
 
+function executeMoveDocument(input: Record<string, unknown>): string {
+	const fromFolderId = input.from_folder_id as string;
+	const fileId = input.file_id as string;
+	const toFolderId = input.to_folder_id as string;
+	if (!fromFolderId || !fileId || !toFolderId) return 'Error: from_folder_id, file_id, and to_folder_id are required';
+	const ok = documents.moveDocument(fromFolderId, fileId, toFolderId);
+	if (!ok) return 'Error: could not move document — destination may have a file with the same name';
+	return 'Moved document successfully';
+}
+
+function executeReadDocument(input: Record<string, unknown>): string {
+	const folderId = input.folder_id as string;
+	const fileId = input.file_id as string;
+	if (!folderId || !fileId) return 'Error: folder_id and file_id are required';
+	const result = documents.getDocument(folderId, fileId);
+	if (!result) return 'Error: document not found';
+	return `File: ${result.file.name}\n\n${result.file.content}`;
+}
+
+function executeOpenDocument(input: Record<string, unknown>, ctx: ToolContext): string {
+	const folderId = input.folder_id as string;
+	const fileId = input.file_id as string;
+	if (!folderId || !fileId) return 'Error: folder_id and file_id are required';
+	if (!ctx.onOpenDocument) return 'Error: opening documents is not available in this context';
+	documents.openDocument(folderId, fileId);
+	ctx.onOpenDocument(folderId, fileId);
+	return 'Opened document in panel';
+}
+
+function executeOpenFolder(input: Record<string, unknown>, ctx: ToolContext): string {
+	const folderId = input.folder_id as string;
+	if (!folderId) return 'Error: folder_id is required';
+	if (!ctx.onOpenFolder) return 'Error: opening folders is not available in this context';
+	ctx.onOpenFolder(folderId);
+	return 'Opened folder in panel';
+}
+
+function executeListChats(): string {
+	const chats = chat.getChats();
+	if (chats.length === 0) return 'No chats exist.';
+	return chats.map((c, i) => `${i}: ${c.name}`).join('\n');
+}
+
+function executeSelectChat(input: Record<string, unknown>): string {
+	const index = input.index as number;
+	if (index === undefined) return 'Error: index is required';
+	const chats = chat.getChats();
+	if (index < 0 || index >= chats.length) return `Error: invalid index ${index} — there are ${chats.length} chats`;
+	chat.selectChat(index);
+	return `Switched to chat "${chats[index].name}"`;
+}
+
+function executeRenameChat(input: Record<string, unknown>): string {
+	const index = input.index as number;
+	const name = input.name as string;
+	if (index === undefined || !name) return 'Error: index and name are required';
+	const result = chat.renameChat(index, name);
+	if (result === null) return `Error: could not rename chat — name "${name}" may already exist`;
+	return `Renamed chat to "${result}"`;
+}
+
+function executeDeleteChat(input: Record<string, unknown>): string {
+	const index = input.index as number;
+	if (index === undefined) return 'Error: index is required';
+	const chats = chat.getChats();
+	if (index < 0 || index >= chats.length) return `Error: invalid index ${index}`;
+	chat.removeChat(index);
+	return 'Deleted chat';
+}
+
+function executeToggleSidebar(ctx: ToolContext): string {
+	if (!ctx.onToggleSidebar) return 'Error: toggling sidebar is not available in this context';
+	ctx.onToggleSidebar();
+	return 'Toggled sidebar';
+}
+
+function executeClosePanel(input: Record<string, unknown>, ctx: ToolContext): string {
+	const index = input.index as number;
+	if (index === undefined) return 'Error: index is required';
+	if (!ctx.onClosePanel) return 'Error: closing panels is not available in this context';
+	ctx.onClosePanel(index);
+	return `Closed panel ${index}`;
+}
+
+function executeRenameFolder(input: Record<string, unknown>): string {
+	const folderId = input.folder_id as string;
+	const name = input.name as string;
+	if (!folderId || !name) return 'Error: folder_id and name are required';
+	const result = documents.renameFolder(folderId, name);
+	if (result === null) return `Error: could not rename folder — name "${name}" may already exist`;
+	return `Renamed folder to "${result}"`;
+}
+
+function executeRenameDocument(input: Record<string, unknown>): string {
+	const folderId = input.folder_id as string;
+	const fileId = input.file_id as string;
+	const name = input.name as string;
+	if (!folderId || !fileId || !name) return 'Error: folder_id, file_id, and name are required';
+	const { result, error } = documents.renameDocument(folderId, fileId, name);
+	if (error) return `Error: ${error}`;
+	if (result === null) return `Error: could not rename document — name "${name}" may already exist`;
+	return `Renamed document to "${result}"`;
+}
+
+function executeDeleteFolder(input: Record<string, unknown>): string {
+	const folderId = input.folder_id as string;
+	if (!folderId) return 'Error: folder_id is required';
+	documents.deleteFolder(folderId);
+	return `Deleted folder`;
+}
+
+function executeDeleteDocument(input: Record<string, unknown>): string {
+	const folderId = input.folder_id as string;
+	const fileId = input.file_id as string;
+	if (!folderId || !fileId) return 'Error: folder_id and file_id are required';
+	documents.deleteDocument(folderId, fileId);
+	return `Deleted document`;
+}
+
 // ── Message building ───────────────────────────────────────────────────────
 
-export function buildMessages(
-	prompt: string,
-	documentContent: string | undefined,
-	chatTree: domain.tree.ChatTree
-): Message[] {
+export function buildSystemPrompt(documentContent: string | undefined): string {
 	const documentSection = documentContent
 		? `\n\n<current_document>\n${documentContent}\n</current_document>`
 		: '\n\nThe document is currently empty.';
 
-	const systemPrompt = [
-		'You are an assistant that can edit documents, create files, manage folders, and create chats.',
-		'When editing a document, your text response becomes the new document content.',
+	return [
+		'You are a helpful assistant in a document workspace app. You can chat normally AND use tools to manage the workspace.',
 		'',
-		'CRITICAL RULES:',
-		'- Only change what the user asked for. Do NOT rewrite, rephrase, reformat, or reorganize any content the user did not mention.',
-		'- Preserve the existing document exactly as-is, except for the specific change requested.',
-		'- Your entire text response becomes the new document. Do NOT wrap it in code fences or add commentary.',
+		'Your text responses are chat messages shown to the user. Use tools to take actions.',
 		'',
-		'COMMUNICATING WITH THE USER:',
-		'If you need to ask a clarifying question or respond to the user without editing the document, use the respond tool.',
-		'Do NOT write conversational text as your response — that would overwrite the document.',
+		'AVAILABLE ACTIONS (via tools):',
 		'',
-		'WORKSPACE MANAGEMENT:',
-		'You can create folders, files, and chats using the available tools.',
-		'- Use list_folders to see existing folders and files before creating new ones.',
-		'- Use create_folder to create a new folder, then use its returned ID with create_file.',
-		'- Use create_file to create documents (.md) or SVGs (.svg) inside a folder.',
-		'- Use create_chat to create new chat conversations.',
-		'- When creating multiple files in a new folder, create the folder first, then create files using the folder ID.',
+		'Documents:',
+		'- edit_document: Edit the currently open document. Only change what was asked for.',
+		'- create_file: Create a new file (.md or .svg) in a folder.',
+		'- read_document: Read a document\'s content by folder/file ID.',
+		'- rename_document: Rename a document.',
+		'- delete_document: Delete a document.',
+		'- move_document: Move a document between folders.',
+		'- open_document: Open a document in the UI panel.',
+		'',
+		'Folders:',
+		'- create_folder: Create a new folder. Returns its ID.',
+		'- rename_folder: Rename a folder.',
+		'- delete_folder: Delete a folder and all its contents.',
+		'- open_folder: Open a folder in the UI panel.',
+		'- list_folders: See all folders and files with their IDs.',
+		'',
+		'Chats:',
+		'- create_chat: Create a new chat.',
+		'- list_chats: List all chats with indices.',
+		'- select_chat: Switch to a chat by index.',
+		'- rename_chat: Rename a chat.',
+		'- delete_chat: Delete a chat.',
+		'',
+		'UI:',
+		'- toggle_sidebar: Toggle the sidebar open/closed.',
+		'- close_panel: Close a panel by index (0=left, 1=right).',
+		'',
+		'IMPORTANT:',
+		'- Your text response is a CHAT MESSAGE, not a document edit. To edit a document, use the edit_document tool.',
+		'- When creating multiple files in a new folder, create the folder first, then use its ID with create_file.',
+		'- Always use tools to take actions. Do not describe what you would do — just do it.',
 		'',
 		'CREATING SVG DIAGRAMS:',
 		'When the user asks for a diagram, chart, visual, or SVG, you MUST use the create_file tool. Do NOT write SVG markup inline in the document.',
@@ -324,6 +688,14 @@ export function buildMessages(
 		'- Multiple functions: "data": [{ "fn": "sin(x)" }, { "fn": "cos(x)" }]',
 		documentSection
 	].join('\n');
+}
+
+export function buildMessages(
+	prompt: string,
+	documentContent: string | undefined,
+	chatTree: domain.tree.ChatTree
+): Message[] {
+	const systemPrompt = buildSystemPrompt(documentContent);
 
 	const chatHistory = domain.tree
 		.getMainChat(chatTree)

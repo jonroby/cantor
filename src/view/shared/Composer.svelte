@@ -9,8 +9,9 @@
 		onExpandSideChat: (exchangeId: string) => void;
 		agentMode?: boolean;
 		liveDocumentContent?: string;
-		activeFolderId?: string | null;
+		activeDocumentKey?: { folderId: string; fileId: string } | null;
 		onToggleMode?: () => void;
+		toolCallbacks?: app.chat.SubmitOptions['toolCallbacks'];
 	}
 
 	let {
@@ -18,8 +19,9 @@
 		onExpandSideChat,
 		agentMode = false,
 		liveDocumentContent,
-		activeFolderId = null,
-		onToggleMode
+		activeDocumentKey = null,
+		onToggleMode,
+		toolCallbacks
 	}: Props = $props();
 
 	let composerValue = $state('');
@@ -29,15 +31,11 @@
 	let composerRef: ReturnType<typeof ComposerInput> | undefined = $state();
 	let providerState = $derived(app.providers.getState());
 	let activeChat = $derived(app.chat.getChat());
-	let agentState = $derived(app.agent.getState());
 
 	export function focus() {
 		composerRef?.focus();
 	}
 
-	export function resetAgent() {
-		app.agent.reset();
-	}
 
 	let activeExchanges = $derived(activeChat.exchanges);
 	let activeTree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
@@ -68,11 +66,6 @@
 	});
 
 	async function submitPrompt() {
-		if (agentMode) {
-			await submitAgent();
-			return;
-		}
-
 		const prompt = composerValue.trim();
 		if (
 			(!prompt && pendingImages.length === 0) ||
@@ -98,7 +91,10 @@
 					liveDocumentContent,
 					contextStrategy,
 					contextLength: providerState.contextLength,
-					images: pendingImages.length > 0 ? pendingImages : undefined
+					images: pendingImages.length > 0 ? pendingImages : undefined,
+					agentMode,
+					activeDocumentKey,
+					toolCallbacks
 				}
 			);
 		} catch (error) {
@@ -115,31 +111,10 @@
 		await tick();
 		onScrollToNode(result.id);
 	}
-
-	async function submitAgent() {
-		const prompt = composerValue.trim();
-		if (!prompt || !providerState.activeModel) return;
-
-		operationError = null;
-		composerValue = '';
-
-		try {
-			await app.agent.submit(prompt, providerState.activeModel, liveDocumentContent, activeTree, activeFolderId);
-		} catch (e) {
-			operationError = e instanceof Error ? e.message : 'Agent failed.';
-		}
-	}
 </script>
 
 {#if operationError}
 	<div class="error-banner">{operationError}</div>
-{/if}
-
-{#if agentMode && agentState.lastResponse}
-	<div class="agent-response">
-		<div class="agent-response-text">{agentState.lastResponse}</div>
-		<button class="agent-response-dismiss" onclick={() => app.agent.dismissResponse()}>Dismiss</button>
-	</div>
 {/if}
 
 <ComposerInput
@@ -147,9 +122,9 @@
 	bind:composerValue
 	bind:pendingImages
 	{agentMode}
-	inputMessage={agentState.pendingContent !== null ? 'Accept or reject pending changes first.' : null}
+	inputMessage={null}
 	{submitDisabledReason}
-	streaming={agentState.streaming || activeNodeStreaming}
+	streaming={activeNodeStreaming}
 	activeModelLabel={providerState.activeModelLabel}
 	activeProvider={providerState.activeModel?.provider ?? null}
 	{usedTokens}
@@ -161,9 +136,7 @@
 	}}
 	onSubmit={submitPrompt}
 	onStop={() => {
-		if (agentState.streaming) {
-			app.agent.stop();
-		} else if (activeExchangeId) {
+		if (activeExchangeId) {
 			app.chat.stopStream(activeExchangeId);
 		}
 	}}
@@ -189,35 +162,4 @@
 />
 
 <style>
-	.agent-response {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
-		margin-bottom: 0.5rem;
-		padding: 0.625rem 0.75rem;
-		border-radius: 0.5rem;
-		background: hsl(var(--muted));
-		font-size: 0.8125rem;
-		line-height: 1.4;
-		color: hsl(var(--foreground));
-	}
-
-	.agent-response-text {
-		flex: 1;
-		white-space: pre-wrap;
-	}
-
-	.agent-response-dismiss {
-		flex-shrink: 0;
-		padding: 0.125rem 0.375rem;
-		border-radius: 0.25rem;
-		font-size: 0.6875rem;
-		color: hsl(var(--muted-foreground));
-		cursor: pointer;
-		transition: color 150ms;
-	}
-
-	.agent-response-dismiss:hover {
-		color: hsl(var(--foreground));
-	}
 </style>
