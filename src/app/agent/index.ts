@@ -1054,6 +1054,140 @@ export function buildMessages(
 	];
 }
 
+// ── Agent run ───────────────────────────────────────────────────────────────
+
+export function isRunning(exchangeId: string): boolean {
+	return state.agent.isStreaming(exchangeId);
+}
+
+export function stopRun(exchangeId: string): void {
+	external.streams.cancelStream(exchangeId);
+	state.agent.stopStreaming(exchangeId);
+}
+
+export function stopRunsForChat(chatId: string): void {
+	external.streams.cancelStreamsForChat(chatId);
+}
+
+function summarizeInput(input: Record<string, unknown>): string {
+	const entries = Object.entries(input);
+	if (entries.length === 0) return '{}';
+	return entries
+		.slice(0, 4)
+		.map(
+			([key, value]) =>
+				`${key}: ${typeof value === 'string' ? JSON.stringify(value) : String(value)}`
+		)
+		.join(', ');
+}
+
+function buildVerificationSummary(reads: VerificationRead[], ctx: ToolContext): string[] {
+	return reads.map((read) => {
+		const verification = executeTool(read.name, read.input, ctx);
+		return `Verification via ${read.name}: ${verification.result}`;
+	});
+}
+
+function getVerificationLines(
+	toolName: string,
+	input: Record<string, unknown>,
+	executed: ToolExecution,
+	ctx: ToolContext
+): string[] {
+	const definition = getToolDefinition(toolName);
+	const reads = definition?.verification?.buildReads?.(input, executed, ctx) ?? [];
+	const lines = reads.length > 0 ? buildVerificationSummary(reads, ctx) : [];
+	const verificationRequired =
+		definition?.verification?.required ??
+		(definition !== undefined && (definition.kind === 'write' || definition.kind === 'workspace'));
+	if (verificationRequired && lines.length === 0) {
+		lines.push(`Verification missing for action ${toolName}.`);
+	}
+	return lines;
+}
+
+export function startRun(
+	chatId: string,
+	exchangeId: string,
+	model: domain.models.ActiveModel,
+	history: domain.tree.Message[],
+	toolContext: ToolContext
+) {
+	state.agent.clearThinking(exchangeId);
+	state.agent.startStreaming(exchangeId);
+	state.agent.setExpanded(exchangeId, true);
+
+	const toolExecutor: external.streams.ToolExecutor = {
+		execute(toolCalls) {
+			const results: Array<{ tool_use_id: string; content: string }> = [];
+			const summary: string[] = [];
+
+			for (const toolCall of toolCalls) {
+				state.agent.appendThinkingEvent(
+					exchangeId,
+					'tool_call',
+					`${toolCall.name}(${summarizeInput(toolCall.input)})`
+				);
+				const executed = executeTool(toolCall.name, toolCall.input, toolContext);
+				const verificationLines = getVerificationLines(
+					toolCall.name,
+					toolCall.input,
+					executed,
+					toolContext
+				);
+				for (const line of verificationLines) {
+					state.agent.appendThinkingEvent(exchangeId, 'verification', line);
+				}
+				const content = [executed.result, ...verificationLines].join('\n');
+				state.agent.appendThinkingEvent(exchangeId, 'tool_result', content);
+				results.push({ tool_use_id: toolCall.id, content });
+			}
+
+			return { results, summary };
+		}
+	};
+
+	external.streams.startStream(
+		{
+			exchangeId,
+			chatId,
+			model,
+			history,
+			tools: TOOLS,
+			toolExecutor,
+			callbacks: {
+				onDelta: (eid, fullText) => state.agent.setLiveStatus(eid, fullText),
+				onToolNote: (eid, text) => state.agent.appendThinkingEvent(eid, 'note', text),
+				onComplete: (eid, responseText) => {
+					state.agent.clearLiveStatus(eid);
+					if (responseText) state.agent.setLastResponse(responseText);
+					state.agent.stopStreaming(eid);
+				},
+				onError: (eid, message) => {
+					state.agent.appendThinkingEvent(eid, 'status', `Run failed: ${message}`);
+					state.agent.clearLiveStatus(eid);
+					state.agent.stopStreaming(eid);
+				}
+			}
+		},
+		{
+			getTreeByChatId: state.chats.getTreeByChatId,
+			replaceTreeByChatId: state.chats.replaceTreeByChatId,
+			getProviderStream: (activeModel, streamHistory, signal, streamTools) =>
+				external.providers.stream.getProviderStream(
+					activeModel,
+					streamHistory,
+					signal,
+					{
+						apiKey: state.providers.providerState.apiKeys[activeModel.provider] ?? '',
+						ollamaUrl: state.providers.providerState.ollamaUrl
+					},
+					streamTools
+				)
+		}
+	);
+}
+
 export function acceptPending(documentKey: { folderId: string; fileId: string } | null) {
 	const pending = state.agent.agentState.pendingContent;
 	if (pending !== null && documentKey) {

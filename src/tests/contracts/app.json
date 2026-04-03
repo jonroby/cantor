@@ -9,10 +9,14 @@
     "getCapabilities": true,
     "getState": true,
     "getToolDefinition": true,
+    "isRunning": true,
     "rejectPending": true,
     "reset": true,
     "setThinkingExpanded": true,
+    "startRun": true,
     "stop": true,
+    "stopRun": true,
+    "stopRunsForChat": true,
     "TOOLS": true
   },
   "bootstrap": {

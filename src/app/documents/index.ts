@@ -210,35 +210,34 @@ export const moveDocument = state.documents.moveDocumentToFolder;
 export const updateDocumentContent = state.documents.updateDocumentContent;
 export const validateDocumentMarkdown = lib.validateMd.validate;
 
-export function importDocument(
+export async function importDocument(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
-) {
-	void external.io.pickFile('.md,.svg').then(async (file) => {
-		if (!file) return;
-		const folder = state.documents.findFolder(folderId);
-		if (!folder) {
-			feedback.error?.('Folder not found');
+): Promise<void> {
+	const file = await external.io.pickFile('.md,.svg');
+	if (!file) return;
+	const folder = state.documents.findFolder(folderId);
+	if (!folder) {
+		feedback.error?.('Folder not found');
+		return;
+	}
+	const content = await file.text();
+	if (file.name.endsWith('.md')) {
+		const errors = lib.validateMd.validate(content);
+		if (errors.length > 0) {
+			feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
 			return;
 		}
-		const content = await file.text();
-		if (file.name.endsWith('.md')) {
-			const errors = lib.validateMd.validate(content);
-			if (errors.length > 0) {
-				feedback.error?.(`Invalid markdown: ${errors.join('; ')}`);
-				return;
-			}
-		}
-		const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
-		const name = deduplicateImportedName(file.name, existingNames);
-		const documentFile: state.documents.DocumentFile = {
-			id: crypto.randomUUID(),
-			name,
-			content
-		};
-		folder.files = [...(folder.files ?? []), documentFile];
-		feedback.success?.(`Uploaded ${file.name}`);
-	});
+	}
+	const existingNames = (folder.files ?? []).map((candidate) => candidate.name);
+	const name = deduplicateImportedName(file.name, existingNames);
+	const documentFile: state.documents.DocumentFile = {
+		id: crypto.randomUUID(),
+		name,
+		content
+	};
+	folder.files = [...(folder.files ?? []), documentFile];
+	feedback.success?.(`Uploaded ${file.name}`);
 }
 
 export async function exportFolder(
@@ -297,47 +296,47 @@ async function importDocumentsIntoFolder(
 	}
 }
 
-export function importFolder(feedback: DocumentTransferFeedback = NOOP_FEEDBACK) {
-	void external.io.pickDirectory().then((files) => {
-		if (files.length === 0) return;
-		const supportedFiles = files.filter(
-			(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
-		);
-		if (supportedFiles.length === 0) {
-			feedback.error?.('No .md or .svg files found in the selected folder');
-			return;
-		}
+export async function importFolder(
+	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
+): Promise<void> {
+	const files = await external.io.pickDirectory();
+	if (files.length === 0) return;
+	const supportedFiles = files.filter(
+		(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
+	);
+	if (supportedFiles.length === 0) {
+		feedback.error?.('No .md or .svg files found in the selected folder');
+		return;
+	}
 
-		const dirName = supportedFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
-		const folderName = deduplicateImportedName(
-			dirName,
-			state.documents.documentState.folders.map((folder) => folder.name)
-		);
+	const dirName = supportedFiles[0].webkitRelativePath?.split('/')[0] ?? 'Uploaded Folder';
+	const folderName = deduplicateImportedName(
+		dirName,
+		state.documents.documentState.folders.map((folder) => folder.name)
+	);
 
-		const folderId = crypto.randomUUID();
-		const folder: state.documents.Folder = { id: folderId, name: folderName, files: [] };
-		state.documents.documentState.folders = [...state.documents.documentState.folders, folder];
+	const folderId = crypto.randomUUID();
+	const folder: state.documents.Folder = { id: folderId, name: folderName, files: [] };
+	state.documents.documentState.folders = [...state.documents.documentState.folders, folder];
 
-		importDocumentsIntoFolder(folderId, supportedFiles, feedback);
-	});
+	await importDocumentsIntoFolder(folderId, supportedFiles, feedback);
 }
 
-export function importFolderIntoFolder(
+export async function importFolderIntoFolder(
 	folderId: string,
 	feedback: DocumentTransferFeedback = NOOP_FEEDBACK
-) {
-	void external.io.pickDirectory().then((files) => {
-		if (files.length === 0) return;
-		const supportedFiles = files.filter(
-			(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
-		);
-		if (supportedFiles.length === 0) {
-			feedback.error?.('No .md or .svg files found in the selected folder');
-			return;
-		}
+): Promise<void> {
+	const files = await external.io.pickDirectory();
+	if (files.length === 0) return;
+	const supportedFiles = files.filter(
+		(file) => file.name.endsWith('.md') || file.name.endsWith('.svg')
+	);
+	if (supportedFiles.length === 0) {
+		feedback.error?.('No .md or .svg files found in the selected folder');
+		return;
+	}
 
-		importDocumentsIntoFolder(folderId, supportedFiles, feedback);
-	});
+	await importDocumentsIntoFolder(folderId, supportedFiles, feedback);
 }
 
 export function getDocument(

@@ -18,6 +18,13 @@ export interface ToolExecutor {
 	};
 }
 
+export interface StreamCallbacks {
+	onDelta?: (exchangeId: string, fullText: string) => void;
+	onToolNote?: (exchangeId: string, text: string) => void;
+	onComplete?: (exchangeId: string, responseText: string) => void;
+	onError?: (exchangeId: string, message: string) => void;
+}
+
 export interface StreamDeps {
 	getTreeByChatId: (chatId: string) => domain.tree.ChatTree | undefined;
 	replaceTreeByChatId: (chatId: string, tree: domain.tree.ChatTree) => void;
@@ -53,9 +60,10 @@ export function startStream(
 		history: domain.tree.Message[];
 		tools?: providers.stream.ToolDefinition[];
 		toolExecutor?: ToolExecutor;
+		callbacks?: StreamCallbacks;
 	}
 ): void {
-	const { exchangeId, chatId, model, history, tools, toolExecutor } = params;
+	const { exchangeId, chatId, model, history, tools, toolExecutor, callbacks } = params;
 
 	const input: StreamMachineInput = {
 		exchangeId,
@@ -96,10 +104,14 @@ export function startStream(
 					context.response
 				)
 			});
+			callbacks?.onDelta?.(exchangeId, context.response);
 		}
 
 		// Handle tool use — execute tools and send results back
 		if (snapshot.value === 'awaiting_tools' && toolExecutor && context.toolCalls.length > 0) {
+			if (lastResponse.trim()) {
+				callbacks?.onToolNote?.(exchangeId, lastResponse.trim());
+			}
 			const { results, summary } = toolExecutor.execute(context.toolCalls);
 
 			// Build structured assistant message
@@ -168,6 +180,9 @@ export function startStream(
 						)
 					});
 				}
+				callbacks?.onError?.(exchangeId, context.error);
+			} else {
+				callbacks?.onComplete?.(exchangeId, context.response);
 			}
 
 			cleanup(store, exchangeId);

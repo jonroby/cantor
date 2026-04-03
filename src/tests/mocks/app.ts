@@ -110,10 +110,14 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 				expandedByExchangeId: {}
 			})),
 			getToolDefinition: mockFn<typeof app.agent.getToolDefinition>(() => undefined),
+			isRunning: mockFn<typeof app.agent.isRunning>(() => false),
 			rejectPending: mockFn<typeof app.agent.rejectPending>(),
 			reset: mockFn<typeof app.agent.reset>(),
 			setThinkingExpanded: mockFn<typeof app.agent.setThinkingExpanded>(),
-			stop: mockFn<typeof app.agent.stop>()
+			startRun: mockFn<typeof app.agent.startRun>(),
+			stop: mockFn<typeof app.agent.stop>(),
+			stopRun: mockFn<typeof app.agent.stopRun>(),
+			stopRunsForChat: mockFn<typeof app.agent.stopRunsForChat>()
 		},
 		bootstrap: {
 			deleteTrashItem: mockFn<typeof app.bootstrap.deleteTrashItem>(async () => {}),
