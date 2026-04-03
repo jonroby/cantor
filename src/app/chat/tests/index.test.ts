@@ -178,6 +178,8 @@ describe('public API', () => {
 	it('exposes the expected public API', () => {
 		expect(Object.keys(chat).sort()).toEqual([
 			'addDocumentToChat',
+			'canCreateSideChat',
+			'canPromoteSideChat',
 			'canSubmitPrompt',
 			'copyChat',
 			'createChat',
@@ -189,6 +191,7 @@ describe('public API', () => {
 			'getChat',
 			'getChats',
 			'getContextStrategy',
+			'getExchangePath',
 			'getMainChat',
 			'getMode',
 			'getSideChats',

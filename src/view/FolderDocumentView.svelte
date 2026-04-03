@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Document } from '@/view/features/document';
 	import * as app from '@/app';
+	import { Folder, ChevronDown, File } from 'lucide-svelte';
 
 	interface Props {
 		folderId: string;
@@ -47,43 +48,24 @@
 
 <div class="folderview-shell">
 	<div class="folderview-header">
-		<svg
-			width="16"
-			height="16"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-		>
-			<path
-				d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-			/>
-		</svg>
+		<Folder size={16} />
 		<span class="folderview-folder-name">{folderName}</span>
 		<span class="folderview-separator">/</span>
 		<div class="folderview-file-picker">
 			<button class="folderview-file-btn" onclick={() => (dropdownOpen = !dropdownOpen)}>
 				{activeFile?.name ?? 'No files'}
-				<svg
-					width="12"
-					height="12"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="folderview-chevron"
-					class:folderview-chevron-open={dropdownOpen}
-				>
-					<path d="M6 9l6 6 6-6" />
-				</svg>
+				<ChevronDown
+					size={12}
+					class="folderview-chevron{dropdownOpen ? ' folderview-chevron-open' : ''}"
+				/>
 			</button>
 			{#if dropdownOpen}
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="folderview-dropdown-scrim" onclick={() => (dropdownOpen = false)}></div>
+				<button
+					type="button"
+					class="folderview-dropdown-scrim"
+					aria-label="Close dropdown"
+					onclick={() => (dropdownOpen = false)}
+				></button>
 				<div class="folderview-dropdown">
 					{#each files as file (file.id)}
 						<button
@@ -91,17 +73,7 @@
 							class:folderview-dropdown-item-active={file.id === activeFileId}
 							onclick={() => selectFile(file.id)}
 						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 16 16"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-							>
-								<path d="M3 2h7l3 3v9H3V2z" />
-								<path d="M10 2v3h3" />
-							</svg>
+							<File size={14} />
 							{file.name}
 						</button>
 					{/each}
@@ -218,11 +190,11 @@
 		background: hsl(var(--muted));
 	}
 
-	.folderview-chevron {
+	:global(.folderview-chevron) {
 		transition: transform 150ms ease;
 	}
 
-	.folderview-chevron-open {
+	:global(.folderview-chevron-open) {
 		transform: rotate(180deg);
 	}
 

@@ -258,9 +258,6 @@
 	}
 
 	function addDocumentToChat(folderId: string, fileId: string) {
-		const folder = app.documents.getState().folders.find((f) => f.id === folderId);
-		const file = folder?.files?.find((f) => f.id === fileId);
-		if (!file) return;
 		app.documents.addDocumentToChat(folderId, fileId);
 	}
 
@@ -396,14 +393,7 @@
 					{#if hasChatPanel && chatScrolledAway}
 						<button
 							class="scroll-to-bottom-btn"
-							onclick={() => {
-								const chat = app.chat.getChat();
-								const path = app.chat.getMainChat({
-									rootId: chat.rootId,
-									exchanges: chat.exchanges
-								});
-								if (path.length > 0) chatViewRef?.scrollToNode(path[path.length - 1]!.id);
-							}}
+							onclick={() => chatViewRef?.scrollToBottom()}
 							aria-label="Scroll to bottom"
 						>
 							<ArrowDown size={18} />

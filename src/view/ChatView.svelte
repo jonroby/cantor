@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
 	import { Button } from '@/view/components/custom';
 	import ChatMessage from './ChatMessage.svelte';
 	import AgentActivity from './AgentActivity.svelte';
@@ -306,46 +307,12 @@
 			.filter((child): child is app.chat.Exchange => child !== undefined);
 	}
 
-	function isInSideChat(exchangeId: string): boolean {
-		if (!activeExchanges) return false;
-		let current = activeExchanges[exchangeId];
-		while (current) {
-			if (current.parentId === null) return false;
-			const parent = activeExchanges[current.parentId];
-			if (!parent) return false;
-			if ((parent.childIds[0] ?? null) !== current.id) return true;
-			current = parent;
-		}
-		return false;
-	}
-
 	function canCreateSideChat(exchangeId: string): boolean {
-		if (isInSideChat(exchangeId)) return false;
-		return getChildren(exchangeId).length > 0;
-	}
-
-	function hasSplitDescendant(exchangeId: string): boolean {
-		const queue = [exchangeId];
-		while (queue.length > 0) {
-			const currentId = queue.shift()!;
-			const children = getChildren(currentId);
-			if (children.length > 1) return true;
-			for (const child of children) queue.push(child.id);
-		}
-		return false;
+		return app.chat.canCreateSideChat(activeTree, exchangeId);
 	}
 
 	function canPromoteSideChat(exchangeId: string): boolean {
-		if (!activeExchanges) return false;
-		const exchange = activeExchanges[exchangeId];
-		if (!exchange || exchange.parentId === null) return false;
-		const parent = activeExchanges[exchange.parentId];
-		if (!parent) return false;
-		const index = parent.childIds.indexOf(exchangeId);
-		if (index <= 0) return false;
-		const mainChildId = parent.childIds[0];
-		if (!mainChildId) return false;
-		return !hasSplitDescendant(mainChildId);
+		return app.chat.canPromoteSideChat(activeTree, exchangeId);
 	}
 
 	function getNodeDataForExchange(exchangeId: string) {
@@ -431,15 +398,7 @@
 	}
 
 	function getExchangePath(exchangeId: string): app.chat.Exchange[] {
-		if (!activeExchanges || !activeExchanges[exchangeId]) return [];
-
-		const path: app.chat.Exchange[] = [];
-		let current: app.chat.Exchange | undefined = activeExchanges[exchangeId];
-		while (current) {
-			path.push(current);
-			current = current.parentId ? activeExchanges[current.parentId] : undefined;
-		}
-		return path.reverse();
+		return app.chat.getExchangePath(activeTree, exchangeId);
 	}
 
 	function getSidePanelTarget(
@@ -554,16 +513,7 @@
 				{activeChat.name}
 				{#if onClose}
 					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-						</svg>
+						<X size={14} />
 					</button>
 				{/if}
 			</div>
@@ -639,16 +589,7 @@
 								disabled={sideChatIndex <= 0}
 								onclick={prevSideChat}
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M8.5 3L4.5 7l4 4" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
+								<ChevronLeft size={14} />
 							</Button>
 							<span class="chatview-side-counter">
 								{#if isNewSideChat}
@@ -664,16 +605,7 @@
 								disabled={sideChatIndex >= sideChats.length - 1}
 								onclick={nextSideChat}
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M5.5 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
+								<ChevronRight size={14} />
 							</Button>
 							<Button
 								class="ghost-button"
@@ -683,16 +615,7 @@
 								onclick={newSideChat}
 								ariaLabel="New side chat"
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M7 2v10M2 7h10" stroke-linecap="round" />
-								</svg>
+								<Plus size={14} />
 							</Button>
 							<Button
 								class="ghost-button chatview-side-close"
@@ -701,16 +624,7 @@
 								onclick={closeSidePanel}
 								ariaLabel="Close side panel"
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-								</svg>
+								<X size={14} />
 							</Button>
 						</div>
 					{:else}
@@ -723,16 +637,7 @@
 								onclick={closeSidePanel}
 								ariaLabel="Close side panel"
 							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 14 14"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke-linecap="round" />
-								</svg>
+								<X size={14} />
 							</Button>
 						</div>
 					{/if}

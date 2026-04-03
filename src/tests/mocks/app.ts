@@ -130,12 +130,15 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 		},
 		chat: {
 			addDocumentToChat: mockFn<typeof app.chat.addDocumentToChat>(),
+			canCreateSideChat: mockFn<typeof app.chat.canCreateSideChat>(() => false),
+			canPromoteSideChat: mockFn<typeof app.chat.canPromoteSideChat>(() => false),
 			canSubmitPrompt: mockFn<typeof app.chat.canSubmitPrompt>(() => false),
 			copyChat: mockFn<typeof app.chat.copyChat>(),
 			createChat: mockFn<typeof app.chat.createChat>(),
 			deleteExchange: mockFn<typeof app.chat.deleteExchange>(),
 			exportChat: mockFn<typeof app.chat.exportChat>(),
 			exportState: mockFn<typeof app.chat.exportState>(),
+			getExchangePath: mockFn<typeof app.chat.getExchangePath>(() => []),
 			getActiveChatIndex: mockFn<typeof app.chat.getActiveChatIndex>(
 				() => appStateBacking.chatState.activeChatIndex
 			),

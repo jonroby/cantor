@@ -135,6 +135,18 @@ export function canSubmitPrompt(tree: domain.tree.ChatTree, activeExchangeId: st
 	return domain.tree.constraints.canAcceptNewChat(tree, activeExchangeId);
 }
 
+export function canCreateSideChat(tree: domain.tree.ChatTree, exchangeId: string): boolean {
+	return domain.tree.constraints.canCreateSideChats(tree, exchangeId);
+}
+
+export function canPromoteSideChat(tree: domain.tree.ChatTree, exchangeId: string): boolean {
+	return domain.tree.constraints.canPromoteSideChatToMainChat(tree, exchangeId);
+}
+
+export function getExchangePath(tree: domain.tree.ChatTree, exchangeId: string): Exchange[] {
+	return domain.tree.getPath(tree, exchangeId);
+}
+
 export function getUsedTokens(tree: domain.tree.ChatTree, activeExchangeId: string): number {
 	return domain.tree
 		.getPath(tree, activeExchangeId)
