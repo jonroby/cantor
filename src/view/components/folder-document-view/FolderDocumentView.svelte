@@ -102,89 +102,109 @@
 			</div>
 		</div>
 		<Tooltip.Provider>
-		<div class="folderview-header-actions">
-			{#if pendingContent != null}
-				<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
-				<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
-			{/if}
-			{#if onSwap}
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<button {...props} class="folderview-header-btn" onclick={onSwap}>
-								<ArrowLeftRight size={14} />
-							</button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content>Swap panels</Tooltip.Content>
-				</Tooltip.Root>
-			{/if}
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					{#snippet child({ props })}
-						<button {...props} class="folderview-header-btn" onclick={onClose}>
-							<X size={14} />
-						</button>
-					{/snippet}
-				</Tooltip.Trigger>
-				<Tooltip.Content>Close</Tooltip.Content>
-			</Tooltip.Root>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					{#snippet child({ props })}
-						<button {...props} class="folderview-header-btn" onclick={() => documentRef?.downloadMarkdown()}>
-							<Download size={14} />
-						</button>
-					{/snippet}
-				</Tooltip.Trigger>
-				<Tooltip.Content>Download as Markdown</Tooltip.Content>
-			</Tooltip.Root>
-			{#if editing}
-				{#if dirty}
+			<div class="folderview-header-actions">
+				{#if pendingContent != null}
+					<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+					<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+				{/if}
+				{#if onSwap}
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							{#snippet child({ props })}
-								<button {...props} class="folderview-header-btn" onclick={() => documentRef?.revertToSaved()}>
-									<RotateCcw size={14} />
+								<button {...props} class="folderview-header-btn" onclick={onSwap}>
+									<ArrowLeftRight size={14} />
 								</button>
 							{/snippet}
 						</Tooltip.Trigger>
-						<Tooltip.Content>Revert to saved</Tooltip.Content>
+						<Tooltip.Content>Swap panels</Tooltip.Content>
 					</Tooltip.Root>
 				{/if}
 				<Tooltip.Root>
 					<Tooltip.Trigger>
 						{#snippet child({ props })}
-							<button {...props} class="folderview-header-btn" onclick={() => documentRef?.cancelEdit()}>
-								<Check size={14} />
+							<button {...props} class="folderview-header-btn" aria-label="Close" onclick={onClose}>
+								<X size={14} />
 							</button>
 						{/snippet}
 					</Tooltip.Trigger>
-					<Tooltip.Content>Done (Esc)</Tooltip.Content>
+					<Tooltip.Content>Close</Tooltip.Content>
 				</Tooltip.Root>
 				<Tooltip.Root>
 					<Tooltip.Trigger>
 						{#snippet child({ props })}
-							<button {...props} class="folderview-header-btn save-btn" onclick={() => documentRef?.saveEdit()}>
-								<Save size={14} />
+							<button
+								{...props}
+								class="folderview-header-btn"
+								onclick={() => documentRef?.downloadMarkdown()}
+							>
+								<Download size={14} />
 							</button>
 						{/snippet}
 					</Tooltip.Trigger>
-					<Tooltip.Content>Save (⌘S)</Tooltip.Content>
+					<Tooltip.Content>Download as Markdown</Tooltip.Content>
 				</Tooltip.Root>
-			{:else}
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<button {...props} class="folderview-header-btn" onclick={() => documentRef?.enterEditMode()}>
-								<Pencil size={14} />
-							</button>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content>Edit</Tooltip.Content>
-				</Tooltip.Root>
-			{/if}
-		</div>
+				{#if editing}
+					{#if dirty}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button
+										{...props}
+										class="folderview-header-btn"
+										onclick={() => documentRef?.revertToSaved()}
+									>
+										<RotateCcw size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Revert to saved</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="folderview-header-btn"
+									onclick={() => documentRef?.cancelEdit()}
+								>
+									<Check size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Done (Esc)</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="folderview-header-btn save-btn"
+									onclick={() => documentRef?.saveEdit()}
+								>
+									<Save size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Save (⌘S)</Tooltip.Content>
+					</Tooltip.Root>
+				{:else}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="folderview-header-btn"
+									onclick={() => documentRef?.enterEditMode()}
+								>
+									<Pencil size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Edit</Tooltip.Content>
+					</Tooltip.Root>
+				{/if}
+			</div>
 		</Tooltip.Provider>
 	</Header>
 

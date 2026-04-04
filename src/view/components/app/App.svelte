@@ -37,7 +37,6 @@
 	let agentState = $derived(app.agent.getState());
 	let hasModel = $derived(!!providerState.activeModel);
 	let hasChatPanel = $derived(workspaceState.panels.some((p) => p.type === 'chat'));
-	let hasSideChatPanel = $derived(workspaceState.panels.some((p) => p.type === 'side-chat'));
 	let _hasDocPanel = $derived(
 		workspaceState.panels.some((p) => p.type === 'document' || p.type === 'folder')
 	);
@@ -45,8 +44,7 @@
 	let bothDocs = $derived(isSplit && !hasChatPanel);
 	let showToc = $derived(
 		workspaceState.panels.length === 1 &&
-			(workspaceState.panels[0]?.type === 'document' ||
-				workspaceState.panels[0]?.type === 'folder')
+			(workspaceState.panels[0]?.type === 'document' || workspaceState.panels[0]?.type === 'folder')
 	);
 	let agentMode = $derived(app.chat.getMode() === 'agent');
 	let activeDocSide = $state<'left' | 'right'>('left');
@@ -69,13 +67,19 @@
 		const panel = workspaceState.panels[panelIndex];
 		if (!panel) return;
 		if (panel.type === 'side-chat') {
-			const activeTree = { rootId: app.chat.getChat().rootId, exchanges: app.chat.getChat().exchanges };
+			const activeTree = {
+				rootId: app.chat.getChat().rootId,
+				exchanges: app.chat.getChat().exchanges
+			};
 			const sideChats = app.chat.getSideChats(activeTree, panel.parentExchangeId);
 			const currentChat = sideChats[panel.sideChatIndex];
 			const tail = currentChat?.at(-1)?.id ?? panel.parentExchangeId;
 			app.chat.selectExchange(tail);
 		} else if (panel.type === 'chat') {
-			const activeTree = { rootId: app.chat.getChat().rootId, exchanges: app.chat.getChat().exchanges };
+			const activeTree = {
+				rootId: app.chat.getChat().rootId,
+				exchanges: app.chat.getChat().exchanges
+			};
 			const main = app.chat.getMainChat(activeTree);
 			const tail = main.at(-1)?.id;
 			if (tail) app.chat.selectExchange(tail);
@@ -376,7 +380,10 @@
 									onScrollAwayChange={(away) => (chatScrolledAway = away)}
 								/>
 							{:else if panel.type === 'side-chat'}
-								{@const activeTree = { rootId: app.chat.getChat().rootId, exchanges: app.chat.getChat().exchanges }}
+								{@const activeTree = {
+									rootId: app.chat.getChat().rootId,
+									exchanges: app.chat.getChat().exchanges
+								}}
 								{@const sideChats = app.chat.getSideChats(activeTree, panel.parentExchangeId)}
 								<ChatView
 									bind:this={sideChatViewRef}
@@ -388,7 +395,11 @@
 										onPrev: () => {
 											if (panel.sideChatIndex > 0) {
 												const newIndex = panel.sideChatIndex - 1;
-												app.workspace.setPanels(workspaceState.panels.map((p, i) => i === index ? { ...p, sideChatIndex: newIndex } : p));
+												app.workspace.setPanels(
+													workspaceState.panels.map((p, i) =>
+														i === index ? { ...p, sideChatIndex: newIndex } : p
+													)
+												);
 												const tail = sideChats[newIndex]?.at(-1);
 												if (tail) app.chat.selectExchange(tail.id);
 											}
@@ -396,14 +407,22 @@
 										onNext: () => {
 											if (panel.sideChatIndex < sideChats.length - 1) {
 												const newIndex = panel.sideChatIndex + 1;
-												app.workspace.setPanels(workspaceState.panels.map((p, i) => i === index ? { ...p, sideChatIndex: newIndex } : p));
+												app.workspace.setPanels(
+													workspaceState.panels.map((p, i) =>
+														i === index ? { ...p, sideChatIndex: newIndex } : p
+													)
+												);
 												const tail = sideChats[newIndex]?.at(-1);
 												if (tail) app.chat.selectExchange(tail.id);
 											}
 										},
 										onNew: () => {
 											if (sideChats.length > 0) {
-												app.workspace.setPanels(workspaceState.panels.map((p, i) => i === index ? { ...p, sideChatIndex: sideChats.length } : p));
+												app.workspace.setPanels(
+													workspaceState.panels.map((p, i) =>
+														i === index ? { ...p, sideChatIndex: sideChats.length } : p
+													)
+												);
 												app.chat.selectExchange(panel.parentExchangeId);
 											}
 										}

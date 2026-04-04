@@ -635,9 +635,6 @@
 		color: var(--sidebar-icon-strong);
 	}
 
-	:global(.sidebar-tooltip) {
-	}
-
 	:global(.sidebar-tooltip-wide) {
 		max-width: var(--dropdown-max-w);
 	}

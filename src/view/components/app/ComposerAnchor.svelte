@@ -55,56 +55,63 @@
 >
 	{#if hasChatPanel}
 		<Tooltip.Provider>
-		{#if chatScrolledAway}
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					{#snippet child({ props })}
-						<button {...props} class="scroll-to-bottom-btn" onclick={onScrollToBottom} aria-label="Scroll to bottom">
-							<ArrowDown size={18} />
-						</button>
-					{/snippet}
-				</Tooltip.Trigger>
-				<Tooltip.Content side="top">Scroll to bottom</Tooltip.Content>
-			</Tooltip.Root>
-		{/if}
-		<div class="composer-wrap">
-			{#if composerHovered && isSplit}
+			{#if chatScrolledAway}
 				<Tooltip.Root>
 					<Tooltip.Trigger>
 						{#snippet child({ props })}
 							<button
 								{...props}
-								class="composer-move-btn"
-								class:composer-move-left={composerSide === 'right'}
-								class:composer-move-right={composerSide !== 'right'}
-								onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
-								aria-label={composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
+								class="scroll-to-bottom-btn"
+								onclick={onScrollToBottom}
+								aria-label="Scroll to bottom"
 							>
-								{#if composerSide === 'right'}
-									<ArrowLeft size={18} />
-								{:else}
-									<ArrowRight size={18} />
-								{/if}
+								<ArrowDown size={18} />
 							</button>
 						{/snippet}
 					</Tooltip.Trigger>
-					<Tooltip.Content side="top">
-						{composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
-					</Tooltip.Content>
+					<Tooltip.Content side="top">Scroll to bottom</Tooltip.Content>
 				</Tooltip.Root>
 			{/if}
-			<Composer
-				bind:this={composerRef}
-				{agentMode}
-				{onToggleMode}
-				liveDocumentContent={activeDocumentFile?.content}
-				{activeDocumentKey}
-				{toolCallbacks}
-				{onScrollToNode}
-				{onExpandSideChat}
-				anchored={true}
-			/>
-		</div>
+			<div class="composer-wrap">
+				{#if composerHovered && isSplit}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="composer-move-btn"
+									class:composer-move-left={composerSide === 'right'}
+									class:composer-move-right={composerSide !== 'right'}
+									onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
+									aria-label={composerSide === 'right'
+										? 'Move composer left'
+										: 'Move composer right'}
+								>
+									{#if composerSide === 'right'}
+										<ArrowLeft size={18} />
+									{:else}
+										<ArrowRight size={18} />
+									{/if}
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">
+							{composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
+						</Tooltip.Content>
+					</Tooltip.Root>
+				{/if}
+				<Composer
+					bind:this={composerRef}
+					{agentMode}
+					{onToggleMode}
+					liveDocumentContent={activeDocumentFile?.content}
+					{activeDocumentKey}
+					{toolCallbacks}
+					{onScrollToNode}
+					{onExpandSideChat}
+					anchored={true}
+				/>
+			</div>
 		</Tooltip.Provider>
 	{/if}
 </div>

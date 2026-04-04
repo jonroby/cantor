@@ -392,103 +392,103 @@
 					<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 				{/if}
 				<Tooltip.Provider>
-				<div class="header-actions">
-					{#if pendingDiff}
-						<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
-						<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
-					{/if}
-					{#if onSwap}
-						<Tooltip.Root>
-							<Tooltip.Trigger>
-								{#snippet child({ props })}
-									<button {...props} class="header-btn" onclick={onSwap}>
-										<ArrowLeftRight size={14} />
-									</button>
-								{/snippet}
-							</Tooltip.Trigger>
-							<Tooltip.Content>Swap panels</Tooltip.Content>
-						</Tooltip.Root>
-					{/if}
-					{#if onClose}
-						<Tooltip.Root>
-							<Tooltip.Trigger>
-								{#snippet child({ props })}
-									<button {...props} class="header-btn" onclick={requestClose}>
-										<X size={14} />
-									</button>
-								{/snippet}
-							</Tooltip.Trigger>
-							<Tooltip.Content>Close</Tooltip.Content>
-						</Tooltip.Root>
-					{/if}
-					{#if onAddToChat}
-						<Tooltip.Root>
-							<Tooltip.Trigger>
-								{#snippet child({ props })}
-									<button {...props} class="header-btn" onclick={onAddToChat}>
-										<MessageSquare size={14} />
-									</button>
-								{/snippet}
-							</Tooltip.Trigger>
-							<Tooltip.Content>Add to chat</Tooltip.Content>
-						</Tooltip.Root>
-					{/if}
-					<Tooltip.Root>
-						<Tooltip.Trigger>
-							{#snippet child({ props })}
-								<button {...props} class="header-btn" onclick={downloadMarkdown}>
-									<Download size={14} />
-								</button>
-							{/snippet}
-						</Tooltip.Trigger>
-						<Tooltip.Content>Download as Markdown</Tooltip.Content>
-					</Tooltip.Root>
-					{#if editing}
-						{#if dirty}
+					<div class="header-actions">
+						{#if pendingDiff}
+							<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+							<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+						{/if}
+						{#if onSwap}
 							<Tooltip.Root>
 								<Tooltip.Trigger>
 									{#snippet child({ props })}
-										<button {...props} class="header-btn" onclick={revertToSaved}>
-											<RotateCcw size={14} />
+										<button {...props} class="header-btn" onclick={onSwap}>
+											<ArrowLeftRight size={14} />
 										</button>
 									{/snippet}
 								</Tooltip.Trigger>
-								<Tooltip.Content>Revert to saved</Tooltip.Content>
+								<Tooltip.Content>Swap panels</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+						{#if onClose}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={requestClose}>
+											<X size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Close</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+						{#if onAddToChat}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={onAddToChat}>
+											<MessageSquare size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Add to chat</Tooltip.Content>
 							</Tooltip.Root>
 						{/if}
 						<Tooltip.Root>
 							<Tooltip.Trigger>
 								{#snippet child({ props })}
-									<button {...props} class="header-btn" onclick={cancelEdit}>
-										<Check size={14} />
+									<button {...props} class="header-btn" onclick={downloadMarkdown}>
+										<Download size={14} />
 									</button>
 								{/snippet}
 							</Tooltip.Trigger>
-							<Tooltip.Content>Done (Esc)</Tooltip.Content>
+							<Tooltip.Content>Download as Markdown</Tooltip.Content>
 						</Tooltip.Root>
-						<Tooltip.Root>
-							<Tooltip.Trigger>
-								{#snippet child({ props })}
-									<button {...props} class="header-btn save-btn" onclick={saveEdit}>
-										<Save size={14} />
-									</button>
-								{/snippet}
-							</Tooltip.Trigger>
-							<Tooltip.Content>Save (⌘S)</Tooltip.Content>
-						</Tooltip.Root>
-					{:else}
-						<Tooltip.Root>
-							<Tooltip.Trigger>
-								{#snippet child({ props })}
-									<button {...props} class="header-btn" onclick={enterEditMode}>
-										<Pencil size={14} />
-									</button>
-								{/snippet}
-							</Tooltip.Trigger>
-							<Tooltip.Content>Edit</Tooltip.Content>
-						</Tooltip.Root>
-					{/if}
-				</div>
+						{#if editing}
+							{#if dirty}
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										{#snippet child({ props })}
+											<button {...props} class="header-btn" onclick={revertToSaved}>
+												<RotateCcw size={14} />
+											</button>
+										{/snippet}
+									</Tooltip.Trigger>
+									<Tooltip.Content>Revert to saved</Tooltip.Content>
+								</Tooltip.Root>
+							{/if}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={cancelEdit}>
+											<Check size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Done (Esc)</Tooltip.Content>
+							</Tooltip.Root>
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn save-btn" onclick={saveEdit}>
+											<Save size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Save (⌘S)</Tooltip.Content>
+							</Tooltip.Root>
+						{:else}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" title="Edit" onclick={enterEditMode}>
+											<Pencil size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Edit</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+					</div>
 				</Tooltip.Provider>
 			</div>
 		</Header>

@@ -262,9 +262,6 @@
 		background: hsl(var(--muted) / 0.75);
 	}
 
-	.search-result-prompt {
-	}
-
 	.search-result-snippet {
 		color: hsl(var(--muted-foreground));
 	}

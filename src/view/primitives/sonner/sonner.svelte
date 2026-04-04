@@ -20,10 +20,18 @@
 		<HugeiconsIcon icon={Loading03Icon} strokeWidth={2} class="size-4 animate-spin" />
 	{/snippet}
 	{#snippet successIcon()}
-		<HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} class="size-4 sonner-success-icon" />
+		<HugeiconsIcon
+			icon={CheckmarkCircle02Icon}
+			strokeWidth={2}
+			class="size-4 sonner-success-icon"
+		/>
 	{/snippet}
 	{#snippet errorIcon()}
-		<HugeiconsIcon icon={MultiplicationSignCircleIcon} strokeWidth={2} class="size-4 sonner-error-icon" />
+		<HugeiconsIcon
+			icon={MultiplicationSignCircleIcon}
+			strokeWidth={2}
+			class="size-4 sonner-error-icon"
+		/>
 	{/snippet}
 	{#snippet infoIcon()}
 		<HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} class="size-4" />

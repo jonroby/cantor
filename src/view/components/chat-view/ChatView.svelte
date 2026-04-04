@@ -4,16 +4,12 @@
 	import { MessageSquare, X } from 'lucide-svelte';
 	import { Header } from '@/view/primitives';
 	import * as Tooltip from '@/view/primitives/tooltip';
-	import {
-		createMainChatPanel,
-		createDocumentPanel
-	} from '@/view/components/panel';
+	import { createMainChatPanel, createDocumentPanel } from '@/view/components/panel';
 	import type { Panel } from '@/view/components/panel';
 	import type { ChatCardData } from '@/view/components/chat-card';
 	import { Document } from '@/view/components/document';
 	import DeleteExchangeDialog from './DeleteExchangeDialog.svelte';
 	import SidePanelHeader from './SidePanelHeader.svelte';
-	import SidePanelContext from './SidePanelContext.svelte';
 	import ExchangeList from './ExchangeList.svelte';
 	import * as app from '@/app';
 
@@ -51,7 +47,6 @@
 	let deleteMode: app.chat.DeleteMode = $state('exchange');
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
-	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let bottomSpacerEl: HTMLDivElement | null = $state(null);
 	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 	let lastScrollAway = false;
@@ -160,9 +155,7 @@
 
 	function openSidePanel(parentId: string) {
 		const panels = app.workspace.getState().panels;
-		const existing = panels.find(
-			(p) => p.type === 'side-chat' && p.parentExchangeId === parentId
-		);
+		const existing = panels.find((p) => p.type === 'side-chat' && p.parentExchangeId === parentId);
 		if (existing) {
 			onClose?.();
 			return;
@@ -181,8 +174,14 @@
 
 		const chatPanel = panels.find((p) => p.type === 'chat');
 		const newPanels = chatPanel
-			? [chatPanel, { type: 'side-chat' as const, parentExchangeId: parentId, sideChatIndex: sideChatIdx }]
-			: [...panels.slice(0, 1), { type: 'side-chat' as const, parentExchangeId: parentId, sideChatIndex: sideChatIdx }];
+			? [
+					chatPanel,
+					{ type: 'side-chat' as const, parentExchangeId: parentId, sideChatIndex: sideChatIdx }
+				]
+			: [
+					...panels.slice(0, 1),
+					{ type: 'side-chat' as const, parentExchangeId: parentId, sideChatIndex: sideChatIdx }
+				];
 		app.workspace.setPanels(newPanels);
 	}
 
@@ -469,7 +468,12 @@
 						getNodeData={(id) => {
 							const data = getNodeDataForExchange(id);
 							if (!data) return null;
-							return { ...data, hasSideChildren: false, sideChildrenCount: 0, canCreateSideChat: false };
+							return {
+								...data,
+								hasSideChildren: false,
+								sideChildrenCount: 0,
+								canCreateSideChat: false
+							};
 						}}
 					/>
 				{/if}
@@ -490,7 +494,12 @@
 					<Tooltip.Root>
 						<Tooltip.Trigger>
 							{#snippet child({ props })}
-								<button {...props} class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
+								<button
+									{...props}
+									class="chatview-close-btn"
+									onclick={onClose}
+									aria-label="Close chat panel"
+								>
 									<X size={14} />
 								</button>
 							{/snippet}
@@ -524,10 +533,7 @@
 				<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>
 			</div>
 
-			<div
-				class="chatview-side"
-				class:chatview-side-open={sidePanelOpen}
-			>
+			<div class="chatview-side" class:chatview-side-open={sidePanelOpen}>
 				{#if sidePanelOpen && isDocumentPanel && activeDocumentFile}
 					<div class="chatview-doc-wrap">
 						<Document

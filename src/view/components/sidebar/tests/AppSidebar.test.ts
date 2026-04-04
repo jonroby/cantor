@@ -63,7 +63,7 @@ function getRowActionsButton(label: string): HTMLButtonElement {
 
 describe('AppSidebar', () => {
 	beforeEach(() => {
-state.chats.chatState.chats = [
+		state.chats.chatState.chats = [
 			{
 				id: 'chat-1',
 				name: 'Chat 1',

@@ -18,107 +18,107 @@
 </script>
 
 <Tooltip.Provider>
-{#if sideChatCount > 0}
-	<Header>
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				{#snippet child({ props })}
-					<Button
-						{...props}
-						class="ghost-button"
-						variant="ghost"
-						size="sm"
-						disabled={sideChatIndex <= 0}
-						onclick={onPrev}
-					>
-						<ChevronLeft size={14} />
-					</Button>
-				{/snippet}
-			</Tooltip.Trigger>
-			<Tooltip.Content>Previous</Tooltip.Content>
-		</Tooltip.Root>
-		<span class="chatview-side-counter">
-			{#if isNewSideChat}
-				New
-			{:else}
-				{sideChatIndex + 1} / {sideChatCount}
-			{/if}
-		</span>
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				{#snippet child({ props })}
-					<Button
-						{...props}
-						class="ghost-button"
-						variant="ghost"
-						size="sm"
-						disabled={sideChatIndex >= sideChatCount - 1}
-						onclick={onNext}
-					>
-						<ChevronRight size={14} />
-					</Button>
-				{/snippet}
-			</Tooltip.Trigger>
-			<Tooltip.Content>Next</Tooltip.Content>
-		</Tooltip.Root>
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				{#snippet child({ props })}
-					<Button
-						{...props}
-						class="ghost-button"
-						variant="ghost"
-						size="sm"
-						disabled={isNewSideChat}
-						onclick={onNew}
-						ariaLabel="New side chat"
-					>
-						<Plus size={14} />
-					</Button>
-				{/snippet}
-			</Tooltip.Trigger>
-			<Tooltip.Content>New side chat</Tooltip.Content>
-		</Tooltip.Root>
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				{#snippet child({ props })}
-					<Button
-						{...props}
-						class="ghost-button sidepanel-close-btn"
-						variant="ghost"
-						size="sm"
-						onclick={onClose}
-						ariaLabel="Close side panel"
-					>
-						<X size={14} />
-					</Button>
-				{/snippet}
-			</Tooltip.Trigger>
-			<Tooltip.Content>Close</Tooltip.Content>
-		</Tooltip.Root>
-	</Header>
-{:else}
-	<Header>
-		<span class="chatview-side-counter">New side chat</span>
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				{#snippet child({ props })}
-					<Button
-						{...props}
-						class="ghost-button sidepanel-close-btn"
-						variant="ghost"
-						size="sm"
-						onclick={onClose}
-						ariaLabel="Close side panel"
-					>
-						<X size={14} />
-					</Button>
-				{/snippet}
-			</Tooltip.Trigger>
-			<Tooltip.Content>Close</Tooltip.Content>
-		</Tooltip.Root>
-	</Header>
-{/if}
+	{#if sideChatCount > 0}
+		<Header>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							class="ghost-button"
+							variant="ghost"
+							size="sm"
+							disabled={sideChatIndex <= 0}
+							onclick={onPrev}
+						>
+							<ChevronLeft size={14} />
+						</Button>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content>Previous</Tooltip.Content>
+			</Tooltip.Root>
+			<span class="chatview-side-counter">
+				{#if isNewSideChat}
+					New
+				{:else}
+					{sideChatIndex + 1} / {sideChatCount}
+				{/if}
+			</span>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							class="ghost-button"
+							variant="ghost"
+							size="sm"
+							disabled={sideChatIndex >= sideChatCount - 1}
+							onclick={onNext}
+						>
+							<ChevronRight size={14} />
+						</Button>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content>Next</Tooltip.Content>
+			</Tooltip.Root>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							class="ghost-button"
+							variant="ghost"
+							size="sm"
+							disabled={isNewSideChat}
+							onclick={onNew}
+							ariaLabel="New side chat"
+						>
+							<Plus size={14} />
+						</Button>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content>New side chat</Tooltip.Content>
+			</Tooltip.Root>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							class="ghost-button sidepanel-close-btn"
+							variant="ghost"
+							size="sm"
+							onclick={onClose}
+							ariaLabel="Close side panel"
+						>
+							<X size={14} />
+						</Button>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content>Close</Tooltip.Content>
+			</Tooltip.Root>
+		</Header>
+	{:else}
+		<Header>
+			<span class="chatview-side-counter">New side chat</span>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							class="ghost-button sidepanel-close-btn"
+							variant="ghost"
+							size="sm"
+							onclick={onClose}
+							ariaLabel="Close side panel"
+						>
+							<X size={14} />
+						</Button>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content>Close</Tooltip.Content>
+			</Tooltip.Root>
+		</Header>
+	{/if}
 </Tooltip.Provider>
 
 <style>
