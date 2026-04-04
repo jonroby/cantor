@@ -72,7 +72,7 @@
 	</Sidebar.MenuButton>
 	<DropdownMenu.Root>
 		<DropdownMenu.Trigger class="document-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
-			<EllipsisVertical size={14} />
+			<EllipsisVertical size={22} />
 		</DropdownMenu.Trigger>
 		<DropdownMenu.Portal>
 			<DropdownMenu.Content align="start" side="right" class="document-item-menu-content">
@@ -127,7 +127,7 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .document-item-button),
-	:global(li[data-sidebar='menu-item'][data-state='open'] .document-item-button) {
+	:global(li[data-sidebar='menu-item']:has([data-state='open']) .document-item-button) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
 	}
@@ -137,8 +137,8 @@
 		top: 50%;
 		right: 0.25rem;
 		display: flex;
-		height: 1.5rem;
-		width: 1.5rem;
+		height: 2rem;
+		width: 2rem;
 		align-items: center;
 		justify-content: center;
 		transform: translateY(-50%);
@@ -185,6 +185,7 @@
 		gap: 0.5rem;
 		padding: 0.375rem 0.5rem;
 		border-radius: 0.375rem;
+		font-size: 1rem;
 		cursor: pointer;
 	}
 
