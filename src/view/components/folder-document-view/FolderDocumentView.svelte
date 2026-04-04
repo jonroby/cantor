@@ -83,6 +83,10 @@
 			</div>
 		</div>
 		<div class="folderview-header-actions">
+			{#if pendingContent != null}
+				<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+				<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+			{/if}
 			<button class="folderview-header-btn" onclick={onClose} title="Close" aria-label="Close">
 				<X size={14} />
 			</button>
@@ -172,6 +176,36 @@
 
 	.folderview-file-picker {
 		position: relative;
+	}
+
+	.diff-btn {
+		padding: 3px 10px;
+		border-radius: 5px;
+		border: none;
+		font-size: var(--text-sm);
+		font-weight: 500;
+		cursor: pointer;
+		transition:
+			background var(--duration-fast) ease,
+			color var(--duration-fast) ease;
+	}
+
+	.diff-accept {
+		background: hsl(142 71% 45%);
+		color: white;
+	}
+
+	.diff-accept:hover {
+		background: hsl(142 71% 38%);
+	}
+
+	.diff-reject {
+		background: hsl(var(--muted, 0 0% 96%));
+		color: hsl(var(--foreground, 0 0% 9%));
+	}
+
+	.diff-reject:hover {
+		background: hsl(var(--foreground) / 0.1);
 	}
 
 	.folderview-header-btn {

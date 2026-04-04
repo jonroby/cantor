@@ -27,6 +27,8 @@ export type StreamMachineEvent =
 			toolCalls: providers.stream.ToolUseBlock[];
 			responseText: string;
 			stopReason?: string;
+			promptTokens: number;
+			responseTokens: number;
 	  }
 	| { type: 'TOOL_RESULT'; messages: unknown[] }
 	| { type: 'ERROR'; message: string }
@@ -55,6 +57,8 @@ const streamCallback = fromCallback<StreamMachineEvent, CallbackInput>(({ sendBa
 			const toolCalls: providers.stream.ToolUseBlock[] = [];
 			let responseText = '';
 			let stopReason: string | undefined;
+			let promptTokens = 0;
+			let responseTokens = 0;
 
 			for await (const chunk of stream) {
 				if (chunk.type === 'delta') {
@@ -64,18 +68,23 @@ const streamCallback = fromCallback<StreamMachineEvent, CallbackInput>(({ sendBa
 					toolCalls.push(chunk.toolUse);
 				} else if (chunk.type === 'done') {
 					stopReason = chunk.stopReason;
+					promptTokens = chunk.promptTokens;
+					responseTokens = chunk.responseTokens;
 					if (toolCalls.length === 0) {
-						sendBack({
-							type: 'DONE',
-							promptTokens: chunk.promptTokens,
-							responseTokens: chunk.responseTokens
-						});
+						sendBack({ type: 'DONE', promptTokens, responseTokens });
 					}
 				}
 			}
 
 			if (toolCalls.length > 0) {
-				sendBack({ type: 'TOOL_USE', toolCalls, responseText, stopReason });
+				sendBack({
+					type: 'TOOL_USE',
+					toolCalls,
+					responseText,
+					stopReason,
+					promptTokens,
+					responseTokens
+				});
 			}
 		} catch (e) {
 			if (e instanceof DOMException && e.name === 'AbortError') return;
@@ -151,13 +160,15 @@ export const streamMachine = setup({
 				DONE: {
 					target: 'done',
 					actions: assign({
-						promptTokens: ({ event }) => event.promptTokens,
-						responseTokens: ({ event }) => event.responseTokens
+						promptTokens: ({ context, event }) => context.promptTokens + event.promptTokens,
+						responseTokens: ({ context, event }) => context.responseTokens + event.responseTokens
 					})
 				},
 				TOOL_USE: {
 					target: 'awaiting_tools',
 					actions: assign({
+						promptTokens: ({ context, event }) => context.promptTokens + event.promptTokens,
+						responseTokens: ({ context, event }) => context.responseTokens + event.responseTokens,
 						toolCalls: ({ event }) => event.toolCalls,
 						turnCount: ({ context }) => context.turnCount + 1
 					})
@@ -176,14 +187,17 @@ export const streamMachine = setup({
 		},
 		awaiting_tools: {
 			on: {
-				TOOL_RESULT: {
-					target: 'streaming',
-					guard: ({ context }) => context.turnCount < 10,
-					actions: assign({
-						history: ({ event }) => event.messages as domain.tree.Message[],
-						response: () => ''
-					})
-				},
+				TOOL_RESULT: [
+					{
+						target: 'streaming',
+						guard: ({ context }) => context.turnCount < 10,
+						actions: assign({
+							history: ({ event }) => event.messages as domain.tree.Message[],
+							response: () => ''
+						})
+					},
+					{ target: 'done' }
+				],
 				CANCEL: {
 					target: 'done'
 				}

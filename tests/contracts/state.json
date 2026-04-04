@@ -31,7 +31,9 @@
 		"selectChat": true,
 		"setActiveExchangeId": true,
 		"setContextStrategy": true,
-		"setMode": true
+		"setMode": true,
+		"getEnabledToolNames": true,
+		"setEnabledToolNames": true
 	},
 	"documents": {
 		"closeDocument": true,

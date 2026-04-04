@@ -37,6 +37,7 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			deleteChat: mockFn<typeof state.chats.deleteChat>(),
 			getActiveChat: mockFn<typeof state.chats.getActiveChat>(),
 			getActiveExchangeId: mockFn<typeof state.chats.getActiveExchangeId>(),
+			getEnabledToolNames: mockFn<typeof state.chats.getEnabledToolNames>(() => null),
 			getMode: mockFn<typeof state.chats.getMode>(() => 'chat'),
 			getActiveTree: mockFn<typeof state.chats.getActiveTree>(() => ({
 				rootId: null,
@@ -52,6 +53,7 @@ export function createStateMock(overrides?: DeepPartial<StateMock>): StateMock {
 			selectChat: mockFn<typeof state.chats.selectChat>(),
 			setActiveExchangeId: mockFn<typeof state.chats.setActiveExchangeId>(),
 			setContextStrategy: mockFn<typeof state.chats.setContextStrategy>(),
+			setEnabledToolNames: mockFn<typeof state.chats.setEnabledToolNames>(),
 			setMode: mockFn<typeof state.chats.setMode>()
 		},
 		documents: {

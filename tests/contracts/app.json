@@ -62,7 +62,10 @@
 		"setMode": true,
 		"stopChatStreams": true,
 		"stopStream": true,
-		"submitPrompt": true
+		"submitPrompt": true,
+		"getEnabledToolNames": true,
+		"setEnabledToolNames": true,
+		"getTotalTokens": true
 	},
 	"documents": {
 		"addDocumentToChat": true,

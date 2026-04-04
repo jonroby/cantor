@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '@/view/primitives';
 	import { PROVIDER_LOGOS } from '@/view/assets';
-	import { ArrowUp, Square, Plus, X } from 'lucide-svelte';
+	import { ArrowUp, Square, Plus, X, Settings } from 'lucide-svelte';
 	import type * as app from '@/app';
 
 	type ImageAttachment = app.chat.ImageAttachment;
@@ -16,14 +16,16 @@
 		activeModelLabel: string | null;
 		activeProvider: string | null;
 		usedTokens: number;
+		totalTokens: number;
 		contextLength: number | null;
 		contextStrategy: 'full' | 'lru' | 'bm25';
 		anchored?: boolean;
-		onCycleStrategy: () => void;
 		onSubmit: () => void;
 		onStop: () => void;
 		onOpenPalette: () => void;
+		onOpenContextPalette: () => void;
 		onToggleMode?: () => void;
+		onOpenAgentPalette?: () => void;
 	}
 
 	let {
@@ -36,14 +38,16 @@
 		activeModelLabel,
 		activeProvider,
 		usedTokens,
+		totalTokens: _totalTokens,
 		contextLength,
-		contextStrategy,
+		contextStrategy: _contextStrategy,
 		anchored = false,
-		onCycleStrategy,
 		onSubmit,
 		onStop,
 		onOpenPalette,
-		onToggleMode
+		onOpenContextPalette,
+		onToggleMode,
+		onOpenAgentPalette
 	}: Props = $props();
 
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
@@ -213,9 +217,11 @@
 							{agentMode ? 'Agent' : 'Chat'}
 						</Button>
 					{/if}
-					<Button class="strategy-chip" variant="outline" size="sm" onclick={onCycleStrategy}>
-						{contextStrategy === 'full' ? 'Full' : contextStrategy === 'lru' ? 'LRU' : 'BM25'}
-					</Button>
+					{#if agentMode && onOpenAgentPalette}
+						<Button class="mode-chip" variant="outline" size="sm" onclick={onOpenAgentPalette}>
+							Tools
+						</Button>
+					{/if}
 				{/if}
 				{#if submitDisabledReason && !inputMessage && activeModelLabel}
 					<span class="composer-hint">{submitDisabledReason}</span>
@@ -223,7 +229,14 @@
 			</div>
 			{#if activeModelLabel}
 				<div class="composer-footer-right">
-					<span>Context</span>
+					<button
+						class="context-settings-btn"
+						onclick={onOpenContextPalette}
+						title="Context settings"
+					>
+						<Settings size={16} />
+					</button>
+					<span class="context-strategy-label">Context Window</span>
 					{#if contextLength != null}
 						<div class="progress-track compact">
 							<div
@@ -232,7 +245,7 @@
 							></div>
 						</div>
 					{/if}
-					<span
+					<span class="context-token-count"
 						>{usedTokens.toLocaleString()}{contextLength != null
 							? ` / ${contextLength.toLocaleString()}`
 							: ''}</span
@@ -244,6 +257,10 @@
 </form>
 
 <style>
+	:global(.composer-send) {
+		border-radius: 50% !important;
+	}
+
 	.composer {
 		position: fixed;
 		bottom: 1.5rem;
@@ -317,9 +334,9 @@
 
 	.composer-row {
 		display: flex;
-		align-items: flex-end;
+		align-items: center;
 		gap: 0.6rem;
-		padding: 0.75rem;
+		padding: 0.85rem 1rem;
 	}
 
 	.composer-message {
@@ -330,7 +347,6 @@
 	}
 
 	.composer-attach {
-		margin-bottom: 0.15rem;
 		display: flex;
 		height: 1.75rem;
 		width: 1.75rem;
@@ -338,7 +354,6 @@
 		cursor: pointer;
 		align-items: center;
 		justify-content: center;
-		align-self: flex-end;
 		border-radius: 50%;
 		border: 1px solid hsl(var(--border));
 		background: transparent;
@@ -352,17 +367,18 @@
 
 	.composer-textarea {
 		flex: 1;
-		min-height: 2.5rem;
+		min-height: 1.5rem;
 		max-height: 12rem;
 		resize: none;
 		overflow-y: auto;
 		border: 0;
 		background: transparent;
-		padding: 0.5rem 0.5rem 0.5rem 0.25rem;
+		padding: 0.125rem 0.5rem 0.125rem 0.25rem;
 		font-family: inherit;
 		font-size: var(--text-lg);
 		color: hsl(var(--foreground));
 		outline: none;
+		line-height: 1.5;
 	}
 
 	.composer-footer {
@@ -412,5 +428,41 @@
 		height: 100%;
 		border-radius: inherit;
 		background: hsl(var(--foreground));
+	}
+
+	.context-strategy-label {
+		flex-shrink: 0;
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.context-token-count {
+		flex-shrink: 0;
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+		font-variant-numeric: tabular-nums;
+	}
+
+	.context-settings-btn {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.375rem;
+		height: 1.375rem;
+		padding: 0;
+		border: none;
+		border-radius: var(--radius-sm);
+		background: transparent;
+		color: hsl(var(--muted-foreground));
+		cursor: pointer;
+		transition:
+			background var(--duration-fast) ease,
+			color var(--duration-fast) ease;
+	}
+
+	.context-settings-btn:hover {
+		background: hsl(var(--muted));
+		color: hsl(var(--foreground));
 	}
 </style>

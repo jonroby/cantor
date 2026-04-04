@@ -15,12 +15,13 @@ function renderComposerInput(overrides: Partial<Parameters<typeof ComposerInput>
 		activeModelLabel: 'Claude Sonnet 4.5',
 		activeProvider: 'claude',
 		usedTokens: 0,
+		totalTokens: 0,
 		contextLength: 128000,
 		contextStrategy: 'full' as const,
-		onCycleStrategy: vi.fn(),
 		onSubmit: vi.fn(),
 		onStop: vi.fn(),
 		onOpenPalette: vi.fn(),
+		onOpenContextPalette: vi.fn(),
 		...overrides
 	};
 	return { ...render(ComposerInput, { props }), props };
@@ -87,24 +88,14 @@ describe('ComposerInput', () => {
 		expect(screen.getByText(/1,500 \/ 128,000/)).toBeInTheDocument();
 	});
 
-	it('shows "Full" strategy pill by default', () => {
+	it('shows "Context Window" label', () => {
 		renderComposerInput();
-		expect(screen.getByText('Full')).toBeInTheDocument();
+		expect(screen.getByText('Context Window')).toBeInTheDocument();
 	});
 
-	it('shows "LRU" when contextStrategy is lru', () => {
-		renderComposerInput({ contextStrategy: 'lru' });
-		expect(screen.getByText('LRU')).toBeInTheDocument();
-	});
-
-	it('shows "BM25" when contextStrategy is bm25', () => {
-		renderComposerInput({ contextStrategy: 'bm25' });
-		expect(screen.getByText('BM25')).toBeInTheDocument();
-	});
-
-	it('strategy pill fires onCycleStrategy', async () => {
+	it('gear button fires onOpenContextPalette', async () => {
 		const { props } = renderComposerInput();
-		await userEvent.click(screen.getByText('Full'));
-		expect(props.onCycleStrategy).toHaveBeenCalledOnce();
+		await userEvent.click(screen.getByTitle('Context settings'));
+		expect(props.onOpenContextPalette).toHaveBeenCalledOnce();
 	});
 });
