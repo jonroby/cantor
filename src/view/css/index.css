@@ -133,6 +133,11 @@ svg.lucide {
 	color: var(--icon-muted);
 }
 
+.ui-button-default svg.lucide,
+.ui-button-destructive svg.lucide {
+	color: inherit;
+}
+
 html,
 body {
 	margin: 0;

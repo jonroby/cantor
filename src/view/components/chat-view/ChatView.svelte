@@ -526,47 +526,41 @@
 {/if}
 
 <div class="chatview-shell">
-	<div class="chatview-body" class:chatview-body-split={sidePanelOpen}>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<Header>
+		<div class="chatview-title-inner">
+			<MessageSquare size={14} />
+			{activeChat.name}
+			{#if onClose}
+				<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
+					<X size={14} />
+				</button>
+			{/if}
+		</div>
+	</Header>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="chatview-body" class:chatview-body-split={sidePanelOpen} onclick={focusMain}>
 		<div
-			class="chatview-pane"
-			class:chatview-pane-focused={focusedPane === 'main'}
-			onclick={focusMain}
+			class="pane-scroll chatview-main"
+			bind:this={mainScrollContainer}
+			onscroll={handleMainScroll}
 		>
-			<Header>
-				<div class="chatview-title-inner">
-					<MessageSquare size={14} />
-					{activeChat.name}
-					{#if onClose}
-						<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
-							<X size={14} />
-						</button>
-					{/if}
-				</div>
-			</Header>
-			<div
-				class="pane-scroll chatview-main"
-				bind:this={mainScrollContainer}
-				onscroll={handleMainScroll}
-			>
-				<div class="chatview-exchanges">
-					<ExchangeList
-						exchanges={mainChatPath}
-						{sidePanelOpen}
-						{sidePanelParentId}
-						getNodeData={getNodeDataForExchange}
-					/>
-					{#if mainChatPath.length === 0}
-						<div class="chatview-empty">
-							{providerState.activeModel
-								? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.'
-								: 'Select a model to get started.'}
-						</div>
-					{/if}
-				</div>
-				<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>
+			<div class="chatview-exchanges">
+				<ExchangeList
+					exchanges={mainChatPath}
+					{sidePanelOpen}
+					{sidePanelParentId}
+					getNodeData={getNodeDataForExchange}
+				/>
+				{#if mainChatPath.length === 0}
+					<div class="chatview-empty">
+						{providerState.activeModel
+							? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.'
+							: 'Select a model to get started.'}
+					</div>
+				{/if}
 			</div>
+			<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>
 		</div>
 
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -574,8 +568,7 @@
 		<div
 			class="chatview-side"
 			class:chatview-side-open={sidePanelOpen}
-			class:chatview-pane-focused={focusedPane === 'side'}
-			onclick={focusSide}
+			onclick={(e) => { e.stopPropagation(); focusSide(); }}
 		>
 			{#if sidePanelOpen}
 				{#if isDocumentPanel && activeDocumentFile}
@@ -656,17 +649,9 @@
 		overflow: hidden;
 	}
 
-	/* Split layout — border added to first pane when side panel is open */
+	/* Split layout — border added to main scroll area when side panel is open */
 	.chatview-body-split > :first-child {
 		border-right: 1px solid var(--border-color);
-	}
-
-	.chatview-pane {
-		position: relative;
-		display: flex;
-		flex: 1;
-		flex-direction: column;
-		overflow: hidden;
 	}
 
 	/* Side panel open/closed transition */
@@ -693,8 +678,6 @@
 		align-items: center;
 		gap: 8px;
 		width: 100%;
-		max-width: var(--pane-content-width);
-		margin: 0 auto;
 	}
 
 	.chatview-close-btn {
@@ -719,8 +702,9 @@
 		color: hsl(var(--foreground));
 	}
 
-	/* .chatview-main extends .pane-scroll — no padding/scrollbar overrides needed */
+	/* .chatview-main extends .pane-scroll — fills the body alongside side panel */
 	.chatview-main {
+		flex: 1;
 		min-height: 0;
 	}
 
@@ -767,8 +751,4 @@
 		overflow: hidden;
 	}
 
-	/* Focused pane ring — applied via class: directive */
-	.chatview-pane-focused {
-		outline: none;
-	}
 </style>
