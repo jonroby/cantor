@@ -145,6 +145,7 @@ function idbClear(db: IDBDatabase, storeName: string): Promise<void> {
 
 export type PersistedPanel =
 	| { type: 'chat' }
+	| { type: 'side-chat'; parentExchangeId: string; sideChatIndex: number }
 	| { type: 'document'; folderId: string; fileId: string }
 	| { type: 'folder'; folderId: string };
 
@@ -177,6 +178,9 @@ function isPersistedPanel(value: unknown): value is PersistedPanel {
 	if (typeof value !== 'object' || value === null) return false;
 	const panel = value as Record<string, unknown>;
 	if (panel.type === 'chat') return true;
+	if (panel.type === 'side-chat') {
+		return typeof panel.parentExchangeId === 'string' && typeof panel.sideChatIndex === 'number';
+	}
 	if (panel.type === 'folder') return typeof panel.folderId === 'string';
 	if (panel.type === 'document') {
 		return typeof panel.folderId === 'string' && typeof panel.fileId === 'string';

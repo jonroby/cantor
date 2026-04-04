@@ -1,5 +1,6 @@
 export type WorkspacePanel =
 	| { type: 'chat' }
+	| { type: 'side-chat'; parentExchangeId: string; sideChatIndex: number }
 	| { type: 'document'; folderId: string; fileId: string }
 	| { type: 'folder'; folderId: string };
 
