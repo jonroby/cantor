@@ -683,16 +683,19 @@
 	}
 
 	.docs-content :global(h1) {
+		font-size: 1.5em;
 		font-weight: var(--font-weight-bold);
 		margin: 0 0 12px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h2) {
+		font-size: 1.25em;
 		font-weight: var(--font-weight-semibold);
 		margin: 20px 0 8px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h3) {
+		font-size: 1.1em;
 		font-weight: var(--font-weight-semibold);
 		margin: 16px 0 6px 0;
 	}
@@ -730,7 +733,8 @@
 		color: hsl(var(--muted-foreground, 0 0% 45%));
 	}
 	.docs-content :global(.katex-display) {
-		margin: 16px 0;
+		font-size: 1.03em;
+		margin: 24px 0;
 	}
 	.docs-content :global(table) {
 		border-collapse: collapse;
