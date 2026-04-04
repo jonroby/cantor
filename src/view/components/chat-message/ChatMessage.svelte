@@ -601,11 +601,12 @@
 
 	:global(.chatmsg-response-body .katex-display) {
 		margin: 0.5em 0;
+		padding: 0.4em 0;
 		overflow-x: auto;
-		overflow-y: hidden;
 	}
 
 	:global(.chatmsg-response-body .katex) {
 		font-size: var(--text-xl);
+		line-height: normal;
 	}
 </style>
