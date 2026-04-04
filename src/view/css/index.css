@@ -32,8 +32,10 @@
 	--color-sidebar-ring: hsl(var(--sidebar-ring));
 
 	/* Design scale — usable in scoped <style> blocks */
-	--text-base: 1rem;
-	--text-lg: 1.176rem;
+	--text-sm: 12px;
+	--text-base: 12.75px;
+	--text-md: 13.75px;
+	--text-lg: 15px;
 	--text-sidebar: 13.75px;
 
 	--font-weight-normal: 400;

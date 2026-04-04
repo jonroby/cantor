@@ -20,10 +20,10 @@
 		<HugeiconsIcon icon={Loading03Icon} strokeWidth={2} class="size-4 animate-spin" />
 	{/snippet}
 	{#snippet successIcon()}
-		<HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} class="size-4" />
+		<HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} class="size-4 sonner-success-icon" />
 	{/snippet}
 	{#snippet errorIcon()}
-		<HugeiconsIcon icon={MultiplicationSignCircleIcon} strokeWidth={2} class="size-4" />
+		<HugeiconsIcon icon={MultiplicationSignCircleIcon} strokeWidth={2} class="size-4 sonner-error-icon" />
 	{/snippet}
 	{#snippet infoIcon()}
 		<HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} class="size-4" />
@@ -32,3 +32,13 @@
 		<HugeiconsIcon icon={Alert02Icon} strokeWidth={2} class="size-4" />
 	{/snippet}
 </Sonner>
+
+<style>
+	:global(.sonner-success-icon) {
+		color: hsl(142 71% 45%);
+	}
+
+	:global(.sonner-error-icon) {
+		color: hsl(0 72% 51%);
+	}
+</style>

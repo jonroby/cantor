@@ -19,6 +19,7 @@
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
 	import { Header } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 
 	interface Props {
 		title?: string;
@@ -269,6 +270,10 @@
 		}
 	}
 
+	export function getScrollEl() {
+		return contentEl;
+	}
+
 	export function isEditing() {
 		return editing;
 	}
@@ -386,47 +391,105 @@
 				{#if dirty}
 					<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 				{/if}
+				<Tooltip.Provider>
 				<div class="header-actions">
 					{#if pendingDiff}
 						<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
 						<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
 					{/if}
 					{#if onSwap}
-						<button class="header-btn" onclick={onSwap} title="Swap panels">
-							<ArrowLeftRight size={14} />
-						</button>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="header-btn" onclick={onSwap}>
+										<ArrowLeftRight size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Swap panels</Tooltip.Content>
+						</Tooltip.Root>
 					{/if}
 					{#if onClose}
-						<button class="header-btn" onclick={requestClose} title="Close">
-							<X size={14} />
-						</button>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="header-btn" onclick={requestClose}>
+										<X size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Close</Tooltip.Content>
+						</Tooltip.Root>
 					{/if}
 					{#if onAddToChat}
-						<button class="header-btn" onclick={onAddToChat} title="Add to chat">
-							<MessageSquare size={14} />
-						</button>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="header-btn" onclick={onAddToChat}>
+										<MessageSquare size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Add to chat</Tooltip.Content>
+						</Tooltip.Root>
 					{/if}
-					<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
-						<Download size={14} />
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button {...props} class="header-btn" onclick={downloadMarkdown}>
+									<Download size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Download as Markdown</Tooltip.Content>
+					</Tooltip.Root>
 					{#if editing}
 						{#if dirty}
-							<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
-								<RotateCcw size={14} />
-							</button>
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={revertToSaved}>
+											<RotateCcw size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Revert to saved</Tooltip.Content>
+							</Tooltip.Root>
 						{/if}
-						<button class="header-btn" onclick={cancelEdit} title="Done (Esc)">
-							<Check size={14} />
-						</button>
-						<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
-							<Save size={14} />
-						</button>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="header-btn" onclick={cancelEdit}>
+										<Check size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Done (Esc)</Tooltip.Content>
+						</Tooltip.Root>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="header-btn save-btn" onclick={saveEdit}>
+										<Save size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Save (⌘S)</Tooltip.Content>
+						</Tooltip.Root>
 					{:else}
-						<button class="header-btn" onclick={enterEditMode} title="Edit">
-							<Pencil size={14} />
-						</button>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="header-btn" onclick={enterEditMode}>
+										<Pencil size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Edit</Tooltip.Content>
+						</Tooltip.Root>
 					{/if}
 				</div>
+				</Tooltip.Provider>
 			</div>
 		</Header>
 	{/if}
@@ -685,19 +748,19 @@
 	.docs-content :global(h1) {
 		font-size: 1.5em;
 		font-weight: var(--font-weight-bold);
-		margin: 0 0 12px 0;
+		margin: 28px 0 12px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h2) {
 		font-size: 1.25em;
 		font-weight: var(--font-weight-semibold);
-		margin: 20px 0 8px 0;
+		margin: 28px 0 8px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h3) {
 		font-size: 1.1em;
 		font-weight: var(--font-weight-semibold);
-		margin: 16px 0 6px 0;
+		margin: 28px 0 6px 0;
 	}
 	.docs-content :global(p) {
 		margin: 0 0 12px 0;

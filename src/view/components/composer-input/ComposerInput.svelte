@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { ArrowUp, Square, Plus, X, Settings } from 'lucide-svelte';
 	import type * as app from '@/app';
@@ -112,6 +113,7 @@
 	}
 </script>
 
+<Tooltip.Provider>
 <input
 	bind:this={fileInputEl}
 	type="file"
@@ -148,14 +150,22 @@
 				<span class="composer-message">{inputMessage}</span>
 			{:else}
 				{#if activeModelLabel}
-					<button
-						class="composer-attach"
-						type="button"
-						onclick={openFilePicker}
-						aria-label="Attach image"
-					>
-						<Plus size={20} />
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="composer-attach"
+									type="button"
+									onclick={openFilePicker}
+									aria-label="Attach image"
+								>
+									<Plus size={20} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Attach image</Tooltip.Content>
+					</Tooltip.Root>
 				{/if}
 				<textarea
 					bind:this={textareaEl}
@@ -229,13 +239,20 @@
 			</div>
 			{#if activeModelLabel}
 				<div class="composer-footer-right">
-					<button
-						class="context-settings-btn"
-						onclick={onOpenContextPalette}
-						title="Context settings"
-					>
-						<Settings size={16} />
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="context-settings-btn"
+									onclick={onOpenContextPalette}
+								>
+									<Settings size={16} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Context settings</Tooltip.Content>
+					</Tooltip.Root>
 					<span class="context-strategy-label">Context Window</span>
 					{#if contextLength != null}
 						<div class="progress-track compact">
@@ -255,6 +272,7 @@
 		</div>
 	</div>
 </form>
+</Tooltip.Provider>
 
 <style>
 	:global(.composer-send) {

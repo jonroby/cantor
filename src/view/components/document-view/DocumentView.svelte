@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Document } from '@/view/components/document';
+	import { Document as DocumentComponent, DocToc } from '@/view/components/document';
 	import * as app from '@/app';
 
 	interface Props {
 		folderId: string;
 		fileId: string;
+		showToc?: boolean;
 		agentStreaming?: boolean;
 		agentProvider?: app.providers.Provider | null;
 		pendingContent?: string | null;
@@ -17,6 +18,7 @@
 	let {
 		folderId,
 		fileId,
+		showToc = false,
 		agentStreaming = false,
 		agentProvider,
 		pendingContent = null,
@@ -27,11 +29,15 @@
 	}: Props = $props();
 
 	let result = $derived(app.documents.getDocument(folderId, fileId));
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	let docRef: any = $state(null);
+	let scrollEl = $derived(docRef?.getScrollEl() ?? null);
 </script>
 
 <div class="documentview-shell">
 	{#if result}
-		<Document
+		<DocumentComponent
+			bind:this={docRef}
 			title={result.file.name}
 			content={result.file.content}
 			{agentStreaming}
@@ -44,6 +50,9 @@
 			onContentChange={(c) => app.documents.updateOpenDocumentContent(folderId, fileId, c)}
 			{onClose}
 		/>
+		{#if showToc}
+			<DocToc content={result.file.content} {scrollEl} />
+		{/if}
 	{/if}
 </div>
 
@@ -55,6 +64,7 @@
 		min-height: 0;
 		min-width: 0;
 		overflow: hidden;
+		position: relative;
 	}
 
 	.documentview-shell > :global(.document) {

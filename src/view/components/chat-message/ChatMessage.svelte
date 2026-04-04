@@ -12,6 +12,7 @@
 	} from 'lucide-svelte';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/lib/katex';
 	import type { ChatCardData } from '@/view/components/chat-card';
 
@@ -155,126 +156,166 @@
 	{/if}
 
 	{#if !data.isStreaming}
+		<Tooltip.Provider>
 		<div class="chatmsg-toolbar">
 			<div class="chatmsg-actions">
-				<span class="action-tip-wrap">
-					<Button
-						class="icon-chip delete-chip"
-						variant="ghost"
-						size="icon"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							data.onDelete();
-						}}
-						ariaLabel="Delete"
-					>
-						<Trash2 size={15} />
-					</Button>
-					<span class="action-tip">Delete</span>
-				</span>
-				<span class="action-tip-wrap">
-					<Button
-						class="icon-chip"
-						variant="ghost"
-						size="icon"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							data.onCopy();
-						}}
-						ariaLabel="Copy"
-					>
-						<GitFork size={15} />
-					</Button>
-					<span class="action-tip">Copy</span>
-				</span>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								class="icon-chip delete-chip"
+								variant="ghost"
+								size="icon"
+								onclick={(event: MouseEvent) => {
+									event.stopPropagation();
+									data.onDelete();
+								}}
+								ariaLabel="Delete"
+							>
+								<Trash2 size={15} />
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="top">Delete</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								class="icon-chip"
+								variant="ghost"
+								size="icon"
+								onclick={(event: MouseEvent) => {
+									event.stopPropagation();
+									data.onCopy();
+								}}
+								ariaLabel="Copy"
+							>
+								<GitFork size={15} />
+							</Button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="top">Copy</Tooltip.Content>
+				</Tooltip.Root>
 				{#if data.isSideRoot}
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							disabled={!data.canPromote}
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								data.onPromote();
-							}}
-							ariaLabel="Promote"
-						>
-							<ArrowUp size={14} />
-						</Button>
-						<span class="action-tip">Promote</span>
-					</span>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									class="icon-chip"
+									variant="ghost"
+									size="icon"
+									disabled={!data.canPromote}
+									onclick={(event: MouseEvent) => {
+										event.stopPropagation();
+										data.onPromote();
+									}}
+									ariaLabel="Promote"
+								>
+									<ArrowUp size={14} />
+								</Button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Promote</Tooltip.Content>
+					</Tooltip.Root>
 				{/if}
 				{#if responseBlocks.length > 0}
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								showSource = !showSource;
-							}}
-							ariaLabel={showSource ? 'Show rendered' : 'Show source'}
-						>
-							{#if showSource}
-								<Eye size={15} />
-							{:else}
-								<Code size={15} />
-							{/if}
-						</Button>
-						<span class="action-tip">{showSource ? 'Rendered' : 'Source'}</span>
-					</span>
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								navigator.clipboard.writeText(data.response);
-							}}
-							ariaLabel="Copy text"
-						>
-							<ClipboardCopy size={15} />
-						</Button>
-						<span class="action-tip">Copy text</span>
-					</span>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									class="icon-chip"
+									variant="ghost"
+									size="icon"
+									onclick={(event: MouseEvent) => {
+										event.stopPropagation();
+										showSource = !showSource;
+									}}
+									ariaLabel={showSource ? 'Show rendered' : 'Show source'}
+								>
+									{#if showSource}
+										<Eye size={15} />
+									{:else}
+										<Code size={15} />
+									{/if}
+								</Button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">{showSource ? 'Rendered' : 'Source'}</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									class="icon-chip"
+									variant="ghost"
+									size="icon"
+									onclick={(event: MouseEvent) => {
+										event.stopPropagation();
+										navigator.clipboard.writeText(data.response);
+									}}
+									ariaLabel="Copy text"
+								>
+									<ClipboardCopy size={15} />
+								</Button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Copy text</Tooltip.Content>
+					</Tooltip.Root>
 				{/if}
 			</div>
 			{#if !data.isSideRoot}
 				{#if data.hasSideChildren}
-					<button
-						class="chatmsg-side-chat-badge"
-						type="button"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							data.onToggleSideChildren();
-						}}
-					>
-						<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
-						<span>{data.sideChildrenCount}</span>
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="chatmsg-side-chat-badge"
+									type="button"
+									onclick={(event: MouseEvent) => {
+										event.stopPropagation();
+										data.onToggleSideChildren();
+									}}
+								>
+									<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
+									<span>{data.sideChildrenCount}</span>
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Side chat</Tooltip.Content>
+					</Tooltip.Root>
 				{:else}
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							disabled={!data.canCreateSideChat}
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								data.onToggleSideChildren();
-							}}
-							ariaLabel="Side chat"
-						>
-							<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
-						</Button>
-						<span class="action-tip">Side chat</span>
-					</span>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									class="icon-chip"
+									variant="ghost"
+									size="icon"
+									disabled={!data.canCreateSideChat}
+									onclick={(event: MouseEvent) => {
+										event.stopPropagation();
+										data.onToggleSideChildren();
+									}}
+									ariaLabel="Side chat"
+								>
+									<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
+								</Button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Side chat</Tooltip.Content>
+					</Tooltip.Root>
 				{/if}
 			{/if}
 		</div>
+		</Tooltip.Provider>
 	{/if}
 </div>
 

@@ -3,6 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { MessageSquare, X } from 'lucide-svelte';
 	import { Header } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 	import {
 		createMainChatPanel,
 		createDocumentPanel
@@ -486,9 +487,16 @@
 				<MessageSquare size={14} />
 				{activeChat.name}
 				{#if onClose}
-					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
-						<X size={14} />
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button {...props} class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
+									<X size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Close panel</Tooltip.Content>
+					</Tooltip.Root>
 				{/if}
 			</div>
 		</Header>
@@ -569,14 +577,14 @@
 		flex-direction: column;
 		height: 100%;
 		min-width: 0;
-		overflow: hidden;
+		overflow-x: hidden;
 	}
 
 	.chatview-body {
 		position: relative;
 		display: flex;
 		flex: 1;
-		overflow: hidden;
+		overflow-x: hidden;
 	}
 
 	/* Split layout — border added to main scroll area when side panel is open */

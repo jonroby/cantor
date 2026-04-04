@@ -184,13 +184,21 @@
 							</Tooltip.Content>
 						</Tooltip.Root>
 					</div>
-					<button
-						class="sidebar-icon-btn"
-						onclick={() => sidebar.toggle()}
-						aria-label="Collapse sidebar"
-					>
-						<HugeiconsIcon icon={SidebarLeftIcon} size={20} />
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="sidebar-icon-btn"
+									onclick={() => sidebar.toggle()}
+									aria-label="Collapse sidebar"
+								>
+									<HugeiconsIcon icon={SidebarLeftIcon} size={20} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="right" class="sidebar-tooltip">Collapse sidebar</Tooltip.Content>
+					</Tooltip.Root>
 				</div>
 			{:else}
 				<div class="sidebar-collapsed-header">
@@ -467,7 +475,7 @@
 		display: flex;
 		height: 52px;
 		align-items: center;
-		padding: 0 0.75rem 0 1rem;
+		padding: 0 0.75rem 0 2rem;
 	}
 
 	.sidebar-brand {
@@ -478,7 +486,7 @@
 	}
 
 	.sidebar-brand-name {
-		font-size: 19px;
+		font-size: 17px;
 		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--sidebar-foreground) / 0.88);
 	}
@@ -571,7 +579,7 @@
 	}
 
 	:global(.sidebar-content-shell) {
-		padding-left: 0.5rem;
+		padding-left: 1.25rem;
 		padding-right: 0.5rem;
 	}
 
@@ -602,7 +610,7 @@
 		justify-content: space-between;
 		margin-bottom: 0.25rem;
 		padding: 0 0.75rem;
-		font-size: 0.875rem;
+		font-size: 12px;
 		color: hsl(var(--sidebar-foreground) / 0.5);
 	}
 

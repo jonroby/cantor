@@ -43,6 +43,11 @@
 	);
 	let isSplit = $derived(workspaceState.panels.length === 2);
 	let bothDocs = $derived(isSplit && !hasChatPanel);
+	let showToc = $derived(
+		workspaceState.panels.length === 1 &&
+			(workspaceState.panels[0]?.type === 'document' ||
+				workspaceState.panels[0]?.type === 'folder')
+	);
 	let agentMode = $derived(app.chat.getMode() === 'agent');
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let _chatPanelIsFirst = $derived(workspaceState.panels[0]?.type === 'chat');
@@ -408,6 +413,7 @@
 								<DocumentView
 									folderId={panel.folderId}
 									fileId={panel.fileId}
+									{showToc}
 									agentStreaming={false}
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={agentState.pendingContent}
@@ -426,6 +432,7 @@
 								<FolderDocumentView
 									folderId={panel.folderId}
 									folderName={folder?.name ?? 'Folder'}
+									{showToc}
 									files={folderFiles}
 									{activeFileId}
 									agentStreaming={false}
@@ -515,7 +522,7 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
+		overflow-x: hidden;
 		min-width: 0;
 		font-size: var(--text-lg);
 		transition: flex 250ms ease;

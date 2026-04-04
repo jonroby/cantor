@@ -8,7 +8,7 @@
 	let {
 		ref = $bindable(null),
 		class: className = '',
-		sideOffset = 0,
+		sideOffset = 8,
 		side = 'top',
 		children,
 		arrowClasses: _arrowClasses,
@@ -44,8 +44,8 @@
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
 		border-radius: 0.375rem;
-		background: hsl(var(--foreground));
-		color: hsl(var(--background));
+		background: var(--tooltip-bg);
+		color: var(--tooltip-fg);
 		box-shadow: var(--surface-floating-shadow);
 		transform-origin: var(--bits-tooltip-content-transform-origin);
 	}
