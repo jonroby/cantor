@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ArrowDown, ArrowRight, ArrowLeft } from 'lucide-svelte';
 	import { Composer } from '@/view/components/composer';
+	import * as Tooltip from '@/view/primitives/tooltip';
 
 	interface Props {
 		composerSide: 'left' | 'right' | null;
@@ -52,39 +53,67 @@
 	onmouseenter={() => (composerHovered = true)}
 	onmouseleave={() => (composerHovered = false)}
 >
-	{#if hasChatPanel && chatScrolledAway}
-		<button class="scroll-to-bottom-btn" onclick={onScrollToBottom} aria-label="Scroll to bottom">
-			<ArrowDown size={18} />
-		</button>
-	{/if}
-	<div class="composer-wrap">
-		{#if composerHovered && isSplit}
-			<button
-				class="composer-move-btn"
-				class:composer-move-left={composerSide === 'right'}
-				class:composer-move-right={composerSide !== 'right'}
-				onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
-				aria-label={composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
-			>
-				{#if composerSide === 'right'}
-					<ArrowLeft size={18} />
-				{:else}
-					<ArrowRight size={18} />
+	{#if hasChatPanel}
+		<Tooltip.Provider>
+			{#if chatScrolledAway}
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								class="scroll-to-bottom-btn"
+								onclick={onScrollToBottom}
+								aria-label="Scroll to bottom"
+							>
+								<ArrowDown size={18} />
+							</button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="top">Scroll to bottom</Tooltip.Content>
+				</Tooltip.Root>
+			{/if}
+			<div class="composer-wrap">
+				{#if composerHovered && isSplit}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="composer-move-btn"
+									class:composer-move-left={composerSide === 'right'}
+									class:composer-move-right={composerSide !== 'right'}
+									onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
+									aria-label={composerSide === 'right'
+										? 'Move composer left'
+										: 'Move composer right'}
+								>
+									{#if composerSide === 'right'}
+										<ArrowLeft size={18} />
+									{:else}
+										<ArrowRight size={18} />
+									{/if}
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">
+							{composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
+						</Tooltip.Content>
+					</Tooltip.Root>
 				{/if}
-			</button>
-		{/if}
-		<Composer
-			bind:this={composerRef}
-			{agentMode}
-			{onToggleMode}
-			liveDocumentContent={activeDocumentFile?.content}
-			{activeDocumentKey}
-			{toolCallbacks}
-			{onScrollToNode}
-			{onExpandSideChat}
-			anchored={true}
-		/>
-	</div>
+				<Composer
+					bind:this={composerRef}
+					{agentMode}
+					{onToggleMode}
+					liveDocumentContent={activeDocumentFile?.content}
+					{activeDocumentKey}
+					{toolCallbacks}
+					{onScrollToNode}
+					{onExpandSideChat}
+					anchored={true}
+				/>
+			</div>
+		</Tooltip.Provider>
+	{/if}
 </div>
 
 <style>
@@ -94,7 +123,7 @@
 		left: 0;
 		right: 0;
 		z-index: 25;
-		padding: 0 1rem;
+		padding: 0 var(--pane-padding-h);
 		transition:
 			left 250ms ease,
 			right 250ms ease;
@@ -116,7 +145,7 @@
 		height: 2rem;
 		margin: 0 auto 0.5rem;
 		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--background));
 		color: hsl(var(--muted-foreground));
 		cursor: pointer;
@@ -140,7 +169,7 @@
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--background));
 		color: hsl(var(--muted-foreground));
 		display: flex;

@@ -36,7 +36,6 @@
 		border: none;
 		background: transparent;
 		outline: none;
-		font-size: var(--text-sm);
 		color: hsl(var(--sidebar-foreground));
 	}
 </style>

@@ -29,7 +29,7 @@
 <Tooltip.Provider delayDuration={0}>
 	<div
 		data-slot="sidebar-wrapper"
-		style={`--sidebar-width: 16rem; --sidebar-width-icon: 3rem; ${style}`}
+		style={`--sidebar-width: 260px; --sidebar-width-icon: 3rem; ${style}`}
 		class={`bits-sidebar-wrapper ${className}`}
 		{...restProps}
 	>

@@ -19,6 +19,7 @@
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
 	import { Header } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 
 	interface Props {
 		title?: string;
@@ -269,6 +270,10 @@
 		}
 	}
 
+	export function getScrollEl() {
+		return contentEl;
+	}
+
 	export function isEditing() {
 		return editing;
 	}
@@ -378,57 +383,116 @@
 	ondrop={handleDrop}
 	onwheel={(e) => e.stopPropagation()}
 >
-	<Header class={embedded ? 'docs-header-embedded' : ''}>
-		<!-- inner wrapper retained for centering and border-bottom -->
-		<div class="docs-header-inner">
-			<FileText size={16} />
-			<span>{title || 'Document'}</span>
-			{#if dirty}
-				<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
-			{/if}
-			<div class="header-actions">
-				{#if pendingDiff}
-					<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
-					<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+	{#if !embedded}
+		<Header>
+			<div class="docs-header-inner">
+				<FileText size={16} />
+				<span>{title || 'Document'}</span>
+				{#if dirty}
+					<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 				{/if}
-				{#if onSwap}
-					<button class="header-btn" onclick={onSwap} title="Swap panels">
-						<ArrowLeftRight size={14} />
-					</button>
-				{/if}
-				{#if onClose}
-					<button class="header-btn" onclick={requestClose} title="Close">
-						<X size={14} />
-					</button>
-				{/if}
-				{#if onAddToChat}
-					<button class="header-btn" onclick={onAddToChat} title="Add to chat">
-						<MessageSquare size={14} />
-					</button>
-				{/if}
-				<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
-					<Download size={14} />
-				</button>
-				{#if editing}
-					{#if dirty}
-						<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
-							<RotateCcw size={14} />
-						</button>
-					{/if}
-					<button class="header-btn" onclick={cancelEdit} title="Done (Esc)">
-						<Check size={14} />
-					</button>
-					<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
-						<Save size={14} />
-					</button>
-				{:else}
-					<button class="header-btn" onclick={enterEditMode} title="Edit">
-						<Pencil size={14} />
-					</button>
-				{/if}
+				<Tooltip.Provider>
+					<div class="header-actions">
+						{#if pendingDiff}
+							<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+							<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+						{/if}
+						{#if onSwap}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={onSwap}>
+											<ArrowLeftRight size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Swap panels</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+						{#if onClose}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={requestClose}>
+											<X size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Close</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+						{#if onAddToChat}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={onAddToChat}>
+											<MessageSquare size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Add to chat</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button {...props} class="header-btn" onclick={downloadMarkdown}>
+										<Download size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Download as Markdown</Tooltip.Content>
+						</Tooltip.Root>
+						{#if editing}
+							{#if dirty}
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										{#snippet child({ props })}
+											<button {...props} class="header-btn" onclick={revertToSaved}>
+												<RotateCcw size={14} />
+											</button>
+										{/snippet}
+									</Tooltip.Trigger>
+									<Tooltip.Content>Revert to saved</Tooltip.Content>
+								</Tooltip.Root>
+							{/if}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" onclick={cancelEdit}>
+											<Check size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Done (Esc)</Tooltip.Content>
+							</Tooltip.Root>
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn save-btn" onclick={saveEdit}>
+											<Save size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Save (⌘S)</Tooltip.Content>
+							</Tooltip.Root>
+						{:else}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<button {...props} class="header-btn" title="Edit" onclick={enterEditMode}>
+											<Pencil size={14} />
+										</button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content>Edit</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+					</div>
+				</Tooltip.Provider>
 			</div>
-		</div>
-	</Header>
+		</Header>
+	{/if}
 	{#if error}
 		<div class="error-bar">{error}</div>
 	{/if}
@@ -489,7 +553,7 @@
 
 <style>
 	.document {
-		border: 1px solid hsl(var(--border, 0 0% 85%));
+		border: 1px solid var(--border-color);
 		border-radius: 12px;
 		overflow: hidden;
 		display: flex;
@@ -505,8 +569,6 @@
 		border: none;
 		border-radius: 0;
 	}
-
-	/* .docs-header-embedded now uses .pane-header from layout.css */
 
 	.panel-body-embedded {
 		padding-bottom: 12rem;
@@ -524,16 +586,10 @@
 		width: 100%;
 		max-width: var(--pane-content-width);
 		margin: 0 auto;
-		padding: 12px 0;
-		font-size: var(--text-base);
-		font-weight: 600;
-		color: hsl(var(--foreground, 0 0% 9%));
-		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
 	}
 
 	.dirty-indicator {
 		color: hsl(var(--primary, 220 90% 56%));
-		font-size: var(--text-xl);
 		line-height: 1;
 		margin-left: -4px;
 	}
@@ -577,7 +633,6 @@
 		padding: 8px 16px;
 		background: hsl(0 72% 51% / 0.1);
 		color: hsl(0 72% 51%);
-		font-size: var(--text-sm);
 		border-bottom: 1px solid hsl(0 72% 51% / 0.2);
 		flex-shrink: 0;
 	}
@@ -587,7 +642,6 @@
 		overflow-y: auto;
 		padding: 16px 20px;
 		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
-		font-size: var(--text-base);
 		line-height: 1.6;
 	}
 
@@ -602,28 +656,17 @@
 		color: hsl(142 71% 30%);
 	}
 
-	:global(.dark) .diff-added {
-		background: hsl(142 71% 45% / 0.12);
-		color: hsl(142 71% 65%);
-	}
-
 	.diff-removed {
 		background: hsl(0 72% 51% / 0.12);
 		color: hsl(0 72% 40%);
 		text-decoration: line-through;
 	}
 
-	:global(.dark) .diff-removed {
-		background: hsl(0 72% 51% / 0.1);
-		color: hsl(0 72% 65%);
-	}
-
 	.diff-btn {
 		padding: 3px 10px;
 		border-radius: 5px;
 		border: none;
-		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		cursor: pointer;
 		transition:
 			background var(--duration-fast) ease,
@@ -654,7 +697,7 @@
 		max-width: var(--pane-content-width);
 		margin: 0 auto;
 		padding-top: 16px;
-		border-top: 1px solid hsl(var(--border, 0 0% 85%));
+		border-top: 1px solid var(--border-color);
 	}
 
 	.docs-editor-wrap {
@@ -665,7 +708,7 @@
 		padding-top: 16px;
 		padding-bottom: 12rem;
 		padding-left: var(--pane-padding-h);
-		padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
+		padding-right: var(--pane-padding-h);
 		overflow-y: auto;
 		overflow-x: hidden;
 	}
@@ -678,7 +721,6 @@
 		outline: none;
 		resize: none;
 		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
-		font-size: var(--text-base);
 		line-height: 1.6;
 		color: hsl(var(--foreground, 0 0% 9%));
 		background: transparent;
@@ -691,7 +733,7 @@
 		padding-top: 16px;
 		padding-bottom: 12rem;
 		padding-left: var(--pane-padding-h);
-		padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
+		padding-right: var(--pane-padding-h);
 		overflow-y: auto;
 		overflow-x: hidden;
 		line-height: 1.7;
@@ -704,24 +746,28 @@
 	}
 
 	.docs-content :global(h1) {
-		font-size: 22px;
-		font-weight: 700;
-		margin: 0 0 12px 0;
+		font-size: 1.5em;
+		font-weight: var(--font-weight-bold);
+		margin: 28px 0 12px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h2) {
-		font-size: 18px;
-		font-weight: 600;
-		margin: 20px 0 8px 0;
+		font-size: 1.25em;
+		font-weight: var(--font-weight-semibold);
+		margin: 28px 0 8px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h3) {
-		font-size: 15px;
-		font-weight: 600;
-		margin: 16px 0 6px 0;
+		font-size: 1.1em;
+		font-weight: var(--font-weight-semibold);
+		margin: 28px 0 6px 0;
 	}
 	.docs-content :global(p) {
 		margin: 0 0 12px 0;
+	}
+	.docs-content :global(img) {
+		max-width: 100%;
+		height: auto;
 	}
 	.docs-content :global(ul),
 	.docs-content :global(ol) {
@@ -735,7 +781,6 @@
 		background: hsl(var(--muted, 0 0% 96%));
 		padding: 2px 5px;
 		border-radius: var(--radius-sm);
-		font-size: var(--text-base);
 	}
 	.docs-content :global(pre) {
 		background: hsl(var(--muted, 0 0% 96%));
@@ -749,13 +794,14 @@
 		padding: 0;
 	}
 	.docs-content :global(blockquote) {
-		border-left: 3px solid hsl(var(--border, 0 0% 85%));
+		border-left: 3px solid var(--border-color);
 		margin: 0 0 12px 0;
 		padding: 4px 16px;
 		color: hsl(var(--muted-foreground, 0 0% 45%));
 	}
 	.docs-content :global(.katex-display) {
-		margin: 16px 0;
+		font-size: 1.03em;
+		margin: 24px 0;
 	}
 	.docs-content :global(table) {
 		border-collapse: collapse;
@@ -764,28 +810,27 @@
 	}
 	.docs-content :global(th),
 	.docs-content :global(td) {
-		border: 1px solid hsl(var(--border, 0 0% 85%));
+		border: 1px solid var(--border-color);
 		padding: 6px 10px;
 		text-align: left;
-		font-size: var(--text-base);
 	}
 	.docs-content :global(th) {
 		background: hsl(var(--muted, 0 0% 96%));
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 	}
 	.docs-content :global(hr) {
 		border: none;
-		border-top: 1px solid hsl(var(--border, 0 0% 85%));
+		border-top: 1px solid var(--border-color);
 		margin: 16px 0;
 	}
-	.docs-content-inner > :global(svg) {
+
+	.docs-content-inner :global(svg) {
 		max-width: 100%;
 		height: auto;
 		display: block;
 		margin: 16px auto;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 8px;
-		padding: 16px;
 		background: hsl(var(--card));
 	}
 </style>

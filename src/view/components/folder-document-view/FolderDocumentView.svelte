@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Document as DocumentComponent } from '@/view/components/document';
+	import { Document as DocumentComponent, DocToc } from '@/view/components/document';
 	import * as app from '@/app';
 	import {
 		Folder,
@@ -14,10 +14,12 @@
 		Check
 	} from 'lucide-svelte';
 	import { Header } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 
 	interface Props {
 		folderId: string;
 		folderName: string;
+		showToc?: boolean;
 		files: app.documents.DocumentFile[];
 		activeFileId: string | null;
 		agentStreaming?: boolean;
@@ -35,6 +37,7 @@
 	let {
 		folderId: _folderId,
 		folderName,
+		showToc = false,
 		files,
 		activeFileId,
 		agentStreaming = false,
@@ -55,6 +58,7 @@
 	let documentRef: any = $state(null);
 	let editing = $derived(documentRef?.isEditing() ?? false);
 	let dirty = $derived(documentRef?.isDirty() ?? false);
+	let scrollEl = $derived(documentRef?.getScrollEl() ?? null);
 
 	function selectFile(fileId: string) {
 		onSelectFile?.(fileId);
@@ -97,60 +101,111 @@
 				{/if}
 			</div>
 		</div>
-		<div class="folderview-header-actions">
-			{#if pendingContent != null}
-				<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
-				<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
-			{/if}
-			{#if onSwap}
-				<button class="folderview-header-btn" onclick={onSwap} title="Swap panels">
-					<ArrowLeftRight size={14} />
-				</button>
-			{/if}
-			<button class="folderview-header-btn" onclick={onClose} title="Close" aria-label="Close">
-				<X size={14} />
-			</button>
-			<button
-				class="folderview-header-btn"
-				onclick={() => documentRef?.downloadMarkdown()}
-				title="Download as Markdown"
-			>
-				<Download size={14} />
-			</button>
-			{#if editing}
-				{#if dirty}
-					<button
-						class="folderview-header-btn"
-						onclick={() => documentRef?.revertToSaved()}
-						title="Revert to saved"
-					>
-						<RotateCcw size={14} />
-					</button>
+		<Tooltip.Provider>
+			<div class="folderview-header-actions">
+				{#if pendingContent != null}
+					<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+					<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
 				{/if}
-				<button
-					class="folderview-header-btn"
-					onclick={() => documentRef?.cancelEdit()}
-					title="Done (Esc)"
-				>
-					<Check size={14} />
-				</button>
-				<button
-					class="folderview-header-btn save-btn"
-					onclick={() => documentRef?.saveEdit()}
-					title="Save (⌘S)"
-				>
-					<Save size={14} />
-				</button>
-			{:else}
-				<button
-					class="folderview-header-btn"
-					onclick={() => documentRef?.enterEditMode()}
-					title="Edit"
-				>
-					<Pencil size={14} />
-				</button>
-			{/if}
-		</div>
+				{#if onSwap}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button {...props} class="folderview-header-btn" onclick={onSwap}>
+									<ArrowLeftRight size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Swap panels</Tooltip.Content>
+					</Tooltip.Root>
+				{/if}
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<button {...props} class="folderview-header-btn" aria-label="Close" onclick={onClose}>
+								<X size={14} />
+							</button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content>Close</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								class="folderview-header-btn"
+								onclick={() => documentRef?.downloadMarkdown()}
+							>
+								<Download size={14} />
+							</button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content>Download as Markdown</Tooltip.Content>
+				</Tooltip.Root>
+				{#if editing}
+					{#if dirty}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button
+										{...props}
+										class="folderview-header-btn"
+										onclick={() => documentRef?.revertToSaved()}
+									>
+										<RotateCcw size={14} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content>Revert to saved</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="folderview-header-btn"
+									onclick={() => documentRef?.cancelEdit()}
+								>
+									<Check size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Done (Esc)</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="folderview-header-btn save-btn"
+									onclick={() => documentRef?.saveEdit()}
+								>
+									<Save size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Save (⌘S)</Tooltip.Content>
+					</Tooltip.Root>
+				{:else}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="folderview-header-btn"
+									onclick={() => documentRef?.enterEditMode()}
+								>
+									<Pencil size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Edit</Tooltip.Content>
+					</Tooltip.Root>
+				{/if}
+			</div>
+		</Tooltip.Provider>
 	</Header>
 
 	{#if activeFile}
@@ -158,6 +213,7 @@
 			bind:this={documentRef}
 			title={activeFile.name}
 			content={activeFile.content}
+			embedded={true}
 			{agentStreaming}
 			{agentProvider}
 			{pendingContent}
@@ -168,6 +224,9 @@
 			{onContentChange}
 			{onClose}
 		/>
+		{#if showToc}
+			<DocToc content={activeFile.content} {scrollEl} />
+		{/if}
 	{/if}
 </div>
 
@@ -190,40 +249,18 @@
 		height: auto;
 	}
 
-	/* .docs-header uses .pane-header from layout.css — no overrides needed */
-
-	/* Hide the Document's default icon and title — we show our own */
-	.folderview-shell :global(.docs-header-inner > svg:first-child),
-	.folderview-shell :global(.docs-header-inner > span:first-of-type) {
-		display: none;
-	}
-
-	/* Overlays the Document's own header — absolute so it floats on top */
-	:global(.folderview-header) {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 1;
-		pointer-events: none;
-	}
-
-	:global(.folderview-header) > * {
-		pointer-events: auto;
-	}
-
 	.folderview-folder-name {
 		color: hsl(var(--foreground) / 0.7);
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 	}
 
-	:global(.folderview-header) {
+	.folderview-header-left {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		gap: 0.35rem;
+		flex: 1;
 	}
 
-	.folderview-header-left,
 	.folderview-header-actions {
 		display: flex;
 		align-items: center;
@@ -232,7 +269,7 @@
 
 	.folderview-separator {
 		color: hsl(var(--muted-foreground));
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 	}
 
 	.folderview-file-picker {
@@ -243,8 +280,7 @@
 		padding: 3px 10px;
 		border-radius: 5px;
 		border: none;
-		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		cursor: pointer;
 		transition:
 			background var(--duration-fast) ease,
@@ -310,8 +346,7 @@
 		border-radius: var(--radius-sm);
 		background: transparent;
 		color: hsl(var(--foreground) / 0.7);
-		font-size: var(--text-base);
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		cursor: pointer;
 		transition: background var(--duration-normal) ease;
 	}
@@ -348,7 +383,7 @@
 		max-height: 300px;
 		overflow-y: auto;
 		padding: 4px;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-md);
 		background: hsl(var(--background));
 		box-shadow: 0 8px 24px hsl(var(--foreground) / 0.1);
@@ -364,8 +399,7 @@
 		border-radius: 6px;
 		background: transparent;
 		color: hsl(var(--foreground));
-		font-size: var(--text-base);
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		cursor: pointer;
 		transition: background var(--duration-fast) ease;
 		text-align: left;

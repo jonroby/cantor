@@ -104,7 +104,6 @@
 		border-radius: 0.375rem;
 		background: transparent;
 		text-align: left;
-		font-size: var(--text-sm);
 		color: inherit;
 		cursor: pointer;
 		outline: none;
@@ -116,24 +115,27 @@
 			color 120ms ease;
 	}
 
-	:global(.bits-sidebar-menu-button:hover),
-	:global(.bits-sidebar-menu-button[data-active='true']) {
+	:global(.bits-sidebar-menu-button:hover) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
 	}
 
+	:global(.bits-sidebar-menu-button[data-active='true']) {
+		background: hsl(var(--sidebar-accent));
+		color: hsl(var(--sidebar-accent-foreground));
+		font-weight: var(--font-weight-medium);
+	}
+
 	:global(.bits-sidebar-menu-button-default) {
-		height: 2rem;
+		height: 2.5rem;
 	}
 
 	:global(.bits-sidebar-menu-button-sm) {
-		height: 1.75rem;
-		font-size: var(--text-xs);
+		height: 2.25rem;
 	}
 
 	:global(.bits-sidebar-menu-button-lg) {
 		height: 3rem;
-		font-size: var(--text-sm);
 	}
 
 	:global(.bits-sidebar-root[data-collapsible='icon'] .bits-sidebar-menu-button) {

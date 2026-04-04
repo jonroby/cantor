@@ -1,5 +1,6 @@
 export type WorkspacePanel =
 	| { type: 'chat' }
+	| { type: 'side-chat'; parentExchangeId: string; sideChatIndex: number }
 	| { type: 'document'; folderId: string; fileId: string }
 	| { type: 'folder'; folderId: string };
 
@@ -17,20 +18,15 @@ export const workspaceState: WorkspaceState = $state({
 	selectedFileIdsByFolderId: {}
 });
 
-function ensureChatPanel(panels: WorkspacePanel[]): WorkspacePanel[] {
-	if (panels.some((p) => p.type === 'chat')) return panels;
-	return [{ type: 'chat' }, ...panels.slice(0, 1)];
-}
-
 export function hydrate(layout: Partial<WorkspaceState>) {
-	workspaceState.panels = ensureChatPanel(layout.panels ?? []);
+	workspaceState.panels = layout.panels ?? [];
 	workspaceState.sidebarOpen = layout.sidebarOpen ?? true;
 	workspaceState.expandedFolders = layout.expandedFolders ?? {};
 	workspaceState.selectedFileIdsByFolderId = layout.selectedFileIdsByFolderId ?? {};
 }
 
 export function setPanels(panels: WorkspacePanel[]) {
-	workspaceState.panels = ensureChatPanel(panels);
+	workspaceState.panels = panels;
 }
 
 export function setSidebarOpen(open: boolean) {

@@ -18,6 +18,7 @@
 
 	type PanelEntry =
 		| { type: 'chat' }
+		| { type: 'side-chat'; parentExchangeId: string; sideChatIndex: number }
 		| { type: 'document'; folderId: string; fileId: string }
 		| { type: 'folder'; folderId: string };
 
@@ -27,8 +28,8 @@
 	let hasHydrated = $state(false);
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
+	let sideChatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
-	let chatSidePanelOpen = $state(false);
 	let chatScrolledAway = $state(false);
 	let workspaceState = $derived(app.workspace.getState());
 
@@ -41,15 +42,48 @@
 	);
 	let isSplit = $derived(workspaceState.panels.length === 2);
 	let bothDocs = $derived(isSplit && !hasChatPanel);
+	let showToc = $derived(
+		workspaceState.panels.length === 1 &&
+			(workspaceState.panels[0]?.type === 'document' || workspaceState.panels[0]?.type === 'folder')
+	);
 	let agentMode = $derived(app.chat.getMode() === 'agent');
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let _chatPanelIsFirst = $derived(workspaceState.panels[0]?.type === 'chat');
-	let sideChatSide = $state<'left' | 'right'>('left');
 	let composerPinned = $state<'left' | 'right' | null>(null);
 	let composerSide = $derived.by(() => {
-		if (chatSidePanelOpen) return sideChatSide;
 		if (!isSplit) return null;
 		return composerPinned ?? 'left';
+	});
+	let activeViewRef = $derived.by(() => {
+		if (!composerSide) return chatViewRef;
+		const panelOnComposerSide = workspaceState.panels[composerSide === 'left' ? 0 : 1];
+		if (panelOnComposerSide?.type === 'side-chat') return sideChatViewRef;
+		return chatViewRef;
+	});
+
+	// Sync activeExchangeId to the tail of whichever panel the composer is on
+	$effect(() => {
+		const panelIndex = composerSide === 'right' ? 1 : 0;
+		const panel = workspaceState.panels[panelIndex];
+		if (!panel) return;
+		if (panel.type === 'side-chat') {
+			const activeTree = {
+				rootId: app.chat.getChat().rootId,
+				exchanges: app.chat.getChat().exchanges
+			};
+			const sideChats = app.chat.getSideChats(activeTree, panel.parentExchangeId);
+			const currentChat = sideChats[panel.sideChatIndex];
+			const tail = currentChat?.at(-1)?.id ?? panel.parentExchangeId;
+			app.chat.selectExchange(tail);
+		} else if (panel.type === 'chat') {
+			const activeTree = {
+				rootId: app.chat.getChat().rootId,
+				exchanges: app.chat.getChat().exchanges
+			};
+			const main = app.chat.getMainChat(activeTree);
+			const tail = main.at(-1)?.id;
+			if (tail) app.chat.selectExchange(tail);
+		}
 	});
 	let activeDocumentKey = $derived.by(() => {
 		const targetIndex = bothDocs ? (activeDocSide === 'left' ? 0 : 1) : -1;
@@ -231,22 +265,18 @@
 		const panel = workspaceState.panels[index];
 		if (!panel) return;
 		if (panel.type === 'chat') {
-			chatSidePanelOpen = false;
-			const chats = app.chat.getChats();
-			const activeIndex = app.chat.getActiveChatIndex();
-			if (chats.length > 1) {
-				const nextIndex = activeIndex > 0 ? activeIndex - 1 : 1;
-				app.chat.selectChat(nextIndex);
-			}
 			resetUIState();
-			return;
+		} else {
+			const documentKey = getPanelDocumentKey(panel);
+			if (documentKey) {
+				app.documents.closeOpenDocument(documentKey.folderId, documentKey.fileId);
+				app.workspace.clearOpenDocument();
+			}
 		}
-		const documentKey = getPanelDocumentKey(panel);
-		if (documentKey) {
-			app.documents.closeOpenDocument(documentKey.folderId, documentKey.fileId);
-			app.workspace.clearOpenDocument();
-		}
-		app.workspace.setPanels(workspaceState.panels.filter((_, i) => i !== index));
+		const remaining = workspaceState.panels.filter((_, i) => i !== index);
+		const filtered =
+			panel.type === 'chat' ? remaining.filter((p) => p.type !== 'side-chat') : remaining;
+		app.workspace.setPanels(filtered);
 	}
 
 	function ensureChatPanel() {
@@ -343,22 +373,69 @@
 		<SidebarPrimitive.Inset>
 			<div class="app-shell">
 				<div class="panel-layout" class:panel-layout-split={isSplit}>
-					{#each workspaceState.panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : 'chat')}
+					{#each workspaceState.panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : panel.type === 'side-chat' ? `side-chat-${panel.parentExchangeId}` : 'chat')}
 						<div class="panel-slot">
 							{#if panel.type === 'chat'}
 								<ChatView
 									bind:this={chatViewRef}
 									onFocusComposer={focusComposer}
-									onSidePanelChange={(open) => {
-										chatSidePanelOpen = open;
-										if (!open) sideChatSide = 'left';
-									}}
+									onClose={() => closePanel(index)}
 									onScrollAwayChange={(away) => (chatScrolledAway = away)}
+								/>
+							{:else if panel.type === 'side-chat'}
+								{@const activeTree = {
+									rootId: app.chat.getChat().rootId,
+									exchanges: app.chat.getChat().exchanges
+								}}
+								{@const sideChats = app.chat.getSideChats(activeTree, panel.parentExchangeId)}
+								<ChatView
+									bind:this={sideChatViewRef}
+									onFocusComposer={focusComposer}
+									onClose={() => closePanel(index)}
+									sideChat={{
+										parentExchangeId: panel.parentExchangeId,
+										sideChatIndex: panel.sideChatIndex,
+										onPrev: () => {
+											if (panel.sideChatIndex > 0) {
+												const newIndex = panel.sideChatIndex - 1;
+												app.workspace.setPanels(
+													workspaceState.panels.map((p, i) =>
+														i === index ? { ...p, sideChatIndex: newIndex } : p
+													)
+												);
+												const tail = sideChats[newIndex]?.at(-1);
+												if (tail) app.chat.selectExchange(tail.id);
+											}
+										},
+										onNext: () => {
+											if (panel.sideChatIndex < sideChats.length - 1) {
+												const newIndex = panel.sideChatIndex + 1;
+												app.workspace.setPanels(
+													workspaceState.panels.map((p, i) =>
+														i === index ? { ...p, sideChatIndex: newIndex } : p
+													)
+												);
+												const tail = sideChats[newIndex]?.at(-1);
+												if (tail) app.chat.selectExchange(tail.id);
+											}
+										},
+										onNew: () => {
+											if (sideChats.length > 0) {
+												app.workspace.setPanels(
+													workspaceState.panels.map((p, i) =>
+														i === index ? { ...p, sideChatIndex: sideChats.length } : p
+													)
+												);
+												app.chat.selectExchange(panel.parentExchangeId);
+											}
+										}
+									}}
 								/>
 							{:else if panel.type === 'document'}
 								<DocumentView
 									folderId={panel.folderId}
 									fileId={panel.fileId}
+									{showToc}
 									agentStreaming={false}
 									agentProvider={providerState.activeModel?.provider}
 									pendingContent={agentState.pendingContent}
@@ -377,6 +454,7 @@
 								<FolderDocumentView
 									folderId={panel.folderId}
 									folderName={folder?.name ?? 'Folder'}
+									{showToc}
 									files={folderFiles}
 									{activeFileId}
 									agentStreaming={false}
@@ -421,11 +499,11 @@
 						onClosePanel: closePanel,
 						onToggleSidebar: app.workspace.toggleSidebar
 					}}
-					onScrollToBottom={() => chatViewRef?.scrollToBottom()}
+					onScrollToBottom={() => activeViewRef?.scrollToBottom()}
 					onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
 					onScrollToNode={(nodeId) => {
 						ensureChatPanel();
-						tick().then(() => chatViewRef?.scrollToNode(nodeId));
+						tick().then(() => activeViewRef?.scrollToNode(nodeId));
 					}}
 					onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
 					onComposerPinChange={(side) => (composerPinned = side)}
@@ -466,13 +544,14 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
+		overflow-x: hidden;
 		min-width: 0;
+		font-size: var(--text-lg);
 		transition: flex 250ms ease;
 	}
 
 	.panel-layout-split .panel-slot:first-child {
-		border-right: 1px solid hsl(var(--border));
+		border-right: 1px solid var(--border-color);
 	}
 
 	.welcome-container {
@@ -485,8 +564,7 @@
 	}
 
 	.welcome-text {
-		font-size: 28px;
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}
 </style>

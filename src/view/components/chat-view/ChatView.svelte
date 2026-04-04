@@ -1,55 +1,52 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { X } from 'lucide-svelte';
+	import { MessageSquare, X } from 'lucide-svelte';
 	import { Header } from '@/view/primitives';
-	import {
-		createMainChatPanel,
-		createSideChatPanel,
-		createDocumentPanel,
-		isSideChat,
-		withContent
-	} from '@/view/components/panel';
+	import * as Tooltip from '@/view/primitives/tooltip';
+	import { createMainChatPanel, createDocumentPanel } from '@/view/components/panel';
 	import type { Panel } from '@/view/components/panel';
 	import type { ChatCardData } from '@/view/components/chat-card';
 	import { Document } from '@/view/components/document';
 	import DeleteExchangeDialog from './DeleteExchangeDialog.svelte';
 	import SidePanelHeader from './SidePanelHeader.svelte';
-	import SidePanelContext from './SidePanelContext.svelte';
 	import ExchangeList from './ExchangeList.svelte';
 	import * as app from '@/app';
+
+	interface SideChatProps {
+		parentExchangeId: string;
+		sideChatIndex: number;
+		onPrev: () => void;
+		onNext: () => void;
+		onNew: () => void;
+	}
 
 	interface Props {
 		onClose?: () => void;
 		onFocusComposer?: () => void;
-		onSidePanelChange?: (open: boolean) => void;
 		onScrollAwayChange?: (away: boolean) => void;
+		sideChat?: SideChatProps;
 	}
 
-	let { onClose, onFocusComposer, onSidePanelChange, onScrollAwayChange }: Props = $props();
+	let { onClose, onFocusComposer, onScrollAwayChange, sideChat }: Props = $props();
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());
-	let sidePanel = $state<Panel | null>(null);
+	let documentSidePanel = $state<Panel | null>(null);
 	let focusedPanelId: string = $state(mainPanel.id);
 
 	// ── Derived compatibility shims ─────────────────────────────────────────
-	let sidePanelOpen = $derived(sidePanel !== null);
-	let sideChatContent = $derived(
-		sidePanel !== null && sidePanel.content.type === 'side-chat' ? sidePanel.content : null
-	);
-	let sidePanelParentId = $derived(sideChatContent ? sideChatContent.parentExchangeId : null);
-	let sideChatIndex = $derived(sideChatContent ? sideChatContent.sideChatIndex : 0);
+	let sidePanelOpen = $derived(documentSidePanel !== null);
+	let sidePanelParentId = $derived(sideChat?.parentExchangeId ?? null);
+	let sideChatIndex = $derived(sideChat?.sideChatIndex ?? 0);
 	let focusedPane = $derived<'main' | 'side'>(
-		sidePanel !== null && focusedPanelId === sidePanel.id ? 'side' : 'main'
+		documentSidePanel !== null && focusedPanelId === documentSidePanel.id ? 'side' : 'main'
 	);
 
-	let trackLatestSideChat = $state(false);
 	let deleteTargetId: string | null = $state(null);
 	let deleteMode: app.chat.DeleteMode = $state('exchange');
 	let operationError: string | null = $state(null);
 	let mainScrollContainer: HTMLDivElement | null = $state(null);
-	let sideScrollContainer: HTMLDivElement | null = $state(null);
 	let bottomSpacerEl: HTMLDivElement | null = $state(null);
 	let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 	let lastScrollAway = false;
@@ -107,7 +104,7 @@
 		return mainChatTailId;
 	});
 	let _sideActivityExchangeId = $derived.by(() => {
-		if (!sidePanelOpen || isDocumentPanel) return null;
+		if (!sideChat || isDocumentPanel) return null;
 		if (activeExchangeId && activeSideChat?.some((exchange) => exchange.id === activeExchangeId)) {
 			return activeExchangeId;
 		}
@@ -117,7 +114,9 @@
 		sidePanelParentId && activeExchanges ? activeExchanges[sidePanelParentId] : null
 	);
 	let documentContent = $derived(
-		sidePanel !== null && sidePanel.content.type === 'document' ? sidePanel.content : null
+		documentSidePanel !== null && documentSidePanel.content.type === 'document'
+			? documentSidePanel.content
+			: null
 	);
 	let activeDocumentFile = $derived.by(() => {
 		if (!documentContent) return null;
@@ -135,7 +134,9 @@
 					d.documentKey?.fileId === documentContent.fileId
 			);
 	});
-	let isDocumentPanel = $derived(sidePanel !== null && sidePanel.content.type === 'document');
+	let isDocumentPanel = $derived(
+		documentSidePanel !== null && documentSidePanel.content.type === 'document'
+	);
 
 	function getMainChatPath(): app.chat.Exchange[] {
 		return app.chat.getMainChat(activeTree);
@@ -146,47 +147,22 @@
 		return app.chat.getSideChats(activeTree, sidePanelParentId);
 	}
 
-	function updateSideChatIndex(newIndex: number) {
-		if (!sidePanel || !isSideChat(sidePanel)) return;
-		sidePanel = withContent(sidePanel, { ...sidePanel.content, sideChatIndex: newIndex });
-	}
-
-	function focusPanel(panelId: string) {
-		if (focusedPanelId === panelId) return;
-		focusedPanelId = panelId;
-		if (panelId === mainPanel.id) {
-			app.chat.selectExchange(mainChatTailId);
-		} else if (sidePanel && panelId === sidePanel.id) {
-			if (sideChatTailId) {
-				app.chat.selectExchange(sideChatTailId);
-			} else if (sidePanelParentId) {
-				app.chat.selectExchange(sidePanelParentId);
-			}
-		}
-		if (!isDocumentPanel) {
-			tick().then(() => onFocusComposer?.());
-		}
-	}
-
 	function focusMain() {
-		focusPanel(mainPanel.id);
-	}
-
-	function focusSide() {
-		if (sidePanel) focusPanel(sidePanel.id);
+		focusedPanelId = mainPanel.id;
+		app.chat.selectExchange(mainChatTailId);
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function openSidePanel(parentId: string) {
-		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === parentId) {
-			closeSidePanel();
+		const panels = app.workspace.getState().panels;
+		const existing = panels.find((p) => p.type === 'side-chat' && p.parentExchangeId === parentId);
+		if (existing) {
+			onClose?.();
 			return;
 		}
 
 		const sideChats = app.chat.getSideChats(activeTree, parentId);
 		const sideChatIdx = sideChats.length > 0 ? sideChats.length - 1 : 0;
-
-		sidePanel = createSideChatPanel(parentId, sideChatIdx);
-		focusedPanelId = sidePanel.id;
 
 		if (sideChats.length > 0) {
 			const latestSideChat = sideChats[sideChats.length - 1];
@@ -195,12 +171,19 @@
 		} else {
 			app.chat.selectExchange(parentId);
 		}
-		tick().then(() => onFocusComposer?.());
-	}
 
-	function closeSidePanel() {
-		sidePanel = null;
-		focusPanel(mainPanel.id);
+		const chatPanel = panels.find((p) => p.type === 'chat');
+		const newPanels = chatPanel
+			? [
+					chatPanel,
+					{ type: 'side-chat' as const, parentExchangeId: parentId, sideChatIndex: sideChatIdx }
+				]
+			: [
+					...panels.slice(0, 1),
+					{ type: 'side-chat' as const, parentExchangeId: parentId, sideChatIndex: sideChatIdx }
+				];
+		app.workspace.setPanels(newPanels);
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function closeSideDocumentPanel() {
@@ -208,7 +191,8 @@
 			app.documents.closeDocument(activeDocumentIndex);
 		}
 		app.workspace.clearOpenDocument();
-		closeSidePanel();
+		documentSidePanel = null;
+		focusedPanelId = mainPanel.id;
 	}
 
 	function addCurrentDocumentToChat() {
@@ -217,25 +201,15 @@
 	}
 
 	function prevSideChat() {
-		if (sideChatIndex > 0) {
-			updateSideChatIndex(sideChatIndex - 1);
-			focusSide();
-		}
+		sideChat?.onPrev();
 	}
 
 	function nextSideChat() {
-		if (sideChatIndex < sideChats.length - 1) {
-			updateSideChatIndex(sideChatIndex + 1);
-			focusSide();
-		}
+		sideChat?.onNext();
 	}
 
 	function newSideChat() {
-		if (!sidePanelParentId) return;
-		if (!activeSideChat || activeSideChat.length === 0) return;
-		updateSideChatIndex(sideChats.length);
-		app.chat.selectExchange(sidePanelParentId);
-		tick().then(() => onFocusComposer?.());
+		sideChat?.onNew();
 	}
 
 	function copyChat(exchangeId: string) {
@@ -270,7 +244,8 @@
 			operationError = result.error;
 		} else {
 			operationError = null;
-			closeSidePanel();
+			const panels = app.workspace.getState().panels;
+			app.workspace.setPanels(panels.filter((p) => p.type !== 'side-chat'));
 		}
 	}
 
@@ -377,10 +352,7 @@
 	export async function scrollToNode(nodeId: string | null) {
 		if (!nodeId) return;
 		await tick();
-		const isSideFocused = sidePanel !== null && focusedPanelId === sidePanel.id;
-		const containers = isSideFocused
-			? [sideScrollContainer, mainScrollContainer]
-			: [mainScrollContainer, sideScrollContainer];
+		const containers = [mainScrollContainer];
 		for (const container of containers) {
 			if (!container) continue;
 			const el = container.querySelector(`[data-exchange-id="${nodeId}"]`);
@@ -405,14 +377,7 @@
 	}
 
 	export function expandSideChat(exchangeId: string) {
-		trackLatestSideChat = true;
-		if (sidePanel && isSideChat(sidePanel) && sidePanel.content.parentExchangeId === exchangeId) {
-			focusedPanelId = sidePanel.id;
-			tick().then(() => onFocusComposer?.());
-			return;
-		}
-		sidePanel = createSideChatPanel(exchangeId, 0);
-		focusedPanelId = sidePanel.id;
+		openSidePanel(exchangeId);
 		tick().then(() => onFocusComposer?.());
 	}
 
@@ -443,8 +408,7 @@
 	export async function revealExchange(exchangeId: string) {
 		const sideTarget = getSidePanelTarget(exchangeId);
 		if (sideTarget) {
-			sidePanel = createSideChatPanel(sideTarget.parentId, sideTarget.sideChatIndex);
-			focusedPanelId = sidePanel.id;
+			openSidePanel(sideTarget.parentId);
 			await tick();
 			app.chat.selectExchange(exchangeId);
 			await scrollToNode(exchangeId);
@@ -457,60 +421,22 @@
 	}
 
 	export function showDocument(folderId: string, fileId: string) {
-		sidePanel = createDocumentPanel(folderId, fileId);
-		focusedPanelId = sidePanel.id;
+		documentSidePanel = createDocumentPanel(folderId, fileId);
+		focusedPanelId = documentSidePanel.id;
 	}
 
 	export function resetUIState() {
-		if (sidePanel !== null) {
+		if (documentSidePanel !== null) {
 			app.workspace.clearOpenDocument();
 		}
-		closeSidePanel();
+		documentSidePanel = null;
+		focusedPanelId = mainPanel.id;
 	}
 
-	// When side panel closes, snap focus to main
+	// When document side panel closes, snap focus to main
 	$effect(() => {
 		if (!sidePanelOpen && focusedPane === 'side') {
-			focusPanel(mainPanel.id);
-		}
-	});
-
-	// Notify parent of side panel state changes
-	$effect(() => {
-		onSidePanelChange?.(sidePanelOpen);
-	});
-
-	// Close side panel if parent node was deleted
-	$effect(() => {
-		if (
-			sidePanelOpen &&
-			sidePanelParentId &&
-			activeExchanges &&
-			!activeExchanges[sidePanelParentId]
-		) {
-			closeSidePanel();
-		}
-	});
-
-	// Follow the latest side chat when a new side chat is created
-	$effect(() => {
-		if (trackLatestSideChat && sideChats.length > 0) {
-			updateSideChatIndex(sideChats.length - 1);
-			trackLatestSideChat = false;
-		}
-	});
-
-	// Clamp side-chat index (allow one past the end for "new side chat" empty state)
-	$effect(() => {
-		if (sideChatIndex > sideChats.length && sideChats.length > 0) {
-			updateSideChatIndex(sideChats.length - 1);
-		}
-	});
-
-	// Keep activeExchangeId synced with focused pane's tail
-	$effect(() => {
-		if (sidePanel && focusedPanelId === sidePanel.id && sideChatTailId) {
-			app.chat.selectExchange(sideChatTailId);
+			focusedPanelId = mainPanel.id;
 		}
 	});
 
@@ -526,22 +452,67 @@
 {/if}
 
 <div class="chatview-shell">
-	<div class="chatview-body" class:chatview-body-split={sidePanelOpen}>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="chatview-pane"
-			class:chatview-pane-focused={focusedPane === 'main'}
-			onclick={focusMain}
-		>
-			<Header class="chatview-main-title">
+	{#if sideChat}
+		<SidePanelHeader
+			sideChatIndex={sideChat.sideChatIndex}
+			sideChatCount={sideChats.length}
+			onPrev={prevSideChat}
+			onNext={nextSideChat}
+			onNew={newSideChat}
+			onClose={() => onClose?.()}
+		/>
+		<div class="pane-scroll chatview-main" bind:this={mainScrollContainer}>
+			<div class="chatview-exchanges">
+				{#if sidePanelParentExchange}
+					<ExchangeList
+						exchanges={[sidePanelParentExchange]}
+						getNodeData={(id) => {
+							const data = getNodeDataForExchange(id);
+							if (!data) return null;
+							return {
+								...data,
+								hasSideChildren: false,
+								sideChildrenCount: 0,
+								canCreateSideChat: false
+							};
+						}}
+					/>
+				{/if}
+				{#if activeSideChat}
+					<ExchangeList exchanges={activeSideChat} getNodeData={getNodeDataForExchange} />
+				{:else}
+					<div class="chatview-empty"></div>
+				{/if}
+			</div>
+			<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>
+		</div>
+	{:else}
+		<Header>
+			<div class="chatview-title-inner">
+				<MessageSquare size={14} />
 				{activeChat.name}
 				{#if onClose}
-					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
-						<X size={14} />
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="chatview-close-btn"
+									onclick={onClose}
+									aria-label="Close chat panel"
+								>
+									<X size={14} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Close panel</Tooltip.Content>
+					</Tooltip.Root>
 				{/if}
-			</Header>
+			</div>
+		</Header>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="chatview-body" class:chatview-body-split={sidePanelOpen} onclick={focusMain}>
 			<div
 				class="pane-scroll chatview-main"
 				bind:this={mainScrollContainer}
@@ -556,26 +527,15 @@
 					/>
 					{#if mainChatPath.length === 0}
 						<div class="chatview-empty">
-							{providerState.activeModel
-								? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.'
-								: 'Select a model to get started.'}
+							{providerState.activeModel ? 'How can I help you?' : 'Select a model to get started.'}
 						</div>
 					{/if}
 				</div>
 				<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>
 			</div>
-		</div>
 
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="chatview-side"
-			class:chatview-side-open={sidePanelOpen}
-			class:chatview-pane-focused={focusedPane === 'side'}
-			onclick={focusSide}
-		>
-			{#if sidePanelOpen}
-				{#if isDocumentPanel && activeDocumentFile}
+			<div class="chatview-side" class:chatview-side-open={sidePanelOpen}>
+				{#if sidePanelOpen && isDocumentPanel && activeDocumentFile}
 					<div class="chatview-doc-wrap">
 						<Document
 							title={activeDocumentFile.name}
@@ -602,29 +562,10 @@
 							onAddToChat={addCurrentDocumentToChat}
 						/>
 					</div>
-				{:else if !isDocumentPanel}
-					<SidePanelHeader
-						{sideChatIndex}
-						sideChatCount={sideChats.length}
-						onPrev={prevSideChat}
-						onNext={nextSideChat}
-						onNew={newSideChat}
-						onClose={closeSidePanel}
-					/>
-					{#if sidePanelParentExchange}
-						<SidePanelContext exchange={sidePanelParentExchange} />
-					{/if}
-					<div class="chatview-side-exchanges" bind:this={sideScrollContainer}>
-						{#if activeSideChat}
-							<ExchangeList exchanges={activeSideChat} getNodeData={getNodeDataForExchange} />
-						{:else}
-							<div class="chatview-empty">Type a message to start a side chat.</div>
-						{/if}
-					</div>
 				{/if}
-			{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>
 
 <DeleteExchangeDialog
@@ -643,27 +584,19 @@
 		flex-direction: column;
 		height: 100%;
 		min-width: 0;
-		overflow: hidden;
+		overflow-x: hidden;
 	}
 
 	.chatview-body {
 		position: relative;
 		display: flex;
 		flex: 1;
-		overflow: hidden;
+		overflow-x: hidden;
 	}
 
-	/* Split layout — border added to first pane when side panel is open */
+	/* Split layout — border added to main scroll area when side panel is open */
 	.chatview-body-split > :first-child {
-		border-right: 1px solid hsl(var(--border));
-	}
-
-	.chatview-pane {
-		position: relative;
-		display: flex;
-		flex: 1;
-		flex-direction: column;
-		overflow: hidden;
+		border-right: 1px solid var(--border-color);
 	}
 
 	/* Side panel open/closed transition */
@@ -684,26 +617,11 @@
 		opacity: 1;
 	}
 
-	/* Title bar — centers content column and draws bottom border line via ::after */
-	:global(.chatview-main-title) {
-		position: relative;
-		box-sizing: border-box;
-		max-width: calc(var(--pane-content-width) + 2 * var(--pane-padding-h));
+	.chatview-title-inner {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 		width: 100%;
-		margin-left: auto;
-		margin-right: auto;
-	}
-
-	:global(.chatview-main-title)::after {
-		content: '';
-		position: absolute;
-		bottom: 0;
-		left: 50%;
-		transform: translateX(-50%);
-		width: calc(100% - 2 * var(--pane-padding-h));
-		max-width: var(--pane-content-width);
-		height: 1px;
-		background: hsl(var(--border));
 	}
 
 	.chatview-close-btn {
@@ -728,12 +646,14 @@
 		color: hsl(var(--foreground));
 	}
 
-	/* .chatview-main extends .pane-scroll — no padding/scrollbar overrides needed */
+	/* .chatview-main extends .pane-scroll — fills the body alongside side panel */
 	.chatview-main {
+		flex: 1;
 		min-height: 0;
 	}
 
 	.chatview-exchanges {
+		width: 100%;
 		max-width: var(--pane-content-width);
 		margin: 0 auto;
 		display: flex;
@@ -753,20 +673,11 @@
 		justify-content: center;
 		min-height: calc(100vh - 200px);
 		text-align: center;
-		font-size: 28px;
-		font-weight: 500;
+		font-size: 26px;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		max-width: 500px;
 		margin: 0 auto;
-	}
-
-	.chatview-side-exchanges {
-		flex: 1;
-		overflow-y: auto;
-		padding: 1rem 0.75rem calc(100vh - 150px);
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
 	}
 
 	.chatview-doc-wrap {
@@ -774,10 +685,5 @@
 		flex-direction: column;
 		flex: 1;
 		overflow: hidden;
-	}
-
-	/* Focused pane ring — applied via class: directive */
-	.chatview-pane-focused {
-		outline: none;
 	}
 </style>

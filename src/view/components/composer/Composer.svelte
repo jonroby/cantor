@@ -67,11 +67,9 @@
 	let submitDisabledReason = $derived(
 		!providerState.activeModel
 			? 'Select a model first.'
-			: activeNodeStreaming
-				? 'Waiting for response…'
-				: activeExchangeId && !app.chat.canSubmitPrompt(activeTree, activeExchangeId)
-					? 'Choose a side-chat tip or main-chain node to continue.'
-					: null
+			: activeExchangeId && !app.chat.canSubmitPrompt(activeTree, activeExchangeId)
+				? 'Choose a side-chat tip or main-chain node to continue.'
+				: null
 	);
 
 	let activeChatId = $derived(activeChat.id);

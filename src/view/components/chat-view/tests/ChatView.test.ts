@@ -156,7 +156,7 @@ describe('ChatView', () => {
 	describe('empty chat', () => {
 		it('shows starter text when no exchanges', () => {
 			render(ChatView);
-			expect(screen.getByText(/Type something and submit|Select a model/)).toBeInTheDocument();
+			expect(screen.getByText(/How can I help you\?|Select a model/)).toBeInTheDocument();
 		});
 	});
 
@@ -263,8 +263,8 @@ describe('ChatView', () => {
 	});
 
 	describe('side chat', () => {
-		it('clicking side chat badge opens side panel', async () => {
-			const { tree } = buildTreeWithSideChat();
+		it('clicking side chat badge opens side panel via workspace', async () => {
+			const { tree, sideChatParentId } = buildTreeWithSideChat();
 			resetState(tree);
 			render(ChatView);
 
@@ -273,128 +273,34 @@ describe('ChatView', () => {
 			await userEvent.click(badge);
 			await tick();
 
-			expect(screen.getByText('From this message')).toBeInTheDocument();
+			const panels = state.workspace.workspaceState.panels;
+			expect(panels.some((p) => p.type === 'side-chat')).toBe(true);
+			const sideChatPanel = panels.find((p) => p.type === 'side-chat');
+			expect(sideChatPanel).toMatchObject({
+				type: 'side-chat',
+				parentExchangeId: sideChatParentId
+			});
 		});
 
-		it('side panel shows parent exchange context', async () => {
-			const { tree } = buildTreeWithSideChat();
-			resetState(tree);
-			render(ChatView);
-
-			await userEvent.click(screen.getByText('1'));
-			await tick();
-
-			// The parent exchange text appears in both the main pane and the side panel context
-			const matches = screen.getAllByText('Main prompt 1');
-			expect(matches.length).toBeGreaterThanOrEqual(2);
-		});
-
-		it('side panel shows side chat exchanges', async () => {
-			const { tree } = buildTreeWithSideChat();
-			resetState(tree);
-			render(ChatView);
-
-			await userEvent.click(screen.getByText('1'));
-			await tick();
-
-			expect(screen.getByText('Side prompt 1')).toBeInTheDocument();
-			expect(screen.getByText('Side response 1')).toBeInTheDocument();
-		});
-
-		it('revealExchange opens the side panel for a side-chat result', async () => {
-			const { tree } = buildTreeWithSideChat();
+		it('revealExchange opens the side panel via workspace for a side-chat exchange', async () => {
+			const { tree, sideChatParentId } = buildTreeWithSideChat();
 			resetState(tree);
 			const view = render(ChatView);
 
-			await view.component.revealExchange(
-				Object.values(tree.exchanges).find((exchange) => exchange.prompt.text === 'Side prompt 1')!
-					.id
-			);
+			const sideExchangeId = Object.values(tree.exchanges).find(
+				(exchange) => exchange.prompt.text === 'Side prompt 1'
+			)!.id;
+
+			await view.component.revealExchange(sideExchangeId);
 			await tick();
 
-			expect(screen.getByText('From this message')).toBeInTheDocument();
-			expect(screen.getByText('Side prompt 1')).toBeInTheDocument();
-		});
-
-		it('close button closes side panel', async () => {
-			const { tree } = buildTreeWithSideChat();
-			resetState(tree);
-			render(ChatView);
-
-			await userEvent.click(screen.getByText('1'));
-			await tick();
-
-			await userEvent.click(screen.getByRole('button', { name: 'Close side panel' }));
-			await tick();
-
-			expect(screen.queryByText('From this message')).not.toBeInTheDocument();
-		});
-
-		it('submitting in side panel adds exchange to the side chat', async () => {
-			const { tree, sideChatParentId } = buildTreeWithSideChat();
-			resetState(tree);
-			render(ChatViewTestWrapper);
-
-			await userEvent.click(screen.getByText('1'));
-			await tick();
-
-			const input = screen.getByRole('textbox');
-			await userEvent.type(input, 'Side message');
-			await userEvent.click(screen.getByRole('button', { name: 'Send message' }));
-			await tick();
-
-			const exchanges = state.chats.getActiveTree().exchanges;
-			const sideChatChildren = domain.tree.getChildren(
-				{ rootId: state.chats.getActiveChat().rootId, exchanges },
-				sideChatParentId
-			);
-			expect(sideChatChildren.length).toBe(2);
-		});
-
-		it('new side chat button creates an empty side-chat state', async () => {
-			const { tree } = buildTreeWithSideChat();
-			resetState(tree);
-			render(ChatView);
-
-			await userEvent.click(screen.getByText('1'));
-			await tick();
-
-			await userEvent.click(screen.getByRole('button', { name: 'New side chat' }));
-			await tick();
-
-			expect(screen.getByText('Type a message to start a side chat.')).toBeInTheDocument();
-		});
-	});
-
-	describe('side chat navigation', () => {
-		it('shows the side chat counter in the side panel', async () => {
-			let tree = domain.tree.buildEmptyTree();
-			const root = domain.tree.addExchange(tree, 'unused', 'Root', MODEL, PROVIDER);
-			tree = root.tree;
-			tree.exchanges[root.id] = {
-				...tree.exchanges[root.id],
-				response: { text: 'Root resp', tokenCount: 10 }
-			};
-
-			// Visible exchange
-			tree = addExchange(tree, root.id, 'Main', 'Main resp');
-			const e1Id = domain.tree.getMainChatTail(tree)!;
-
-			// Main path continuation
-			tree = addExchange(tree, e1Id, 'Main 2', 'Main resp 2');
-
-			// Two side chats
-			tree = addExchange(tree, e1Id, 'Side A', 'Side resp A');
-			tree = addExchange(tree, e1Id, 'Side B', 'Side resp B');
-
-			resetState(tree);
-			render(ChatView);
-
-			// Badge shows "2" for two side children
-			await userEvent.click(screen.getByText('2'));
-			await tick();
-
-			expect(screen.getByText('2 / 2')).toBeInTheDocument();
+			const panels = state.workspace.workspaceState.panels;
+			expect(panels.some((p) => p.type === 'side-chat')).toBe(true);
+			const sideChatPanel = panels.find((p) => p.type === 'side-chat');
+			expect(sideChatPanel).toMatchObject({
+				type: 'side-chat',
+				parentExchangeId: sideChatParentId
+			});
 		});
 	});
 
@@ -481,7 +387,8 @@ describe('ChatView', () => {
 			component.showDocument('folder-1', 'file-1');
 			await tick();
 
-			expect(screen.getByText('notes.md')).toBeInTheDocument();
+			// The side panel becomes open (chatview-side-open class applied)
+			expect(document.querySelector('.chatview-side-open')).toBeInTheDocument();
 		});
 
 		it('closes doc panel via resetUIState', async () => {
@@ -492,12 +399,12 @@ describe('ChatView', () => {
 			component.showDocument('folder-1', 'file-1');
 			await tick();
 
-			expect(screen.getByText('notes.md')).toBeInTheDocument();
+			expect(document.querySelector('.chatview-side-open')).toBeInTheDocument();
 
 			component.resetUIState();
 			await tick();
 
-			expect(screen.queryByText('notes.md')).not.toBeInTheDocument();
+			expect(document.querySelector('.chatview-side-open')).not.toBeInTheDocument();
 		});
 	});
 });

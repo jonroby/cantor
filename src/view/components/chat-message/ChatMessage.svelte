@@ -1,8 +1,18 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
-	import { GitFork, Trash2, Split, Code, Eye, ClipboardCopy } from 'lucide-svelte';
+	import {
+		GitFork,
+		Trash2,
+		Split,
+		Code,
+		Eye,
+		ClipboardCopy,
+		FileText,
+		ArrowUp
+	} from 'lucide-svelte';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/lib/katex';
 	import type { ChatCardData } from '@/view/components/chat-card';
 
@@ -88,18 +98,7 @@
 <div class="chatmsg" class:chatmsg-doc-upload={data.label}>
 	{#if data.label}
 		<div class="chatmsg-doc-label">
-			<svg
-				width="16"
-				height="16"
-				viewBox="0 0 16 16"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.5"
-				class="shrink-0"
-			>
-				<path d="M3 2h7l3 3v9H3V2z" />
-				<path d="M10 2v3h3" />
-			</svg>
+			<FileText size={16} class="shrink-0" />
 			<span>{data.label}</span>
 		</div>
 	{:else}
@@ -157,138 +156,168 @@
 	{/if}
 
 	{#if !data.isStreaming}
-		<div class="chatmsg-toolbar">
-			<div class="chatmsg-actions">
-				<span class="action-tip-wrap">
-					<Button
-						class="icon-chip delete-chip"
-						variant="ghost"
-						size="icon"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							data.onDelete();
-						}}
-						ariaLabel="Delete"
-					>
-						<Trash2 size={15} />
-					</Button>
-					<span class="action-tip">Delete</span>
-				</span>
-				<span class="action-tip-wrap">
-					<Button
-						class="icon-chip"
-						variant="ghost"
-						size="icon"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							data.onCopy();
-						}}
-						ariaLabel="Copy"
-					>
-						<GitFork size={15} />
-					</Button>
-					<span class="action-tip">Copy</span>
-				</span>
-				{#if data.isSideRoot}
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							disabled={!data.canPromote}
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								data.onPromote();
-							}}
-							ariaLabel="Promote"
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-								><path
-									d="M7 12V2M7 2l-2 2M7 2l2 2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/></svg
-							>
-						</Button>
-						<span class="action-tip">Promote</span>
-					</span>
-				{/if}
-				{#if responseBlocks.length > 0}
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								showSource = !showSource;
-							}}
-							ariaLabel={showSource ? 'Show rendered' : 'Show source'}
-						>
-							{#if showSource}
-								<Eye size={15} />
-							{:else}
-								<Code size={15} />
-							{/if}
-						</Button>
-						<span class="action-tip">{showSource ? 'Rendered' : 'Source'}</span>
-					</span>
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								navigator.clipboard.writeText(data.response);
-							}}
-							ariaLabel="Copy text"
-						>
-							<ClipboardCopy size={15} />
-						</Button>
-						<span class="action-tip">Copy text</span>
-					</span>
+		<Tooltip.Provider>
+			<div class="chatmsg-toolbar">
+				<div class="chatmsg-actions">
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									class="icon-chip delete-chip"
+									variant="ghost"
+									size="icon"
+									onclick={(event: MouseEvent) => {
+										event.stopPropagation();
+										data.onDelete();
+									}}
+									ariaLabel="Delete"
+								>
+									<Trash2 size={15} />
+								</Button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Delete</Tooltip.Content>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									class="icon-chip"
+									variant="ghost"
+									size="icon"
+									onclick={(event: MouseEvent) => {
+										event.stopPropagation();
+										data.onCopy();
+									}}
+									ariaLabel="Copy"
+								>
+									<GitFork size={15} />
+								</Button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="top">Copy</Tooltip.Content>
+					</Tooltip.Root>
+					{#if data.isSideRoot}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										class="icon-chip"
+										variant="ghost"
+										size="icon"
+										disabled={!data.canPromote}
+										onclick={(event: MouseEvent) => {
+											event.stopPropagation();
+											data.onPromote();
+										}}
+										ariaLabel="Promote"
+									>
+										<ArrowUp size={14} />
+									</Button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top">Promote</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+					{#if responseBlocks.length > 0}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										class="icon-chip"
+										variant="ghost"
+										size="icon"
+										onclick={(event: MouseEvent) => {
+											event.stopPropagation();
+											showSource = !showSource;
+										}}
+										ariaLabel={showSource ? 'Show rendered' : 'Show source'}
+									>
+										{#if showSource}
+											<Eye size={15} />
+										{:else}
+											<Code size={15} />
+										{/if}
+									</Button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top">{showSource ? 'Rendered' : 'Source'}</Tooltip.Content>
+						</Tooltip.Root>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										class="icon-chip"
+										variant="ghost"
+										size="icon"
+										onclick={(event: MouseEvent) => {
+											event.stopPropagation();
+											navigator.clipboard.writeText(data.response);
+										}}
+										ariaLabel="Copy text"
+									>
+										<ClipboardCopy size={15} />
+									</Button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top">Copy text</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+				</div>
+				{#if !data.isSideRoot}
+					{#if data.hasSideChildren}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button
+										{...props}
+										class="chatmsg-side-chat-badge"
+										type="button"
+										onclick={(event: MouseEvent) => {
+											event.stopPropagation();
+											data.onToggleSideChildren();
+										}}
+									>
+										<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span
+										>
+										<span>{data.sideChildrenCount}</span>
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top">Side chat</Tooltip.Content>
+						</Tooltip.Root>
+					{:else}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										class="icon-chip"
+										variant="ghost"
+										size="icon"
+										disabled={!data.canCreateSideChat}
+										onclick={(event: MouseEvent) => {
+											event.stopPropagation();
+											data.onToggleSideChildren();
+										}}
+										ariaLabel="Side chat"
+									>
+										<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span
+										>
+									</Button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top">Side chat</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
 				{/if}
 			</div>
-			{#if !data.isSideRoot}
-				{#if data.hasSideChildren}
-					<button
-						class="chatmsg-side-chat-badge"
-						type="button"
-						onclick={(event: MouseEvent) => {
-							event.stopPropagation();
-							data.onToggleSideChildren();
-						}}
-					>
-						<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
-						<span>{data.sideChildrenCount}</span>
-					</button>
-				{:else}
-					<span class="action-tip-wrap">
-						<Button
-							class="icon-chip"
-							variant="ghost"
-							size="icon"
-							disabled={!data.canCreateSideChat}
-							onclick={(event: MouseEvent) => {
-								event.stopPropagation();
-								data.onToggleSideChildren();
-							}}
-							ariaLabel="Side chat"
-						>
-							<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
-						</Button>
-						<span class="action-tip">Side chat</span>
-					</span>
-				{/if}
-			{/if}
-		</div>
+		</Tooltip.Provider>
 	{/if}
 </div>
 
@@ -329,7 +358,6 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--foreground) / 0.05);
 		padding: 0.5rem 0.75rem;
-		font-size: var(--text-base);
 		color: hsl(var(--foreground) / 0.6);
 	}
 
@@ -341,11 +369,15 @@
 	.chatmsg-prompt {
 		max-width: 85%;
 		border-radius: 0.75rem;
-		background: hsl(var(--secondary));
-		padding: 0.75rem 1rem;
-		font-size: var(--text-md);
+		background: hsl(var(--foreground) / 0.07);
+		padding: 0.5rem 1rem;
 		line-height: 1.55;
 		word-break: break-word;
+		color: hsl(var(--foreground));
+	}
+
+	.chatmsg-prompt :global(p) {
+		margin: 0;
 	}
 
 	.chatmsg-response {
@@ -355,11 +387,11 @@
 	}
 
 	.chatmsg-response-header {
+		font-size: var(--text-base);
 		display: flex;
 		align-items: center;
 		gap: 0.35rem;
-		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: hsl(var(--muted-foreground));
@@ -372,7 +404,7 @@
 	}
 
 	.chatmsg-model {
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		letter-spacing: normal;
 		text-transform: none;
 	}
@@ -406,7 +438,6 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--muted) / 0.4);
 		padding: 0.75rem;
-		font-size: 0.85em;
 		line-height: 1.6;
 		font-family: var(--font-mono, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
 		white-space: pre-wrap;
@@ -427,7 +458,7 @@
 
 	.chatmsg-actions {
 		display: flex;
-		gap: 0.2rem;
+		gap: 0.5rem;
 	}
 
 	.chatmsg-side-chat-badge {
@@ -436,10 +467,9 @@
 		align-items: center;
 		gap: 0.3rem;
 		border-radius: 999px;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: transparent;
 		padding: 0.25rem 0.5rem;
-		font-size: var(--text-sm);
 		color: var(--icon-muted);
 		transition:
 			background 120ms ease,
@@ -462,7 +492,7 @@
 		z-index: 1000;
 		min-width: 160px;
 		border-radius: 0.5rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: var(--surface-floating);
 		padding: 0.25rem;
 		box-shadow: var(--surface-floating-shadow);
@@ -477,7 +507,6 @@
 		background: transparent;
 		padding: 0.45rem 0.75rem;
 		text-align: left;
-		font-size: var(--text-base);
 		color: hsl(var(--popover-foreground));
 	}
 
@@ -519,7 +548,7 @@
 	:global(.chatmsg-response-body h5),
 	:global(.chatmsg-response-body h6) {
 		margin: 1.25em 0 0.5em;
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		line-height: 1.3;
 		color: hsl(var(--foreground));
 	}
@@ -530,24 +559,8 @@
 		margin-top: 0;
 	}
 
-	:global(.chatmsg-response-body h1) {
-		font-size: 1.35em;
-	}
-
-	:global(.chatmsg-response-body h2) {
-		font-size: 1.2em;
-	}
-
-	:global(.chatmsg-response-body h3) {
-		font-size: 1.08em;
-	}
-
-	:global(.chatmsg-response-body h4) {
-		font-size: 1em;
-	}
-
 	:global(.chatmsg-response-body strong) {
-		font-weight: 650;
+		font-weight: var(--font-weight-bold);
 	}
 
 	:global(.chatmsg-response-body ul),
@@ -568,14 +581,14 @@
 	:global(.chatmsg-response-body blockquote) {
 		margin: 0.75em 0;
 		padding: 0.5em 1em;
-		border-left: 3px solid hsl(var(--border));
+		border-left: 3px solid var(--border-color);
 		color: hsl(var(--muted-foreground));
 	}
 
 	:global(.chatmsg-response-body hr) {
 		margin: 1.25em 0;
 		border: none;
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border-color);
 	}
 
 	:global(.chatmsg-response-body pre) {
@@ -584,14 +597,12 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--muted) / 0.5);
 		overflow-x: auto;
-		font-size: 0.85em;
 	}
 
 	:global(.chatmsg-response-body code) {
 		padding: 0.15em 0.35em;
 		border-radius: 0.25rem;
 		background: hsl(var(--muted) / 0.5);
-		font-size: 0.88em;
 	}
 
 	:global(.chatmsg-response-body pre code) {
@@ -606,7 +617,6 @@
 	}
 
 	:global(.chatmsg-response-body .katex) {
-		font-size: var(--text-xl);
 		line-height: normal;
 	}
 </style>

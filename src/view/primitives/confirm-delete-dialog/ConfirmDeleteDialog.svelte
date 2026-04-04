@@ -52,7 +52,7 @@
 		z-index: 50;
 		width: min(100%, 28rem);
 		padding: 1.5rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 0.75rem;
 		background: var(--surface-floating);
 		box-shadow: var(--surface-floating-shadow);
@@ -60,13 +60,11 @@
 	}
 
 	:global(.confirm-delete-title) {
-		font-size: var(--text-lg);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 	}
 
 	:global(.confirm-delete-description) {
 		margin-top: 0.5rem;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -82,12 +80,11 @@
 		padding: 0.5rem 1rem;
 		border: 1px solid transparent;
 		border-radius: 0.5rem;
-		font-size: var(--text-sm);
 		outline: none;
 	}
 
 	:global(.confirm-delete-cancel) {
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--background));
 		color: hsl(var(--foreground));
 	}

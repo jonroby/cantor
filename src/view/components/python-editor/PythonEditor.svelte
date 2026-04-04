@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { Code2, X, Play } from 'lucide-svelte';
 
 	let code = $state(
 		`# Write your Python here\ndef greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))`
@@ -113,35 +114,13 @@
 <div class="code-editor-card" bind:this={cardElement}>
 	<div class="code-editor-header">
 		<div class="code-editor-title">
-			<svg
-				width="16"
-				height="16"
-				viewBox="0 0 16 16"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.5"
-			>
-				<path
-					d="M5.5 4L2 8l3.5 4M10.5 4L14 8l-3.5 4"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				/>
-			</svg>
+			<Code2 size={16} />
 			<span>Code</span>
 			<span class="code-editor-lang">Python</span>
 		</div>
 		<div class="code-editor-actions">
 			<button class="code-editor-btn" onclick={clearOutput} title="Clear output">
-				<svg
-					width="14"
-					height="14"
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-				>
-					<path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round" />
-				</svg>
+				<X size={14} />
 			</button>
 			<button
 				class="code-editor-run-btn"
@@ -152,9 +131,7 @@
 				{#if isRunning || isLoading}
 					<div class="code-run-spinner"></div>
 				{:else}
-					<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-						<path d="M4 2.5v11l9-5.5z" />
-					</svg>
+					<Play size={14} />
 				{/if}
 				<span>{isLoading ? 'Loading…' : 'Run'}</span>
 			</button>
@@ -181,7 +158,7 @@
 
 <style>
 	.code-editor-card {
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 0.7rem;
 		background: hsl(var(--card));
 		color: hsl(var(--card-foreground));
@@ -195,7 +172,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.6rem 0.85rem;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		background: hsl(var(--muted) / 0.65);
 	}
 
@@ -203,22 +180,20 @@
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-size: 0.78rem;
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: hsl(var(--muted-foreground));
 	}
 
 	.code-editor-lang {
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		letter-spacing: 0;
 		text-transform: none;
 		margin-left: 0.25rem;
 		padding: 0.1rem 0.45rem;
 		border-radius: var(--radius-full);
 		background: hsl(var(--muted));
-		font-size: var(--text-xs);
 	}
 
 	.code-editor-actions {
@@ -250,12 +225,11 @@
 		align-items: center;
 		gap: 0.35rem;
 		padding: 0.3rem 0.7rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 0.5rem;
 		background: hsl(var(--primary));
 		color: hsl(var(--primary-foreground));
-		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: opacity var(--duration-fast) ease;
 	}
@@ -299,7 +273,6 @@
 		color: hsl(var(--card-foreground));
 		font-family:
 			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
-		font-size: 0.85rem;
 		line-height: 1.6;
 		tab-size: 4;
 		resize: vertical;
@@ -312,13 +285,12 @@
 	}
 
 	.code-editor-output {
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border-color);
 	}
 
 	.code-editor-output-header {
 		padding: 0.4rem 0.85rem;
-		font-size: 0.7rem;
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: hsl(var(--muted-foreground));
@@ -330,7 +302,6 @@
 		padding: 0.65rem 0.85rem;
 		font-family:
 			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
-		font-size: 0.8rem;
 		line-height: 1.55;
 		white-space: pre-wrap;
 		word-break: break-word;

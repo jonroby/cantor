@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { type Shape, type DrawingTool, type Point, generateShapeId } from './drawing-types';
+	import { MousePointer2 } from 'lucide-svelte';
 
 	interface Props {
 		shapes: Shape[];
@@ -422,19 +423,7 @@
 				title={tool.label}
 			>
 				{#if tool.id === 'select'}
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M5.5 3.2l2.7 17.6 4-5.3 5.7-1z" />
-						<path d="M12.2 15.5l3.9 4.4" />
-					</svg>
+					<MousePointer2 size={14} />
 				{:else}
 					{tool.icon}
 				{/if}
@@ -652,7 +641,7 @@
 	.drawing-board {
 		overflow: hidden;
 		border-radius: var(--radius-lg);
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--card));
 		box-shadow: 0 2px 8px hsl(var(--foreground) / 0.06);
 	}
@@ -661,7 +650,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.125rem;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		background: hsl(var(--muted));
 		padding: 0.375rem 0.5rem;
 	}
@@ -670,7 +659,7 @@
 		margin: 0 0.25rem;
 		height: 1.25rem;
 		width: 1px;
-		background: hsl(var(--border));
+		background: var(--border-color);
 		flex-shrink: 0;
 	}
 
@@ -713,7 +702,7 @@
 	}
 
 	.color-btn:hover {
-		border-color: hsl(var(--border));
+		border-color: var(--border-color);
 	}
 
 	.color-btn.color-active {

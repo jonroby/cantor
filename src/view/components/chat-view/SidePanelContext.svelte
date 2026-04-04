@@ -29,23 +29,20 @@
 
 	.side-context-label {
 		margin-bottom: 0.35rem;
-		font-size: var(--text-xs);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: hsl(var(--primary) / 0.6);
 	}
 
 	.side-context-prompt {
-		font-size: var(--text-base);
 		line-height: 1.4;
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}
 
 	.side-context-response {
 		margin-top: 0.3rem;
-		font-size: var(--text-base);
 		line-height: 1.4;
 		color: hsl(var(--muted-foreground));
 	}

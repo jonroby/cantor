@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ArrowRight, GitBranch, Shield } from 'lucide-svelte';
+	import { ArrowRight, GitBranch, Shield, LayoutDashboard, Sun } from 'lucide-svelte';
 
 	let canvas: HTMLCanvasElement;
 	let animationId: number;
@@ -155,47 +155,14 @@
 			</div>
 			<div class="feature-card">
 				<div class="feature-icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<rect x="3" y="3" width="18" height="18" rx="2" />
-						<circle cx="9" cy="9" r="2" />
-						<circle cx="15" cy="15" r="2" />
-						<path d="M9 15h6" />
-						<path d="M9 9h.01" />
-					</svg>
+					<LayoutDashboard size={24} />
 				</div>
 				<h3>Canvas View</h3>
 				<p>Visualize your entire conversation tree as a zoomable node graph.</p>
 			</div>
 			<div class="feature-card">
 				<div class="feature-icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M12 2v4" />
-						<path d="m6.93 6.93 2.83 2.83" />
-						<path d="M2 12h4" />
-						<path d="m6.93 17.07 2.83-2.83" />
-						<path d="M12 18v4" />
-						<path d="m17.07 17.07-2.83-2.83" />
-						<path d="M22 12h-4" />
-						<path d="m17.07 6.93-2.83 2.83" />
-					</svg>
+					<Sun size={24} />
 				</div>
 				<h3>Multi-Provider</h3>
 				<p>Claude, Gemini, Ollama, OpenAI-compatible, and WebLLM — all in one place.</p>
@@ -252,8 +219,7 @@
 	}
 
 	.logo {
-		font-size: var(--text-xl);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		letter-spacing: -0.5px;
 		color: hsl(var(--foreground));
 	}
@@ -265,8 +231,7 @@
 	}
 
 	.nav-link {
-		font-size: var(--text-md);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--muted-foreground));
 		text-decoration: none;
 		transition: color 0.2s;
@@ -285,8 +250,7 @@
 		border: none;
 		border-radius: var(--radius-full);
 		padding: 8px 20px;
-		font-size: var(--text-md);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: opacity 0.2s;
 	}
@@ -313,18 +277,16 @@
 		align-items: center;
 		padding: 6px 16px;
 		background: hsl(var(--accent));
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-full);
-		font-size: var(--text-base);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--accent-foreground));
 		margin-bottom: 24px;
 		letter-spacing: 0.02em;
 	}
 
 	.hero-title {
-		font-size: clamp(48px, 10vw, 88px);
-		font-weight: 800;
+		font-weight: var(--font-weight-extrabold);
 		line-height: 1.05;
 		letter-spacing: 0.02em;
 		color: hsl(var(--foreground));
@@ -339,7 +301,6 @@
 	}
 
 	.hero-subtitle {
-		font-size: 18px;
 		line-height: 1.6;
 		color: hsl(var(--muted-foreground));
 		max-width: 560px;
@@ -361,8 +322,7 @@
 		color: hsl(var(--primary-foreground));
 		border: none;
 		border-radius: var(--radius-lg);
-		font-size: var(--text-lg);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: all 0.2s;
 	}
@@ -376,10 +336,9 @@
 		padding: 14px 32px;
 		background: transparent;
 		color: hsl(var(--foreground));
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-lg);
-		font-size: var(--text-lg);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: all 0.2s;
 	}
@@ -400,7 +359,7 @@
 	.feature-card {
 		background: hsl(var(--card) / 0.8);
 		backdrop-filter: blur(8px);
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-lg);
 		padding: 28px 24px;
 		text-align: left;
@@ -426,14 +385,12 @@
 	}
 
 	.feature-card h3 {
-		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		color: hsl(var(--foreground));
 		margin: 0 0 6px;
 	}
 
 	.feature-card p {
-		font-size: var(--text-base);
 		line-height: 1.5;
 		color: hsl(var(--muted-foreground));
 		margin: 0;

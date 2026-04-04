@@ -6,6 +6,7 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
+	import { MessageSquarePlus, Upload, FolderPlus } from 'lucide-svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
@@ -169,7 +170,6 @@
 			{#if sidebar.state === 'expanded'}
 				<div class="sidebar-header-row">
 					<div class="sidebar-brand">
-						<img src={powersetLogo} alt="Cantor" width="18" height="20" />
 						<span class="sidebar-brand-name">Cantor</span>
 						<Tooltip.Root>
 							<Tooltip.Trigger>
@@ -184,13 +184,21 @@
 							</Tooltip.Content>
 						</Tooltip.Root>
 					</div>
-					<button
-						class="sidebar-icon-btn"
-						onclick={() => sidebar.toggle()}
-						aria-label="Collapse sidebar"
-					>
-						<HugeiconsIcon icon={SidebarLeftIcon} size={20} />
-					</button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									class="sidebar-icon-btn"
+									onclick={() => sidebar.toggle()}
+									aria-label="Collapse sidebar"
+								>
+									<HugeiconsIcon icon={SidebarLeftIcon} size={20} />
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="right" class="sidebar-tooltip">Collapse sidebar</Tooltip.Content>
+					</Tooltip.Root>
 				</div>
 			{:else}
 				<div class="sidebar-collapsed-header">
@@ -223,41 +231,37 @@
 		</Sidebar.Header>
 
 		<Sidebar.Content class="sidebar-content-shell">
-			<!-- New chat -->
-			<Sidebar.Group class="sidebar-group-reset">
-				<Sidebar.GroupContent>
-					<Sidebar.Menu>
-						<Sidebar.MenuItem>
-							<Sidebar.MenuButton
-								size="default"
-								tooltipContent="New chat"
-								onclick={() => onNewChat()}
-								class="sidebar-primary-action"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									class="shrink-0"
-								>
-									<path d="M12 20h9" />
-									<path
-										d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
-									/>
-								</svg>
-								<span>New chat</span>
-							</Sidebar.MenuButton>
-						</Sidebar.MenuItem>
-					</Sidebar.Menu>
-				</Sidebar.GroupContent>
-			</Sidebar.Group>
-
 			{#if sidebar.state === 'expanded'}
+				<!-- New chat + New folder -->
+				<Sidebar.Group class="sidebar-group-reset">
+					<Sidebar.GroupContent>
+						<Sidebar.Menu>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="New chat"
+									onclick={() => onNewChat()}
+									class="sidebar-primary-action"
+								>
+									<MessageSquarePlus size={16} class="shrink-0" />
+									<span>New chat</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="New folder"
+									onclick={handleNewFolder}
+									class="sidebar-primary-action"
+								>
+									<FolderPlus size={16} class="shrink-0" />
+									<span>New folder</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						</Sidebar.Menu>
+					</Sidebar.GroupContent>
+				</Sidebar.Group>
+
 				<Sidebar.Separator class="sidebar-section-separator" />
 
 				<!-- Chat list (unfoldered) -->
@@ -273,20 +277,7 @@
 										onclick={onUploadChat}
 										aria-label="Upload chat"
 									>
-										<svg
-											width="14"
-											height="14"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="1.5"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										>
-											<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-											<polyline points="17 8 12 3 7 8" />
-											<line x1="12" y1="3" x2="12" y2="15" />
-										</svg>
+										<Upload size={14} />
 									</button>
 								{/snippet}
 							</Tooltip.Trigger>
@@ -314,44 +305,9 @@
 					</Sidebar.GroupContent>
 				</Sidebar.Group>
 
-				<Sidebar.Separator class="sidebar-section-separator" />
-
-				<!-- New folder -->
-				<Sidebar.Group class="sidebar-group-reset">
-					<Sidebar.GroupContent>
-						<Sidebar.Menu>
-							<Sidebar.MenuItem>
-								<Sidebar.MenuButton
-									size="default"
-									tooltipContent="New folder"
-									onclick={handleNewFolder}
-									class="sidebar-primary-action"
-								>
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										class="shrink-0"
-									>
-										<path d="M12 10v6M9 13h6" />
-										<path
-											d="M2 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"
-										/>
-									</svg>
-									<span>New folder</span>
-								</Sidebar.MenuButton>
-							</Sidebar.MenuItem>
-						</Sidebar.Menu>
-					</Sidebar.GroupContent>
-				</Sidebar.Group>
-
 				<!-- Folders list -->
 				{#if folders.length > 0}
+					<Sidebar.Separator class="sidebar-section-separator" />
 					<Sidebar.Group class="sidebar-group-folders">
 						<Sidebar.GroupLabel class="sidebar-section-label">
 							<span>Folders</span>
@@ -364,20 +320,7 @@
 											onclick={onUploadNewFolder}
 											aria-label="Upload folder"
 										>
-											<svg
-												width="14"
-												height="14"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="1.5"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											>
-												<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-												<polyline points="17 8 12 3 7 8" />
-												<line x1="12" y1="3" x2="12" y2="15" />
-											</svg>
+											<Upload size={14} />
 										</button>
 									{/snippet}
 								</Tooltip.Trigger>
@@ -530,9 +473,9 @@
 
 	.sidebar-header-row {
 		display: flex;
-		height: 3.5rem;
+		height: 52px;
 		align-items: center;
-		padding: 0 0.75rem;
+		padding: 0 0.75rem 0 2rem;
 	}
 
 	.sidebar-brand {
@@ -543,22 +486,24 @@
 	}
 
 	.sidebar-brand-name {
-		font-size: var(--text-sm);
-		font-weight: 600;
-		color: hsl(var(--sidebar-foreground));
+		font-size: 17px;
+		font-weight: var(--font-weight-semibold);
+		color: hsl(var(--sidebar-foreground) / 0.88);
 	}
 
 	.sidebar-alpha-badge {
 		display: inline-flex;
 		align-items: center;
-		border: 1px solid hsl(var(--sidebar-border));
+		margin-top: 3px;
+		margin-left: 0.25rem;
+		border: 1px solid hsl(215 80% 45%);
 		border-radius: 9999px;
-		background: var(--sidebar-surface-tint);
+		background: hsl(215 90% 92%);
 		padding: 0.125rem 0.45rem;
-		font-size: var(--text-xs);
-		font-weight: 600;
+		font-size: 11px;
+		font-weight: var(--font-weight-normal);
 		line-height: 1.2;
-		color: var(--sidebar-surface-tint-foreground);
+		color: hsl(215 80% 35%);
 	}
 
 	.sidebar-alpha-trigger {
@@ -593,7 +538,7 @@
 
 	.sidebar-collapsed-header {
 		display: flex;
-		height: 3.5rem;
+		height: 52px;
 		align-items: center;
 		justify-content: center;
 	}
@@ -649,12 +594,14 @@
 
 	:global(.sidebar-primary-action) {
 		border-radius: 0.5rem;
-		padding: 0.5rem 0.75rem;
+		padding: 0.5rem 0.75rem 0.5rem 1.5rem;
 	}
 
 	:global(.sidebar-section-separator) {
+		height: 0;
 		margin: 0.5rem 0;
-		background: hsl(var(--sidebar-border));
+		border: none;
+		border-top: 1px solid hsl(var(--sidebar-border));
 	}
 
 	:global(.sidebar-section-label) {
@@ -662,8 +609,8 @@
 		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 0.25rem;
-		padding: 0 0.75rem;
-		font-size: var(--text-xs);
+		padding: 0 0.75rem 0 1.5rem;
+		font-size: 12px;
 		color: hsl(var(--sidebar-foreground) / 0.5);
 	}
 
@@ -686,10 +633,6 @@
 	.sidebar-upload-btn:hover {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
-	}
-
-	:global(.sidebar-tooltip) {
-		font-size: var(--text-xs);
 	}
 
 	:global(.sidebar-tooltip-wide) {

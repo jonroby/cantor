@@ -248,6 +248,7 @@ function getLocalProviders(): State['providers'] {
 			id: 'ollama',
 			name: 'Ollama',
 			kind: 'local' as const,
+			credentialState: 'not-required' as const,
 			connection: {
 				status: state.providers.providerState.ollamaStatus,
 				value: state.providers.providerState.ollamaUrl,

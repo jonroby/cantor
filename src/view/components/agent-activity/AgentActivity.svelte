@@ -212,7 +212,7 @@
 <style>
 	.agent-activity {
 		margin: 16px 16px 0;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 14px;
 		background: linear-gradient(180deg, hsl(var(--muted) / 0.4), hsl(var(--background) / 0.92));
 		overflow: hidden;
@@ -244,8 +244,7 @@
 	}
 
 	.agent-activity-title {
-		font-size: 12px;
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: hsl(var(--muted-foreground));
@@ -256,8 +255,7 @@
 		border-radius: 999px;
 		background: hsl(var(--accent) / 0.15);
 		color: hsl(var(--foreground));
-		font-size: 11px;
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 	}
 
 	.agent-activity-summary {
@@ -269,7 +267,6 @@
 	}
 
 	.agent-activity-last {
-		font-size: 13px;
 		line-height: 1.4;
 		color: hsl(var(--foreground));
 		white-space: nowrap;
@@ -280,8 +277,7 @@
 	}
 
 	.agent-activity-count {
-		font-size: 11px;
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: hsl(var(--muted-foreground));
@@ -301,7 +297,7 @@
 		padding: 10px 10px 12px;
 		border-radius: 12px;
 		background: hsl(var(--muted) / 0.22);
-		border: 1px solid hsl(var(--border) / 0.7);
+		border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
 	}
 
 	.agent-activity-step-header {
@@ -315,8 +311,7 @@
 	.agent-activity-step-title,
 	.agent-activity-event-time,
 	.agent-activity-step-time {
-		font-size: 11px;
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: hsl(var(--muted-foreground));
@@ -326,7 +321,7 @@
 		padding: 12px 13px;
 		border-radius: 12px;
 		background: hsl(var(--background) / 0.92);
-		border: 1px solid hsl(var(--border) / 0.82);
+		border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
 	}
 
 	.agent-activity-event-call {
@@ -355,8 +350,7 @@
 	}
 
 	.agent-activity-event-type {
-		font-size: 11px;
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: hsl(var(--muted-foreground));
@@ -365,7 +359,6 @@
 	.agent-activity-event-text {
 		white-space: pre-wrap;
 		word-break: break-word;
-		font-size: 13px;
 		line-height: 1.5;
 		color: hsl(var(--foreground));
 	}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button } from '@/view/primitives';
+	import * as Tooltip from '@/view/primitives/tooltip';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { ArrowUp, Square, Plus, X, Settings } from 'lucide-svelte';
 	import type * as app from '@/app';
@@ -112,149 +113,168 @@
 	}
 </script>
 
-<input
-	bind:this={fileInputEl}
-	type="file"
-	accept="image/jpeg,image/png,image/gif,image/webp"
-	multiple
-	style="display: none"
-	onchange={handleFiles}
-/>
+<Tooltip.Provider>
+	<input
+		bind:this={fileInputEl}
+		type="file"
+		accept="image/jpeg,image/png,image/gif,image/webp"
+		multiple
+		style="display: none"
+		onchange={handleFiles}
+	/>
 
-<form
-	class="composer"
-	class:composer-anchored={anchored}
-	onsubmit={(e: Event) => {
-		e.preventDefault();
-		onSubmit();
-		resetSize();
-	}}
->
-	<div class="composer-shell">
-		{#if pendingImages.length > 0}
-			<div class="composer-images">
-				{#each pendingImages as img, i (i)}
-					<div class="composer-image-thumb">
-						<img src={`data:${img.mimeType};base64,${img.base64}`} alt="" />
-						<button class="composer-image-remove" type="button" onclick={() => removeImage(i)}>
-							<X size={12} />
-						</button>
-					</div>
-				{/each}
-			</div>
-		{/if}
-		<div class="composer-row">
-			{#if inputMessage}
-				<span class="composer-message">{inputMessage}</span>
-			{:else}
-				{#if activeModelLabel}
-					<button
-						class="composer-attach"
-						type="button"
-						onclick={openFilePicker}
-						aria-label="Attach image"
-					>
-						<Plus size={18} />
-					</button>
-				{/if}
-				<textarea
-					bind:this={textareaEl}
-					bind:value={composerValue}
-					class="composer-textarea"
-					placeholder={!activeModelLabel
-						? 'Select a model to get started with chat or working with an agent'
-						: agentMode
-							? 'Agent...'
-							: 'Chat...'}
-					disabled={!activeModelLabel}
-					rows={1}
-					oninput={autoResize}
-					onkeydown={handleKeydown}
-				></textarea>
-			{/if}
-			{#if streaming}
-				<Button
-					class="composer-send composer-stop"
-					type="button"
-					size="icon"
-					onclick={onStop}
-					ariaLabel="Stop response"
-				>
-					<Square size={13} fill="currentColor" />
-				</Button>
-			{:else}
-				<Button
-					class="composer-send"
-					type="submit"
-					size="icon"
-					disabled={!!submitDisabledReason || (!composerValue.trim() && pendingImages.length === 0)}
-					ariaLabel="Send message"
-				>
-					<ArrowUp size={15} strokeWidth={2.5} />
-				</Button>
-			{/if}
-		</div>
-		<div class="composer-footer">
-			<div class="composer-footer-left">
-				<Button
-					class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
-					variant="outline"
-					size="sm"
-					onclick={onOpenPalette}
-				>
-					{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
-						<img
-							src={PROVIDER_LOGOS[activeProvider]}
-							alt=""
-							style="height: 1.15rem; width: 1.15rem; object-fit: contain;"
-						/>
-					{/if}
-					{activeModelLabel ?? 'Choose model'}
-				</Button>
-				{#if activeModelLabel}
-					{#if onToggleMode}
-						<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
-							{agentMode ? 'Agent' : 'Chat'}
-						</Button>
-					{/if}
-					{#if agentMode && onOpenAgentPalette}
-						<Button class="mode-chip" variant="outline" size="sm" onclick={onOpenAgentPalette}>
-							Tools
-						</Button>
-					{/if}
-				{/if}
-				{#if submitDisabledReason && !inputMessage && activeModelLabel}
-					<span class="composer-hint">{submitDisabledReason}</span>
-				{/if}
-			</div>
-			{#if activeModelLabel}
-				<div class="composer-footer-right">
-					<button
-						class="context-settings-btn"
-						onclick={onOpenContextPalette}
-						title="Context settings"
-					>
-						<Settings size={16} />
-					</button>
-					<span class="context-strategy-label">Context Window</span>
-					{#if contextLength != null}
-						<div class="progress-track compact">
-							<div
-								class="progress-fill"
-								style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}
-							></div>
+	<form
+		class="composer"
+		class:composer-anchored={anchored}
+		onsubmit={(e: Event) => {
+			e.preventDefault();
+			onSubmit();
+			resetSize();
+		}}
+	>
+		<div class="composer-shell">
+			{#if pendingImages.length > 0}
+				<div class="composer-images">
+					{#each pendingImages as img, i (i)}
+						<div class="composer-image-thumb">
+							<img src={`data:${img.mimeType};base64,${img.base64}`} alt="" />
+							<button class="composer-image-remove" type="button" onclick={() => removeImage(i)}>
+								<X size={12} />
+							</button>
 						</div>
-					{/if}
-					<span class="context-token-count"
-						>{usedTokens.toLocaleString()}{contextLength != null
-							? ` / ${contextLength.toLocaleString()}`
-							: ''}</span
-					>
+					{/each}
 				</div>
 			{/if}
+			<div class="composer-row">
+				{#if inputMessage}
+					<span class="composer-message">{inputMessage}</span>
+				{:else}
+					{#if activeModelLabel}
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button
+										{...props}
+										class="composer-attach"
+										type="button"
+										onclick={openFilePicker}
+										aria-label="Attach image"
+									>
+										<Plus size={20} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top">Attach image</Tooltip.Content>
+						</Tooltip.Root>
+					{/if}
+					<textarea
+						bind:this={textareaEl}
+						bind:value={composerValue}
+						class="composer-textarea"
+						placeholder={!activeModelLabel
+							? 'Select a model to get started with chat or working with an agent'
+							: agentMode
+								? 'Agent...'
+								: 'Chat...'}
+						disabled={!activeModelLabel}
+						rows={1}
+						oninput={autoResize}
+						onkeydown={handleKeydown}
+					></textarea>
+				{/if}
+				{#if streaming}
+					<Button
+						class="composer-send composer-stop"
+						type="button"
+						size="icon"
+						onclick={onStop}
+						ariaLabel="Stop response"
+					>
+						<Square size={13} fill="currentColor" />
+					</Button>
+				{:else}
+					<Button
+						class="composer-send"
+						type="submit"
+						size="icon"
+						disabled={!!submitDisabledReason ||
+							(!composerValue.trim() && pendingImages.length === 0)}
+						ariaLabel="Send message"
+					>
+						<ArrowUp size={15} strokeWidth={2.5} />
+					</Button>
+				{/if}
+			</div>
+			<div class="composer-footer">
+				<div class="composer-footer-left">
+					<Button
+						class={activeModelLabel ? 'model-chip' : 'model-chip model-chip-cta'}
+						variant="outline"
+						size="sm"
+						onclick={onOpenPalette}
+					>
+						{#if activeProvider && PROVIDER_LOGOS[activeProvider]}
+							<img
+								src={PROVIDER_LOGOS[activeProvider]}
+								alt=""
+								style="height: 1.15rem; width: 1.15rem; object-fit: contain;"
+							/>
+						{/if}
+						{activeModelLabel ?? 'Choose model'}
+					</Button>
+					{#if activeModelLabel}
+						{#if onToggleMode}
+							<Button class="mode-chip" variant="outline" size="sm" onclick={onToggleMode}>
+								{agentMode ? 'Agent' : 'Chat'}
+							</Button>
+						{/if}
+						{#if agentMode && onOpenAgentPalette}
+							<Button class="mode-chip" variant="outline" size="sm" onclick={onOpenAgentPalette}>
+								Tools
+							</Button>
+						{/if}
+					{/if}
+					{#if submitDisabledReason && !inputMessage && activeModelLabel}
+						<span class="composer-hint">{submitDisabledReason}</span>
+					{/if}
+				</div>
+				{#if activeModelLabel}
+					<div class="composer-footer-right">
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<button
+										{...props}
+										class="context-settings-btn"
+										title="Context settings"
+										onclick={onOpenContextPalette}
+									>
+										<Settings size={16} />
+									</button>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top">Context settings</Tooltip.Content>
+						</Tooltip.Root>
+						<span class="context-strategy-label">Context Window</span>
+						{#if contextLength != null}
+							<div class="progress-track compact">
+								<div
+									class="progress-fill"
+									style={`width: ${Math.min(100, (usedTokens / Math.max(1, contextLength)) * 100)}%`}
+								></div>
+							</div>
+						{/if}
+						<span class="context-token-count"
+							>{usedTokens.toLocaleString()}{contextLength != null
+								? ` / ${contextLength.toLocaleString()}`
+								: ''}</span
+						>
+					</div>
+				{/if}
+			</div>
 		</div>
-	</div>
-</form>
+	</form>
+</Tooltip.Provider>
 
 <style>
 	:global(.composer-send) {
@@ -276,15 +296,13 @@
 		left: auto;
 		transform: none;
 		width: 100%;
-		max-width: var(--pane-content-width);
-		margin: 0 auto;
 		box-sizing: border-box;
 	}
 
 	.composer-shell {
 		overflow: hidden;
 		border-radius: 1.25rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--card));
 		box-shadow: 0 12px 40px hsl(var(--foreground) / 0.12);
 	}
@@ -302,7 +320,7 @@
 		height: 4rem;
 		overflow: hidden;
 		border-radius: var(--radius-md);
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 	}
 
 	.composer-image-thumb img {
@@ -342,20 +360,19 @@
 	.composer-message {
 		flex: 1;
 		padding: 0 0.25rem;
-		font-size: var(--text-base);
 		color: hsl(var(--foreground) / 0.45);
 	}
 
 	.composer-attach {
 		display: flex;
-		height: 1.75rem;
-		width: 1.75rem;
+		height: 2.25rem;
+		width: 2.25rem;
 		flex-shrink: 0;
 		cursor: pointer;
 		align-items: center;
 		justify-content: center;
 		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: transparent;
 		color: hsl(var(--muted-foreground));
 	}
@@ -384,7 +401,7 @@
 	.composer-footer {
 		display: flex;
 		align-items: center;
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border-color);
 		padding: 0.85rem 1rem;
 	}
 
@@ -396,7 +413,6 @@
 	}
 
 	.composer-hint {
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -408,9 +424,8 @@
 		align-items: center;
 		align-self: stretch;
 		gap: 0.65rem;
-		border-left: 1px solid hsl(var(--border));
+		border-left: 1px solid var(--border-color);
 		padding-left: 0.75rem;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -432,13 +447,11 @@
 
 	.context-strategy-label {
 		flex-shrink: 0;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
 	.context-token-count {
 		flex-shrink: 0;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 		font-variant-numeric: tabular-nums;
 	}

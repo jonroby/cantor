@@ -123,7 +123,7 @@
 		if (!model?.enabled) return;
 
 		const selection = { provider: provider.id, modelId };
-		if (providerState.vaultState === 'locked') {
+		if (providerState.vaultState === 'locked' && provider.credentialState !== 'not-required') {
 			credentialError = null;
 			credentialInput = '';
 			passwordInput = '';
@@ -307,7 +307,7 @@
 	.palette-tabs {
 		display: flex;
 		gap: 0;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		padding: 0 1.5rem;
 	}
 
@@ -324,8 +324,7 @@
 		gap: 0.375rem;
 		flex: 1;
 		padding: 0.875rem 1rem;
-		font-size: var(--text-base);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--muted-foreground));
 		background: transparent;
 		border: none;

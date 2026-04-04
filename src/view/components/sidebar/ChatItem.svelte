@@ -100,7 +100,6 @@
 		border-radius: 0.5rem;
 		padding: 0.5rem 0.75rem;
 		text-align: left;
-		font-size: var(--text-sm);
 	}
 
 	.chat-item-indented {
@@ -121,7 +120,7 @@
 	}
 
 	:global(.chat-item-button-root) {
-		padding-left: 0.75rem;
+		padding-left: 1.5rem;
 		padding-right: 0.75rem;
 	}
 
@@ -195,7 +194,6 @@
 		gap: 0.5rem;
 		padding: 0.375rem 0.5rem;
 		border-radius: 0.375rem;
-		font-size: var(--text-sm);
 		cursor: pointer;
 	}
 
@@ -214,6 +212,6 @@
 	:global(.item-menu-separator) {
 		height: 1px;
 		margin: 0.25rem 0;
-		background: hsl(var(--border));
+		background: var(--border-color);
 	}
 </style>

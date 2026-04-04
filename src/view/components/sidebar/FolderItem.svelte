@@ -272,7 +272,7 @@
 
 	:global(.folder-item-button) {
 		border-radius: 0.5rem;
-		padding: 0.5rem 0.75rem;
+		padding: 0.5rem 0.75rem 0.5rem 1.5rem;
 	}
 
 	:global(.folder-item-button-dragover) {
@@ -338,7 +338,6 @@
 		gap: 0.5rem;
 		padding: 0.375rem 0.5rem;
 		border-radius: 0.375rem;
-		font-size: var(--text-sm);
 		cursor: pointer;
 	}
 
@@ -357,7 +356,7 @@
 	:global(.folder-item-menu-separator) {
 		height: 1px;
 		margin: 0.25rem 0;
-		background: hsl(var(--border));
+		background: var(--border-color);
 	}
 
 	.subfolder-btn {
@@ -370,7 +369,6 @@
 		border: none;
 		background: transparent;
 		padding: 0.375rem 0.75rem 0.375rem 2rem;
-		font-size: var(--text-base);
 		color: hsl(var(--sidebar-foreground));
 		transition: background 120ms;
 	}
@@ -381,7 +379,6 @@
 
 	.folder-empty-label {
 		padding: 0.25rem 2rem;
-		font-size: var(--text-xs);
 		color: hsl(var(--sidebar-foreground) / 0.3);
 	}
 

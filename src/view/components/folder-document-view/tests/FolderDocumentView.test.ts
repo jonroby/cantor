@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import FolderDocumentView from '../FolderDocumentView.svelte';
 
 vi.mock('@/view/components/document', async () => ({
-	Document: (await import('../../../../../tests/fixtures/PassthroughWrapper.svelte')).default
+	Document: (await import('../../../../../tests/fixtures/DocumentMock.svelte')).default
 }));
 
 describe('FolderDocumentView', () => {

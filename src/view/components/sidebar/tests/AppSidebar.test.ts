@@ -63,7 +63,6 @@ function getRowActionsButton(label: string): HTMLButtonElement {
 
 describe('AppSidebar', () => {
 	beforeEach(() => {
-		document.documentElement.className = 'dark';
 		state.chats.chatState.chats = [
 			{
 				id: 'chat-1',
