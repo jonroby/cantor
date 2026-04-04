@@ -483,7 +483,7 @@
 	.sidebar-brand-name {
 		font-size: 19px;
 		font-weight: var(--font-weight-semibold);
-		color: hsl(var(--sidebar-foreground));
+		color: hsl(var(--sidebar-foreground) / 0.88);
 	}
 
 	.sidebar-alpha-badge {
