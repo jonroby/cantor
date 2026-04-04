@@ -5,7 +5,7 @@
 	overflow-x: hidden;
 	overflow-y: auto;
 	padding-left: var(--pane-padding-h);
-	padding-right: var(--pane-padding-h);
+	padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
 }
 
 .pane-scroll::-webkit-scrollbar {

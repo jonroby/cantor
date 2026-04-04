@@ -709,6 +709,7 @@
 	}
 
 	.chatview-exchanges {
+		width: 100%;
 		max-width: var(--pane-content-width);
 		margin: 0 auto;
 		display: flex;

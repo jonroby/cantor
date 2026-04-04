@@ -96,7 +96,7 @@
 		left: 0;
 		right: 0;
 		z-index: 25;
-		padding: 0 1rem;
+		padding: 0 var(--pane-padding-h);
 		transition:
 			left 250ms ease,
 			right 250ms ease;

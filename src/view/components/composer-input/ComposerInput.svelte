@@ -276,8 +276,6 @@
 		left: auto;
 		transform: none;
 		width: 100%;
-		max-width: var(--pane-content-width);
-		margin: 0 auto;
 		box-sizing: border-box;
 	}
 
