@@ -69,7 +69,7 @@
 			<div class="token-stats">
 				<div class="token-stat">
 					<span class="token-stat-label-row">
-						<span>Estimated next context</span>
+						<span>Estimated next context window</span>
 						<span class="token-stat-info">
 							<Info size={12} />
 							<span class="token-stat-tooltip"
