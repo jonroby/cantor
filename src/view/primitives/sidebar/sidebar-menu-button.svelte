@@ -116,10 +116,15 @@
 			color 120ms ease;
 	}
 
-	:global(.bits-sidebar-menu-button:hover),
-	:global(.bits-sidebar-menu-button[data-active='true']) {
+	:global(.bits-sidebar-menu-button:hover) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
+	}
+
+	:global(.bits-sidebar-menu-button[data-active='true']) {
+		background: hsl(var(--sidebar-accent));
+		color: hsl(var(--sidebar-accent-foreground));
+		font-weight: var(--font-weight-medium);
 	}
 
 	:global(.bits-sidebar-menu-button-default) {

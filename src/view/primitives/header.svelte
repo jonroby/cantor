@@ -17,15 +17,12 @@
 
 <style>
 	.header {
+		font-size: var(--text-sm);
 		height: 52px;
 		box-sizing: border-box;
 		padding: 0 var(--pane-padding-h);
 		flex-shrink: 0;
 		background: hsl(var(--background) / 0.97);
-		font-size: var(--text-sm);
-		font-weight: var(--font-weight-normal);
-		color: hsl(var(--muted-foreground));
-		letter-spacing: 0.02em;
 	}
 
 	.header-inner {

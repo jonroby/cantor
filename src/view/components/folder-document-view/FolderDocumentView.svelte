@@ -197,11 +197,13 @@
 		font-weight: var(--font-weight-normal);
 	}
 
-	:global(.folderview-header) {
-		justify-content: space-between;
+	.folderview-header-left {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		flex: 1;
 	}
 
-	.folderview-header-left,
 	.folderview-header-actions {
 		display: flex;
 		align-items: center;
@@ -288,7 +290,6 @@
 		border-radius: var(--radius-sm);
 		background: transparent;
 		color: hsl(var(--foreground) / 0.7);
-		font-size: var(--text-base);
 		font-weight: var(--font-weight-normal);
 		cursor: pointer;
 		transition: background var(--duration-normal) ease;
@@ -342,7 +343,6 @@
 		border-radius: 6px;
 		background: transparent;
 		color: hsl(var(--foreground));
-		font-size: var(--text-base);
 		font-weight: var(--font-weight-normal);
 		cursor: pointer;
 		transition: background var(--duration-fast) ease;
