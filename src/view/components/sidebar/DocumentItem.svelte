@@ -119,7 +119,7 @@
 	}
 
 	:global(.document-item-button-root) {
-		padding-left: 2rem;
+		padding-left: 1.5rem;
 	}
 
 	:global(.document-item-button-indented) {

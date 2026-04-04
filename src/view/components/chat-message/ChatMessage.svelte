@@ -370,7 +370,7 @@
 		max-width: 85%;
 		border-radius: 0.75rem;
 		background: hsl(var(--foreground) / 0.07);
-		padding: 0.75rem 1rem;
+		padding: 0.5rem 1rem;
 		line-height: 1.55;
 		word-break: break-word;
 		color: hsl(var(--foreground));

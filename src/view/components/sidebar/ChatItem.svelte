@@ -120,7 +120,7 @@
 	}
 
 	:global(.chat-item-button-root) {
-		padding-left: 0.75rem;
+		padding-left: 1.5rem;
 		padding-right: 0.75rem;
 	}
 

@@ -579,7 +579,7 @@
 	}
 
 	:global(.sidebar-content-shell) {
-		padding-left: 1.25rem;
+		padding-left: 0.5rem;
 		padding-right: 0.5rem;
 	}
 
@@ -594,7 +594,7 @@
 
 	:global(.sidebar-primary-action) {
 		border-radius: 0.5rem;
-		padding: 0.5rem 0.75rem;
+		padding: 0.5rem 0.75rem 0.5rem 1.5rem;
 	}
 
 	:global(.sidebar-section-separator) {
@@ -609,7 +609,7 @@
 		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 0.25rem;
-		padding: 0 0.75rem;
+		padding: 0 0.75rem 0 1.5rem;
 		font-size: 12px;
 		color: hsl(var(--sidebar-foreground) / 0.5);
 	}

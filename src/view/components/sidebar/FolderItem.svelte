@@ -272,7 +272,7 @@
 
 	:global(.folder-item-button) {
 		border-radius: 0.5rem;
-		padding: 0.5rem 0.75rem;
+		padding: 0.5rem 0.75rem 0.5rem 1.5rem;
 	}
 
 	:global(.folder-item-button-dragover) {
