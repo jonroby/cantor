@@ -297,10 +297,9 @@
 					</Sidebar.GroupContent>
 				</Sidebar.Group>
 
-				<Sidebar.Separator class="sidebar-section-separator" />
-
 				<!-- Folders list -->
 				{#if folders.length > 0}
+					<Sidebar.Separator class="sidebar-section-separator" />
 					<Sidebar.Group class="sidebar-group-folders">
 						<Sidebar.GroupLabel class="sidebar-section-label">
 							<span>Folders</span>
@@ -591,8 +590,10 @@
 	}
 
 	:global(.sidebar-section-separator) {
+		height: 0;
 		margin: 0.5rem 0;
-		background: hsl(var(--sidebar-border));
+		border: none;
+		border-top: 1px solid hsl(var(--sidebar-border));
 	}
 
 	:global(.sidebar-section-label) {
@@ -601,6 +602,7 @@
 		justify-content: space-between;
 		margin-bottom: 0.25rem;
 		padding: 0 0.75rem;
+		font-size: 0.875rem;
 		color: hsl(var(--sidebar-foreground) / 0.5);
 	}
 

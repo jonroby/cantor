@@ -34,7 +34,7 @@
 	/* Design scale — usable in scoped <style> blocks */
 	--text-base: 1rem;
 	--text-lg: 1.176rem;
-	--text-sidebar: 14px;
+	--text-sidebar: 13.75px;
 
 	--font-weight-normal: 400;
 	--font-weight-medium: 500;
@@ -161,6 +161,11 @@ textarea {
 pre,
 code {
 	font-size: var(--text-base);
+}
+
+svg {
+	max-width: 100%;
+	padding: 0;
 }
 
 .ui-button {

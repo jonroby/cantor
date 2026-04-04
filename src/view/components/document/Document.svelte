@@ -702,6 +702,12 @@
 	.docs-content :global(p) {
 		margin: 0 0 12px 0;
 	}
+	.docs-content :global(svg),
+	.docs-content :global(img) {
+		max-width: 100%;
+		height: auto;
+		padding: 0;
+	}
 	.docs-content :global(ul),
 	.docs-content :global(ol) {
 		margin: 0 0 12px 0;

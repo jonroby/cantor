@@ -232,19 +232,13 @@
 		if (!panel) return;
 		if (panel.type === 'chat') {
 			chatSidePanelOpen = false;
-			const chats = app.chat.getChats();
-			const activeIndex = app.chat.getActiveChatIndex();
-			if (chats.length > 1) {
-				const nextIndex = activeIndex > 0 ? activeIndex - 1 : 1;
-				app.chat.selectChat(nextIndex);
-			}
 			resetUIState();
-			return;
-		}
-		const documentKey = getPanelDocumentKey(panel);
-		if (documentKey) {
-			app.documents.closeOpenDocument(documentKey.folderId, documentKey.fileId);
-			app.workspace.clearOpenDocument();
+		} else {
+			const documentKey = getPanelDocumentKey(panel);
+			if (documentKey) {
+				app.documents.closeOpenDocument(documentKey.folderId, documentKey.fileId);
+				app.workspace.clearOpenDocument();
+			}
 		}
 		app.workspace.setPanels(workspaceState.panels.filter((_, i) => i !== index));
 	}
@@ -349,6 +343,7 @@
 								<ChatView
 									bind:this={chatViewRef}
 									onFocusComposer={focusComposer}
+									onClose={() => closePanel(index)}
 									onSidePanelChange={(open) => {
 										chatSidePanelOpen = open;
 										if (!open) sideChatSide = 'left';

@@ -52,39 +52,41 @@
 	onmouseenter={() => (composerHovered = true)}
 	onmouseleave={() => (composerHovered = false)}
 >
-	{#if hasChatPanel && chatScrolledAway}
-		<button class="scroll-to-bottom-btn" onclick={onScrollToBottom} aria-label="Scroll to bottom">
-			<ArrowDown size={18} />
-		</button>
-	{/if}
-	<div class="composer-wrap">
-		{#if composerHovered && isSplit}
-			<button
-				class="composer-move-btn"
-				class:composer-move-left={composerSide === 'right'}
-				class:composer-move-right={composerSide !== 'right'}
-				onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
-				aria-label={composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
-			>
-				{#if composerSide === 'right'}
-					<ArrowLeft size={18} />
-				{:else}
-					<ArrowRight size={18} />
-				{/if}
+	{#if hasChatPanel}
+		{#if chatScrolledAway}
+			<button class="scroll-to-bottom-btn" onclick={onScrollToBottom} aria-label="Scroll to bottom">
+				<ArrowDown size={18} />
 			</button>
 		{/if}
-		<Composer
-			bind:this={composerRef}
-			{agentMode}
-			{onToggleMode}
-			liveDocumentContent={activeDocumentFile?.content}
-			{activeDocumentKey}
-			{toolCallbacks}
-			{onScrollToNode}
-			{onExpandSideChat}
-			anchored={true}
-		/>
-	</div>
+		<div class="composer-wrap">
+			{#if composerHovered && isSplit}
+				<button
+					class="composer-move-btn"
+					class:composer-move-left={composerSide === 'right'}
+					class:composer-move-right={composerSide !== 'right'}
+					onclick={() => onComposerPinChange(composerSide === 'right' ? 'left' : 'right')}
+					aria-label={composerSide === 'right' ? 'Move composer left' : 'Move composer right'}
+				>
+					{#if composerSide === 'right'}
+						<ArrowLeft size={18} />
+					{:else}
+						<ArrowRight size={18} />
+					{/if}
+				</button>
+			{/if}
+			<Composer
+				bind:this={composerRef}
+				{agentMode}
+				{onToggleMode}
+				liveDocumentContent={activeDocumentFile?.content}
+				{activeDocumentKey}
+				{toolCallbacks}
+				{onScrollToNode}
+				{onExpandSideChat}
+				anchored={true}
+			/>
+		</div>
+	{/if}
 </div>
 
 <style>
