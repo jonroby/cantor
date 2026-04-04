@@ -554,9 +554,7 @@
 				/>
 				{#if mainChatPath.length === 0}
 					<div class="chatview-empty">
-						{providerState.activeModel
-							? 'Type something and submit to get started with a chat. Or open a chat or document on the sidebar.'
-							: 'Select a model to get started.'}
+						{providerState.activeModel ? 'How can I help you?' : 'Select a model to get started.'}
 					</div>
 				{/if}
 			</div>
@@ -730,6 +728,7 @@
 		justify-content: center;
 		min-height: calc(100vh - 200px);
 		text-align: center;
+		font-size: 26px;
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		max-width: 500px;
