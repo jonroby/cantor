@@ -34,6 +34,7 @@
 	/* Design scale — usable in scoped <style> blocks */
 	--text-base: 1rem;
 	--text-lg: 1.176rem;
+	--text-sidebar: 14px;
 
 	--font-weight-normal: 400;
 	--font-weight-medium: 500;
@@ -124,8 +125,6 @@
 }
 
 svg.lucide {
-	width: var(--icon-size) !important;
-	height: var(--icon-size) !important;
 	color: var(--icon-muted);
 }
 

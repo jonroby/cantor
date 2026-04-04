@@ -127,11 +127,11 @@
 	}
 
 	:global(.bits-sidebar-menu-button-default) {
-		height: 2rem;
+		height: 2.5rem;
 	}
 
 	:global(.bits-sidebar-menu-button-sm) {
-		height: 1.75rem;
+		height: 2.25rem;
 	}
 
 	:global(.bits-sidebar-menu-button-lg) {

@@ -38,6 +38,7 @@
 		flex: none;
 		flex-direction: column;
 		height: 100vh;
+		font-size: var(--text-sidebar);
 		color: hsl(var(--sidebar-foreground));
 		transition: width 200ms ease;
 	}

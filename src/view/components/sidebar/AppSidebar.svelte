@@ -6,7 +6,7 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import { SquarePen, Upload, FolderPlus } from 'lucide-svelte';
+	import { MessageSquarePlus, Upload, FolderPlus } from 'lucide-svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
@@ -170,7 +170,6 @@
 			{#if sidebar.state === 'expanded'}
 				<div class="sidebar-header-row">
 					<div class="sidebar-brand">
-						<img src={powersetLogo} alt="Cantor" width="18" height="20" />
 						<span class="sidebar-brand-name">Cantor</span>
 						<Tooltip.Root>
 							<Tooltip.Trigger>
@@ -224,7 +223,7 @@
 		</Sidebar.Header>
 
 		<Sidebar.Content class="sidebar-content-shell">
-			<!-- New chat -->
+			<!-- New chat + New folder -->
 			<Sidebar.Group class="sidebar-group-reset">
 				<Sidebar.GroupContent>
 					<Sidebar.Menu>
@@ -235,10 +234,23 @@
 								onclick={() => onNewChat()}
 								class="sidebar-primary-action"
 							>
-								<SquarePen size={16} class="shrink-0" />
+								<MessageSquarePlus size={16} class="shrink-0" />
 								<span>New chat</span>
 							</Sidebar.MenuButton>
 						</Sidebar.MenuItem>
+						{#if sidebar.state === 'expanded'}
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="New folder"
+									onclick={handleNewFolder}
+									class="sidebar-primary-action"
+								>
+									<FolderPlus size={16} class="shrink-0" />
+									<span>New folder</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						{/if}
 					</Sidebar.Menu>
 				</Sidebar.GroupContent>
 			</Sidebar.Group>
@@ -288,25 +300,6 @@
 				</Sidebar.Group>
 
 				<Sidebar.Separator class="sidebar-section-separator" />
-
-				<!-- New folder -->
-				<Sidebar.Group class="sidebar-group-reset">
-					<Sidebar.GroupContent>
-						<Sidebar.Menu>
-							<Sidebar.MenuItem>
-								<Sidebar.MenuButton
-									size="default"
-									tooltipContent="New folder"
-									onclick={handleNewFolder}
-									class="sidebar-primary-action"
-								>
-									<FolderPlus size={16} class="shrink-0" />
-									<span>New folder</span>
-								</Sidebar.MenuButton>
-							</Sidebar.MenuItem>
-						</Sidebar.Menu>
-					</Sidebar.GroupContent>
-				</Sidebar.Group>
 
 				<!-- Folders list -->
 				{#if folders.length > 0}
@@ -475,9 +468,9 @@
 
 	.sidebar-header-row {
 		display: flex;
-		height: 3.5rem;
+		height: 52px;
 		align-items: center;
-		padding: 0 0.75rem;
+		padding: 0 0.75rem 0 1rem;
 	}
 
 	.sidebar-brand {
@@ -488,6 +481,7 @@
 	}
 
 	.sidebar-brand-name {
+		font-size: 19px;
 		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--sidebar-foreground));
 	}
@@ -495,13 +489,15 @@
 	.sidebar-alpha-badge {
 		display: inline-flex;
 		align-items: center;
-		border: 1px solid var(--border-color);
+		margin-top: 3px;
+		border: 1px solid hsl(215 80% 45%);
 		border-radius: 9999px;
-		background: var(--sidebar-surface-tint);
+		background: hsl(215 90% 92%);
 		padding: 0.125rem 0.45rem;
-		font-weight: var(--font-weight-semibold);
+		font-size: 11px;
+		font-weight: var(--font-weight-normal);
 		line-height: 1.2;
-		color: var(--sidebar-surface-tint-foreground);
+		color: hsl(215 80% 35%);
 	}
 
 	.sidebar-alpha-trigger {
@@ -536,7 +532,7 @@
 
 	.sidebar-collapsed-header {
 		display: flex;
-		height: 3.5rem;
+		height: 52px;
 		align-items: center;
 		justify-content: center;
 	}
