@@ -296,6 +296,7 @@
 		width: min(900px, calc(100vw - 2rem));
 		overflow: hidden;
 		padding: 0;
+		font-size: var(--text-sm);
 	}
 
 	.palette-body {
@@ -324,7 +325,6 @@
 		gap: 0.375rem;
 		flex: 1;
 		padding: 0.875rem 1rem;
-		font-size: var(--text-base);
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--muted-foreground));
 		background: transparent;

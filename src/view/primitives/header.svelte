@@ -18,6 +18,7 @@
 <style>
 	.header {
 		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
 		height: 52px;
 		box-sizing: border-box;
 		padding: 0 var(--pane-padding-h);

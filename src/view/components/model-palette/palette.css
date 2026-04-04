@@ -56,7 +56,7 @@
 }
 
 .palette-provider-name {
-	font-size: var(--text-base);
+	font-size: var(--text-sm);
 	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
@@ -69,7 +69,6 @@
 }
 
 .palette-auth-btn {
-	font-size: var(--text-base);
 	font-weight: var(--font-weight-medium);
 	color: hsl(var(--foreground) / 0.55);
 	background: transparent;
@@ -94,7 +93,7 @@
 }
 
 .palette-vault-label {
-	font-size: var(--text-base);
+	font-size: var(--text-sm);
 	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
