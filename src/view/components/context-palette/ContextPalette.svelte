@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Info } from 'lucide-svelte';
 	import type * as app from '@/app';
 
 	type ContextStrategy = app.chat.ContextStrategy;
@@ -67,7 +68,16 @@
 			<div class="context-section-label">Token Usage</div>
 			<div class="token-stats">
 				<div class="token-stat">
-					<span class="token-stat-label">Estimated next context</span>
+					<span class="token-stat-label-row">
+						<span>Estimated next context</span>
+						<span class="token-stat-info">
+							<Info size={12} />
+							<span class="token-stat-tooltip"
+								>LRU and BM25 only reduce this when history exceeds the context window. With room to
+								spare, all strategies show the same estimate.</span
+							>
+						</span>
+					</span>
 					<span class="token-stat-value">{usedTokens.toLocaleString()}</span>
 				</div>
 				<div class="token-stat">
@@ -182,6 +192,46 @@
 	.token-stat-label {
 		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
+	}
+
+	.token-stat-label-row {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: var(--text-sm);
+		color: hsl(var(--muted-foreground));
+	}
+
+	.token-stat-info {
+		position: relative;
+		display: flex;
+		align-items: center;
+		color: hsl(var(--muted-foreground) / 0.6);
+		cursor: default;
+	}
+
+	.token-stat-tooltip {
+		display: none;
+		position: absolute;
+		bottom: calc(100% + 0.4rem);
+		left: 50%;
+		transform: translateX(-50%);
+		width: 220px;
+		padding: 0.5rem 0.625rem;
+		border-radius: var(--radius-md);
+		background: hsl(var(--popover));
+		border: 1px solid hsl(var(--border));
+		box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
+		font-size: var(--text-xs);
+		color: hsl(var(--muted-foreground));
+		line-height: 1.4;
+		white-space: normal;
+		z-index: 50;
+		pointer-events: none;
+	}
+
+	.token-stat-info:hover .token-stat-tooltip {
+		display: block;
 	}
 
 	.token-stat-value {

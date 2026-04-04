@@ -229,6 +229,13 @@
 			</div>
 			{#if activeModelLabel}
 				<div class="composer-footer-right">
+					<button
+						class="context-settings-btn"
+						onclick={onOpenContextPalette}
+						title="Context settings"
+					>
+						<Settings size={13} />
+					</button>
 					<span class="context-strategy-label">Context Window</span>
 					{#if contextLength != null}
 						<div class="progress-track compact">
@@ -243,13 +250,6 @@
 							? ` / ${contextLength.toLocaleString()}`
 							: ''}</span
 					>
-					<button
-						class="context-settings-btn"
-						onclick={onOpenContextPalette}
-						title="Context settings"
-					>
-						<Settings size={13} />
-					</button>
 				</div>
 			{/if}
 		</div>

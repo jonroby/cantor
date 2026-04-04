@@ -138,8 +138,18 @@ export function getExchangePath(tree: domain.tree.ChatTree, exchangeId: string):
 	return domain.tree.getPath(tree, exchangeId);
 }
 
-export function getUsedTokens(tree: domain.tree.ChatTree, activeExchangeId: string): number {
-	const path = domain.tree.getPath(tree, activeExchangeId);
+export function getUsedTokens(
+	tree: domain.tree.ChatTree,
+	activeExchangeId: string,
+	contextStrategy: state.chats.ContextStrategy = 'full',
+	contextLength: number | null = null
+): number {
+	const fullPath = domain.tree.getPath(tree, activeExchangeId);
+	const path = selectExchanges(fullPath, {
+		contextLength,
+		strategy: contextStrategy,
+		currentPrompt: ''
+	});
 	return path.reduce((total, exchange) => {
 		const promptTokens = lib.tokenEstimate.estimateTokens(exchange.prompt.text);
 		const responseTokens = exchange.response

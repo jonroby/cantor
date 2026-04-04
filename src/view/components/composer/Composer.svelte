@@ -47,7 +47,14 @@
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
 	let contextStrategy = $derived(app.chat.getContextStrategy());
 	let usedTokens = $derived(
-		activeExchangeId ? app.chat.getUsedTokens(activeTree, activeExchangeId) : 0
+		activeExchangeId
+			? app.chat.getUsedTokens(
+					activeTree,
+					activeExchangeId,
+					contextStrategy,
+					providerState.contextLength
+				)
+			: 0
 	);
 	let totalTokens = $derived(
 		activeExchangeId ? app.chat.getTotalTokens(activeTree, activeExchangeId) : 0
