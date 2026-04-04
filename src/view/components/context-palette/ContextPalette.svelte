@@ -102,7 +102,7 @@
 
 	.context-palette-title {
 		font-size: var(--text-base);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: hsl(var(--muted-foreground));
@@ -114,7 +114,7 @@
 
 	.context-section-label {
 		font-size: var(--text-xs);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: hsl(var(--muted-foreground));
@@ -154,7 +154,7 @@
 
 	.strategy-label {
 		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}
 
@@ -236,7 +236,7 @@
 
 	.token-stat-value {
 		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		font-variant-numeric: tabular-nums;
 	}

@@ -181,14 +181,14 @@
 		align-items: center;
 		gap: 0.4rem;
 		font-size: var(--text-xs);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: hsl(var(--muted-foreground));
 	}
 
 	.code-editor-lang {
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		letter-spacing: 0;
 		text-transform: none;
 		margin-left: 0.25rem;
@@ -232,7 +232,7 @@
 		background: hsl(var(--primary));
 		color: hsl(var(--primary-foreground));
 		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: opacity var(--duration-fast) ease;
 	}
@@ -295,7 +295,7 @@
 	.code-editor-output-header {
 		padding: 0.4rem 0.85rem;
 		font-size: var(--text-xs);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: hsl(var(--muted-foreground));

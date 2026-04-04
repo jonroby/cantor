@@ -1,18 +1,5 @@
 /* ── Pane primitives ──────────────────────────────────────────────────────── */
 
-.pane-header {
-	height: var(--pane-header-height);
-	padding: 0 var(--pane-padding-h);
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	flex-shrink: 0;
-	background: hsl(var(--background) / 0.97);
-	font-size: var(--text-base);
-	font-weight: 600;
-	color: hsl(var(--muted-foreground));
-	letter-spacing: 0.02em;
-}
 
 .pane-scroll {
 	flex: 1;

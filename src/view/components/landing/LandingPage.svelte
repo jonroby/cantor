@@ -220,7 +220,7 @@
 
 	.logo {
 		font-size: var(--text-xl);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		letter-spacing: -0.5px;
 		color: hsl(var(--foreground));
 	}
@@ -233,7 +233,7 @@
 
 	.nav-link {
 		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--muted-foreground));
 		text-decoration: none;
 		transition: color 0.2s;
@@ -253,7 +253,7 @@
 		border-radius: var(--radius-full);
 		padding: 8px 20px;
 		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: opacity 0.2s;
 	}
@@ -283,7 +283,7 @@
 		border: 1px solid var(--border-color);
 		border-radius: var(--radius-full);
 		font-size: var(--text-base);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--accent-foreground));
 		margin-bottom: 24px;
 		letter-spacing: 0.02em;
@@ -291,7 +291,7 @@
 
 	.hero-title {
 		font-size: clamp(48px, 10vw, 88px);
-		font-weight: 800;
+		font-weight: var(--font-weight-extrabold);
 		line-height: 1.05;
 		letter-spacing: 0.02em;
 		color: hsl(var(--foreground));
@@ -329,7 +329,7 @@
 		border: none;
 		border-radius: var(--radius-lg);
 		font-size: var(--text-lg);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: all 0.2s;
 	}
@@ -346,7 +346,7 @@
 		border: 1px solid var(--border-color);
 		border-radius: var(--radius-lg);
 		font-size: var(--text-lg);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: all 0.2s;
 	}
@@ -394,7 +394,7 @@
 
 	.feature-card h3 {
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		color: hsl(var(--foreground));
 		margin: 0 0 6px;
 	}

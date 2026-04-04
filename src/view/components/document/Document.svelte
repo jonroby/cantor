@@ -523,10 +523,6 @@
 		width: 100%;
 		max-width: var(--pane-content-width);
 		margin: 0 auto;
-		padding: 12px 0;
-		font-size: var(--text-base);
-		font-weight: 600;
-		color: hsl(var(--foreground, 0 0% 9%));
 	}
 
 	.dirty-indicator {
@@ -613,7 +609,7 @@
 		border-radius: 5px;
 		border: none;
 		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		cursor: pointer;
 		transition:
 			background var(--duration-fast) ease,
@@ -695,19 +691,19 @@
 
 	.docs-content :global(h1) {
 		font-size: var(--text-xl);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		margin: 0 0 12px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h2) {
 		font-size: var(--text-lg);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		margin: 20px 0 8px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h3) {
 		font-size: var(--text-base);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		margin: 16px 0 6px 0;
 	}
 	.docs-content :global(p) {
@@ -761,7 +757,7 @@
 	}
 	.docs-content :global(th) {
 		background: hsl(var(--muted, 0 0% 96%));
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 	}
 	.docs-content :global(hr) {
 		border: none;

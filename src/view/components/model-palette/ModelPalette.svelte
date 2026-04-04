@@ -325,7 +325,7 @@
 		flex: 1;
 		padding: 0.875rem 1rem;
 		font-size: var(--text-base);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--muted-foreground));
 		background: transparent;
 		border: none;

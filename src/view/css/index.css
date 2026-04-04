@@ -38,6 +38,12 @@
 	--text-lg: 1.125rem;
 	--text-xl: 1.25rem;
 
+	--font-weight-normal: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+	--font-weight-extrabold: 800;
+
 	--border-color: hsl(var(--border));
 
 	--radius-sm: 4px;
@@ -49,6 +55,7 @@
 	--duration-fast: 120ms;
 	--duration-normal: 150ms;
 
+	--header-height: 52px;
 	--pane-content-width: 720px;
 	--pane-header-height: 52px;
 	--pane-padding-h: 1rem;
@@ -60,6 +67,9 @@
 	--dropdown-min-w: 140px;
 	--dropdown-max-w: 200px;
 
+	--surface-selected: rgba(232, 232, 232, 0.92);
+	--surface-hover: rgba(232, 232, 232, 0.5);
+
 	--surface-tint: hsl(var(--muted) / 0.72);
 	--surface-tint-strong: hsl(var(--accent));
 	--surface-floating: hsl(var(--popover));
@@ -70,8 +80,12 @@
 	--surface-overlay-strong: hsl(var(--foreground) / 0.42);
 	--focus-ring-color: hsl(var(--ring) / 0.26);
 
-	--icon-muted: hsl(var(--foreground) / 0.56);
-	--icon-strong: hsl(var(--foreground) / 0.88);
+	--icon-subtle: rgba(23, 23, 23, 0.28);
+	--icon-faint: rgba(23, 23, 23, 0.40);
+	--icon-muted: rgba(23, 23, 23, 0.56);
+	--icon-base: rgba(23, 23, 23, 0.72);
+	--icon-strong: rgba(23, 23, 23, 0.88);
+	--icon-full: rgba(23, 23, 23, 1);
 	--sidebar-icon-muted: hsl(var(--sidebar-foreground) / 0.52);
 	--sidebar-icon-strong: hsl(var(--sidebar-foreground) / 0.88);
 	--sidebar-surface-tint: hsl(var(--sidebar-accent) / 0.92);
@@ -121,7 +135,7 @@ body {
 		-apple-system,
 		sans-serif;
 	font-size: 15px;
-	font-weight: 400;
+	font-weight: var(--font-weight-normal);
 }
 
 body {
@@ -142,7 +156,7 @@ textarea {
 	white-space: nowrap;
 	border-radius: calc(var(--radius) - 0.3rem);
 	border: 1px solid transparent;
-	font-weight: 500;
+	font-weight: var(--font-weight-medium);
 	outline: none;
 	transition:
 		color var(--duration-normal) ease,

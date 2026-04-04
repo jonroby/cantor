@@ -194,12 +194,10 @@
 
 	.folderview-folder-name {
 		color: hsl(var(--foreground) / 0.7);
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 	}
 
 	:global(.folderview-header) {
-		display: flex;
-		align-items: center;
 		justify-content: space-between;
 	}
 
@@ -212,7 +210,7 @@
 
 	.folderview-separator {
 		color: hsl(var(--muted-foreground));
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 	}
 
 	.folderview-file-picker {
@@ -224,7 +222,7 @@
 		border-radius: 5px;
 		border: none;
 		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		cursor: pointer;
 		transition:
 			background var(--duration-fast) ease,
@@ -291,7 +289,7 @@
 		background: transparent;
 		color: hsl(var(--foreground) / 0.7);
 		font-size: var(--text-base);
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		cursor: pointer;
 		transition: background var(--duration-normal) ease;
 	}
@@ -345,7 +343,7 @@
 		background: transparent;
 		color: hsl(var(--foreground));
 		font-size: var(--text-base);
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		cursor: pointer;
 		transition: background var(--duration-fast) ease;
 		text-align: left;

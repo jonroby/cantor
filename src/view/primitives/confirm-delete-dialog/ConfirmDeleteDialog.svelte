@@ -61,7 +61,7 @@
 
 	:global(.confirm-delete-title) {
 		font-size: var(--text-lg);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 	}
 
 	:global(.confirm-delete-description) {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { X } from 'lucide-svelte';
+	import { MessageSquare, X } from 'lucide-svelte';
 	import { Header } from '@/view/primitives';
 	import {
 		createMainChatPanel,
@@ -534,13 +534,16 @@
 			class:chatview-pane-focused={focusedPane === 'main'}
 			onclick={focusMain}
 		>
-			<Header class="chatview-main-title">
-				{activeChat.name}
-				{#if onClose}
-					<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
-						<X size={14} />
-					</button>
-				{/if}
+			<Header>
+				<div class="chatview-title-inner">
+					<MessageSquare size={14} />
+					{activeChat.name}
+					{#if onClose}
+						<button class="chatview-close-btn" onclick={onClose} aria-label="Close chat panel">
+							<X size={14} />
+						</button>
+					{/if}
+				</div>
 			</Header>
 			<div
 				class="pane-scroll chatview-main"
@@ -684,26 +687,14 @@
 		opacity: 1;
 	}
 
-	/* Title bar — centers content column and draws bottom border line via ::after */
-	:global(.chatview-main-title) {
-		position: relative;
-		box-sizing: border-box;
-		max-width: calc(var(--pane-content-width) + 2 * var(--pane-padding-h));
-		width: 100%;
-		margin-left: auto;
-		margin-right: auto;
-	}
 
-	:global(.chatview-main-title)::after {
-		content: '';
-		position: absolute;
-		bottom: 0;
-		left: 50%;
-		transform: translateX(-50%);
-		width: calc(100% - 2 * var(--pane-padding-h));
+	.chatview-title-inner {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
 		max-width: var(--pane-content-width);
-		height: 1px;
-		background: var(--border-color);
+		margin: 0 auto;
 	}
 
 	.chatview-close-btn {
@@ -754,7 +745,7 @@
 		min-height: calc(100vh - 200px);
 		text-align: center;
 		font-size: 28px;
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		max-width: 500px;
 		margin: 0 auto;

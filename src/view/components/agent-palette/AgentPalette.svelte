@@ -114,7 +114,7 @@
 
 	.agent-palette-title {
 		font-size: var(--text-base);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: hsl(var(--muted-foreground));
@@ -174,7 +174,7 @@
 
 	.capability-label {
 		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--foreground));
 	}
 
@@ -218,7 +218,7 @@
 
 	.tool-name {
 		font-size: var(--text-sm);
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		font-family: monospace;
 	}

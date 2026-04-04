@@ -489,7 +489,7 @@
 
 	.sidebar-brand-name {
 		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--sidebar-foreground));
 	}
 
@@ -501,7 +501,7 @@
 		background: var(--sidebar-surface-tint);
 		padding: 0.125rem 0.45rem;
 		font-size: var(--text-xs);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		line-height: 1.2;
 		color: var(--sidebar-surface-tint-foreground);
 	}

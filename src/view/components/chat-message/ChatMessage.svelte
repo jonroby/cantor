@@ -336,7 +336,7 @@
 		align-items: center;
 		gap: 0.35rem;
 		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: var(--font-weight-semibold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: hsl(var(--muted-foreground));
@@ -349,7 +349,7 @@
 	}
 
 	.chatmsg-model {
-		font-weight: 400;
+		font-weight: var(--font-weight-normal);
 		letter-spacing: normal;
 		text-transform: none;
 	}
@@ -496,7 +496,7 @@
 	:global(.chatmsg-response-body h5),
 	:global(.chatmsg-response-body h6) {
 		margin: 1.25em 0 0.5em;
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		line-height: 1.3;
 		color: hsl(var(--foreground));
 	}
@@ -524,7 +524,7 @@
 	}
 
 	:global(.chatmsg-response-body strong) {
-		font-weight: 650;
+		font-weight: var(--font-weight-bold);
 	}
 
 	:global(.chatmsg-response-body ul),

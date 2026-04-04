@@ -245,7 +245,7 @@
 
 	.agent-activity-title {
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: hsl(var(--muted-foreground));
@@ -257,7 +257,7 @@
 		background: hsl(var(--accent) / 0.15);
 		color: hsl(var(--foreground));
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 	}
 
 	.agent-activity-summary {
@@ -281,7 +281,7 @@
 
 	.agent-activity-count {
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: hsl(var(--muted-foreground));
@@ -316,7 +316,7 @@
 	.agent-activity-event-time,
 	.agent-activity-step-time {
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: hsl(var(--muted-foreground));
@@ -356,7 +356,7 @@
 
 	.agent-activity-event-type {
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: var(--font-weight-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: hsl(var(--muted-foreground));

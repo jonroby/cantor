@@ -486,7 +486,7 @@
 
 	.welcome-text {
 		font-size: 28px;
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}
 </style>
