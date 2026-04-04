@@ -1015,7 +1015,6 @@ export function buildSystemPrompt(): string {
 		'',
 		'Rules:',
 		'- Treat this as a chat with tools, not a one-shot completion.',
-		'- Verify important writes by using inspection tools after acting.',
 		'- If a write did not succeed, try again or explain the failure.',
 		'- Text you emit before tool calls is treated as live agent progress, not the final answer.',
 		'- The final answer should come after your tool work is done.',
@@ -1039,9 +1038,14 @@ const DOCUMENT_ONLY_TOOLS = new Set([
 	'open_document'
 ]);
 
-export function getRelevantTools(ctx: ToolContext): external.providers.stream.ToolDefinition[] {
-	if (ctx.activeDocumentKey) return TOOLS;
-	return TOOLS.filter((t) => !DOCUMENT_ONLY_TOOLS.has(t.name));
+export function getRelevantTools(
+	ctx: ToolContext,
+	enabledToolNames: string[] | null = null
+): external.providers.stream.ToolDefinition[] {
+	const enabledSet = enabledToolNames ? new Set(enabledToolNames) : null;
+	const tools = enabledSet ? TOOLS.filter((t) => enabledSet.has(t.name)) : TOOLS;
+	if (ctx.activeDocumentKey) return tools;
+	return tools.filter((t) => !DOCUMENT_ONLY_TOOLS.has(t.name));
 }
 
 export function buildMessages(
@@ -1124,7 +1128,8 @@ export function startRun(
 	model: domain.models.ActiveModel,
 	history: domain.tree.Message[],
 	toolContext: ToolContext,
-	system?: string
+	system?: string,
+	enabledToolNames: string[] | null = null
 ) {
 	state.agent.clearThinking(exchangeId);
 	state.agent.startStreaming(exchangeId);
@@ -1166,7 +1171,7 @@ export function startRun(
 			chatId,
 			model,
 			history,
-			tools: getRelevantTools(toolContext),
+			tools: getRelevantTools(toolContext, enabledToolNames),
 			system,
 			toolExecutor,
 			callbacks: {

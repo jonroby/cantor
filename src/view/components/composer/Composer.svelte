@@ -2,6 +2,8 @@
 	import { tick } from 'svelte';
 	import ComposerInput from '@/view/components/composer-input/ComposerInput.svelte';
 	import { ModelPalette } from '@/view/components/model-palette';
+	import { AgentPalette } from '@/view/components/agent-palette';
+	import { ContextPalette } from '@/view/components/context-palette';
 	import * as app from '@/app';
 
 	interface Props {
@@ -29,6 +31,8 @@
 	let composerValue = $state('');
 	let pendingImages: app.chat.ImageAttachment[] = $state([]);
 	let paletteOpen = $state(false);
+	let agentPaletteOpen = $state(false);
+	let contextPaletteOpen = $state(false);
 	let operationError: string | null = $state(null);
 	let composerRef: ReturnType<typeof ComposerInput> | undefined = $state();
 	let providerState = $derived(app.providers.getState());
@@ -44,6 +48,9 @@
 	let contextStrategy = $derived(app.chat.getContextStrategy());
 	let usedTokens = $derived(
 		activeExchangeId ? app.chat.getUsedTokens(activeTree, activeExchangeId) : 0
+	);
+	let totalTokens = $derived(
+		activeExchangeId ? app.chat.getTotalTokens(activeTree, activeExchangeId) : 0
 	);
 	let activeNodeStreaming = $derived.by(() => {
 		const id = activeExchangeId;
@@ -95,6 +102,7 @@
 					images: pendingImages.length > 0 ? pendingImages : undefined,
 					agentMode,
 					activeDocumentKey,
+					enabledToolNames: app.chat.getEnabledToolNames(),
 					toolCallbacks
 				}
 			);
@@ -130,12 +138,9 @@
 	activeModelLabel={providerState.activeModelLabel}
 	activeProvider={providerState.activeModel?.provider ?? null}
 	{usedTokens}
+	{totalTokens}
 	contextLength={providerState.contextLength}
 	{contextStrategy}
-	onCycleStrategy={() => {
-		const next = contextStrategy === 'full' ? 'lru' : contextStrategy === 'lru' ? 'bm25' : 'full';
-		app.chat.setContextStrategy(next);
-	}}
 	onSubmit={submitPrompt}
 	onStop={() => {
 		if (activeExchangeId) {
@@ -143,7 +148,9 @@
 		}
 	}}
 	onOpenPalette={() => (paletteOpen = true)}
+	onOpenContextPalette={() => (contextPaletteOpen = true)}
 	onToggleMode={() => onToggleMode?.()}
+	onOpenAgentPalette={() => (agentPaletteOpen = true)}
 />
 
 <ModelPalette
@@ -161,4 +168,48 @@
 	onSetContextSize={app.providers.setContextSize}
 	onRemoveCachedModel={app.providers.removeCachedModel}
 	onClearCachedModels={app.providers.clearCachedModels}
+/>
+
+<AgentPalette
+	open={agentPaletteOpen}
+	onClose={() => (agentPaletteOpen = false)}
+	enabledToolNames={app.chat.getEnabledToolNames()}
+	onToggleTool={(name) => {
+		const caps = app.agent.getCapabilities();
+		const allNames = caps.flatMap((c) => c.tools.map((t) => t.name));
+		const current = app.chat.getEnabledToolNames();
+		const enabled = current ?? allNames;
+		const next = enabled.includes(name) ? enabled.filter((x) => x !== name) : [...enabled, name];
+		app.chat.setEnabledToolNames(next.length === allNames.length ? null : next);
+	}}
+	onToggleCapability={(id) => {
+		const caps = app.agent.getCapabilities();
+		const allNames = caps.flatMap((c) => c.tools.map((t) => t.name));
+		const cap = caps.find((c) => c.id === id);
+		if (!cap) return;
+		const capNames = cap.tools.map((t) => t.name);
+		const current = app.chat.getEnabledToolNames();
+		const enabledArr = current ?? allNames;
+		const allCapEnabled = capNames.every((n) => enabledArr.includes(n));
+		const next = allCapEnabled
+			? enabledArr.filter((n) => !capNames.includes(n))
+			: [...enabledArr, ...capNames.filter((n) => !enabledArr.includes(n))];
+		app.chat.setEnabledToolNames(next.length === allNames.length ? null : next);
+	}}
+	onToggleAll={() => {
+		const caps = app.agent.getCapabilities();
+		const allNames = caps.flatMap((c) => c.tools.map((t) => t.name));
+		const current = app.chat.getEnabledToolNames();
+		const allEnabled = current === null || current.length === allNames.length;
+		app.chat.setEnabledToolNames(allEnabled ? [] : null);
+	}}
+/>
+
+<ContextPalette
+	open={contextPaletteOpen}
+	onClose={() => (contextPaletteOpen = false)}
+	{contextStrategy}
+	onSelectStrategy={app.chat.setContextStrategy}
+	{usedTokens}
+	{totalTokens}
 />

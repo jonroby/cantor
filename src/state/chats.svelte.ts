@@ -9,6 +9,7 @@ export interface ChatRecord extends domain.tree.ChatTree {
 	activeExchangeId: string | null;
 	contextStrategy: ContextStrategy;
 	mode: ChatMode;
+	enabledToolNames?: string[] | null;
 }
 
 function makeDefaultChat(): ChatRecord {
@@ -20,7 +21,8 @@ function makeDefaultChat(): ChatRecord {
 		exchanges: tree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(tree),
 		contextStrategy: 'full',
-		mode: 'chat'
+		mode: 'chat',
+		enabledToolNames: null
 	};
 }
 
@@ -99,7 +101,8 @@ export function newChat(): number {
 		exchanges: tree.exchanges,
 		activeExchangeId: domain.tree.getMainChatTail(tree),
 		contextStrategy: 'full',
-		mode: 'chat'
+		mode: 'chat',
+		enabledToolNames: null
 	};
 	return addChat(chat);
 }
@@ -124,6 +127,14 @@ export function getMode(): ChatMode {
 
 export function setMode(mode: ChatMode) {
 	chatState.chats[chatState.activeChatIndex].mode = mode;
+}
+
+export function getEnabledToolNames(): string[] | null {
+	return getActiveChat().enabledToolNames ?? null;
+}
+
+export function setEnabledToolNames(names: string[] | null) {
+	chatState.chats[chatState.activeChatIndex].enabledToolNames = names;
 }
 
 export function renameChat(index: number, name: string): boolean {

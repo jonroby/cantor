@@ -48,6 +48,8 @@ export const getContextStrategy = (): state.chats.ContextStrategy =>
 export const setContextStrategy = state.chats.setContextStrategy;
 export const getMode = (): state.chats.ChatMode => state.chats.getMode();
 export const setMode = state.chats.setMode;
+export const getEnabledToolNames = state.chats.getEnabledToolNames;
+export const setEnabledToolNames = state.chats.setEnabledToolNames;
 
 export const createChat = state.chats.newChat;
 export const selectChat = state.chats.selectChat;
@@ -137,6 +139,17 @@ export function getExchangePath(tree: domain.tree.ChatTree, exchangeId: string):
 }
 
 export function getUsedTokens(tree: domain.tree.ChatTree, activeExchangeId: string): number {
+	const path = domain.tree.getPath(tree, activeExchangeId);
+	return path.reduce((total, exchange) => {
+		const promptTokens = lib.tokenEstimate.estimateTokens(exchange.prompt.text);
+		const responseTokens = exchange.response
+			? exchange.response.tokenCount || lib.tokenEstimate.estimateTokens(exchange.response.text)
+			: 0;
+		return total + promptTokens + responseTokens;
+	}, 0);
+}
+
+export function getTotalTokens(tree: domain.tree.ChatTree, activeExchangeId: string): number {
 	return domain.tree
 		.getPath(tree, activeExchangeId)
 		.reduce(
@@ -318,6 +331,7 @@ export interface SubmitOptions {
 	images?: domain.tree.ImageAttachment[];
 	agentMode?: boolean;
 	activeDocumentKey?: { folderId: string; fileId: string } | null;
+	enabledToolNames?: string[] | null;
 	toolCallbacks?: {
 		onOpenDocument?: (folderId: string, fileId: string) => void;
 		onOpenFolder?: (folderId: string) => void;
@@ -384,7 +398,15 @@ export function submitPrompt(
 
 	if (toolContext) {
 		const systemPrompt = agent.buildSystemPrompt();
-		agent.startRun(chatId, created.id, model, history, toolContext, systemPrompt);
+		agent.startRun(
+			chatId,
+			created.id,
+			model,
+			history,
+			toolContext,
+			systemPrompt,
+			options?.enabledToolNames ?? null
+		);
 	} else {
 		external.streams.startStream(
 			{
