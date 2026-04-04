@@ -6,6 +6,7 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
+	import { SquarePen, Upload, FolderPlus } from 'lucide-svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
@@ -234,22 +235,7 @@
 								onclick={() => onNewChat()}
 								class="sidebar-primary-action"
 							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									class="shrink-0"
-								>
-									<path d="M12 20h9" />
-									<path
-										d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
-									/>
-								</svg>
+								<SquarePen size={16} class="shrink-0" />
 								<span>New chat</span>
 							</Sidebar.MenuButton>
 						</Sidebar.MenuItem>
@@ -273,20 +259,7 @@
 										onclick={onUploadChat}
 										aria-label="Upload chat"
 									>
-										<svg
-											width="14"
-											height="14"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="1.5"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										>
-											<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-											<polyline points="17 8 12 3 7 8" />
-											<line x1="12" y1="3" x2="12" y2="15" />
-										</svg>
+										<Upload size={14} />
 									</button>
 								{/snippet}
 							</Tooltip.Trigger>
@@ -327,22 +300,7 @@
 									onclick={handleNewFolder}
 									class="sidebar-primary-action"
 								>
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										class="shrink-0"
-									>
-										<path d="M12 10v6M9 13h6" />
-										<path
-											d="M2 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"
-										/>
-									</svg>
+									<FolderPlus size={16} class="shrink-0" />
 									<span>New folder</span>
 								</Sidebar.MenuButton>
 							</Sidebar.MenuItem>
@@ -364,20 +322,7 @@
 											onclick={onUploadNewFolder}
 											aria-label="Upload folder"
 										>
-											<svg
-												width="14"
-												height="14"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="1.5"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											>
-												<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-												<polyline points="17 8 12 3 7 8" />
-												<line x1="12" y1="3" x2="12" y2="15" />
-											</svg>
+											<Upload size={14} />
 										</button>
 									{/snippet}
 								</Tooltip.Trigger>

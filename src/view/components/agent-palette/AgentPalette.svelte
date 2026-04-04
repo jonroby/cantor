@@ -173,7 +173,7 @@
 	}
 
 	.capability-label {
-		font-size: var(--text-md);
+		font-size: var(--text-sm);
 		font-weight: 600;
 		color: hsl(var(--foreground));
 	}

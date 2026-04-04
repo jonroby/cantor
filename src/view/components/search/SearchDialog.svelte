@@ -272,7 +272,7 @@
 	}
 
 	.search-result-prompt {
-		font-size: 0.92rem;
+		font-size: var(--text-sm);
 	}
 
 	.search-result-snippet {

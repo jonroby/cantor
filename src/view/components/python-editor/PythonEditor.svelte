@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { Code2, X, Play } from 'lucide-svelte';
 
 	let code = $state(
 		`# Write your Python here\ndef greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))`
@@ -113,35 +114,13 @@
 <div class="code-editor-card" bind:this={cardElement}>
 	<div class="code-editor-header">
 		<div class="code-editor-title">
-			<svg
-				width="16"
-				height="16"
-				viewBox="0 0 16 16"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.5"
-			>
-				<path
-					d="M5.5 4L2 8l3.5 4M10.5 4L14 8l-3.5 4"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				/>
-			</svg>
+			<Code2 size={16} />
 			<span>Code</span>
 			<span class="code-editor-lang">Python</span>
 		</div>
 		<div class="code-editor-actions">
 			<button class="code-editor-btn" onclick={clearOutput} title="Clear output">
-				<svg
-					width="14"
-					height="14"
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-				>
-					<path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round" />
-				</svg>
+				<X size={14} />
 			</button>
 			<button
 				class="code-editor-run-btn"
@@ -152,9 +131,7 @@
 				{#if isRunning || isLoading}
 					<div class="code-run-spinner"></div>
 				{:else}
-					<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-						<path d="M4 2.5v11l9-5.5z" />
-					</svg>
+					<Play size={14} />
 				{/if}
 				<span>{isLoading ? 'Loading…' : 'Run'}</span>
 			</button>
@@ -299,7 +276,7 @@
 		color: hsl(var(--card-foreground));
 		font-family:
 			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
-		font-size: 0.85rem;
+		font-size: var(--text-sm);
 		line-height: 1.6;
 		tab-size: 4;
 		resize: vertical;
@@ -317,7 +294,7 @@
 
 	.code-editor-output-header {
 		padding: 0.4rem 0.85rem;
-		font-size: 0.7rem;
+		font-size: var(--text-xs);
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -330,7 +307,7 @@
 		padding: 0.65rem 0.85rem;
 		font-family:
 			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
-		font-size: 0.8rem;
+		font-size: var(--text-sm);
 		line-height: 1.55;
 		white-space: pre-wrap;
 		word-break: break-word;

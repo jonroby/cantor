@@ -153,7 +153,7 @@
 	}
 
 	.strategy-label {
-		font-size: var(--text-md);
+		font-size: var(--text-sm);
 		font-weight: 500;
 		color: hsl(var(--foreground));
 	}

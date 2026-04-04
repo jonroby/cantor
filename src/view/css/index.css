@@ -33,17 +33,10 @@
 
 	/* Design scale — usable in scoped <style> blocks */
 	--text-xs: 0.6875rem;
-	--text-sm: 0.75rem;
-	--text-base: 0.8125rem;
-	--text-md: 0.875rem;
-	--text-lg: 1rem;
+	--text-sm: 0.85rem;
+	--text-base: 1rem;
+	--text-lg: 1.125rem;
 	--text-xl: 1.25rem;
-	--font-size-xs: 0.6875rem;
-	--font-size-sm: 0.75rem;
-	--font-size-base: 0.8125rem;
-	--font-size-md: 0.875rem;
-	--font-size-lg: 1rem;
-	--font-size-xl: 1.25rem;
 
 	--radius-sm: 4px;
 	--radius-md: 8px;
@@ -113,38 +106,6 @@
 	--sidebar-ring: 0 0% 65%;
 }
 
-.dark {
-	color-scheme: dark;
-	font-weight: 350;
-	--background: 0 0% 7%;
-	--foreground: 0 0% 93%;
-	--card: 0 0% 10%;
-	--card-foreground: 0 0% 93%;
-	--popover: 0 0% 10%;
-	--popover-foreground: 0 0% 93%;
-	--primary: 0 0% 93%;
-	--primary-foreground: 0 0% 7%;
-	--secondary: 0 0% 15%;
-	--secondary-foreground: 0 0% 93%;
-	--muted: 0 0% 15%;
-	--muted-foreground: 0 0% 60%;
-	--accent: 0 0% 15%;
-	--accent-foreground: 0 0% 93%;
-	--destructive: 0 62% 55%;
-	--destructive-foreground: 0 0% 93%;
-	--border: 0 0% 18%;
-	--input: 0 0% 18%;
-	--ring: 0 0% 40%;
-
-	--sidebar: 0 0% 9%;
-	--sidebar-foreground: 0 0% 90%;
-	--sidebar-primary: 0 0% 90%;
-	--sidebar-primary-foreground: 0 0% 9%;
-	--sidebar-accent: 0 0% 15%;
-	--sidebar-accent-foreground: 0 0% 90%;
-	--sidebar-border: 0 0% 18%;
-	--sidebar-ring: 0 0% 40%;
-}
 
 html,
 body {
@@ -252,7 +213,7 @@ textarea {
 .ui-button-size-sm {
 	height: 2.1rem;
 	padding: 0 0.85rem;
-	font-size: 0.85rem;
+	font-size: var(--text-sm);
 }
 
 .ui-button-size-lg {

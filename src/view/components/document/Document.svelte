@@ -602,10 +602,6 @@
 		color: hsl(142 71% 30%);
 	}
 
-	:global(.dark) .diff-added {
-		background: hsl(142 71% 45% / 0.12);
-		color: hsl(142 71% 65%);
-	}
 
 	.diff-removed {
 		background: hsl(0 72% 51% / 0.12);
@@ -613,10 +609,6 @@
 		text-decoration: line-through;
 	}
 
-	:global(.dark) .diff-removed {
-		background: hsl(0 72% 51% / 0.1);
-		color: hsl(0 72% 65%);
-	}
 
 	.diff-btn {
 		padding: 3px 10px;
@@ -704,19 +696,19 @@
 	}
 
 	.docs-content :global(h1) {
-		font-size: 22px;
+		font-size: var(--text-xl);
 		font-weight: 700;
 		margin: 0 0 12px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h2) {
-		font-size: 18px;
+		font-size: var(--text-lg);
 		font-weight: 600;
 		margin: 20px 0 8px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h3) {
-		font-size: 15px;
+		font-size: var(--text-base);
 		font-weight: 600;
 		margin: 16px 0 6px 0;
 	}

@@ -123,7 +123,7 @@
 		if (!model?.enabled) return;
 
 		const selection = { provider: provider.id, modelId };
-		if (providerState.vaultState === 'locked') {
+		if (providerState.vaultState === 'locked' && provider.credentialState !== 'not-required') {
 			credentialError = null;
 			credentialInput = '';
 			passwordInput = '';

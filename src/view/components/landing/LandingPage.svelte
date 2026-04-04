@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ArrowRight, GitBranch, Shield } from 'lucide-svelte';
+	import { ArrowRight, GitBranch, Shield, LayoutDashboard, Sun } from 'lucide-svelte';
 
 	let canvas: HTMLCanvasElement;
 	let animationId: number;
@@ -265,7 +265,7 @@
 	}
 
 	.nav-link {
-		font-size: var(--text-md);
+		font-size: var(--text-sm);
 		font-weight: 500;
 		color: hsl(var(--muted-foreground));
 		text-decoration: none;
@@ -285,7 +285,7 @@
 		border: none;
 		border-radius: var(--radius-full);
 		padding: 8px 20px;
-		font-size: var(--text-md);
+		font-size: var(--text-sm);
 		font-weight: 600;
 		cursor: pointer;
 		transition: opacity 0.2s;
@@ -339,7 +339,7 @@
 	}
 
 	.hero-subtitle {
-		font-size: 18px;
+		font-size: var(--text-lg);
 		line-height: 1.6;
 		color: hsl(var(--muted-foreground));
 		max-width: 560px;
@@ -426,7 +426,7 @@
 	}
 
 	.feature-card h3 {
-		font-size: var(--text-md);
+		font-size: var(--text-sm);
 		font-weight: 700;
 		color: hsl(var(--foreground));
 		margin: 0 0 6px;

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Toaster as Sonner, type ToasterProps as SonnerProps } from 'svelte-sonner';
-	import { mode } from 'mode-watcher';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { Loading03Icon } from '@hugeicons/core-free-icons';
 	import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
@@ -12,7 +11,7 @@
 </script>
 
 <Sonner
-	theme={mode.current}
+	theme="light"
 	class="toaster group"
 	style="--normal-bg: var(--color-popover); --normal-text: var(--color-popover-foreground); --normal-border: var(--color-border);"
 	{...restProps}

@@ -343,7 +343,7 @@
 		border-radius: 0.75rem;
 		background: hsl(var(--secondary));
 		padding: 0.75rem 1rem;
-		font-size: var(--text-md);
+		font-size: var(--text-sm);
 		line-height: 1.55;
 		word-break: break-word;
 	}
