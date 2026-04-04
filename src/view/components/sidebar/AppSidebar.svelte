@@ -223,22 +223,22 @@
 		</Sidebar.Header>
 
 		<Sidebar.Content class="sidebar-content-shell">
-			<!-- New chat + New folder -->
-			<Sidebar.Group class="sidebar-group-reset">
-				<Sidebar.GroupContent>
-					<Sidebar.Menu>
-						<Sidebar.MenuItem>
-							<Sidebar.MenuButton
-								size="default"
-								tooltipContent="New chat"
-								onclick={() => onNewChat()}
-								class="sidebar-primary-action"
-							>
-								<MessageSquarePlus size={16} class="shrink-0" />
-								<span>New chat</span>
-							</Sidebar.MenuButton>
-						</Sidebar.MenuItem>
-						{#if sidebar.state === 'expanded'}
+			{#if sidebar.state === 'expanded'}
+				<!-- New chat + New folder -->
+				<Sidebar.Group class="sidebar-group-reset">
+					<Sidebar.GroupContent>
+						<Sidebar.Menu>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="New chat"
+									onclick={() => onNewChat()}
+									class="sidebar-primary-action"
+								>
+									<MessageSquarePlus size={16} class="shrink-0" />
+									<span>New chat</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
 							<Sidebar.MenuItem>
 								<Sidebar.MenuButton
 									size="default"
@@ -250,12 +250,10 @@
 									<span>New folder</span>
 								</Sidebar.MenuButton>
 							</Sidebar.MenuItem>
-						{/if}
-					</Sidebar.Menu>
-				</Sidebar.GroupContent>
-			</Sidebar.Group>
+						</Sidebar.Menu>
+					</Sidebar.GroupContent>
+				</Sidebar.Group>
 
-			{#if sidebar.state === 'expanded'}
 				<Sidebar.Separator class="sidebar-section-separator" />
 
 				<!-- Chat list (unfoldered) -->
@@ -490,6 +488,7 @@
 		display: inline-flex;
 		align-items: center;
 		margin-top: 3px;
+		margin-left: 0.25rem;
 		border: 1px solid hsl(215 80% 45%);
 		border-radius: 9999px;
 		background: hsl(215 90% 92%);

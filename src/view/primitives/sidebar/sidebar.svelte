@@ -62,6 +62,10 @@
 		border-right: 1px solid var(--border-color);
 	}
 
+	:global(.bits-sidebar-root[data-collapsible='icon'] .bits-sidebar-inner) {
+		border-right: none;
+	}
+
 	:global(.bits-sidebar-root[data-side='right'] .bits-sidebar-inner) {
 		border-right: none;
 		border-left: 1px solid var(--border-color);
