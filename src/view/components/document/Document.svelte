@@ -702,11 +702,9 @@
 	.docs-content :global(p) {
 		margin: 0 0 12px 0;
 	}
-	.docs-content :global(svg),
 	.docs-content :global(img) {
 		max-width: 100%;
 		height: auto;
-		padding: 0;
 	}
 	.docs-content :global(ul),
 	.docs-content :global(ol) {
@@ -762,14 +760,14 @@
 		border-top: 1px solid var(--border-color);
 		margin: 16px 0;
 	}
-	.docs-content-inner > :global(svg) {
+
+	.docs-content-inner :global(svg) {
 		max-width: 100%;
 		height: auto;
 		display: block;
 		margin: 16px auto;
 		border: 1px solid var(--border-color);
 		border-radius: 8px;
-		padding: 16px;
 		background: hsl(var(--card));
 	}
 </style>
