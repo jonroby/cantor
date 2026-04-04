@@ -106,7 +106,7 @@
 		z-index: 1;
 		background: hsl(var(--background));
 		padding: 1rem 1.25rem 0.75rem;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -137,7 +137,7 @@
 	}
 
 	.capability-section {
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 	}
 
 	.capability-section:last-child {

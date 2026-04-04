@@ -357,7 +357,7 @@
 	:global(.folder-item-menu-separator) {
 		height: 1px;
 		margin: 0.25rem 0;
-		background: hsl(var(--border));
+		background: var(--border-color);
 	}
 
 	.subfolder-btn {

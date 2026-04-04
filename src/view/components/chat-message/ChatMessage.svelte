@@ -1,6 +1,6 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
-	import { GitFork, Trash2, Split, Code, Eye, ClipboardCopy } from 'lucide-svelte';
+	import { GitFork, Trash2, Split, Code, Eye, ClipboardCopy, FileText, ArrowUp } from 'lucide-svelte';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button } from '@/view/primitives';
 	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/lib/katex';
@@ -88,18 +88,7 @@
 <div class="chatmsg" class:chatmsg-doc-upload={data.label}>
 	{#if data.label}
 		<div class="chatmsg-doc-label">
-			<svg
-				width="16"
-				height="16"
-				viewBox="0 0 16 16"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.5"
-				class="shrink-0"
-			>
-				<path d="M3 2h7l3 3v9H3V2z" />
-				<path d="M10 2v3h3" />
-			</svg>
+			<FileText size={16} class="shrink-0" />
 			<span>{data.label}</span>
 		</div>
 	{:else}
@@ -202,19 +191,7 @@
 							}}
 							ariaLabel="Promote"
 						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-								><path
-									d="M7 12V2M7 2l-2 2M7 2l2 2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/></svg
-							>
+							<ArrowUp size={14} />
 						</Button>
 						<span class="action-tip">Promote</span>
 					</span>
@@ -436,7 +413,7 @@
 		align-items: center;
 		gap: 0.3rem;
 		border-radius: 999px;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: transparent;
 		padding: 0.25rem 0.5rem;
 		font-size: var(--text-sm);
@@ -462,7 +439,7 @@
 		z-index: 1000;
 		min-width: 160px;
 		border-radius: 0.5rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: var(--surface-floating);
 		padding: 0.25rem;
 		box-shadow: var(--surface-floating-shadow);
@@ -568,14 +545,14 @@
 	:global(.chatmsg-response-body blockquote) {
 		margin: 0.75em 0;
 		padding: 0.5em 1em;
-		border-left: 3px solid hsl(var(--border));
+		border-left: 3px solid var(--border-color);
 		color: hsl(var(--muted-foreground));
 	}
 
 	:global(.chatmsg-response-body hr) {
 		margin: 1.25em 0;
 		border: none;
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border-color);
 	}
 
 	:global(.chatmsg-response-body pre) {

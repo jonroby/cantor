@@ -212,7 +212,7 @@
 <style>
 	.agent-activity {
 		margin: 16px 16px 0;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 14px;
 		background: linear-gradient(180deg, hsl(var(--muted) / 0.4), hsl(var(--background) / 0.92));
 		overflow: hidden;
@@ -301,7 +301,7 @@
 		padding: 10px 10px 12px;
 		border-radius: 12px;
 		background: hsl(var(--muted) / 0.22);
-		border: 1px solid hsl(var(--border) / 0.7);
+		border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
 	}
 
 	.agent-activity-step-header {
@@ -326,7 +326,7 @@
 		padding: 12px 13px;
 		border-radius: 12px;
 		background: hsl(var(--background) / 0.92);
-		border: 1px solid hsl(var(--border) / 0.82);
+		border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
 	}
 
 	.agent-activity-event-call {

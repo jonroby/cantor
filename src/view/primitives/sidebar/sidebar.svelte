@@ -58,11 +58,11 @@
 		height: 100%;
 		overflow: hidden;
 		background: hsl(var(--sidebar));
-		border-right: 1px solid hsl(var(--border));
+		border-right: 1px solid var(--border-color);
 	}
 
 	:global(.bits-sidebar-root[data-side='right'] .bits-sidebar-inner) {
 		border-right: none;
-		border-left: 1px solid hsl(var(--border));
+		border-left: 1px solid var(--border-color);
 	}
 </style>

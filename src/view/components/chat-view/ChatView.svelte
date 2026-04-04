@@ -655,7 +655,7 @@
 
 	/* Split layout — border added to first pane when side panel is open */
 	.chatview-body-split > :first-child {
-		border-right: 1px solid hsl(var(--border));
+		border-right: 1px solid var(--border-color);
 	}
 
 	.chatview-pane {
@@ -703,7 +703,7 @@
 		width: calc(100% - 2 * var(--pane-padding-h));
 		max-width: var(--pane-content-width);
 		height: 1px;
-		background: hsl(var(--border));
+		background: var(--border-color);
 	}
 
 	.chatview-close-btn {

@@ -158,6 +158,7 @@
 			bind:this={documentRef}
 			title={activeFile.name}
 			content={activeFile.content}
+			embedded={true}
 			{agentStreaming}
 			{agentProvider}
 			{pendingContent}
@@ -190,27 +191,6 @@
 		height: auto;
 	}
 
-	/* .docs-header uses .pane-header from layout.css — no overrides needed */
-
-	/* Hide the Document's default icon and title — we show our own */
-	.folderview-shell :global(.docs-header-inner > svg:first-child),
-	.folderview-shell :global(.docs-header-inner > span:first-of-type) {
-		display: none;
-	}
-
-	/* Overlays the Document's own header — absolute so it floats on top */
-	:global(.folderview-header) {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 1;
-		pointer-events: none;
-	}
-
-	:global(.folderview-header) > * {
-		pointer-events: auto;
-	}
 
 	.folderview-folder-name {
 		color: hsl(var(--foreground) / 0.7);
@@ -348,7 +328,7 @@
 		max-height: 300px;
 		overflow-y: auto;
 		padding: 4px;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-md);
 		background: hsl(var(--background));
 		box-shadow: 0 8px 24px hsl(var(--foreground) / 0.1);

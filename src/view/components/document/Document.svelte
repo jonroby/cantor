@@ -378,8 +378,8 @@
 	ondrop={handleDrop}
 	onwheel={(e) => e.stopPropagation()}
 >
-	<Header class={embedded ? 'docs-header-embedded' : ''}>
-		<!-- inner wrapper retained for centering and border-bottom -->
+	{#if !embedded}
+	<Header>
 		<div class="docs-header-inner">
 			<FileText size={16} />
 			<span>{title || 'Document'}</span>
@@ -429,6 +429,7 @@
 			</div>
 		</div>
 	</Header>
+	{/if}
 	{#if error}
 		<div class="error-bar">{error}</div>
 	{/if}
@@ -489,7 +490,7 @@
 
 <style>
 	.document {
-		border: 1px solid hsl(var(--border, 0 0% 85%));
+		border: 1px solid var(--border-color);
 		border-radius: 12px;
 		overflow: hidden;
 		display: flex;
@@ -505,8 +506,6 @@
 		border: none;
 		border-radius: 0;
 	}
-
-	/* .docs-header-embedded now uses .pane-header from layout.css */
 
 	.panel-body-embedded {
 		padding-bottom: 12rem;
@@ -528,7 +527,6 @@
 		font-size: var(--text-base);
 		font-weight: 600;
 		color: hsl(var(--foreground, 0 0% 9%));
-		border-bottom: 1px solid hsl(var(--border, 0 0% 85%));
 	}
 
 	.dirty-indicator {
@@ -646,7 +644,7 @@
 		max-width: var(--pane-content-width);
 		margin: 0 auto;
 		padding-top: 16px;
-		border-top: 1px solid hsl(var(--border, 0 0% 85%));
+		border-top: 1px solid var(--border-color);
 	}
 
 	.docs-editor-wrap {
@@ -741,7 +739,7 @@
 		padding: 0;
 	}
 	.docs-content :global(blockquote) {
-		border-left: 3px solid hsl(var(--border, 0 0% 85%));
+		border-left: 3px solid var(--border-color);
 		margin: 0 0 12px 0;
 		padding: 4px 16px;
 		color: hsl(var(--muted-foreground, 0 0% 45%));
@@ -756,7 +754,7 @@
 	}
 	.docs-content :global(th),
 	.docs-content :global(td) {
-		border: 1px solid hsl(var(--border, 0 0% 85%));
+		border: 1px solid var(--border-color);
 		padding: 6px 10px;
 		text-align: left;
 		font-size: var(--text-base);
@@ -767,7 +765,7 @@
 	}
 	.docs-content :global(hr) {
 		border: none;
-		border-top: 1px solid hsl(var(--border, 0 0% 85%));
+		border-top: 1px solid var(--border-color);
 		margin: 16px 0;
 	}
 	.docs-content-inner > :global(svg) {
@@ -775,7 +773,7 @@
 		height: auto;
 		display: block;
 		margin: 16px auto;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 8px;
 		padding: 16px;
 		background: hsl(var(--card));

@@ -472,7 +472,7 @@
 	}
 
 	.panel-layout-split .panel-slot:first-child {
-		border-right: 1px solid hsl(var(--border));
+		border-right: 1px solid var(--border-color);
 	}
 
 	.welcome-container {

@@ -116,7 +116,7 @@
 		height: 2rem;
 		margin: 0 auto 0.5rem;
 		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--background));
 		color: hsl(var(--muted-foreground));
 		cursor: pointer;
@@ -140,7 +140,7 @@
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--background));
 		color: hsl(var(--muted-foreground));
 		display: flex;

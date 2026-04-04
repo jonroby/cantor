@@ -52,7 +52,7 @@
 		z-index: 50;
 		width: min(100%, 28rem);
 		padding: 1.5rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 0.75rem;
 		background: var(--surface-floating);
 		box-shadow: var(--surface-floating-shadow);
@@ -87,7 +87,7 @@
 	}
 
 	:global(.confirm-delete-cancel) {
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--background));
 		color: hsl(var(--foreground));
 	}

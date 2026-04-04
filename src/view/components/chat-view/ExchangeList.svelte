@@ -30,7 +30,7 @@
 	.exchange-item {
 		width: 100%;
 		scroll-margin-top: 1rem;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		padding-bottom: 1.25rem;
 	}
 

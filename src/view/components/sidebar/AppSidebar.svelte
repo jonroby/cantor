@@ -496,7 +496,7 @@
 	.sidebar-alpha-badge {
 		display: inline-flex;
 		align-items: center;
-		border: 1px solid hsl(var(--sidebar-border));
+		border: 1px solid var(--border-color);
 		border-radius: 9999px;
 		background: var(--sidebar-surface-tint);
 		padding: 0.125rem 0.45rem;

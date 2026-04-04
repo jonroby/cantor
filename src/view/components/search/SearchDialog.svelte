@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
+	import { Search } from 'lucide-svelte';
 	import { Input } from '@/view/primitives';
 	import type * as app from '@/app';
 
@@ -169,15 +170,7 @@
 <button class="modal-scrim" type="button" aria-label="Close search" onclick={onClose}></button>
 <div class="modal-panel search-panel">
 	<div class="search-header">
-		<svg
-			width="18"
-			height="18"
-			viewBox="0 0 18 18"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.6"
-			><circle cx="7.5" cy="7.5" r="5" /><path d="M13 13l3 3" stroke-linecap="round" /></svg
-		>
+		<Search size={18} />
 		<Input
 			id="search"
 			bind:value={searchQuery}
@@ -225,7 +218,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		padding: 1rem 1.2rem;
 	}
 

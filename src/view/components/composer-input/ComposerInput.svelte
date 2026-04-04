@@ -284,7 +284,7 @@
 	.composer-shell {
 		overflow: hidden;
 		border-radius: 1.25rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: hsl(var(--card));
 		box-shadow: 0 12px 40px hsl(var(--foreground) / 0.12);
 	}
@@ -302,7 +302,7 @@
 		height: 4rem;
 		overflow: hidden;
 		border-radius: var(--radius-md);
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 	}
 
 	.composer-image-thumb img {
@@ -355,7 +355,7 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 50%;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		background: transparent;
 		color: hsl(var(--muted-foreground));
 	}
@@ -375,7 +375,7 @@
 		background: transparent;
 		padding: 0.125rem 0.5rem 0.125rem 0.25rem;
 		font-family: inherit;
-		font-size: var(--text-lg);
+		font-size: var(--text-base);
 		color: hsl(var(--foreground));
 		outline: none;
 		line-height: 1.5;
@@ -384,7 +384,7 @@
 	.composer-footer {
 		display: flex;
 		align-items: center;
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border-color);
 		padding: 0.85rem 1rem;
 	}
 
@@ -408,7 +408,7 @@
 		align-items: center;
 		align-self: stretch;
 		gap: 0.65rem;
-		border-left: 1px solid hsl(var(--border));
+		border-left: 1px solid var(--border-color);
 		padding-left: 0.75rem;
 		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));

@@ -97,7 +97,7 @@
 
 	.context-palette-header {
 		padding: 1rem 1.25rem 0.75rem;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 	}
 
 	.context-palette-title {
@@ -173,7 +173,7 @@
 
 	.context-divider {
 		margin: 0.75rem 0;
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border-color);
 	}
 
 	.token-stats {
@@ -220,7 +220,7 @@
 		padding: 0.5rem 0.625rem;
 		border-radius: var(--radius-md);
 		background: hsl(var(--popover));
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
 		font-size: var(--text-xs);
 		color: hsl(var(--muted-foreground));

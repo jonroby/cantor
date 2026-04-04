@@ -167,7 +167,7 @@
 
 <style>
 	.code-editor-card {
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 0.7rem;
 		background: hsl(var(--card));
 		color: hsl(var(--card-foreground));
@@ -181,7 +181,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.6rem 0.85rem;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		background: hsl(var(--muted) / 0.65);
 	}
 
@@ -236,7 +236,7 @@
 		align-items: center;
 		gap: 0.35rem;
 		padding: 0.3rem 0.7rem;
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: 0.5rem;
 		background: hsl(var(--primary));
 		color: hsl(var(--primary-foreground));
@@ -298,7 +298,7 @@
 	}
 
 	.code-editor-output {
-		border-top: 1px solid hsl(var(--border));
+		border-top: 1px solid var(--border-color);
 	}
 
 	.code-editor-output-header {

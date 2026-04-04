@@ -155,47 +155,14 @@
 			</div>
 			<div class="feature-card">
 				<div class="feature-icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<rect x="3" y="3" width="18" height="18" rx="2" />
-						<circle cx="9" cy="9" r="2" />
-						<circle cx="15" cy="15" r="2" />
-						<path d="M9 15h6" />
-						<path d="M9 9h.01" />
-					</svg>
+					<LayoutDashboard size={24} />
 				</div>
 				<h3>Canvas View</h3>
 				<p>Visualize your entire conversation tree as a zoomable node graph.</p>
 			</div>
 			<div class="feature-card">
 				<div class="feature-icon">
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M12 2v4" />
-						<path d="m6.93 6.93 2.83 2.83" />
-						<path d="M2 12h4" />
-						<path d="m6.93 17.07 2.83-2.83" />
-						<path d="M12 18v4" />
-						<path d="m17.07 17.07-2.83-2.83" />
-						<path d="M22 12h-4" />
-						<path d="m17.07 6.93-2.83 2.83" />
-					</svg>
+					<Sun size={24} />
 				</div>
 				<h3>Multi-Provider</h3>
 				<p>Claude, Gemini, Ollama, OpenAI-compatible, and WebLLM — all in one place.</p>
@@ -313,7 +280,7 @@
 		align-items: center;
 		padding: 6px 16px;
 		background: hsl(var(--accent));
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-full);
 		font-size: var(--text-base);
 		font-weight: 600;
@@ -376,7 +343,7 @@
 		padding: 14px 32px;
 		background: transparent;
 		color: hsl(var(--foreground));
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-lg);
 		font-size: var(--text-lg);
 		font-weight: 600;
@@ -400,7 +367,7 @@
 	.feature-card {
 		background: hsl(var(--card) / 0.8);
 		backdrop-filter: blur(8px);
-		border: 1px solid hsl(var(--border));
+		border: 1px solid var(--border-color);
 		border-radius: var(--radius-lg);
 		padding: 28px 24px;
 		text-align: left;

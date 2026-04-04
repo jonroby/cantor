@@ -307,7 +307,7 @@
 	.palette-tabs {
 		display: flex;
 		gap: 0;
-		border-bottom: 1px solid hsl(var(--border));
+		border-bottom: 1px solid var(--border-color);
 		padding: 0 1.5rem;
 	}
 
