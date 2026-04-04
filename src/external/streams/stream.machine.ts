@@ -187,14 +187,17 @@ export const streamMachine = setup({
 		},
 		awaiting_tools: {
 			on: {
-				TOOL_RESULT: {
-					target: 'streaming',
-					guard: ({ context }) => context.turnCount < 10,
-					actions: assign({
-						history: ({ event }) => event.messages as domain.tree.Message[],
-						response: () => ''
-					})
-				},
+				TOOL_RESULT: [
+					{
+						target: 'streaming',
+						guard: ({ context }) => context.turnCount < 10,
+						actions: assign({
+							history: ({ event }) => event.messages as domain.tree.Message[],
+							response: () => ''
+						})
+					},
+					{ target: 'done' }
+				],
 				CANCEL: {
 					target: 'done'
 				}

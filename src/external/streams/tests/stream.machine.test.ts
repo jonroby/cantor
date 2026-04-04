@@ -164,6 +164,42 @@ describe('streamMachine', () => {
 		expect(final.context.error).toBe('Unknown error.');
 	});
 
+	it('transitions to done when turn limit is reached', async () => {
+		const input: StreamMachineInput = {
+			exchangeId: 'test-exchange',
+			model: { provider: 'claude', modelId: 'claude-sonnet-4-6' },
+			history: [{ role: 'user', content: 'hello' }] as domain.tree.Message[],
+			getStream: async function* () {
+				yield { type: 'done', promptTokens: 0, responseTokens: 0 };
+			},
+			tools: []
+		};
+
+		const final = await new Promise<SnapshotFrom<typeof streamMachine>>((resolve) => {
+			const actor = createActor(streamMachine, { input });
+			actor.subscribe((snapshot) => {
+				if (snapshot.status !== 'active') {
+					resolve(snapshot);
+				}
+			});
+			actor.start();
+			// Manually drive the machine to awaiting_tools with turnCount = 10
+			actor.send({
+				type: 'TOOL_USE',
+				toolCalls: [],
+				responseText: '',
+				promptTokens: 0,
+				responseTokens: 0
+			});
+			// Pump TOOL_RESULT 10 times to exhaust the turn budget
+			for (let i = 0; i < 10; i++) {
+				actor.send({ type: 'TOOL_RESULT', messages: [] });
+			}
+		});
+
+		expect(final.value).toBe('done');
+	});
+
 	it('initializes context from input', () => {
 		const input = makeInput();
 		const actor = createActor(streamMachine, { input });
