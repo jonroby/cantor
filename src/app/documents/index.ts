@@ -207,7 +207,14 @@ export function renameDocument(
 	return { result };
 }
 export const moveDocument = state.documents.moveDocumentToFolder;
-export const updateDocumentContent = state.documents.updateDocumentContent;
+export function updateDocumentContent(index: number, content: string): void {
+	state.documents.updateDocumentContent(index, content);
+	void external.persistence.saveToStorage({
+		chats: state.chats.chatState.chats,
+		activeChatIndex: state.chats.chatState.activeChatIndex,
+		folders: state.documents.documentState.folders
+	});
+}
 export const validateDocumentMarkdown = lib.validateMd.validate;
 
 export async function importDocument(
@@ -366,7 +373,7 @@ export function findOpenDocumentIndex(folderId: string, fileId: string): number 
 
 export function updateOpenDocumentContent(folderId: string, fileId: string, content: string): void {
 	const index = findOpenDocumentIndex(folderId, fileId);
-	if (index >= 0) state.documents.updateDocumentContent(index, content);
+	if (index >= 0) updateDocumentContent(index, content);
 }
 
 export function closeOpenDocument(folderId: string, fileId: string): void {
