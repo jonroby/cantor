@@ -67,8 +67,8 @@
 	--dropdown-min-w: 140px;
 	--dropdown-max-w: 200px;
 
-	--surface-selected: rgba(232, 232, 232, 0.92);
-	--surface-hover: rgba(232, 232, 232, 0.5);
+	--surface-selected: hsl(var(--muted));
+	--surface-hover: hsl(var(--muted) / 0.5);
 
 	--surface-tint: hsl(var(--muted) / 0.72);
 	--surface-tint-strong: hsl(var(--accent));
@@ -122,6 +122,16 @@
 	--sidebar-ring: 0 0% 65%;
 }
 
+
+:root {
+	--icon-size: 16px;
+}
+
+svg.lucide {
+	width: var(--icon-size) !important;
+	height: var(--icon-size) !important;
+	color: var(--icon-muted);
+}
 
 html,
 body {
