@@ -645,7 +645,7 @@
 		padding-top: 16px;
 		padding-bottom: 12rem;
 		padding-left: var(--pane-padding-h);
-		padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
+		padding-right: var(--pane-padding-h);
 		overflow-y: auto;
 		overflow-x: hidden;
 	}
@@ -670,7 +670,7 @@
 		padding-top: 16px;
 		padding-bottom: 12rem;
 		padding-left: var(--pane-padding-h);
-		padding-right: calc(var(--pane-padding-h) - var(--pane-scrollbar-width));
+		padding-right: var(--pane-padding-h);
 		overflow-y: auto;
 		overflow-x: hidden;
 		line-height: 1.7;
