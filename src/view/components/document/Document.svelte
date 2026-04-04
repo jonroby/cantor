@@ -269,23 +269,31 @@
 		}
 	}
 
-	function enterEditMode() {
+	export function isEditing() {
+		return editing;
+	}
+
+	export function isDirty() {
+		return dirty;
+	}
+
+	export function enterEditMode() {
 		if (!draft) draft = content;
 		error = null;
 		editing = true;
 	}
 
-	function cancelEdit() {
+	export function cancelEdit() {
 		editing = false;
 		error = null;
 	}
 
-	function revertToSaved() {
+	export function revertToSaved() {
 		draft = content;
 		error = null;
 	}
 
-	function saveEdit() {
+	export function saveEdit() {
 		const validationError = validate(draft);
 		if (validationError) {
 			error = validationError;
@@ -297,7 +305,7 @@
 		editing = false;
 	}
 
-	function downloadMarkdown() {
+	export function downloadMarkdown() {
 		const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
@@ -748,7 +756,6 @@
 	}
 	.docs-content :global(.katex-display) {
 		margin: 16px 0;
-		overflow-x: auto;
 	}
 	.docs-content :global(table) {
 		border-collapse: collapse;

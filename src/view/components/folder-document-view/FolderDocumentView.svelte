@@ -1,7 +1,18 @@
 <script lang="ts">
-	import { Document } from '@/view/components/document';
+	import { Document as DocumentComponent } from '@/view/components/document';
 	import * as app from '@/app';
-	import { Folder, ChevronDown, File, X } from 'lucide-svelte';
+	import {
+		Folder,
+		ChevronDown,
+		File,
+		X,
+		ArrowLeftRight,
+		Download,
+		Pencil,
+		Save,
+		RotateCcw,
+		Check
+	} from 'lucide-svelte';
 	import { Header } from '@/view/primitives';
 
 	interface Props {
@@ -40,6 +51,10 @@
 
 	let activeFile = $derived(files.find((f) => f.id === activeFileId) ?? null);
 	let dropdownOpen = $state(false);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	let documentRef: any = $state(null);
+	let editing = $derived(documentRef?.isEditing() ?? false);
+	let dirty = $derived(documentRef?.isDirty() ?? false);
 
 	function selectFile(fileId: string) {
 		onSelectFile?.(fileId);
@@ -87,14 +102,60 @@
 				<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
 				<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
 			{/if}
+			{#if onSwap}
+				<button class="folderview-header-btn" onclick={onSwap} title="Swap panels">
+					<ArrowLeftRight size={14} />
+				</button>
+			{/if}
 			<button class="folderview-header-btn" onclick={onClose} title="Close" aria-label="Close">
 				<X size={14} />
 			</button>
+			<button
+				class="folderview-header-btn"
+				onclick={() => documentRef?.downloadMarkdown()}
+				title="Download as Markdown"
+			>
+				<Download size={14} />
+			</button>
+			{#if editing}
+				{#if dirty}
+					<button
+						class="folderview-header-btn"
+						onclick={() => documentRef?.revertToSaved()}
+						title="Revert to saved"
+					>
+						<RotateCcw size={14} />
+					</button>
+				{/if}
+				<button
+					class="folderview-header-btn"
+					onclick={() => documentRef?.cancelEdit()}
+					title="Done (Esc)"
+				>
+					<Check size={14} />
+				</button>
+				<button
+					class="folderview-header-btn save-btn"
+					onclick={() => documentRef?.saveEdit()}
+					title="Save (⌘S)"
+				>
+					<Save size={14} />
+				</button>
+			{:else}
+				<button
+					class="folderview-header-btn"
+					onclick={() => documentRef?.enterEditMode()}
+					title="Edit"
+				>
+					<Pencil size={14} />
+				</button>
+			{/if}
 		</div>
 	</Header>
 
 	{#if activeFile}
-		<Document
+		<DocumentComponent
+			bind:this={documentRef}
 			title={activeFile.name}
 			content={activeFile.content}
 			{agentStreaming}
@@ -229,6 +290,15 @@
 	.folderview-header-btn:hover {
 		background: var(--surface-tint);
 		color: var(--icon-strong);
+	}
+
+	.save-btn {
+		color: hsl(var(--primary, 220 90% 56%));
+	}
+
+	.save-btn:hover {
+		background: hsl(var(--primary, 220 90% 56%) / 0.1);
+		color: hsl(var(--primary, 220 90% 56%));
 	}
 
 	.folderview-file-btn {
