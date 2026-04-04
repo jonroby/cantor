@@ -183,6 +183,7 @@
 					{ type: 'side-chat' as const, parentExchangeId: parentId, sideChatIndex: sideChatIdx }
 				];
 		app.workspace.setPanels(newPanels);
+		tick().then(() => onFocusComposer?.());
 	}
 
 	function closeSideDocumentPanel() {
@@ -480,7 +481,7 @@
 				{#if activeSideChat}
 					<ExchangeList exchanges={activeSideChat} getNodeData={getNodeDataForExchange} />
 				{:else}
-					<div class="chatview-empty">Type a message to start a side chat.</div>
+					<div class="chatview-empty"></div>
 				{/if}
 			</div>
 			<div class="chatview-bottom-spacer" bind:this={bottomSpacerEl}></div>

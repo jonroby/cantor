@@ -273,7 +273,10 @@
 				app.workspace.clearOpenDocument();
 			}
 		}
-		app.workspace.setPanels(workspaceState.panels.filter((_, i) => i !== index));
+		const remaining = workspaceState.panels.filter((_, i) => i !== index);
+		const filtered =
+			panel.type === 'chat' ? remaining.filter((p) => p.type !== 'side-chat') : remaining;
+		app.workspace.setPanels(filtered);
 	}
 
 	function ensureChatPanel() {
