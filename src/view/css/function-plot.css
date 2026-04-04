@@ -32,7 +32,6 @@
 
 .function-plot-chart .tick text {
 	fill: hsl(var(--muted-foreground));
-	font-size: var(--text-xs);
 }
 
 .function-plot-chart path.line {
@@ -86,7 +85,6 @@
 	color: hsl(var(--background));
 	padding: 5px 12px;
 	border-radius: var(--radius-md);
-	font-size: var(--text-base);
 	font-weight: var(--font-weight-medium);
 	white-space: nowrap;
 	transform: translateX(-50%);

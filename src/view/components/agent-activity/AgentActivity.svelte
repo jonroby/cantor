@@ -244,7 +244,6 @@
 	}
 
 	.agent-activity-title {
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -256,7 +255,6 @@
 		border-radius: 999px;
 		background: hsl(var(--accent) / 0.15);
 		color: hsl(var(--foreground));
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-bold);
 	}
 
@@ -269,7 +267,6 @@
 	}
 
 	.agent-activity-last {
-		font-size: var(--text-sm);
 		line-height: 1.4;
 		color: hsl(var(--foreground));
 		white-space: nowrap;
@@ -280,7 +277,6 @@
 	}
 
 	.agent-activity-count {
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-bold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -315,7 +311,6 @@
 	.agent-activity-step-title,
 	.agent-activity-event-time,
 	.agent-activity-step-time {
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-bold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -355,7 +350,6 @@
 	}
 
 	.agent-activity-event-type {
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
@@ -365,7 +359,6 @@
 	.agent-activity-event-text {
 		white-space: pre-wrap;
 		word-break: break-word;
-		font-size: var(--text-sm);
 		line-height: 1.5;
 		color: hsl(var(--foreground));
 	}

@@ -226,7 +226,6 @@
 		display: flex;
 		align-items: center;
 		gap: 0.45rem;
-		font-size: var(--text-sm);
 		white-space: nowrap;
 		color: hsl(var(--muted-foreground));
 	}
@@ -242,7 +241,6 @@
 	.search-empty {
 		padding: 2rem 1.2rem;
 		text-align: center;
-		font-size: var(--text-base);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -265,11 +263,9 @@
 	}
 
 	.search-result-prompt {
-		font-size: var(--text-sm);
 	}
 
 	.search-result-snippet {
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 

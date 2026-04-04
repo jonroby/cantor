@@ -379,56 +379,56 @@
 	onwheel={(e) => e.stopPropagation()}
 >
 	{#if !embedded}
-	<Header>
-		<div class="docs-header-inner">
-			<FileText size={16} />
-			<span>{title || 'Document'}</span>
-			{#if dirty}
-				<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
-			{/if}
-			<div class="header-actions">
-				{#if pendingDiff}
-					<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
-					<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+		<Header>
+			<div class="docs-header-inner">
+				<FileText size={16} />
+				<span>{title || 'Document'}</span>
+				{#if dirty}
+					<span class="dirty-indicator" title="Unsaved changes">&bull;</span>
 				{/if}
-				{#if onSwap}
-					<button class="header-btn" onclick={onSwap} title="Swap panels">
-						<ArrowLeftRight size={14} />
-					</button>
-				{/if}
-				{#if onClose}
-					<button class="header-btn" onclick={requestClose} title="Close">
-						<X size={14} />
-					</button>
-				{/if}
-				{#if onAddToChat}
-					<button class="header-btn" onclick={onAddToChat} title="Add to chat">
-						<MessageSquare size={14} />
-					</button>
-				{/if}
-				<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
-					<Download size={14} />
-				</button>
-				{#if editing}
-					{#if dirty}
-						<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
-							<RotateCcw size={14} />
+				<div class="header-actions">
+					{#if pendingDiff}
+						<button class="diff-btn diff-accept" onclick={onAcceptPending}>Accept</button>
+						<button class="diff-btn diff-reject" onclick={onRejectPending}>Reject</button>
+					{/if}
+					{#if onSwap}
+						<button class="header-btn" onclick={onSwap} title="Swap panels">
+							<ArrowLeftRight size={14} />
 						</button>
 					{/if}
-					<button class="header-btn" onclick={cancelEdit} title="Done (Esc)">
-						<Check size={14} />
+					{#if onClose}
+						<button class="header-btn" onclick={requestClose} title="Close">
+							<X size={14} />
+						</button>
+					{/if}
+					{#if onAddToChat}
+						<button class="header-btn" onclick={onAddToChat} title="Add to chat">
+							<MessageSquare size={14} />
+						</button>
+					{/if}
+					<button class="header-btn" onclick={downloadMarkdown} title="Download as Markdown">
+						<Download size={14} />
 					</button>
-					<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
-						<Save size={14} />
-					</button>
-				{:else}
-					<button class="header-btn" onclick={enterEditMode} title="Edit">
-						<Pencil size={14} />
-					</button>
-				{/if}
+					{#if editing}
+						{#if dirty}
+							<button class="header-btn" onclick={revertToSaved} title="Revert to saved">
+								<RotateCcw size={14} />
+							</button>
+						{/if}
+						<button class="header-btn" onclick={cancelEdit} title="Done (Esc)">
+							<Check size={14} />
+						</button>
+						<button class="header-btn save-btn" onclick={saveEdit} title="Save (⌘S)">
+							<Save size={14} />
+						</button>
+					{:else}
+						<button class="header-btn" onclick={enterEditMode} title="Edit">
+							<Pencil size={14} />
+						</button>
+					{/if}
+				</div>
 			</div>
-		</div>
-	</Header>
+		</Header>
 	{/if}
 	{#if error}
 		<div class="error-bar">{error}</div>
@@ -527,7 +527,6 @@
 
 	.dirty-indicator {
 		color: hsl(var(--primary, 220 90% 56%));
-		font-size: var(--text-xl);
 		line-height: 1;
 		margin-left: -4px;
 	}
@@ -571,7 +570,6 @@
 		padding: 8px 16px;
 		background: hsl(0 72% 51% / 0.1);
 		color: hsl(0 72% 51%);
-		font-size: var(--text-sm);
 		border-bottom: 1px solid hsl(0 72% 51% / 0.2);
 		flex-shrink: 0;
 	}
@@ -581,7 +579,6 @@
 		overflow-y: auto;
 		padding: 16px 20px;
 		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
-		font-size: var(--text-base);
 		line-height: 1.6;
 	}
 
@@ -596,19 +593,16 @@
 		color: hsl(142 71% 30%);
 	}
 
-
 	.diff-removed {
 		background: hsl(0 72% 51% / 0.12);
 		color: hsl(0 72% 40%);
 		text-decoration: line-through;
 	}
 
-
 	.diff-btn {
 		padding: 3px 10px;
 		border-radius: 5px;
 		border: none;
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-medium);
 		cursor: pointer;
 		transition:
@@ -664,7 +658,6 @@
 		outline: none;
 		resize: none;
 		font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
-		font-size: var(--text-base);
 		line-height: 1.6;
 		color: hsl(var(--foreground, 0 0% 9%));
 		background: transparent;
@@ -690,19 +683,16 @@
 	}
 
 	.docs-content :global(h1) {
-		font-size: var(--text-xl);
 		font-weight: var(--font-weight-bold);
 		margin: 0 0 12px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h2) {
-		font-size: var(--text-lg);
 		font-weight: var(--font-weight-semibold);
 		margin: 20px 0 8px 0;
 		line-height: 1.3;
 	}
 	.docs-content :global(h3) {
-		font-size: var(--text-base);
 		font-weight: var(--font-weight-semibold);
 		margin: 16px 0 6px 0;
 	}
@@ -721,7 +711,6 @@
 		background: hsl(var(--muted, 0 0% 96%));
 		padding: 2px 5px;
 		border-radius: var(--radius-sm);
-		font-size: var(--text-base);
 	}
 	.docs-content :global(pre) {
 		background: hsl(var(--muted, 0 0% 96%));
@@ -753,7 +742,6 @@
 		border: 1px solid var(--border-color);
 		padding: 6px 10px;
 		text-align: left;
-		font-size: var(--text-base);
 	}
 	.docs-content :global(th) {
 		background: hsl(var(--muted, 0 0% 96%));

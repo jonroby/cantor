@@ -185,7 +185,6 @@
 		gap: 0.5rem;
 		padding: 0.375rem 0.5rem;
 		border-radius: 0.375rem;
-		font-size: var(--text-sm);
 		cursor: pointer;
 	}
 

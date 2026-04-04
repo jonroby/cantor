@@ -104,7 +104,6 @@
 		border-radius: 0.375rem;
 		background: transparent;
 		text-align: left;
-		font-size: var(--text-sm);
 		color: inherit;
 		cursor: pointer;
 		outline: none;
@@ -133,12 +132,10 @@
 
 	:global(.bits-sidebar-menu-button-sm) {
 		height: 1.75rem;
-		font-size: var(--text-xs);
 	}
 
 	:global(.bits-sidebar-menu-button-lg) {
 		height: 3rem;
-		font-size: var(--text-sm);
 	}
 
 	:global(.bits-sidebar-root[data-collapsible='icon'] .bits-sidebar-menu-button) {

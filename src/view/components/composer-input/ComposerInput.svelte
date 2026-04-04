@@ -154,7 +154,7 @@
 						onclick={openFilePicker}
 						aria-label="Attach image"
 					>
-						<Plus size={18} />
+						<Plus size={20} />
 					</button>
 				{/if}
 				<textarea
@@ -342,14 +342,13 @@
 	.composer-message {
 		flex: 1;
 		padding: 0 0.25rem;
-		font-size: var(--text-base);
 		color: hsl(var(--foreground) / 0.45);
 	}
 
 	.composer-attach {
 		display: flex;
-		height: 1.75rem;
-		width: 1.75rem;
+		height: 2.25rem;
+		width: 2.25rem;
 		flex-shrink: 0;
 		cursor: pointer;
 		align-items: center;
@@ -375,7 +374,7 @@
 		background: transparent;
 		padding: 0.125rem 0.5rem 0.125rem 0.25rem;
 		font-family: inherit;
-		font-size: var(--text-base);
+		font-size: var(--text-lg);
 		color: hsl(var(--foreground));
 		outline: none;
 		line-height: 1.5;
@@ -396,7 +395,6 @@
 	}
 
 	.composer-hint {
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -410,7 +408,6 @@
 		gap: 0.65rem;
 		border-left: 1px solid var(--border-color);
 		padding-left: 0.75rem;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -432,13 +429,11 @@
 
 	.context-strategy-label {
 		flex-shrink: 0;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
 	.context-token-count {
 		flex-shrink: 0;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 		font-variant-numeric: tabular-nums;
 	}

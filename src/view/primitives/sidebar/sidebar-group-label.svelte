@@ -35,7 +35,6 @@
 		height: 2rem;
 		padding: 0 0.5rem;
 		border-radius: 0.375rem;
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--sidebar-foreground) / 0.7);
 		transition:

@@ -189,7 +189,6 @@
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -204,7 +203,6 @@
 		padding: 0.1rem 0.45rem;
 		border-radius: 999px;
 		background: hsl(var(--muted));
-		font-size: var(--text-xs);
 	}
 
 	.code-editor-actions {
@@ -240,7 +238,6 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--primary));
 		color: hsl(var(--primary-foreground));
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
 		transition: opacity 120ms ease;
@@ -285,7 +282,6 @@
 		color: hsl(var(--card-foreground));
 		font-family:
 			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
-		font-size: var(--text-sm);
 		line-height: 1.6;
 		tab-size: 2;
 		resize: vertical;
@@ -303,7 +299,6 @@
 
 	.code-editor-output-header {
 		padding: 0.4rem 0.85rem;
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -316,7 +311,6 @@
 		padding: 0.65rem 0.85rem;
 		font-family:
 			'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
-		font-size: var(--text-sm);
 		line-height: 1.55;
 		white-space: pre-wrap;
 		word-break: break-word;

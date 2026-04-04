@@ -568,7 +568,10 @@
 		<div
 			class="chatview-side"
 			class:chatview-side-open={sidePanelOpen}
-			onclick={(e) => { e.stopPropagation(); focusSide(); }}
+			onclick={(e) => {
+				e.stopPropagation();
+				focusSide();
+			}}
 		>
 			{#if sidePanelOpen}
 				{#if isDocumentPanel && activeDocumentFile}
@@ -672,7 +675,6 @@
 		opacity: 1;
 	}
 
-
 	.chatview-title-inner {
 		display: flex;
 		align-items: center;
@@ -728,7 +730,6 @@
 		justify-content: center;
 		min-height: calc(100vh - 200px);
 		text-align: center;
-		font-size: 28px;
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		max-width: 500px;
@@ -750,5 +751,4 @@
 		flex: 1;
 		overflow: hidden;
 	}
-
 </style>

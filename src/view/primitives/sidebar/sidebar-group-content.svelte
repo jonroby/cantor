@@ -15,6 +15,5 @@
 <style>
 	:global(.bits-sidebar-group-content) {
 		width: 100%;
-		font-size: var(--text-sm);
 	}
 </style>

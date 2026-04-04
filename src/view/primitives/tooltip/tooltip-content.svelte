@@ -35,6 +35,7 @@
 
 <style>
 	:global(.bits-tooltip-content) {
+		font-size: var(--text-base);
 		z-index: 50;
 		display: inline-flex;
 		width: fit-content;
@@ -43,10 +44,8 @@
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
 		border-radius: 0.375rem;
-		border: 1px solid var(--surface-floating-border);
-		background: var(--surface-floating);
-		color: var(--surface-floating-foreground);
-		font-size: var(--text-xs);
+		background: hsl(var(--foreground));
+		color: hsl(var(--background));
 		box-shadow: var(--surface-floating-shadow);
 		transform-origin: var(--bits-tooltip-content-transform-origin);
 	}

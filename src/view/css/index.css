@@ -32,11 +32,8 @@
 	--color-sidebar-ring: hsl(var(--sidebar-ring));
 
 	/* Design scale — usable in scoped <style> blocks */
-	--text-xs: 0.6875rem;
-	--text-sm: 0.85rem;
 	--text-base: 1rem;
-	--text-lg: 1.125rem;
-	--text-xl: 1.25rem;
+	--text-lg: 1.176rem;
 
 	--font-weight-normal: 400;
 	--font-weight-medium: 500;
@@ -70,7 +67,7 @@
 	--surface-selected: hsl(var(--muted));
 	--surface-hover: hsl(var(--muted) / 0.5);
 
-	--surface-tint: hsl(var(--muted) / 0.72);
+	--surface-tint: hsl(var(--foreground) / 0.08);
 	--surface-tint-strong: hsl(var(--accent));
 	--surface-floating: hsl(var(--popover));
 	--surface-floating-foreground: hsl(var(--popover-foreground));
@@ -81,7 +78,7 @@
 	--focus-ring-color: hsl(var(--ring) / 0.26);
 
 	--icon-subtle: rgba(23, 23, 23, 0.28);
-	--icon-faint: rgba(23, 23, 23, 0.40);
+	--icon-faint: rgba(23, 23, 23, 0.4);
 	--icon-muted: rgba(23, 23, 23, 0.56);
 	--icon-base: rgba(23, 23, 23, 0.72);
 	--icon-strong: rgba(23, 23, 23, 0.88);
@@ -122,7 +119,6 @@
 	--sidebar-ring: 0 0% 65%;
 }
 
-
 :root {
 	--icon-size: 16px;
 }
@@ -143,13 +139,13 @@ body {
 	margin: 0;
 	min-height: 100%;
 	overflow-x: hidden;
+	font-size: 12.75px;
 	background: hsl(var(--background));
 	color: hsl(var(--foreground));
 	font-family:
 		system-ui,
 		-apple-system,
 		sans-serif;
-	font-size: 15px;
 	font-weight: var(--font-weight-normal);
 }
 
@@ -161,6 +157,11 @@ button,
 input,
 textarea {
 	font: inherit;
+}
+
+pre,
+code {
+	font-size: var(--text-base);
 }
 
 .ui-button {
@@ -244,7 +245,6 @@ textarea {
 .ui-button-size-sm {
 	height: 2.1rem;
 	padding: 0 0.85rem;
-	font-size: var(--text-sm);
 }
 
 .ui-button-size-lg {

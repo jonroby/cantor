@@ -113,7 +113,6 @@
 	}
 
 	.agent-palette-title {
-		font-size: var(--text-base);
 		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
@@ -128,7 +127,6 @@
 	}
 
 	.toggle-all-label {
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -173,13 +171,11 @@
 	}
 
 	.capability-label {
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--foreground));
 	}
 
 	.capability-description {
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -217,14 +213,12 @@
 	}
 
 	.tool-name {
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		font-family: monospace;
 	}
 
 	.tool-description {
-		font-size: var(--text-xs);
 		color: hsl(var(--muted-foreground));
 	}
 </style>

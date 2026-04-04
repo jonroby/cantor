@@ -1,6 +1,15 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
-	import { GitFork, Trash2, Split, Code, Eye, ClipboardCopy, FileText, ArrowUp } from 'lucide-svelte';
+	import {
+		GitFork,
+		Trash2,
+		Split,
+		Code,
+		Eye,
+		ClipboardCopy,
+		FileText,
+		ArrowUp
+	} from 'lucide-svelte';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { Button } from '@/view/primitives';
 	import { renderMarkdownKatexBlocks, renderRichText } from '@/view/lib/katex';
@@ -306,7 +315,6 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--foreground) / 0.05);
 		padding: 0.5rem 0.75rem;
-		font-size: var(--text-base);
 		color: hsl(var(--foreground) / 0.6);
 	}
 
@@ -318,9 +326,8 @@
 	.chatmsg-prompt {
 		max-width: 85%;
 		border-radius: 0.75rem;
-		background: var(--surface-hover);
+		background: hsl(var(--foreground) / 0.07);
 		padding: 0.75rem 1rem;
-		font-size: var(--text-sm);
 		line-height: 1.55;
 		word-break: break-word;
 		color: hsl(var(--foreground));
@@ -337,10 +344,10 @@
 	}
 
 	.chatmsg-response-header {
+		font-size: var(--text-base);
 		display: flex;
 		align-items: center;
 		gap: 0.35rem;
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-semibold);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -388,7 +395,6 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--muted) / 0.4);
 		padding: 0.75rem;
-		font-size: 0.85em;
 		line-height: 1.6;
 		font-family: var(--font-mono, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
 		white-space: pre-wrap;
@@ -409,7 +415,7 @@
 
 	.chatmsg-actions {
 		display: flex;
-		gap: 0.2rem;
+		gap: 0.5rem;
 	}
 
 	.chatmsg-side-chat-badge {
@@ -421,7 +427,6 @@
 		border: 1px solid var(--border-color);
 		background: transparent;
 		padding: 0.25rem 0.5rem;
-		font-size: var(--text-sm);
 		color: var(--icon-muted);
 		transition:
 			background 120ms ease,
@@ -459,7 +464,6 @@
 		background: transparent;
 		padding: 0.45rem 0.75rem;
 		text-align: left;
-		font-size: var(--text-base);
 		color: hsl(var(--popover-foreground));
 	}
 
@@ -513,19 +517,15 @@
 	}
 
 	:global(.chatmsg-response-body h1) {
-		font-size: 1.35em;
 	}
 
 	:global(.chatmsg-response-body h2) {
-		font-size: 1.2em;
 	}
 
 	:global(.chatmsg-response-body h3) {
-		font-size: 1.08em;
 	}
 
 	:global(.chatmsg-response-body h4) {
-		font-size: 1em;
 	}
 
 	:global(.chatmsg-response-body strong) {
@@ -566,14 +566,12 @@
 		border-radius: 0.5rem;
 		background: hsl(var(--muted) / 0.5);
 		overflow-x: auto;
-		font-size: 0.85em;
 	}
 
 	:global(.chatmsg-response-body code) {
 		padding: 0.15em 0.35em;
 		border-radius: 0.25rem;
 		background: hsl(var(--muted) / 0.5);
-		font-size: 0.88em;
 	}
 
 	:global(.chatmsg-response-body pre code) {
@@ -588,7 +586,6 @@
 	}
 
 	:global(.chatmsg-response-body .katex) {
-		font-size: var(--text-xl);
 		line-height: normal;
 	}
 </style>

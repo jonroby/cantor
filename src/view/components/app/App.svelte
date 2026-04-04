@@ -468,6 +468,7 @@
 		flex-direction: column;
 		overflow: hidden;
 		min-width: 0;
+		font-size: var(--text-lg);
 		transition: flex 250ms ease;
 	}
 
@@ -485,7 +486,6 @@
 	}
 
 	.welcome-text {
-		font-size: 28px;
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}

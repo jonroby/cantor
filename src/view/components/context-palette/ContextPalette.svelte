@@ -101,7 +101,6 @@
 	}
 
 	.context-palette-title {
-		font-size: var(--text-base);
 		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
@@ -113,7 +112,6 @@
 	}
 
 	.context-section-label {
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-semibold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -153,7 +151,6 @@
 	}
 
 	.strategy-label {
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}
@@ -166,7 +163,6 @@
 	}
 
 	.strategy-description {
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 		line-height: 1.4;
 	}
@@ -190,7 +186,6 @@
 	}
 
 	.token-stat-label {
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -198,7 +193,6 @@
 		display: flex;
 		align-items: center;
 		gap: 0.3rem;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -222,7 +216,6 @@
 		background: hsl(var(--popover));
 		border: 1px solid var(--border-color);
 		box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
-		font-size: var(--text-xs);
 		color: hsl(var(--muted-foreground));
 		line-height: 1.4;
 		white-space: normal;
@@ -235,7 +228,6 @@
 	}
 
 	.token-stat-value {
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 		font-variant-numeric: tabular-nums;

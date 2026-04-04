@@ -191,7 +191,6 @@
 		height: auto;
 	}
 
-
 	.folderview-folder-name {
 		color: hsl(var(--foreground) / 0.7);
 		font-weight: var(--font-weight-normal);
@@ -223,7 +222,6 @@
 		padding: 3px 10px;
 		border-radius: 5px;
 		border: none;
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-medium);
 		cursor: pointer;
 		transition:

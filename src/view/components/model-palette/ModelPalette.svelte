@@ -296,7 +296,6 @@
 		width: min(900px, calc(100vw - 2rem));
 		overflow: hidden;
 		padding: 0;
-		font-size: var(--text-sm);
 	}
 
 	.palette-body {

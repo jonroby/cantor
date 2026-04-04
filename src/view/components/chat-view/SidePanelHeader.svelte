@@ -80,7 +80,6 @@
 
 <style>
 	.chatview-side-counter {
-		font-size: var(--text-base);
 		color: hsl(var(--muted-foreground));
 		min-width: 3rem;
 		text-align: center;

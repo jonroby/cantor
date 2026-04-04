@@ -60,13 +60,11 @@
 	}
 
 	:global(.confirm-delete-title) {
-		font-size: var(--text-lg);
 		font-weight: var(--font-weight-semibold);
 	}
 
 	:global(.confirm-delete-description) {
 		margin-top: 0.5rem;
-		font-size: var(--text-sm);
 		color: hsl(var(--muted-foreground));
 	}
 
@@ -82,7 +80,6 @@
 		padding: 0.5rem 1rem;
 		border: 1px solid transparent;
 		border-radius: 0.5rem;
-		font-size: var(--text-sm);
 		outline: none;
 	}
 

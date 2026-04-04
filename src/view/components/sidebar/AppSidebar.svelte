@@ -488,7 +488,6 @@
 	}
 
 	.sidebar-brand-name {
-		font-size: var(--text-sm);
 		font-weight: var(--font-weight-semibold);
 		color: hsl(var(--sidebar-foreground));
 	}
@@ -500,7 +499,6 @@
 		border-radius: 9999px;
 		background: var(--sidebar-surface-tint);
 		padding: 0.125rem 0.45rem;
-		font-size: var(--text-xs);
 		font-weight: var(--font-weight-semibold);
 		line-height: 1.2;
 		color: var(--sidebar-surface-tint-foreground);
@@ -608,7 +606,6 @@
 		justify-content: space-between;
 		margin-bottom: 0.25rem;
 		padding: 0 0.75rem;
-		font-size: var(--text-xs);
 		color: hsl(var(--sidebar-foreground) / 0.5);
 	}
 
@@ -634,7 +631,6 @@
 	}
 
 	:global(.sidebar-tooltip) {
-		font-size: var(--text-xs);
 	}
 
 	:global(.sidebar-tooltip-wide) {
