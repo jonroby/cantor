@@ -67,12 +67,12 @@
 				onCancel={onCancelRename}
 			/>
 		{:else}
-			<span>{file.name}</span>
+			<span data-doc-label>{file.name}</span>
 		{/if}
 	</Sidebar.MenuButton>
 	<DropdownMenu.Root>
 		<DropdownMenu.Trigger class="document-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
-			<EllipsisVertical size={22} />
+			<EllipsisVertical size={18} />
 		</DropdownMenu.Trigger>
 		<DropdownMenu.Portal>
 			<DropdownMenu.Content align="start" side="right" class="document-item-menu-content">
@@ -130,6 +130,7 @@
 	:global(li[data-sidebar='menu-item']:has([data-state='open']) .document-item-button) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
+		padding-right: 2.25rem;
 	}
 
 	:global(.document-item-menu-trigger) {
@@ -148,6 +149,7 @@
 		color: var(--sidebar-icon-muted);
 		opacity: 0;
 		outline: none;
+		cursor: pointer;
 		transition:
 			opacity 120ms ease,
 			color 120ms ease,
@@ -159,9 +161,11 @@
 		opacity: 1;
 	}
 
-	:global(.document-item-menu-trigger:hover) {
+	:global(.document-item-menu-trigger:hover),
+	:global(.document-item-menu-trigger:active) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
+		cursor: pointer;
 	}
 
 	:global(.document-item-menu-trigger:focus-visible) {
@@ -171,9 +175,9 @@
 	:global(.document-item-menu-content) {
 		z-index: 50;
 		min-width: var(--dropdown-min-w);
-		padding: 0.25rem;
+		padding: 0.375rem;
 		border: 1px solid var(--surface-floating-border);
-		border-radius: 0.5rem;
+		border-radius: 0.75rem;
 		background: var(--surface-floating);
 		color: var(--surface-floating-foreground);
 		box-shadow: var(--surface-floating-shadow);
@@ -182,9 +186,9 @@
 	:global(.document-item-menu-action) {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.375rem 0.5rem;
-		border-radius: 0.375rem;
+		gap: 0.625rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.5rem;
 		font-size: 1rem;
 		cursor: pointer;
 	}

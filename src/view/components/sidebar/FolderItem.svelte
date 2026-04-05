@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import {
 		ChevronRight,
-		Ellipsis,
+		EllipsisVertical,
 		Folder,
 		FilePlus,
 		Upload,
@@ -147,6 +147,7 @@
 				/>
 			{:else}
 				<span
+					data-folder-label
 					ondblclick={(e) => {
 						e.stopPropagation();
 						startRenameFolder();
@@ -156,7 +157,7 @@
 		</Sidebar.MenuButton>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger class="folder-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
-				<Ellipsis size={14} />
+				<EllipsisVertical size={18} />
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Portal>
 				<DropdownMenu.Content align="start" side="right" class="folder-item-menu-content">
@@ -280,9 +281,10 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .folder-item-button),
-	:global(li[data-sidebar='menu-item'][data-state='open'] .folder-item-button) {
+	:global(li[data-sidebar='menu-item']:has([data-state='open']) .folder-item-button) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
+		padding-right: 2.25rem;
 	}
 
 	:global(.folder-item-menu-trigger) {
@@ -290,8 +292,8 @@
 		top: 50%;
 		right: 0.25rem;
 		display: flex;
-		height: 1.5rem;
-		width: 1.5rem;
+		height: 2rem;
+		width: 2rem;
 		align-items: center;
 		justify-content: center;
 		transform: translateY(-50%);
@@ -301,6 +303,7 @@
 		color: var(--sidebar-icon-muted);
 		opacity: 0;
 		outline: none;
+		cursor: pointer;
 		transition:
 			opacity 120ms ease,
 			color 120ms ease,
@@ -308,13 +311,15 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .folder-item-menu-trigger),
-	:global(.folder-item-menu-trigger[data-state='open']) {
+	:global(li[data-sidebar='menu-item']:has([data-state='open']) .folder-item-menu-trigger) {
 		opacity: 1;
 	}
 
-	:global(.folder-item-menu-trigger:hover) {
+	:global(.folder-item-menu-trigger:hover),
+	:global(.folder-item-menu-trigger:active) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
+		cursor: pointer;
 	}
 
 	:global(.folder-item-menu-trigger:focus-visible) {
@@ -324,9 +329,9 @@
 	:global(.folder-item-menu-content) {
 		z-index: 50;
 		min-width: var(--dropdown-min-w);
-		padding: 0.25rem;
+		padding: 0.375rem;
 		border: 1px solid var(--surface-floating-border);
-		border-radius: 0.5rem;
+		border-radius: 0.75rem;
 		background: var(--surface-floating);
 		color: var(--surface-floating-foreground);
 		box-shadow: var(--surface-floating-shadow);
@@ -335,9 +340,9 @@
 	:global(.folder-item-menu-action) {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.375rem 0.5rem;
-		border-radius: 0.375rem;
+		gap: 0.625rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.5rem;
 		cursor: pointer;
 	}
 

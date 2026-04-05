@@ -255,7 +255,7 @@
 							</Tooltip.Trigger>
 							<Tooltip.Content side="top">Context settings</Tooltip.Content>
 						</Tooltip.Root>
-						<span class="context-strategy-label">Context Window</span>
+						<span class="context-strategy-label">Context</span>
 						{#if contextLength != null}
 							<div class="progress-track compact">
 								<div
@@ -438,7 +438,7 @@
 	}
 
 	:global(.model-chip) {
-		min-width: 14.5rem;
+		max-width: 14.5rem;
 		justify-content: flex-start;
 		gap: 0.65rem;
 	}

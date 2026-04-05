@@ -4,7 +4,7 @@
 	import * as app from '@/app';
 	import InlineRenameInput from '@/view/primitives/inline-rename-input/InlineRenameInput.svelte';
 	import MessageSquare from 'lucide-svelte/icons/message-square';
-	import Ellipsis from 'lucide-svelte/icons/ellipsis';
+	import EllipsisVertical from 'lucide-svelte/icons/ellipsis-vertical';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Download from 'lucide-svelte/icons/download';
 	import Trash2 from 'lucide-svelte/icons/trash-2';
@@ -58,12 +58,12 @@
 			class={`chat-item-button ${indented ? 'chat-item-button-indented' : 'chat-item-button-root'}`}
 		>
 			<MessageSquare size={16} class="shrink-0" />
-			<span class="chat-item-label">{chat.name}</span>
+			<span data-chat-label>{chat.name}</span>
 		</Sidebar.MenuButton>
 	{/if}
 	<DropdownMenu.Root>
 		<DropdownMenu.Trigger class="chat-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
-			<Ellipsis size={14} />
+			<EllipsisVertical size={18} />
 		</DropdownMenu.Trigger>
 		<DropdownMenu.Portal>
 			<DropdownMenu.Content align="start" side="right" class="item-menu-content">
@@ -107,7 +107,7 @@
 		padding-right: 0.75rem;
 	}
 
-	.chat-item-label {
+	:global([data-chat-label]) {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -130,15 +130,11 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .chat-item-button),
-	:global(li[data-sidebar='menu-item'][data-state='open'] .chat-item-button) {
+	:global(li[data-sidebar='menu-item']:has([data-state='open']) .chat-item-button),
+	:global(li[data-sidebar='menu-item']:has(.bits-sidebar-menu-button[data-active='true']) .chat-item-button) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
-	}
-
-	:global(li[data-sidebar='menu-item']:hover .chat-item-label) {
-		text-overflow: clip;
-		mask-image: linear-gradient(to right, black 40%, transparent 85%);
-		-webkit-mask-image: linear-gradient(to right, black 40%, transparent 85%);
+		padding-right: 2.25rem;
 	}
 
 	:global(.chat-item-menu-trigger) {
@@ -146,8 +142,8 @@
 		top: 50%;
 		right: 0.25rem;
 		display: flex;
-		height: 1.5rem;
-		width: 1.5rem;
+		height: 2rem;
+		width: 2rem;
 		align-items: center;
 		justify-content: center;
 		transform: translateY(-50%);
@@ -157,6 +153,7 @@
 		color: var(--sidebar-icon-muted);
 		opacity: 0;
 		outline: none;
+		cursor: pointer;
 		transition:
 			opacity 120ms ease,
 			color 120ms ease,
@@ -164,13 +161,16 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .chat-item-menu-trigger),
-	:global(.chat-item-menu-trigger[data-state='open']) {
+	:global(li[data-sidebar='menu-item']:has(.bits-sidebar-menu-button[data-active='true']) .chat-item-menu-trigger),
+	:global(li[data-sidebar='menu-item']:has([data-state='open']) .chat-item-menu-trigger) {
 		opacity: 1;
 	}
 
-	:global(.chat-item-menu-trigger:hover) {
+	:global(.chat-item-menu-trigger:hover),
+	:global(.chat-item-menu-trigger:active) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
+		cursor: pointer;
 	}
 
 	:global(.chat-item-menu-trigger:focus-visible) {
@@ -180,9 +180,9 @@
 	:global(.item-menu-content) {
 		z-index: 50;
 		min-width: var(--dropdown-min-w);
-		padding: 0.25rem;
+		padding: 0.375rem;
 		border: 1px solid var(--surface-floating-border);
-		border-radius: 0.5rem;
+		border-radius: 0.75rem;
 		background: var(--surface-floating);
 		color: var(--surface-floating-foreground);
 		box-shadow: var(--surface-floating-shadow);
@@ -191,9 +191,9 @@
 	:global(.item-menu-action) {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.375rem 0.5rem;
-		border-radius: 0.375rem;
+		gap: 0.625rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.5rem;
 		cursor: pointer;
 	}
 
