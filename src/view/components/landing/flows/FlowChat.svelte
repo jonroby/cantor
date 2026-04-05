@@ -173,6 +173,7 @@
 		<!-- Main panel -->
 		<div class="main" bind:this={mainEl}>
 			<div class="chat-header">
+				<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="rgba(23,23,23,0.4)" viewBox="0 0 256 256"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></svg>
 				<span class="chat-title">Transformers</span>
 			</div>
 
@@ -312,6 +313,7 @@
 		height: 52px;
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
 		padding: 0 1.5rem;
 		background: hsl(0 0% 98%);
 		border-bottom: 1px solid hsl(0 0% 91%);
