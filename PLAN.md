@@ -1,8 +1,81 @@
 # Landing Page — Feature Flows Plan
 
-## Context
+## Context for New Conversations
 
-The landing page currently shows a single looping HTML animation (`WorkflowChat.svelte`) of a user typing a message and the sidebar collapsing. The goal is to expand this into **5 distinct feature flows**, each demonstrating a key capability of Cantor. A Railway-style tab bar below the demo frame labels each flow; when a flow's animation ends it auto-advances to the next, and the user can also click any tab to jump directly.
+This plan is for the `landing` branch of the Cantor repo at `/Users/jonroby/ai/cantor`.
+
+**What Cantor is:** Svelte 5 + Vite SPA. An LLM interface for power users. Browser-only state in IndexedDB.
+
+**What this branch does:** Replaces the old hero video on the landing page with an animated HTML demo. The demo shows 5 feature flows, each as a looping animation, with a Railway-style tab bar that auto-advances between flows.
+
+**Current state:**
+
+- `src/view/components/landing/LandingPage.svelte` — landing page, imports `WorkflowChat` in the `.preview` section
+- `src/view/components/landing/WorkflowChat.svelte` — a single GSAP-animated HTML component (Flow 1 prototype). Has sidebar + main panel + composer. Currently uses `repeat: -1` (infinite loop). Needs to be moved to `flows/FlowChat.svelte` and converted to call `onComplete()` once instead of looping.
+- `PLAN.md` — this file, at repo root
+- `package.json` — gsap 3.14.2 added as dependency
+- No videos, no SVGs for the demo — pure HTML/CSS/GSAP
+
+**Key constraint:** The demo HTML must be a pixel-perfect replica of the real app UI. Do NOT approximate — use the exact class names, CSS values, and measurements documented below.
+
+---
+
+## Real App CSS Variables (exact values)
+
+```css
+/* Colors */
+--background: 0 0% 98% /* hsl → #f9f9f9 */ --foreground: 0 0% 9% /* hsl → #171717 */ --card: 0 0%
+	100% /* white */ --muted: 0 0% 96% /* #f5f5f5 */ --muted-foreground: 0 0% 45% /* #737373 */
+	--border: 0 0% 88% /* #e0e0e0 */ --sidebar: 0 0% 97% /* #f7f7f7 */ --sidebar-foreground: 0 0% 15%
+	/* #262626 */ --sidebar-accent: 0 0% 91% /* #e8e8e8 */ --sidebar-border: 0 0% 88% /* #e0e0e0 */
+	--primary: 0 0% 12% /* #1f1f1f */ /* Typography */ --text-sm: 12px --text-base: 12.75px
+	--text-md: 13.75px --text-lg: 15px --text-sidebar: 13.75px /* Radius */ --radius-sm: 4px
+	--radius-md: 8px --radius-lg: 12px --radius-full: 999px /* Layout */ --header-height: 52px
+	--pane-content-width: 720px /* Surfaces */ --surface-tint: hsl(var(--foreground) / 0.08)
+	--sidebar-surface-tint: hsl(var(--sidebar-accent) / 0.92) --surface-floating-shadow: 0 18px 40px
+	hsl(var(--foreground) / 0.12) /* Icons */ --icon-muted: rgba(23, 23, 23, 0.56)
+	--icon-strong: rgba(23, 23, 23, 0.88) --sidebar-icon-muted: hsl(var(--sidebar-foreground) / 0.52);
+```
+
+---
+
+## Real App Component Measurements
+
+### Sidebar (`AppSidebar.svelte`)
+
+- Root bg: `hsl(var(--sidebar))` = `#f7f7f7`
+- Border-right: `1px solid hsl(var(--border))` = `1px solid #e0e0e0`
+- Header row height: `52px`, padding: `0 0.75rem 0 2rem`
+- Brand name: `font-size: 17px; font-weight: 600; color: hsl(var(--sidebar-foreground) / 0.88)`
+- Primary action buttons: `border-radius: 0.5rem; padding: 0.5rem 0.75rem 0.5rem 1.5rem`
+- Section separator: `border-top: 1px solid hsl(var(--sidebar-border)); margin: 0.5rem 0`
+- Section label: `font-size: 12px; color: hsl(var(--sidebar-foreground) / 0.5); padding: 0 0.75rem 0 1.5rem`
+- Menu button height: `2.5rem` (40px), active bg: `hsl(var(--sidebar-accent))`
+- Menu button active font-weight: `500`
+- Content padding: `0.5rem` left and right
+
+### Composer (`ComposerInput.svelte`)
+
+- Shell: `border-radius: 1.25rem; border: 1px solid var(--border-color); background: hsl(var(--card)); box-shadow: 0 12px 40px hsl(var(--foreground) / 0.12)`
+- Row padding: `0.85rem 1rem`
+- Footer padding: `0.85rem 1rem`
+- Footer border-top: `1px solid var(--border-color)`
+- Attach button: `height: 2.25rem; width: 2.25rem; border-radius: 50%; border: 1px solid var(--border-color)`
+- Send button: `border-radius: 50%`
+- Textarea: `font-size: var(--text-lg)` = 15px, `line-height: 1.5`
+- Footer right: `border-left: 1px solid var(--border-color); padding-left: 0.75rem; gap: 0.65rem`
+- Progress track: `height: 0.35rem; border-radius: 999px; background: hsl(var(--muted))`
+- Context label/count: `color: hsl(var(--muted-foreground))`
+- Context settings btn: `width: 1.375rem; height: 1.375rem; border-radius: var(--radius-sm)`
+- Model chip / mode chip: `ui-button-outline ui-button-size-sm` → `height: 2.1rem; padding: 0 0.85rem; border: 1px solid var(--border-color); background: hsl(var(--background))`
+
+### Chat View (`ChatView.svelte`)
+
+- Header height: `52px`, bg: inherits from `Header` primitive
+- Title: `font-size: 13.75px; font-weight: 600`
+- Exchanges container: `max-width: 720px; margin: 0 auto; gap: 1rem; padding-top: 1.5rem`
+- Bottom spacer: `height: 8rem`
+- User bubble: right-aligned, dark bg `hsl(var(--primary))` = `#1f1f1f`
 
 ---
 
@@ -10,22 +83,21 @@ The landing page currently shows a single looping HTML animation (`WorkflowChat.
 
 ```
 src/view/components/landing/
-├── LandingPage.svelte          ← add FlowPlayer, update preview section
-├── FlowPlayer.svelte           ← NEW: tab bar + flow switcher shell
+├── LandingPage.svelte          ← swap WorkflowChat → FlowPlayer
+├── FlowPlayer.svelte           ← NEW: registry + tab bar + switcher
+├── WorkflowChat.svelte         ← DELETE after moving to flows/FlowChat.svelte
 ├── flows/
-│   ├── FlowChat.svelte         ← renamed from WorkflowChat.svelte (Flow 1)
-│   ├── FlowProviders.svelte    ← NEW stub → Flow 2
-│   ├── FlowTokens.svelte       ← NEW stub → Flow 3
-│   ├── FlowDocuments.svelte    ← NEW stub → Flow 4
-│   └── FlowAgent.svelte        ← NEW stub → Flow 5
+│   ├── FlowChat.svelte         ← moved from WorkflowChat.svelte + onComplete prop
+│   ├── FlowProviders.svelte    ← stub
+│   ├── FlowTokens.svelte       ← stub
+│   ├── FlowDocuments.svelte    ← stub
+│   └── FlowAgent.svelte        ← stub
 └── index.ts                    ← no change
 ```
 
 ---
 
-## Flow Registry
-
-A single array in `FlowPlayer.svelte` defines all flows. Reordering or adding flows = editing this array only.
+## Flow Registry (in FlowPlayer.svelte)
 
 ```ts
 const flows = [
@@ -37,28 +109,26 @@ const flows = [
 ];
 ```
 
+Reordering or adding flows = editing this array only.
+
 ---
 
 ## FlowPlayer.svelte
 
 - Tracks `activeIndex` (which flow is playing)
-- Renders the active flow component, passing an `onComplete` prop
-- When `onComplete` fires, increments `activeIndex % flows.length`
-- Tab bar at the bottom: 5 tabs separated by `|` dividers, active tab highlighted with a pill background (dark, matches the Railway style)
-- Clicking a tab sets `activeIndex` directly and restarts that flow
-
-### Tab bar style
-
-- Sits below the demo frame, not inside it
-- Background: transparent (inherits landing page bg)
-- Tabs: muted text, active tab gets a dark rounded pill
-- Separated by faint `|` dividers
+- Renders the active flow component via `{#key activeIndex}<ActiveFlow onComplete={advance}/>{/key}`
+- `{#key}` remounts the component on each switch so GSAP timelines restart cleanly
+- When `onComplete` fires: `activeIndex = (activeIndex + 1) % flows.length`
+- Tab bar sits **below** the demo frame (not inside it)
+- Active tab: dark rounded pill background
+- Inactive tabs: muted text, separated by faint `|` dividers
+- Clicking a tab sets `activeIndex` directly
 
 ---
 
 ## Flow interface
 
-Each flow component accepts:
+Each flow component:
 
 ```ts
 interface Props {
@@ -66,60 +136,71 @@ interface Props {
 }
 ```
 
-The flow calls `onComplete()` at the end of its GSAP timeline (before reset, so the tab switches and the new flow fades in cleanly). The `repeat: -1` on the timeline is removed — each flow runs once, calls `onComplete`, and the parent remounts the next flow.
+- No `repeat: -1` on the GSAP timeline
+- Call `onComplete()` at the natural end of the timeline (after the final hold, before any reset)
 
 ---
 
-## Flow 1: Conversations (FlowChat)
+## Flow 1: Conversations (FlowChat) — move + adapt WorkflowChat
 
-Rename `WorkflowChat.svelte` → `flows/FlowChat.svelte`. Changes:
+Current `WorkflowChat.svelte` animation sequence:
 
-- Remove `repeat: -1, repeatDelay: 1.5` from GSAP timeline
-- At end of timeline call `onComplete()`
-- Keep all existing animation stages (type → send → stream response → sidebar collapse → expand)
+1. User types into composer (character by character via `onUpdate`)
+2. User bubble slides up, composer clears
+3. Response lines stream in one by one
+4. Response cursor blinks
+5. Sidebar collapses (width 216 → 0, main margin-left 216 → 0)
+6. Hold
+7. Sidebar expands back
 
----
+Changes needed:
 
-## Flow 2: Providers (FlowProviders) — stub → implement later
-
-Show:
-
-1. Model chip in composer is clicked → model palette slides up
-2. Provider logos animate in (Claude, OpenAI, Gemini, Mistral, Ollama, WebLLM)
-3. A provider is selected, chip updates
-4. Encrypted key badge fades in ("Keys stored locally · Web Crypto AES-256")
-
----
-
-## Flow 3: Tokens (FlowTokens) — stub → implement later
-
-Show:
-
-1. Context window progress bar fills as messages accumulate
-2. Context settings opens → three strategies shown (Full, LRU, BM25)
-3. Strategy is selected, token count updates
+- Remove `repeat: -1, repeatDelay: 1.5`
+- Add `onComplete` prop
+- Call `onComplete()` at end of timeline
 
 ---
 
-## Flow 4: Documents (FlowDocuments) — stub → implement later
+## Flow 2: Providers — stub (implement later)
 
-Show:
+Animation plan:
+
+1. Model chip clicked → palette slides up from composer
+2. Provider logos appear (Claude, OpenAI, Gemini, Mistral, Ollama, WebLLM)
+3. Provider selected → chip label updates
+4. Badge fades in: "Keys stored locally · Web Crypto AES-256"
+
+---
+
+## Flow 3: Tokens — stub (implement later)
+
+Animation plan:
+
+1. Context window bar fills as messages appear
+2. Context settings popover opens → Full / LRU / BM25 options shown
+3. Strategy selected → token count updates
+
+---
+
+## Flow 4: Documents — stub (implement later)
+
+Animation plan:
 
 1. Folder panel opens in split view
-2. A `.md` file opens with rendered math/SVG content
-3. A function plot renders
-4. Download button is clicked
+2. `.md` file opens with rendered math/SVG
+3. Function plot renders
+4. Download button clicked
 
 ---
 
-## Flow 5: Agent (FlowAgent) — stub → implement later
+## Flow 5: Agent — stub (implement later)
 
-Show:
+Animation plan:
 
 1. Agent toggle activates in composer footer
-2. Tools palette opens showing tool list (read_file, write_file, search, etc.)
-3. Some tools are deselected ("reducing token usage" label)
-4. Agent runs: tool call indicators stream in between messages
+2. Tools palette opens — list of tools shown
+3. Some tools deselected ("reducing token usage")
+4. Agent runs with tool call indicators streaming in
 
 ---
 
@@ -127,40 +208,39 @@ Show:
 
 - Replace `import WorkflowChat` with `import FlowPlayer`
 - Replace `<WorkflowChat />` with `<FlowPlayer />`
-- The `.preview` wrapper stays identical — `FlowPlayer` fills it
+- `.preview` wrapper is unchanged
 
 ---
 
-## Stub implementation
+## Stub implementation (Flows 2–5)
 
-Flows 2–5 initially render a placeholder that:
+Each stub:
 
-- Shows the demo frame with sidebar + composer (shared base layout)
-- Displays the flow label centered in the chat area
-- Calls `onComplete()` after 3 seconds
-
-This lets the tab switcher work end-to-end before the real animations are built.
+- Renders the same demo frame shell (sidebar + main + composer)
+- Shows the flow label centered in the chat area
+- Calls `onComplete()` after 3 seconds via `setTimeout`
 
 ---
 
 ## Critical files
 
-| File                                                     | Action                                                  |
-| -------------------------------------------------------- | ------------------------------------------------------- |
-| `src/view/components/landing/LandingPage.svelte`         | Swap WorkflowChat → FlowPlayer                          |
-| `src/view/components/landing/WorkflowChat.svelte`        | Rename → `flows/FlowChat.svelte`, add `onComplete` prop |
-| `src/view/components/landing/FlowPlayer.svelte`          | CREATE: registry + tab bar + switcher                   |
-| `src/view/components/landing/flows/FlowProviders.svelte` | CREATE: stub                                            |
-| `src/view/components/landing/flows/FlowTokens.svelte`    | CREATE: stub                                            |
-| `src/view/components/landing/flows/FlowDocuments.svelte` | CREATE: stub                                            |
-| `src/view/components/landing/flows/FlowAgent.svelte`     | CREATE: stub                                            |
+| File                                                     | Action                                                                     |
+| -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `src/view/components/landing/LandingPage.svelte`         | Swap WorkflowChat → FlowPlayer                                             |
+| `src/view/components/landing/WorkflowChat.svelte`        | Move → `flows/FlowChat.svelte`, add `onComplete` prop, remove `repeat: -1` |
+| `src/view/components/landing/FlowPlayer.svelte`          | CREATE                                                                     |
+| `src/view/components/landing/flows/FlowChat.svelte`      | CREATE (from WorkflowChat)                                                 |
+| `src/view/components/landing/flows/FlowProviders.svelte` | CREATE stub                                                                |
+| `src/view/components/landing/flows/FlowTokens.svelte`    | CREATE stub                                                                |
+| `src/view/components/landing/flows/FlowDocuments.svelte` | CREATE stub                                                                |
+| `src/view/components/landing/flows/FlowAgent.svelte`     | CREATE stub                                                                |
 
 ---
 
 ## Verification
 
-1. `bun run dev` — landing page loads
-2. Flow 1 plays the full chat animation then tab advances to Flow 2
-3. Flow 2 stub shows placeholder for 3s then advances to Flow 3, etc.
-4. Clicking any tab jumps directly to that flow
+1. `bun run dev` — landing page loads, Flow 1 plays
+2. Flow 1 completes → tab advances to Flow 2 stub (3s placeholder)
+3. Continues through all 5 flows in a loop
+4. Clicking any tab jumps to that flow
 5. `bun run typecheck` — no errors
