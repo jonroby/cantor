@@ -447,13 +447,13 @@
 		box-shadow: 0 0 0 1px hsl(158 75% 42% / 0.4);
 	}
 
-	/* Progress fill that sweeps left→right inside active tab */
+	/* Progress fill sweeps left→right with straight leading edge */
 	.tab-fill {
 		position: absolute;
 		inset: 0;
 		left: 0;
-		background: linear-gradient(90deg, hsl(158 85% 36%), hsl(175 85% 36%));
-		border-radius: inherit;
+		background: hsl(162 72% 38%);
+		border-radius: 999px 0 0 999px;
 		pointer-events: none;
 		transition: none;
 	}
@@ -466,6 +466,12 @@
 
 	.tab-label {
 		position: relative;
+	}
+
+	.tab.active .tab-label,
+	.tab.active .tab-icon {
+		text-shadow: 0 0 8px hsl(158 85% 75% / 0.18);
+		filter: drop-shadow(0 0 3px hsl(158 85% 75% / 0.12));
 	}
 
 	.tab-divider {
