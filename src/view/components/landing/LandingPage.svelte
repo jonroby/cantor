@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import WorkflowChat from './WorkflowChat.svelte';
+	import FlowChat from './flows/FlowChat.svelte';
 
 	let canvas: HTMLCanvasElement;
 	let animationId: number;
@@ -129,7 +129,7 @@
 	<!-- App preview — animated SVG screen recording -->
 	<div class="preview-wrap">
 		<div class="preview">
-			<WorkflowChat />
+			<FlowChat onComplete={() => {}} />
 		</div>
 	</div>
 </div>
