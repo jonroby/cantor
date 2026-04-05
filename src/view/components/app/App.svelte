@@ -75,6 +75,7 @@
 
 	// Sync activeExchangeId to the tail of whichever panel the composer is on
 	$effect(() => {
+		if (routerState.route === 'canvas') return;
 		const panelIndex = composerSide === 'right' ? 1 : 0;
 		const panel = workspaceState.panels[panelIndex];
 		if (!panel) return;
@@ -200,6 +201,11 @@
 	function resetUIState() {
 		canvasViewRef?.resetUIState?.();
 		chatViewRef?.resetUIState();
+		const panels = app.workspace.getState().panels;
+		const withoutSideChat = panels.filter((p) => p.type !== 'side-chat');
+		if (withoutSideChat.length !== panels.length) {
+			app.workspace.setPanels(withoutSideChat);
+		}
 	}
 
 	function focusComposer() {
@@ -423,10 +429,7 @@
 						}}
 						onScrollToBottom={() => canvasViewRef?.scrollToTop?.()}
 						onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
-						onScrollToNode={(nodeId) => {
-							ensureChatPanel();
-							tick().then(() => activeViewRef?.scrollToNode(nodeId));
-						}}
+						onScrollToNode={(nodeId) => canvasViewRef?.scrollToNode?.(nodeId)}
 						onExpandSideChat={(exchangeId) => canvasViewRef?.expandSideChat?.(exchangeId)}
 						onComposerPinChange={() => {}}
 					/>

@@ -5,19 +5,7 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { renderRichText } from '@/view/lib/katex';
-	import {
-		Search,
-		Maximize2,
-		ArrowUpToLine,
-		CircleDot,
-		GitFork,
-		Trash2,
-		ArrowUp,
-		SplitSquareVertical,
-		ChevronLeft,
-		ChevronRight,
-		X
-	} from 'lucide-svelte';
+	import { Search, Maximize2, ArrowUpToLine, CircleDot, GitFork, Trash2, ArrowUp, ChevronLeft, ChevronRight, Split } from 'lucide-svelte';
 
 	interface Props {
 		onSearchOpen?: () => void;
@@ -45,7 +33,7 @@
 	const NODE_WIDTH = 768;
 	const NODE_MIN_HEIGHT = 260;
 	const COLUMN_GAP = 80;
-	const ROW_GAP = 48;
+	const ROW_GAP = 80;
 	const PADDING_X = 48;
 	const PADDING_Y = 48;
 
@@ -54,25 +42,26 @@
 	let ty = $state(0);
 	let scale = $state(1);
 	let animating = $state(false);
-	let expandedSideChatParent: string | null = $state(null);
-	let sideChatIndex = $state(0);
 	let measuredHeights: Record<string, number> = $state({});
 	let headerVisible = $state(true);
 	let headerTimer: ReturnType<typeof setTimeout> | null = $state(null);
 	let operationError: string | null = $state(null);
-	let selectedExchangeId = $state<string | null>(null);
 
 	let activeChat = $derived(app.chat.getChat());
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
+	let selectedExchangeId = $state<string | null>(null);
+
+	$effect(() => {
+		selectedExchangeId = activeExchangeId;
+	});
+	let expandedSideChatParent: string | null = $state(null);
+	let sideChatIndex = $state(0);
 	let tree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
-	let hiddenExchangeIds = $derived(app.canvas.getHiddenExchangeIds(tree, expandedSideChatParent));
+	let hiddenExchangeIds = $derived(app.canvas.getHiddenExchangeIds(tree, expandedSideChatParent, sideChatIndex));
 	let graph = $derived(computeLayout());
 	let nodeLookup = $derived(new Map(graph.nodes.map((node) => [node.id, node])));
 	let expandedSideChats = $derived(
 		expandedSideChatParent ? app.chat.getSideChats(tree, expandedSideChatParent) : []
-	);
-	let activeSideChat = $derived(
-		expandedSideChats.length > 0 ? (expandedSideChats[sideChatIndex] ?? expandedSideChats[0]) : null
 	);
 
 	function computeLayout() {
@@ -84,8 +73,9 @@
 			return { nodes, edges, width: 1200, height: 900 };
 		}
 
+		// Track how many columns are in use so side branches get fresh columns
+		let nextFreeColumn = 0;
 		const columnBottoms = new Map<number, number>();
-		let maxColumn = 0;
 		let maxBottom = PADDING_Y;
 
 		function visit(exchangeId: string, column: number, y: number) {
@@ -103,17 +93,26 @@
 			});
 
 			columnBottoms.set(column, nextY + height + ROW_GAP);
-			maxColumn = Math.max(maxColumn, column);
+			nextFreeColumn = Math.max(nextFreeColumn, column + 1);
 			maxBottom = Math.max(maxBottom, nextY + height);
 
 			const children = exchange.childIds
 				.map((childId) => tree.exchanges[childId])
 				.filter((child): child is app.chat.Exchange => !!child && !hiddenExchangeIds.has(child.id));
 
-			for (let index = 0; index < children.length; index += 1) {
-				const child = children[index]!;
-				edges.push({ id: `${exchange.id}->${child.id}`, from: exchange.id, to: child.id });
-				visit(child.id, column + index, nextY + height + ROW_GAP);
+			if (children.length === 0) return;
+
+			// Main child stays in same column, below parent
+			const mainChild = children[0]!;
+			edges.push({ id: `${exchange.id}->${mainChild.id}`, from: exchange.id, to: mainChild.id });
+			visit(mainChild.id, column, nextY + height + ROW_GAP);
+
+			// Side children go into fresh columns to the right, at the same y as the main child
+			for (let i = 1; i < children.length; i++) {
+				const sideChild = children[i]!;
+				const sideColumn = nextFreeColumn++;
+				edges.push({ id: `${exchange.id}->${sideChild.id}`, from: exchange.id, to: sideChild.id });
+				visit(sideChild.id, sideColumn, nextY + height + ROW_GAP);
 			}
 		}
 
@@ -122,7 +121,7 @@
 		return {
 			nodes,
 			edges,
-			width: Math.max(1200, PADDING_X * 2 + (maxColumn + 1) * NODE_WIDTH + maxColumn * COLUMN_GAP),
+			width: Math.max(1200, PADDING_X * 2 + nextFreeColumn * NODE_WIDTH + (nextFreeColumn - 1) * COLUMN_GAP),
 			height: Math.max(900, maxBottom + PADDING_Y)
 		};
 	}
@@ -139,8 +138,9 @@
 		const source = nodeLookup.get(edge.from);
 		const target = nodeLookup.get(edge.to);
 		if (!source || !target) return '';
+		const sourceHeight = measuredHeights[edge.from] ?? source.height;
 		const sx = source.x + NODE_WIDTH / 2;
-		const sy = source.y + source.height;
+		const sy = source.y + sourceHeight;
 		const tx2 = target.x + NODE_WIDTH / 2;
 		const ty2 = target.y;
 		const midY = (sy + ty2) / 2;
@@ -287,7 +287,6 @@
 
 	function copyExchange(exchangeId: string) {
 		app.chat.copyChat(exchangeId);
-		expandedSideChatParent = null;
 		queueMicrotask(() => scrollToNode(app.chat.getActiveExchangeId()));
 	}
 
@@ -295,74 +294,30 @@
 		return app.canvas.isSideRoot(tree, exchangeId);
 	}
 
-	function toggleSideChildren(exchangeId: string) {
-		expandedSideChatParent = expandedSideChatParent === exchangeId ? null : exchangeId;
-		if (expandedSideChatParent === exchangeId) {
-			sideChatIndex = app.canvas.getSideChatIndexFromSelection(tree, exchangeId, activeExchangeId);
-		}
-	}
-
 	function deleteExchange(exchangeId: string) {
 		const mode: DeleteMode = app.canvas.getDeleteMode(tree, exchangeId);
 		const result = app.chat.deleteExchange(tree, exchangeId, mode, activeExchangeId);
 		operationError = result.error;
-		if (!result.error && expandedSideChatParent === exchangeId) {
-			closeSidePanel();
-		}
 	}
 
 	function promoteExchange(exchangeId: string) {
 		const result = app.chat.promoteExchange(tree, exchangeId);
 		operationError = result.error;
-		if (!result.error) {
-			closeSidePanel();
-		}
 	}
 
 	function renderHtml(text: string) {
 		return DOMPurify.sanitize(renderRichText(text));
 	}
 
-	function closeSidePanel() {
-		expandedSideChatParent = null;
-		sideChatIndex = 0;
-	}
-
-	function prevSideChat() {
-		if (expandedSideChats.length === 0) return;
-		sideChatIndex = Math.max(0, sideChatIndex - 1);
-		const tail = expandedSideChats[Math.max(0, sideChatIndex)]?.at(-1);
-		if (tail) app.chat.selectExchange(tail.id);
-	}
-
-	function nextSideChat() {
-		if (expandedSideChats.length === 0) return;
-		const nextIndex = Math.min(expandedSideChats.length - 1, sideChatIndex + 1);
-		sideChatIndex = nextIndex;
-		const tail = expandedSideChats[nextIndex]?.at(-1);
-		if (tail) app.chat.selectExchange(tail.id);
-	}
-
-	$effect(() => {
-		selectedExchangeId = activeExchangeId;
-	});
-
-	$effect(() => {
-		const parentFromSelection = app.canvas.getExpandedParentFromSelection(tree, activeExchangeId);
-		if (parentFromSelection) {
-			expandedSideChatParent = parentFromSelection;
-			sideChatIndex = app.canvas.getSideChatIndexFromSelection(
-				tree,
-				parentFromSelection,
-				activeExchangeId
-			);
-			return;
-		}
-		if (expandedSideChatParent && !tree.exchanges[expandedSideChatParent]) {
+	function toggleSideChat(exchangeId: string) {
+		if (expandedSideChatParent === exchangeId) {
 			expandedSideChatParent = null;
 			sideChatIndex = 0;
+		} else {
+			expandedSideChatParent = exchangeId;
+			sideChatIndex = app.canvas.getSideChatIndexFromSelection(tree, exchangeId, activeExchangeId);
 		}
-	});
+	}
 
 	$effect(() => {
 		headerTimer = setTimeout(() => {
@@ -455,19 +410,33 @@
 		</div>
 	</Tooltip.Provider>
 
+	{#if expandedSideChatParent && expandedSideChats.length > 0}
+		<div class="side-chat-nav">
+			<button
+				class="side-chat-nav-btn"
+				disabled={sideChatIndex === 0}
+				onclick={() => { sideChatIndex = Math.max(0, sideChatIndex - 1); }}
+			>
+				<ChevronLeft size={14} />
+			</button>
+			<span class="side-chat-nav-label">Side chat {sideChatIndex + 1} of {expandedSideChats.length}</span>
+			<button
+				class="side-chat-nav-btn"
+				disabled={sideChatIndex >= expandedSideChats.length - 1}
+				onclick={() => { sideChatIndex = Math.min(expandedSideChats.length - 1, sideChatIndex + 1); }}
+			>
+				<ChevronRight size={14} />
+			</button>
+		</div>
+	{/if}
+
 	<div
 		class="canvas-container"
 		bind:this={containerEl}
 		onwheel={onWheel}
 		style={`--tx:${tx}px;--ty:${ty}px;--scale:${scale};`}
 	>
-		<div class="canvas-layer" class:canvas-animating={animating}>
-			<svg class="edges-svg" width={graph.width} height={graph.height}>
-				{#each graph.edges as edge (edge.id)}
-					<path d={computeEdgePath(edge)} class="edge-path" />
-				{/each}
-			</svg>
-
+		<div class="canvas-layer" class:canvas-animating={animating} style={`width:${graph.width}px;height:${graph.height}px;--layer-w:${graph.width}px;--layer-h:${graph.height}px;`}>
 			{#each graph.nodes as node (node.id)}
 				{@const exchange = getExchange(node.id)}
 				{#if exchange}
@@ -479,15 +448,12 @@
 							use:bindNodeCard={exchange.id}
 							class:active-node={exchange.id === selectedExchangeId}
 							class="exchange-card flow-node-card"
+							role="button"
+							tabindex="0"
+							aria-label={`Select exchange ${exchange.id}`}
+							onclick={() => selectNode(exchange.id)}
+							onkeydown={(e) => e.key === 'Enter' && selectNode(exchange.id)}
 						>
-							<button
-								class="exchange-select-hitbox"
-								type="button"
-								aria-label={`Select exchange ${exchange.id}`}
-								onpointerdown={(event) => handleNodePointerDown(event, exchange.id)}
-								onmousedown={(event) => handleNodeMouseDown(event, exchange.id)}
-								onclick={() => selectNode(exchange.id)}
-							></button>
 							<div class="exchange-actions">
 								<Tooltip.Root>
 									<Tooltip.Trigger>
@@ -518,12 +484,9 @@
 													class="icon-chip"
 													variant="ghost"
 													size="icon"
-													onclick={(event) => {
-														event.stopPropagation();
-														toggleSideChildren(exchange.id);
-													}}
+													onclick={(event) => { event.stopPropagation(); toggleSideChat(exchange.id); }}
 												>
-													<SplitSquareVertical size={15} />
+													<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
 												</Button>
 											{/snippet}
 										</Tooltip.Trigger>
@@ -608,94 +571,15 @@
 					</div>
 				{/if}
 			{/each}
+
+			<svg class="edges-svg">
+				{#each graph.edges as edge (edge.id)}
+					<path d={computeEdgePath(edge)} class="edge-path" />
+				{/each}
+			</svg>
 		</div>
 	</div>
 
-	{#if activeSideChat && expandedSideChatParent}
-		<div class="canvas-side-panel">
-			<div class="canvas-side-panel-header">
-				<div class="canvas-side-panel-title-group">
-					<div class="canvas-side-panel-kicker">Side Chat</div>
-					<div class="canvas-side-panel-title">
-						{sideChatIndex + 1} of {expandedSideChats.length}
-					</div>
-				</div>
-				<div class="canvas-side-panel-actions">
-					<Button
-						class="canvas-side-panel-btn"
-						variant="outline"
-						size="icon"
-						disabled={sideChatIndex === 0}
-						onclick={prevSideChat}
-					>
-						<ChevronLeft size={14} />
-					</Button>
-					<Button
-						class="canvas-side-panel-btn"
-						variant="outline"
-						size="icon"
-						disabled={sideChatIndex >= expandedSideChats.length - 1}
-						onclick={nextSideChat}
-					>
-						<ChevronRight size={14} />
-					</Button>
-					<Button
-						class="canvas-side-panel-btn"
-						variant="outline"
-						size="icon"
-						onclick={closeSidePanel}
-					>
-						<X size={14} />
-					</Button>
-				</div>
-			</div>
-			<div class="canvas-side-panel-body">
-				{#each activeSideChat as exchange (exchange.id)}
-					<div
-						class:active-node={exchange.id === selectedExchangeId}
-						class="exchange-card flow-node-card side-panel-card"
-					>
-						<button
-							class="exchange-select-hitbox"
-							type="button"
-							aria-label={`Select exchange ${exchange.id}`}
-							onpointerdown={(event) => handleNodePointerDown(event, exchange.id)}
-							onmousedown={(event) => handleNodeMouseDown(event, exchange.id)}
-							onclick={() => selectNode(exchange.id)}
-						></button>
-						<div class="exchange-card-content">
-							<div class="exchange-section prompt-section">
-								<div class="exchange-kicker">You</div>
-								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								<div class="exchange-prompt">{@html renderHtml(exchange.prompt.text)}</div>
-							</div>
-							<div class="exchange-section response-section">
-								<div class="exchange-card-header">
-									<div class="exchange-kicker">
-										{#if exchange.provider && PROVIDER_LOGOS[exchange.provider]}
-											<img
-												src={PROVIDER_LOGOS[exchange.provider]}
-												alt={exchange.provider}
-												class="exchange-provider-logo"
-											/>
-										{/if}
-										Assistant
-										<span class="exchange-model">{exchange.model}</span>
-									</div>
-								</div>
-								{#if exchange.response?.text}
-									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-									<div class="exchange-response">{@html renderHtml(exchange.response.text)}</div>
-								{:else}
-									<div class="exchange-response exchange-response-plain">No response yet</div>
-								{/if}
-							</div>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
 </div>
 
 <style>
@@ -751,6 +635,40 @@
 		font-size: 0.875rem;
 	}
 
+	.side-chat-nav {
+		position: fixed;
+		top: 1rem;
+		left: 50%;
+		transform: translateX(-50%);
+		margin-left: 8rem;
+		z-index: 30;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.35rem 0.6rem;
+		border: 1px solid hsl(var(--border));
+		border-radius: 999px;
+		background: hsl(var(--card) / 0.94);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+		font-size: 0.8rem;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.side-chat-nav-btn {
+		display: flex;
+		align-items: center;
+		padding: 0.1rem;
+		border: none;
+		background: none;
+		cursor: pointer;
+		color: hsl(var(--foreground));
+	}
+
+	.side-chat-nav-btn:disabled {
+		opacity: 0.3;
+		cursor: default;
+	}
+
 	.floating-actions {
 		position: fixed;
 		right: 1rem;
@@ -800,6 +718,8 @@
 		position: absolute;
 		top: 0;
 		left: 0;
+		width: var(--layer-w);
+		height: var(--layer-h);
 		pointer-events: none;
 		overflow: visible;
 	}
@@ -831,20 +751,9 @@
 		min-height: 220px;
 	}
 
-	.exchange-select-hitbox {
-		position: absolute;
-		inset: 0;
-		z-index: 1;
-		border: 0;
-		border-radius: inherit;
-		background: transparent;
-		cursor: pointer;
-	}
-
 	.exchange-card-content {
 		position: relative;
 		z-index: 2;
-		pointer-events: none;
 	}
 
 	.exchange-card:hover,
@@ -1016,62 +925,4 @@
 		font-size: 20px;
 	}
 
-	.canvas-side-panel {
-		position: fixed;
-		top: 5.25rem;
-		right: 5rem;
-		bottom: 7rem;
-		z-index: 22;
-		display: flex;
-		flex-direction: column;
-		width: min(34rem, calc(100vw - 8rem));
-		border: 1px solid hsl(var(--border));
-		border-radius: 1rem;
-		background: hsl(var(--card) / 0.98);
-		box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
-		backdrop-filter: blur(8px);
-	}
-
-	.canvas-side-panel-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.9rem 1rem;
-		border-bottom: 1px solid hsl(var(--border));
-	}
-
-	.canvas-side-panel-title-group {
-		min-width: 0;
-	}
-
-	.canvas-side-panel-kicker {
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.canvas-side-panel-title {
-		margin-top: 0.2rem;
-		font-size: 0.95rem;
-		color: hsl(var(--foreground));
-	}
-
-	.canvas-side-panel-actions {
-		display: flex;
-		gap: 0.45rem;
-	}
-
-	.canvas-side-panel-body {
-		display: grid;
-		gap: 0.75rem;
-		overflow: auto;
-		padding: 1rem;
-	}
-
-	.side-panel-card {
-		min-height: 0;
-	}
 </style>

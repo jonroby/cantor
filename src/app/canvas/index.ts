@@ -4,13 +4,26 @@ import * as chat from '@/app/chat';
 export type Exchange = domain.tree.Exchange;
 export type ChatTree = domain.tree.ChatTree;
 
-export function getHiddenExchangeIds(tree: ChatTree, expandedParentId: string | null): Set<string> {
+export function getHiddenExchangeIds(
+	tree: ChatTree,
+	expandedParentId: string | null,
+	sideChatIndex: number = 0
+): Set<string> {
 	const hidden = new Set<string>();
 
 	for (const exchange of Object.values(tree.exchanges)) {
-		if (exchange.childIds.length <= 1 || exchange.id === expandedParentId) continue;
-		for (const childId of exchange.childIds.slice(1)) {
-			hideSubtree(tree, childId, hidden);
+		if (exchange.childIds.length <= 1) continue;
+		if (exchange.id === expandedParentId) {
+			// Show only the selected side chat, hide the rest
+			for (let i = 1; i < exchange.childIds.length; i++) {
+				if (i !== sideChatIndex + 1) {
+					hideSubtree(tree, exchange.childIds[i]!, hidden);
+				}
+			}
+		} else {
+			for (const childId of exchange.childIds.slice(1)) {
+				hideSubtree(tree, childId, hidden);
+			}
 		}
 	}
 

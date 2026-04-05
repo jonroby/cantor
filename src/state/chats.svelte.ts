@@ -80,7 +80,7 @@ export function addChat(chat: ChatRecord): number {
 export function setActiveExchangeId(exchangeId: string | null) {
 	const i = chatState.activeChatIndex;
 	if (chatState.chats[i]?.activeExchangeId === exchangeId) return;
-	chatState.chats = chatState.chats.map((c, idx) =>
+chatState.chats = chatState.chats.map((c, idx) =>
 		idx === i ? { ...c, activeExchangeId: exchangeId } : c
 	);
 }
