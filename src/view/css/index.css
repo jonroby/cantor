@@ -51,6 +51,7 @@
 	--radius-lg: 12px;
 	--radius-xl: 1rem;
 	--radius-full: 999px;
+	--radius-control: 1rem;
 
 	--duration-fast: 120ms;
 	--duration-normal: 150ms;
@@ -79,6 +80,11 @@
 	--surface-overlay: hsl(var(--foreground) / 0.18);
 	--surface-overlay-strong: hsl(var(--foreground) / 0.42);
 	--focus-ring-color: hsl(var(--ring) / 0.26);
+	--control-surface-bg: hsl(var(--background) / 0.96);
+	--control-surface-bg-hover: hsl(var(--background));
+	--control-surface-border: hsl(var(--border));
+	--control-surface-foreground: hsl(var(--foreground));
+	--control-surface-muted: hsl(var(--muted-foreground));
 
 	--icon-subtle: rgba(23, 23, 23, 0.28);
 	--icon-faint: rgba(23, 23, 23, 0.4);
@@ -176,7 +182,7 @@ svg {
 	justify-content: center;
 	gap: 0.5rem;
 	white-space: nowrap;
-	border-radius: calc(var(--radius) - 0.3rem);
+	border-radius: var(--radius-control);
 	border: 1px solid transparent;
 	font-weight: var(--font-weight-medium);
 	outline: none;
@@ -209,20 +215,21 @@ svg {
 }
 
 .ui-button-secondary {
-	background: hsl(var(--secondary));
-	color: hsl(var(--secondary-foreground));
+	border-color: var(--control-surface-border);
+	background: var(--control-surface-bg);
+	color: var(--control-surface-foreground);
 }
 
 .ui-button-secondary:hover,
 .ui-button-outline:hover,
 .ui-button-ghost:hover {
-	background: var(--surface-tint);
+	background: var(--control-surface-bg-hover);
 }
 
 .ui-button-outline {
-	border-color: var(--border-color);
-	background: hsl(var(--background));
-	color: hsl(var(--foreground));
+	border-color: var(--control-surface-border);
+	background: var(--control-surface-bg);
+	color: var(--control-surface-foreground);
 }
 
 .ui-button-ghost {
@@ -262,6 +269,7 @@ svg {
 	height: 2.25rem;
 	width: 2.25rem;
 	padding: 0;
+	border-radius: var(--radius-control);
 }
 
 .ui-input {

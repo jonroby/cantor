@@ -56,6 +56,15 @@
 		if (!isSplit) return null;
 		return composerPinned ?? 'left';
 	});
+
+	$effect(() => {
+		const hasSideChat = workspaceState.panels.some((p) => p.type === 'side-chat');
+		if (hasSideChat && composerPinned !== 'right') {
+			composerPinned = 'right';
+		} else if (!hasSideChat && composerPinned === 'right') {
+			composerPinned = null;
+		}
+	});
 	let activeViewRef = $derived.by(() => {
 		if (routerState.route === 'canvas') return canvasViewRef;
 		if (!composerSide) return chatViewRef;

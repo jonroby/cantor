@@ -157,7 +157,6 @@
 		const panels = app.workspace.getState().panels;
 		const existing = panels.find((p) => p.type === 'side-chat' && p.parentExchangeId === parentId);
 		if (existing) {
-			onClose?.();
 			return;
 		}
 
