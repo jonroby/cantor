@@ -15,6 +15,14 @@
 		{ label: 'Providers',  icon: Plug },
 	];
 
+	const features = [
+		'Side Chats',
+		'Multi Streaming',
+		'Quick Ask',
+		'Delete Nodes',
+		'Fork Chats',
+	];
+
 	// Duration of each flow in ms — will tighten later
 	const FLOW_DURATION = 18000;
 
@@ -90,35 +98,54 @@
 			<h1 class="tagline">LLMs for <span class="tagline-accent">Power Users</span></h1>
 		</div>
 
-		<!-- Viewport -->
-		<div class="viewport-wrap">
-			<div class="viewport">
-				{#key key}
-					<div style="display:contents; height:100%">
-						<FlowChat onComplete={advance} />
-					</div>
-				{/key}
+		<!-- Content row -->
+		<div class="content-row">
+
+			<!-- Left: feature list -->
+			<div class="feature-col">
+				<p class="feature-label">Power Tools</p>
+				<ul class="feature-list">
+					{#each features as f, i}
+						<li class="feature-item" class:feature-item-active={i === activeIndex % features.length}>{f}</li>
+					{/each}
+				</ul>
 			</div>
 
-			<!-- Tab bar -->
-			<div class="tab-bar">
-				<div class="tab-pill">
-					{#each tabs as { label, icon }, i}
-						{#if i > 0}<span class="tab-divider" class:hidden={activeIndex === i || activeIndex === i - 1}></span>{/if}
-						<button
-							class="tab"
-							class:active={activeIndex === i}
-							onclick={() => selectTab(i)}
-						>
-							{#if activeIndex === i}
-								<span class="tab-fill" style="width: {progress * 100}%"></span>
-							{/if}
-							<span class="tab-icon"><svelte:component this={icon} size={14} /></span>
-							<span class="tab-label">{label}</span>
-						</button>
-					{/each}
+	
+			<!-- Right: viewport + tabs -->
+			<div class="viewport-wrap">
+				<div class="viewport">
+					{#key key}
+						<div style="display:contents; height:100%">
+							<FlowChat onComplete={advance} />
+						</div>
+					{/key}
+				</div>
+
+				<!-- Tab bar -->
+				<div class="tab-bar">
+					<div class="tab-pill">
+						{#each tabs as { label, icon }, i}
+							{#if i > 0}<span class="tab-divider" class:hidden={activeIndex === i || activeIndex === i - 1}></span>{/if}
+							<button
+								class="tab"
+								class:active={activeIndex === i}
+								onclick={() => selectTab(i)}
+							>
+								{#if activeIndex === i}
+									<span class="tab-fill" style="width: {progress * 100}%"></span>
+								{/if}
+								<span class="tab-icon"><svelte:component this={icon} size={14} /></span>
+								<span class="tab-label">{label}</span>
+							</button>
+						{/each}
+					</div>
 				</div>
 			</div>
+
+			<!-- Right spacer to balance left col -->
+			<div class="feature-col"></div>
+
 		</div>
 	</div>
 
@@ -293,6 +320,59 @@
 
 	.hero-key-btn:hover { color: rgba(23,23,23,0.9); }
 
+	/* ── Content row ──────────────────────────────────────── */
+	.content-row {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+		align-items: center;
+		justify-content: center;
+		padding: 0 48px 24px;
+		gap: 32px;
+	}
+
+	/* ── Feature col ──────────────────────────────────────── */
+	.feature-col {
+		width: 160px;
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	.feature-label {
+		font-size: 11px;
+		font-weight: 600;
+		color: rgba(23,23,23,0.35);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		margin: 0 0 12px;
+	}
+
+	.feature-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.feature-item {
+		font-size: 14px;
+		font-weight: 500;
+		color: rgba(23,23,23,0.25);
+		transition: color 0.3s;
+	}
+
+	.feature-item-active {
+		background: linear-gradient(90deg, hsl(158 85% 40%), hsl(175 90% 38%));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		font-weight: 600;
+	}
+
 	/* ── Viewport ─────────────────────────────────────────── */
 	.viewport-wrap {
 		position: relative;
@@ -300,21 +380,19 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		padding: 0 32px 24px;
+		min-width: 0;
 		flex: 1;
-		min-height: 0;
+		max-width: 1150px;
 	}
 
 	.viewport {
 		width: 100%;
-		max-width: 1100px;
+		aspect-ratio: 16 / 9;
 		border-radius: 12px;
 		overflow: hidden;
 		box-shadow:
 			0 0 0 1px rgba(23,23,23,0.08),
 			0 8px 24px rgba(0,0,0,0.1);
-		flex: 1;
-		min-height: 0;
 		display: flex;
 		flex-direction: column;
 	}
@@ -323,8 +401,9 @@
 	.tab-bar {
 		display: flex;
 		justify-content: center;
-		padding: 24px 0 0;
+		padding: 16px 0 0;
 		flex-shrink: 0;
+		width: 100%;
 	}
 
 	.tab-pill {

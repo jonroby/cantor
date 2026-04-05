@@ -288,6 +288,7 @@
 		font-size: 12.75px;
 		color: hsl(0 0% 9%);
 		isolation: isolate;
+		flex: 1;
 	}
 
 	.content-area {
