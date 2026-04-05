@@ -170,7 +170,7 @@
 		justify-content: space-between;
 		height: 56px;
 		flex-shrink: 0;
-		padding: 0 4px;
+		padding: 0 24px;
 	}
 
 	.nav-btns {
@@ -242,6 +242,7 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
+		padding-top: 50px;
 	}
 
 	.bg-dots { display: none; }
@@ -254,8 +255,8 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		padding-top: 32px;
-		padding-bottom: 20px;
+		padding-top: 20px;
+		padding-bottom: 12px;
 		flex-shrink: 0;
 	}
 
@@ -338,6 +339,7 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
+		padding-bottom: 80px;
 	}
 
 	.feature-label {
@@ -401,7 +403,7 @@
 	.tab-bar {
 		display: flex;
 		justify-content: center;
-		padding: 16px 0 0;
+		padding: 28px 0 28px;
 		flex-shrink: 0;
 		width: 100%;
 	}
