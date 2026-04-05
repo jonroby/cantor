@@ -30,6 +30,13 @@
 		"restoreFolder": true,
 		"save": true
 	},
+	"canvas": {
+		"getDeleteMode": true,
+		"getExpandedParentFromSelection": true,
+		"getHiddenExchangeIds": true,
+		"getSideChatIndexFromSelection": true,
+		"isSideRoot": true
+	},
 	"chat": {
 		"addDocumentToChat": true,
 		"canCreateSideChat": true,
@@ -39,16 +46,18 @@
 		"createChat": true,
 		"deleteExchange": true,
 		"exportChat": true,
-		"getExchangePath": true,
 		"exportState": true,
 		"getActiveChatIndex": true,
 		"getActiveExchangeId": true,
 		"getChat": true,
 		"getChats": true,
 		"getContextStrategy": true,
-		"getMode": true,
+		"getEnabledToolNames": true,
+		"getExchangePath": true,
 		"getMainChat": true,
+		"getMode": true,
 		"getSideChats": true,
+		"getTotalTokens": true,
 		"getUsedTokens": true,
 		"importChat": true,
 		"isStreaming": true,
@@ -59,13 +68,11 @@
 		"selectChat": true,
 		"selectExchange": true,
 		"setContextStrategy": true,
+		"setEnabledToolNames": true,
 		"setMode": true,
 		"stopChatStreams": true,
 		"stopStream": true,
-		"submitPrompt": true,
-		"getEnabledToolNames": true,
-		"setEnabledToolNames": true,
-		"getTotalTokens": true
+		"submitPrompt": true
 	},
 	"documents": {
 		"addDocumentToChat": true,

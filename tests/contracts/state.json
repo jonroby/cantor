@@ -19,9 +19,10 @@
 		"deleteChat": true,
 		"getActiveChat": true,
 		"getActiveExchangeId": true,
-		"getMode": true,
 		"getActiveTree": true,
 		"getChatById": true,
+		"getEnabledToolNames": true,
+		"getMode": true,
 		"getTreeByChatId": true,
 		"hydrate": true,
 		"newChat": true,
@@ -31,9 +32,8 @@
 		"selectChat": true,
 		"setActiveExchangeId": true,
 		"setContextStrategy": true,
-		"setMode": true,
-		"getEnabledToolNames": true,
-		"setEnabledToolNames": true
+		"setEnabledToolNames": true,
+		"setMode": true
 	},
 	"documents": {
 		"closeDocument": true,
