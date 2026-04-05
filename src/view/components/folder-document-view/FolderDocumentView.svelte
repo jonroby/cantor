@@ -264,7 +264,7 @@
 	.folderview-header-actions {
 		display: flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: 10px;
 	}
 
 	.folderview-separator {
@@ -357,6 +357,8 @@
 
 	.folderview-chevron {
 		display: inline-flex;
+		position: relative;
+		top: 2px;
 		transition: transform var(--duration-normal) ease;
 	}
 

@@ -597,7 +597,7 @@
 	.header-actions {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 10px;
 		margin-left: auto;
 	}
 

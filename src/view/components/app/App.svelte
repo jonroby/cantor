@@ -447,7 +447,7 @@
 									<ChatView
 										bind:this={chatViewRef}
 										onFocusComposer={focusComposer}
-										onClose={isSplit ? () => closePanel(index) : undefined}
+										onClose={() => closePanel(index)}
 										onScrollAwayChange={(away) => (chatScrolledAway = away)}
 									/>
 								{:else if panel.type === 'side-chat'}
@@ -549,7 +549,7 @@
 
 					{#if workspaceState.panels.length === 0}
 						<div class="welcome-container">
-							<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
+							<span class="welcome-text">Start a chat or create a doc.</span>
 						</div>
 					{/if}
 					<ComposerAnchor
@@ -633,6 +633,7 @@
 	}
 
 	.welcome-text {
+		font-size: 26px;
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}
