@@ -119,11 +119,11 @@
 	}
 
 	:global(.document-item-button-root) {
-		padding-left: 1.5rem;
+		padding-left: 3.25rem;
 	}
 
 	:global(.document-item-button-indented) {
-		padding-left: 3rem;
+		padding-left: 4.5rem;
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .document-item-button),
