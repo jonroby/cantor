@@ -77,8 +77,9 @@
 	--surface-floating-foreground: hsl(var(--popover-foreground));
 	--surface-floating-border: var(--border-color);
 	--surface-floating-shadow: 0 18px 40px hsl(var(--foreground) / 0.12);
-	--surface-overlay: hsl(var(--foreground) / 0.18);
-	--surface-overlay-strong: hsl(var(--foreground) / 0.42);
+	--surface-overlay: hsl(var(--background) / 0.6);
+	--surface-overlay-strong: hsl(var(--background) / 0.6);
+	--surface-overlay-blur: 0.25px;
 	--focus-ring-color: hsl(var(--ring) / 0.26);
 	--control-surface-bg: hsl(var(--background) / 0.96);
 	--control-surface-bg-hover: hsl(var(--background));

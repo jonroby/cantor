@@ -75,26 +75,26 @@
 			<EllipsisVertical size={18} />
 		</DropdownMenu.Trigger>
 		<DropdownMenu.Portal>
-			<DropdownMenu.Content align="start" side="right" class="document-item-menu-content">
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onOpen}>
+			<DropdownMenu.Content align="start" side="right" class="item-menu-content">
+				<DropdownMenu.Item class="item-menu-action" onclick={onOpen}>
 					<FileText size={14} />
 					Open
 				</DropdownMenu.Item>
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onAddToChat}>
+				<DropdownMenu.Item class="item-menu-action" onclick={onAddToChat}>
 					<MessageCircle size={14} />
 					Add to chat
 				</DropdownMenu.Item>
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onStartRename}>
+				<DropdownMenu.Item class="item-menu-action" onclick={onStartRename}>
 					<Pencil size={14} />
 					Rename
 				</DropdownMenu.Item>
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onDownload}>
+				<DropdownMenu.Item class="item-menu-action" onclick={onDownload}>
 					<Download size={14} />
 					Download
 				</DropdownMenu.Item>
-				<DropdownMenu.Separator class="document-item-menu-separator" />
+				<DropdownMenu.Separator class="item-menu-separator" />
 				<DropdownMenu.Item
-					class="document-item-menu-action document-item-menu-action-destructive"
+					class="item-menu-action item-menu-action-destructive"
 					onclick={onDelete}
 				>
 					<Trash2 size={14} />
@@ -172,42 +172,5 @@
 		box-shadow: 0 0 0 2px var(--focus-ring-color);
 	}
 
-	:global(.document-item-menu-content) {
-		z-index: 50;
-		min-width: var(--dropdown-min-w);
-		padding: 0.375rem;
-		border: 1px solid var(--surface-floating-border);
-		border-radius: 0.75rem;
-		background: var(--surface-floating);
-		color: var(--surface-floating-foreground);
-		box-shadow: var(--surface-floating-shadow);
-	}
 
-	:global(.document-item-menu-action) {
-		display: flex;
-		align-items: center;
-		gap: 0.625rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: 0.5rem;
-		font-size: 1rem;
-		cursor: pointer;
-	}
-
-	:global(.document-item-menu-action:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.document-item-menu-action-destructive) {
-		color: hsl(var(--destructive));
-	}
-
-	:global(.document-item-menu-action-destructive:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.document-item-menu-separator) {
-		height: 1px;
-		margin: 0.25rem 0;
-		background: var(--border-color);
-	}
 </style>

@@ -278,12 +278,12 @@
 							<Sidebar.MenuItem>
 								<Sidebar.MenuButton
 									size="default"
-									tooltipContent="Chat view"
+									tooltipContent="Classic view"
 									onclick={() => onNavigate?.('chat')}
 									class={`sidebar-primary-action ${activeRoute === 'chat' ? 'is-selected' : ''}`}
 								>
 									<MessagesSquare size={16} class="shrink-0" />
-									<span>Chat</span>
+									<span>Classic</span>
 								</Sidebar.MenuButton>
 							</Sidebar.MenuItem>
 							<Sidebar.MenuItem>

@@ -160,35 +160,35 @@
 				<EllipsisVertical size={18} />
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Portal>
-				<DropdownMenu.Content align="start" side="right" class="folder-item-menu-content">
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onOpenFolder}>
+				<DropdownMenu.Content align="start" side="right" class="item-menu-content">
+					<DropdownMenu.Item class="item-menu-action" onclick={onOpenFolder}>
 						<Folder size={14} strokeWidth={1.5} />
 						Open
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="folder-item-menu-separator" />
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onNewDocument}>
+					<DropdownMenu.Separator class="item-menu-separator" />
+					<DropdownMenu.Item class="item-menu-action" onclick={onNewDocument}>
 						<FilePlus size={14} strokeWidth={1.5} />
 						New file
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onUploadDocument}>
+					<DropdownMenu.Item class="item-menu-action" onclick={onUploadDocument}>
 						<Upload size={14} strokeWidth={1.5} />
 						Upload file
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onUploadFolder}>
+					<DropdownMenu.Item class="item-menu-action" onclick={onUploadFolder}>
 						<FolderUp size={14} strokeWidth={1.5} />
 						Upload folder
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={startRenameFolder}>
+					<DropdownMenu.Item class="item-menu-action" onclick={startRenameFolder}>
 						<Pencil size={14} strokeWidth={1.5} />
 						Rename
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onDownloadFolder}>
+					<DropdownMenu.Item class="item-menu-action" onclick={onDownloadFolder}>
 						<Download size={14} strokeWidth={1.5} />
 						Download
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="folder-item-menu-separator" />
+					<DropdownMenu.Separator class="item-menu-separator" />
 					<DropdownMenu.Item
-						class="folder-item-menu-action folder-item-menu-action-destructive"
+						class="item-menu-action item-menu-action-destructive"
 						onclick={onDeleteFolder}
 					>
 						<Trash2 size={14} strokeWidth={1.5} />
@@ -324,44 +324,6 @@
 
 	:global(.folder-item-menu-trigger:focus-visible) {
 		box-shadow: 0 0 0 2px var(--focus-ring-color);
-	}
-
-	:global(.folder-item-menu-content) {
-		z-index: 50;
-		min-width: var(--dropdown-min-w);
-		padding: 0.375rem;
-		border: 1px solid var(--surface-floating-border);
-		border-radius: 0.75rem;
-		background: var(--surface-floating);
-		color: var(--surface-floating-foreground);
-		box-shadow: var(--surface-floating-shadow);
-	}
-
-	:global(.folder-item-menu-action) {
-		display: flex;
-		align-items: center;
-		gap: 0.625rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: 0.5rem;
-		cursor: pointer;
-	}
-
-	:global(.folder-item-menu-action:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.folder-item-menu-action-destructive) {
-		color: hsl(var(--destructive));
-	}
-
-	:global(.folder-item-menu-action-destructive:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.folder-item-menu-separator) {
-		height: 1px;
-		margin: 0.25rem 0;
-		background: var(--border-color);
 	}
 
 	.subfolder-btn {
