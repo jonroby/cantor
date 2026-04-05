@@ -1,191 +1,225 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { MessageSquare, Layers, Bot, FileText, Plug } from 'lucide-svelte';
 	import FlowChat from './flows/FlowChat.svelte';
-
-	let canvas: HTMLCanvasElement;
-	let animationId: number;
-
-	interface Dot {
-		x: number;
-		y: number;
-		vx: number;
-		vy: number;
-		r: number;
-		opacity: number;
-	}
-
-	let dots: Dot[] = [];
-
-	function initDots(w: number, h: number) {
-		dots = Array.from({ length: 55 }, () => ({
-			x: Math.random() * w,
-			y: Math.random() * h,
-			vx: (Math.random() - 0.5) * 0.3,
-			vy: (Math.random() - 0.5) * 0.3,
-			r: 2 + Math.random() * 3.5,
-			opacity: 0.07 + Math.random() * 0.15
-		}));
-	}
-
-	function animate() {
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
-		const dpr = window.devicePixelRatio || 1;
-		const w = canvas.width / dpr;
-		const h = canvas.height / dpr;
-
-		ctx.save();
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, w, h);
-
-		for (const d of dots) {
-			d.x += d.vx;
-			d.y += d.vy;
-			if (d.x < -10) d.x = w + 10;
-			if (d.x > w + 10) d.x = -10;
-			if (d.y < -10) d.y = h + 10;
-			if (d.y > h + 10) d.y = -10;
-
-			ctx.beginPath();
-			ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-			ctx.fillStyle = `rgba(23, 23, 23, ${d.opacity})`;
-			ctx.fill();
-		}
-
-		ctx.restore();
-		animationId = requestAnimationFrame(animate);
-	}
-
-	function setupCanvas() {
-		const dpr = window.devicePixelRatio || 1;
-		const w = window.innerWidth;
-		const h = window.innerHeight;
-		canvas.width = w * dpr;
-		canvas.height = h * dpr;
-		canvas.style.width = w + 'px';
-		canvas.style.height = h + 'px';
-		const ctx = canvas.getContext('2d');
-		if (ctx) ctx.scale(dpr, dpr);
-		initDots(w, h);
-	}
 
 	function goToApp() {
 		window.location.hash = '#/';
 	}
 
+	const tabs = [
+		{ label: 'Side Chats', icon: MessageSquare },
+		{ label: 'Context',    icon: Layers },
+		{ label: 'Agents',     icon: Bot },
+		{ label: 'Documents',  icon: FileText },
+		{ label: 'Providers',  icon: Plug },
+	];
+
+	// Duration of each flow in ms — will tighten later
+	const FLOW_DURATION = 18000;
+
+	let activeIndex = $state(0);
+	let key = $state(0);
+	let progress = $state(0); // 0–1
+
+	let rafId: number;
+	let startTime: number;
+
+	function startProgress() {
+		cancelAnimationFrame(rafId);
+		progress = 0;
+		startTime = performance.now();
+		function tick() {
+			const elapsed = performance.now() - startTime;
+			progress = Math.min(elapsed / FLOW_DURATION, 1);
+			if (progress < 1) rafId = requestAnimationFrame(tick);
+		}
+		rafId = requestAnimationFrame(tick);
+	}
+
+	function advance() {
+		activeIndex = (activeIndex + 1) % tabs.length;
+		key++;
+		startProgress();
+	}
+
+	function selectTab(i: number) {
+		activeIndex = i;
+		key++;
+		startProgress();
+	}
+
 	onMount(() => {
-		setupCanvas();
-		animate();
-		const onResize = () => setupCanvas();
-		window.addEventListener('resize', onResize);
-		return () => {
-			cancelAnimationFrame(animationId);
-			window.removeEventListener('resize', onResize);
-		};
+		startProgress();
+		return () => cancelAnimationFrame(rafId);
 	});
 </script>
 
-<div class="landing">
-	<canvas bind:this={canvas} class="bg-canvas"></canvas>
+<div class="page">
 
-	<!-- Top-left logo -->
-	<div class="logo-area">
-		<svg width="36" height="41" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
-			<circle cx="70" cy="25" r="8.5" fill="hsl(var(--foreground))" />
-			<circle cx="30" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
-			<circle cx="70" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
-			<circle cx="110" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
-			<circle cx="30" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
-			<circle cx="70" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
-			<circle cx="110" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
-			<circle cx="70" cy="130" r="8.5" fill="hsl(var(--foreground)/0.2)" />
-		</svg>
-		<span class="logo-name">Cantor</span>
-		<span class="alpha-badge">Alpha</span>
-	</div>
-
-	<!-- Hero -->
-	<div class="hero">
-		<h1 class="tagline">LLMs for Power Users</h1>
-		<p class="subline">For long running chat sessions</p>
-		<div class="btn-row">
-			<button class="start-btn" onclick={goToApp}>
-				<svg width="22" height="25" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
-					<circle cx="70" cy="25" r="8.5" fill="white" />
-					<circle cx="30" cy="60" r="8.5" fill="white" />
-					<circle cx="70" cy="60" r="8.5" fill="white" />
-					<circle cx="110" cy="60" r="8.5" fill="white" />
-					<circle cx="30" cy="95" r="8.5" fill="white" />
-					<circle cx="70" cy="95" r="8.5" fill="white" />
-					<circle cx="110" cy="95" r="8.5" fill="white" />
-					<circle cx="70" cy="130" r="8.5" fill="white" />
-				</svg>
+	<!-- Nav — white background, outside dark card -->
+	<div class="nav">
+		<div class="logo-area">
+			<svg width="28" height="32" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+				<circle cx="70" cy="25" r="8.5" fill="rgba(23,23,23,0.9)" />
+				<circle cx="30" cy="60" r="8.5" fill="rgba(23,23,23,0.55)" />
+				<circle cx="70" cy="60" r="8.5" fill="rgba(23,23,23,0.55)" />
+				<circle cx="110" cy="60" r="8.5" fill="rgba(23,23,23,0.55)" />
+				<circle cx="30" cy="95" r="8.5" fill="rgba(23,23,23,0.25)" />
+				<circle cx="70" cy="95" r="8.5" fill="rgba(23,23,23,0.25)" />
+				<circle cx="110" cy="95" r="8.5" fill="rgba(23,23,23,0.25)" />
+				<circle cx="70" cy="130" r="8.5" fill="rgba(23,23,23,0.1)" />
+			</svg>
+			<span class="logo-name">Cantor</span>
+			<span class="alpha-badge">Alpha</span>
+		</div>
+		<div class="nav-btns">
+			<button class="hero-key-btn">Request a Key</button>
+			<button class="hero-start-btn" onclick={goToApp}>
 				Get Started
 			</button>
-			<button class="key-btn">Request a Key</button>
 		</div>
 	</div>
 
-	<!-- App preview — animated SVG screen recording -->
-	<div class="preview-wrap">
-		<div class="preview">
-			<FlowChat onComplete={() => {}} />
+	<!-- Dark card -->
+	<div class="dark-card">
+		<div class="bg-dots"></div>
+
+		<!-- Hero -->
+		<div class="hero">
+			<h1 class="tagline">LLMs for <span class="tagline-accent">Power Users</span></h1>
+		</div>
+
+		<!-- Viewport -->
+		<div class="viewport-wrap">
+			<div class="viewport">
+				{#key key}
+					<div style="display:contents; height:100%">
+						<FlowChat onComplete={advance} />
+					</div>
+				{/key}
+			</div>
+
+			<!-- Tab bar -->
+			<div class="tab-bar">
+				<div class="tab-pill">
+					{#each tabs as { label, icon }, i}
+						{#if i > 0}<span class="tab-divider" class:hidden={activeIndex === i || activeIndex === i - 1}></span>{/if}
+						<button
+							class="tab"
+							class:active={activeIndex === i}
+							onclick={() => selectTab(i)}
+						>
+							{#if activeIndex === i}
+								<span class="tab-fill" style="width: {progress * 100}%"></span>
+							{/if}
+							<span class="tab-icon"><svelte:component this={icon} size={14} /></span>
+							<span class="tab-label">{label}</span>
+						</button>
+					{/each}
+				</div>
+			</div>
 		</div>
 	</div>
+
 </div>
 
 <style>
-	.landing {
-		position: relative;
-		min-height: 100vh;
-		background: hsl(var(--background));
+	.page {
+		height: 100vh;
+		background: white;
+		display: flex;
+		flex-direction: column;
+		font-family: Inter, system-ui, sans-serif;
+		padding: 0;
+		box-sizing: border-box;
 		overflow: hidden;
 	}
 
-	.bg-canvas {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		pointer-events: none;
-		z-index: 0;
+	/* ── Nav ──────────────────────────────────────────────── */
+	.nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 56px;
+		flex-shrink: 0;
+		padding: 0 4px;
 	}
 
-	/* Logo */
+	.nav-btns {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
 	.logo-area {
-		position: fixed;
-		top: 22px;
-		left: 28px;
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		z-index: 10;
 	}
 
 	.logo-name {
-		font-size: 24px;
-		font-weight: var(--font-weight-semibold);
-		color: hsl(var(--foreground) / 0.88);
-		margin-bottom: 3px;
+		font-size: 20px;
+		font-weight: 600;
+		color: rgba(23,23,23,0.88);
+		letter-spacing: -0.3px;
 	}
 
 	.alpha-badge {
 		display: inline-flex;
 		align-items: center;
-		margin-top: 3px;
-		margin-left: 0.25rem;
-		border: 1px solid hsl(215 80% 45%);
+		border: 1px solid hsl(158 75% 42%);
 		border-radius: 9999px;
-		background: hsl(215 90% 92%);
-		padding: 0.125rem 0.45rem;
+		background: hsl(158 70% 90%);
+		padding: 0.1rem 0.45rem;
 		font-size: 11px;
-		font-weight: var(--font-weight-normal);
-		line-height: 1.2;
-		color: hsl(215 80% 35%);
+		color: hsl(158 80% 25%);
+		margin-top: 1px;
 	}
 
-	/* Hero */
+	.nav-actions {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.key-btn {
+		height: 36px;
+		padding: 0 16px;
+		background: transparent;
+		color: rgba(23,23,23,0.55);
+		border: 1px solid rgba(23,23,23,0.15);
+		border-radius: 8px;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+	}
+
+	.start-btn {
+		height: 36px;
+		padding: 0 16px;
+		background: rgba(23,23,23,0.9);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	/* ── Dark card ────────────────────────────────────────── */
+	.dark-card {
+		position: relative;
+		flex: 1;
+		background: white;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.bg-dots { display: none; }
+
+	/* ── Hero ─────────────────────────────────────────────── */
 	.hero {
 		position: relative;
 		z-index: 1;
@@ -193,96 +227,175 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		padding-top: 8vh;
-		padding-bottom: 40px;
+		padding-top: 32px;
+		padding-bottom: 20px;
+		flex-shrink: 0;
 	}
 
 	.tagline {
-		font-size: 52px;
-		font-weight: var(--font-weight-bold);
-		color: hsl(var(--foreground));
-		margin: 0 0 12px;
-		letter-spacing: -1.5px;
-		line-height: 1.1;
+		font-size: 44px;
+		font-weight: 700;
+		color: rgba(23,23,23,0.92);
+		margin: 0 0 20px;
+		letter-spacing: -2px;
+		line-height: 1.08;
+	}
+
+	.tagline-accent {
+		background: linear-gradient(90deg, hsl(158 85% 40%), hsl(175 90% 38%));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
 	}
 
 	.subline {
-		font-size: 17px;
-		font-weight: var(--font-weight-normal);
-		color: hsl(var(--muted-foreground));
-		margin: 0 0 32px;
-	}
-
-	.start-btn {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 14px 32px 14px 22px;
-		background: hsl(0 0% 12%);
-		color: white;
-		border: none;
-		border-radius: var(--radius-full);
-		font-size: 16px;
-		font-weight: var(--font-weight-semibold);
-		cursor: pointer;
-		transition: opacity 0.15s;
-		letter-spacing: -0.1px;
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.06),
-			0 8px 24px rgba(0, 0, 0, 0.1);
+		font-size: 15px;
+		color: rgba(23,23,23,0.45);
+		margin: 0 0 20px;
+		font-weight: 400;
 	}
 
 	.btn-row {
 		display: flex;
 		align-items: center;
-		gap: 40px;
+		gap: 20px;
 	}
 
-	.key-btn {
-		height: 53px;
-		padding: 0 36px;
-		background: white;
-		color: hsl(var(--foreground));
-		border: 1px solid hsl(var(--border));
-		border-radius: var(--radius-full);
-		font-size: 16px;
-		font-weight: var(--font-weight-semibold);
+	.hero-start-btn {
+		display: flex;
+		align-items: center;
+		padding: 7px 16px;
+		background: hsl(0 0% 11%);
+		color: white;
+		border: none;
+		border-radius: 999px;
+		font-size: 13px;
+		font-weight: 600;
 		cursor: pointer;
 		transition: opacity 0.15s;
 		letter-spacing: -0.1px;
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.06),
-			0 8px 24px rgba(0, 0, 0, 0.1);
 	}
 
-	.key-btn:hover {
-		opacity: 0.9;
+	.hero-start-btn:hover { opacity: 0.85; }
+
+	.hero-key-btn {
+		display: flex;
+		align-items: center;
+		padding: 7px 14px;
+		background: transparent;
+		color: rgba(23,23,23,0.6);
+		border: none;
+		border-radius: 999px;
+		font-size: 13px;
+		font-weight: 500;
+		cursor: pointer;
 	}
 
-	.start-btn svg {
-		transform: translateX(-5px);
-	}
+	.hero-key-btn:hover { color: rgba(23,23,23,0.9); }
 
-	.start-btn:hover {
-		opacity: 0.85;
-	}
-
-	/* Preview */
-	.preview-wrap {
+	/* ── Viewport ─────────────────────────────────────────── */
+	.viewport-wrap {
 		position: relative;
 		z-index: 1;
 		display: flex;
-		justify-content: center;
-		padding: 0 32px 64px;
+		flex-direction: column;
+		align-items: center;
+		padding: 0 32px 24px;
+		flex: 1;
+		min-height: 0;
 	}
 
-	.preview {
-		width: 960px;
-		max-width: 100%;
+	.viewport {
+		width: 100%;
+		max-width: 1100px;
 		border-radius: 12px;
-		box-shadow:
-			0 4px 16px hsl(var(--foreground) / 0.06),
-			0 24px 64px hsl(var(--foreground) / 0.1);
 		overflow: hidden;
+		box-shadow:
+			0 0 0 1px rgba(23,23,23,0.08),
+			0 8px 24px rgba(0,0,0,0.1);
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* ── Tab bar ──────────────────────────────────────────── */
+	.tab-bar {
+		display: flex;
+		justify-content: center;
+		padding: 24px 0 0;
+		flex-shrink: 0;
+	}
+
+	.tab-pill {
+		display: flex;
+		align-items: center;
+		background: white;
+		border-radius: 999px;
+		padding: 5px;
+		gap: 0;
+		box-shadow: 0 0 0 1px rgba(23,23,23,0.08), 0 2px 8px rgba(23,23,23,0.06);
+	}
+
+	.tab {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 7px;
+		width: 140px;
+		padding: 8px 0;
+		border: none;
+		border-radius: 999px;
+		background: transparent;
+		color: rgba(23,23,23,0.45);
+		font-size: 13.5px;
+		font-weight: 500;
+		cursor: pointer;
+		white-space: nowrap;
+		font-family: inherit;
+		overflow: hidden;
+		transition: color 0.15s;
+	}
+
+	.tab:hover { color: rgba(23,23,23,0.75); }
+
+	.tab.active {
+		background: linear-gradient(90deg, hsl(158 85% 28%), hsl(175 85% 28%));
+		color: hsl(162 80% 88%);
+		box-shadow: 0 0 0 1px hsl(158 75% 42% / 0.4);
+	}
+
+	/* Progress fill that sweeps left→right inside active tab */
+	.tab-fill {
+		position: absolute;
+		inset: 0;
+		left: 0;
+		background: linear-gradient(90deg, hsl(158 85% 36%), hsl(175 85% 36%));
+		border-radius: inherit;
+		pointer-events: none;
+		transition: none;
+	}
+
+	.tab-icon {
+		position: relative;
+		font-size: 14px;
+		line-height: 1;
+	}
+
+	.tab-label {
+		position: relative;
+	}
+
+	.tab-divider {
+		width: 1px;
+		height: 16px;
+		background: rgba(23,23,23,0.1);
+		flex-shrink: 0;
+		transition: opacity 0.15s;
+	}
+
+	.tab-divider.hidden {
+		opacity: 0;
 	}
 </style>

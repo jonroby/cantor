@@ -44,7 +44,7 @@
 	let composerText = $state('');
 	let sideComposerText = $state('');
 	let sideCounter = $state('1 / 1');
-	let sideBadgeCount = $state(1);
+	let sideBadgeCount = $state(0);
 	let activeSide = $state(0);
 	let sideOpen = $state(false);
 
@@ -52,6 +52,37 @@
 	let sidebarEl: HTMLElement;
 	let mainEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
+
+	function pulse(tl: gsap.core.Timeline, targetId: string) {
+		tl.call(() => {
+			const frame = frameEl.getBoundingClientRect();
+			const target = document.getElementById(targetId)?.getBoundingClientRect();
+			if (!target) return;
+			const ring = document.createElement('div');
+			ring.style.cssText = `
+				position: absolute;
+				left: ${target.left - frame.left + target.width / 2}px;
+				top: ${target.top - frame.top + target.height / 2}px;
+				width: 0; height: 0;
+				border-radius: 50%;
+				background: rgba(16, 185, 129, 0.55);
+				box-shadow: 0 0 0 0 rgba(16, 185, 129, 1);
+				transform: translate(-50%, -50%);
+				pointer-events: none;
+				z-index: 200;
+			`;
+			frameEl.appendChild(ring);
+			gsap.to(ring, {
+				width: 72, height: 72,
+				opacity: 0,
+				boxShadow: '0 0 0 28px rgba(16,185,129,0)',
+				duration: 0.85,
+				ease: 'power2.out',
+				onComplete: () => ring.remove()
+			});
+		});
+		tl.to({}, { duration: 0.5 });
+	}
 
 	function typeInto(tl: gsap.core.Timeline, setter: (s: string) => void, text: string, cps = 0.042) {
 		tl.to({}, {
@@ -67,67 +98,67 @@
 	onMount(() => {
 		const tl = gsap.timeline();
 
-		// 1. Type + send prompt 1
+		// 1. Type prompt 1, pulse send
 		typeInto(tl, s => { composerText = s; }, prompt1);
-		tl.to({}, { duration: 0.3 });
+		tl.to({}, { duration: 0.15 });
+		pulse(tl, 'composer-send');
 		tl.fromTo('#bubble-1', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' });
 		tl.set({}, { onComplete: () => { composerText = ''; } });
-		tl.to({}, { duration: 0.4 });
+		tl.to({}, { duration: 0.3 });
 
 		// 2. Stream response 1
 		response1Lines.forEach((_, i) => {
 			tl.fromTo(`#r1-${i}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 		});
-		tl.to({}, { duration: 0.5 });
-
-		// 3. Side badge appears on exchange 1
-		tl.fromTo('#side-badge', { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.5)' });
-		tl.to({}, { duration: 0.5 });
-
-		// 4. Type + send prompt 2
-		typeInto(tl, s => { composerText = s; }, prompt2);
-		tl.to({}, { duration: 0.3 });
-		tl.fromTo('#bubble-2', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' });
-		tl.set({}, { onComplete: () => { composerText = ''; } });
 		tl.to({}, { duration: 0.4 });
 
-		// 5. Partial response 2 (still loading)
+		// 3. Side badge appears
+		tl.fromTo('#side-badge', { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.5)' });
+		tl.to({}, { duration: 0.3 });
+
+		// 4. Type prompt 2, pulse send
+		typeInto(tl, s => { composerText = s; }, prompt2);
+		tl.to({}, { duration: 0.15 });
+		pulse(tl, 'composer-send');
+		tl.fromTo('#bubble-2', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' });
+		tl.set({}, { onComplete: () => { composerText = ''; } });
+		tl.to({}, { duration: 0.3 });
+
+		// 5. Partial response 2 streams
 		response2Lines.forEach((_, i) => {
 			tl.fromTo(`#r2-${i}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 		});
-		tl.to({}, { duration: 0.6 });
+		tl.to({}, { duration: 0.5 });
 
-		// 6. Click badge → side panel slides in
-		tl.to('#side-badge', { scale: 0.92, duration: 0.08 });
-		tl.to('#side-badge', { scale: 1, duration: 0.08 });
+		// 6. Pulse side badge, panel opens
+		pulse(tl, 'side-badge');
 		tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
-		tl.to(mainEl, { width: '50%', duration: 0.4, ease: 'power3.inOut' }, '<');
 		tl.set({}, { onComplete: () => { sideOpen = true; } });
-		tl.to({}, { duration: 0.4 });
+		tl.to({}, { duration: 0.3 });
 
 		// 7–9. Three side chats
 		sideChats.forEach((chat, idx) => {
 			tl.set({}, { onComplete: () => { activeSide = idx; } });
 
 			typeInto(tl, s => { sideComposerText = s; }, chat.prompt, 0.05);
-			tl.to({}, { duration: 0.25 });
+			tl.to({}, { duration: 0.15 });
+			pulse(tl, 'composer-send');
 			tl.fromTo(`#side-bubble-${idx}`, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
 			tl.set({}, { onComplete: () => { sideComposerText = ''; } });
-			tl.to({}, { duration: 0.35 });
+			tl.to({}, { duration: 0.3 });
 
 			chat.lines.forEach((_, li) => {
 				tl.fromTo(`#side-r${idx}-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 			});
-			tl.to({}, { duration: 0.6 });
+			tl.set({}, { onComplete: () => {
+				sideBadgeCount = idx + 1;
+				sideCounter = `${idx + 1} / ${idx + 1}`;
+			}});
+			tl.to({}, { duration: 0.5 });
 
 			if (idx < sideChats.length - 1) {
-				tl.to('#side-plus-btn', { scale: 0.88, duration: 0.08 });
-				tl.to('#side-plus-btn', { scale: 1, duration: 0.08 });
-				tl.set({}, { onComplete: () => {
-					sideBadgeCount = idx + 2;
-					sideCounter = `${idx + 2} / ${idx + 2}`;
-				}});
-				tl.to({}, { duration: 0.25 });
+				pulse(tl, 'side-plus-btn');
+				tl.to({}, { duration: 0.2 });
 			}
 		});
 
@@ -216,7 +247,7 @@
 			<div class="composer">
 				<div class="composer-row">
 					<button class="composer-attach"><Plus size={16} /></button>
-					<div class="composer-input">
+					<div id="composer-input" class="composer-input">
 						{#if sideOpen}
 							{#if sideComposerText}
 								<span class="composer-text">{sideComposerText}<span class="composer-cursor">|</span></span>
@@ -231,7 +262,7 @@
 							{/if}
 						{/if}
 					</div>
-					<button class="composer-send">
+					<button id="composer-send" class="composer-send">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 							<line x1="12" y1="19" x2="12" y2="5"></line>
 							<polyline points="5 12 12 5 19 12"></polyline>
@@ -242,6 +273,7 @@
 		</div>
 	</div>
 
+
 </div>
 
 <style>
@@ -249,14 +281,13 @@
 		position: relative;
 		display: flex;
 		width: 100%;
-		aspect-ratio: 16 / 9;
+		height: 100%;
 		overflow: hidden;
 		background: hsl(0 0% 98%);
 		font-family: Inter, system-ui, sans-serif;
 		font-size: 12.75px;
 		color: hsl(0 0% 9%);
 		isolation: isolate;
-		transform-origin: bottom center;
 	}
 
 	.content-area {
@@ -268,12 +299,12 @@
 	/* ── Main panel ───────────────────────────────────────── */
 	.main {
 		position: relative;
-		width: 100%;
+		flex: 1;
+		min-width: 0;
 		background: white;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		flex-shrink: 0;
 	}
 
 	.chat-header {
@@ -498,7 +529,7 @@
 		display: flex;
 	}
 
-	@keyframes blink {
+@keyframes blink {
 		0%, 100% { opacity: 1; }
 		50% { opacity: 0; }
 	}
