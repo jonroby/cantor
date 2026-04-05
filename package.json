@@ -20,9 +20,7 @@
 		"test": "bun run test:unit -- --run",
 		"test:view": "vitest --run 'src/view'",
 		"test:core": "vitest --run --exclude 'src/view/**/*.test.ts'",
-		"prepare": "husky",
-		"record": "node scripts/record-demo.js",
-		"publish-hero": "bash scripts/publish-hero.sh"
+		"prepare": "husky"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
