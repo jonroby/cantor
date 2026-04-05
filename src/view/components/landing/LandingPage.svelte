@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import AppScreenRecording from './AppScreenRecording.svelte';
+	import WorkflowChat from './WorkflowChat.svelte';
 
 	let canvas: HTMLCanvasElement;
 	let animationId: number;
@@ -129,7 +129,7 @@
 	<!-- App preview — animated SVG screen recording -->
 	<div class="preview-wrap">
 		<div class="preview">
-			<AppScreenRecording />
+			<WorkflowChat />
 		</div>
 	</div>
 </div>
