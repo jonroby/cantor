@@ -17,8 +17,19 @@
 	let sidebarEl: HTMLElement;
 	let mainEl: HTMLElement;
 
+	let frameEl: HTMLElement;
+
 	onMount(() => {
 		const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 });
+
+		// ── 0. Zoom into composer ─────────────────────────────
+		// The composer sits at the bottom-center of the frame.
+		// We scale the frame up and shift it so the composer fills view.
+		tl.fromTo(frameEl,
+			{ scale: 1, y: 0 },
+			{ scale: 2.2, y: '-38%', duration: 0.8, ease: 'power3.inOut' }
+		);
+		tl.to({}, { duration: 0.4 });
 
 		// ── 1. Type into composer ─────────────────────────────
 		tl.to({}, {
@@ -76,7 +87,7 @@
 	});
 </script>
 
-<div class="demo-frame">
+<div class="demo-frame" bind:this={frameEl}>
 
 	<!-- Sidebar -->
 	<div class="sidebar" bind:this={sidebarEl}>
@@ -202,6 +213,7 @@
 		font-size: 12.75px;
 		color: hsl(0 0% 9%);
 		isolation: isolate;
+		transform-origin: bottom center;
 	}
 
 	/* ── Sidebar ──────────────────────────────────────────── */

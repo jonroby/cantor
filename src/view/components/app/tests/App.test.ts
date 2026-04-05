@@ -35,6 +35,10 @@ vi.mock('@/view/components/landing', async () => ({
 	LandingPage: (await import('../../../../../tests/fixtures/LandingPageMock.svelte')).default
 }));
 
+vi.mock('@/view/components/canvas-view', async () => ({
+	CanvasView: (await import('../../../../../tests/fixtures/CanvasViewMock.svelte')).default
+}));
+
 vi.mock('@/view/primitives/sidebar', async () => ({
 	Provider: (await import('../../../../../tests/fixtures/PassthroughWrapper.svelte')).default,
 	Inset: (await import('../../../../../tests/fixtures/PassthroughWrapper.svelte')).default
@@ -110,7 +114,8 @@ vi.mock('@/app', async () => {
 });
 
 vi.mock('@/view/routes/router.svelte', () => ({
-	routerState: { route: 'chat' as 'chat' | 'landing' }
+	routerState: { route: 'chat' as 'chat' | 'canvas' | 'landing' },
+	navigate: vi.fn()
 }));
 
 import { toast } from 'svelte-sonner';
@@ -161,6 +166,14 @@ describe('App', () => {
 		render(App);
 
 		expect(screen.getByTestId('landing-page-mock')).toBeInTheDocument();
+	});
+
+	it('renders the canvas view when the router is on canvas', () => {
+		routerState.route = 'canvas';
+
+		render(App);
+
+		expect(screen.getByTestId('canvas-view-mock')).toBeInTheDocument();
 	});
 
 	describe('gracefully renames duplicates on load', () => {

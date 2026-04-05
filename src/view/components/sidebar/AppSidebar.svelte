@@ -6,11 +6,12 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import { MessageSquarePlus, Upload, FolderPlus } from 'lucide-svelte';
+	import { MessageSquarePlus, Upload, FolderPlus, Workflow, MessagesSquare } from 'lucide-svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
 	import powersetLogo from '@/view/assets/powerset-logo.svg';
+	import type { Route } from '@/view/routes/router.svelte';
 
 	interface Props {
 		chats: app.chat.Chat[];
@@ -40,6 +41,8 @@
 			name: string
 		) => { result: string | null; error?: string };
 		onMoveDocument: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
+		activeRoute?: Route;
+		onNavigate?: (route: Route) => void;
 		expandedFolders?: Record<string, boolean>;
 	}
 
@@ -67,6 +70,8 @@
 		onDeleteDocument,
 		onRenameDocument,
 		onMoveDocument,
+		activeRoute = 'chat',
+		onNavigate,
 		expandedFolders = $bindable({})
 	}: Props = $props();
 
@@ -256,6 +261,40 @@
 								>
 									<FolderPlus size={16} class="shrink-0" />
 									<span>New folder</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						</Sidebar.Menu>
+					</Sidebar.GroupContent>
+				</Sidebar.Group>
+
+				<Sidebar.Separator class="sidebar-section-separator" />
+
+				<Sidebar.Group class="sidebar-group-reset">
+					<Sidebar.GroupLabel class="sidebar-section-label">
+						<span>Views</span>
+					</Sidebar.GroupLabel>
+					<Sidebar.GroupContent>
+						<Sidebar.Menu>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="Chat view"
+									onclick={() => onNavigate?.('chat')}
+									class={`sidebar-primary-action ${activeRoute === 'chat' ? 'is-selected' : ''}`}
+								>
+									<MessagesSquare size={16} class="shrink-0" />
+									<span>Chat</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="Canvas view"
+									onclick={() => onNavigate?.('canvas')}
+									class={`sidebar-primary-action ${activeRoute === 'canvas' ? 'is-selected' : ''}`}
+								>
+									<Workflow size={16} class="shrink-0" />
+									<span>Canvas</span>
 								</Sidebar.MenuButton>
 							</Sidebar.MenuItem>
 						</Sidebar.Menu>
@@ -534,6 +573,12 @@
 	.sidebar-icon-btn:hover {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
+	}
+
+	.is-selected {
+		border-color: hsl(193 78% 42% / 0.34);
+		background: linear-gradient(180deg, hsl(191 85% 95%), hsl(170 63% 94%));
+		color: hsl(191 67% 25%);
 	}
 
 	.sidebar-collapsed-header {
