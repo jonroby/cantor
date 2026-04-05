@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { Marked } from 'marked';
 	import katex from 'katex';
+	import { markdownKatexRenderer } from '@/view/lib/katex';
 	import DOMPurify from 'dompurify';
 	import { preprocessChartBlocks, mountCharts } from './charts';
 	import {
@@ -179,11 +179,6 @@
 		tick().then(() => mountCharts(contentEl!));
 	});
 
-	const marked = new Marked({
-		breaks: true,
-		gfm: true
-	});
-
 	let editing = $state(false);
 	let draft = $state('');
 	let error: string | null = $state(null);
@@ -222,17 +217,7 @@
 			return `\n<p data-svg-placeholder="${index}"></p>\n`;
 		});
 
-		// Replace display math $$...$$ before marked processes it
-		md = md.replace(/\$\$([\s\S]*?)\$\$/g, (_match, tex) => {
-			return `<div class="katex-display">${renderKatex(tex.trim(), true)}</div>`;
-		});
-
-		// Replace inline math $...$  (not $$)
-		md = md.replace(/(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$/g, (_match, tex) => {
-			return renderKatex(tex.trim(), false);
-		});
-
-		let html = marked.parse(md);
+		let html = markdownKatexRenderer.parse(md);
 		if (typeof html !== 'string') return '';
 
 		// Restore SVG blocks
@@ -832,5 +817,16 @@
 		border: 1px solid var(--border-color);
 		border-radius: 8px;
 		background: hsl(var(--card));
+	}
+
+	.docs-content-inner :global(.katex svg) {
+		display: block;
+		position: absolute;
+		width: 100%;
+		height: inherit;
+		margin: 0;
+		border: none !important;
+		border-radius: 0 !important;
+		background: none !important;
 	}
 </style>
