@@ -52,6 +52,48 @@ bun install
 bun run dev
 ```
 
+## Recording a Demo Video
+
+`bun run record` uses Playwright to record a short demo of the app with a local Ollama model.
+
+### Prerequisites
+
+1. **Ollama running locally**
+   ```bash
+   ollama serve
+   ollama pull gemma4:latest   # or whichever model you want to use
+   ```
+
+2. **Dev server running**
+   ```bash
+   bun run dev
+   ```
+
+3. **Playwright browsers installed** (first time only)
+   ```bash
+   node node_modules/playwright-core/cli.js install chromium-headless-shell
+   ```
+
+### Run
+
+```bash
+bun run record
+```
+
+Videos are saved to `videos/demo-<timestamp>.webm`. The folder is created automatically.
+
+### Configuration
+
+Edit the top of `scripts/record-demo.js`:
+
+| Variable | Default | Description |
+|---|---|---|
+| `OLLAMA_MODEL` | `gemma4:latest` | Model to select in the palette |
+| `BASE_URL` | `http://localhost:5173` | Dev server URL |
+| `VIDEOS_DIR` | `<root>/videos` | Output folder |
+
+The interactions are numbered sections (1–13) with comments — find the section you want to change and edit it directly.
+
 ## Tests and Checks
 
 ```bash

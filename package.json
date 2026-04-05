@@ -20,7 +20,9 @@
 		"test": "bun run test:unit -- --run",
 		"test:view": "vitest --run 'src/view'",
 		"test:core": "vitest --run --exclude 'src/view/**/*.test.ts'",
-		"prepare": "husky"
+		"prepare": "husky",
+		"record": "node scripts/record-demo.js",
+		"publish-hero": "bash scripts/publish-hero.sh"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
@@ -45,7 +47,7 @@
 		"jsdom": "^29.0.1",
 		"lint-staged": "^16.4.0",
 		"mode-watcher": "^1.1.0",
-		"playwright": "^1.58.2",
+		"playwright": "^1.59.1",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
 		"svelte": "^5.51.0",
