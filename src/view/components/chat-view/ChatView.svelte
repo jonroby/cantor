@@ -366,6 +366,8 @@
 
 	export async function scrollToBottom() {
 		if (!mainScrollContainer || mainChatPath.length === 0) return;
+		const lastExchange = mainChatPath[mainChatPath.length - 1]!;
+		if (mainChatPath.length === 1 && !lastExchange.prompt.text && !lastExchange.response) return;
 		const lastId = mainChatPath[mainChatPath.length - 1]!.id;
 		const el = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
 		if (el) {

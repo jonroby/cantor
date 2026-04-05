@@ -255,8 +255,10 @@
 
 		if (panels.length === 0) {
 			app.workspace.setPanels([documentPanel]);
+		} else if (panels.length === 1 && panels[0]!.type === 'chat') {
+			app.workspace.setPanels([panels[0]!, documentPanel]);
 		} else if (panels.length === 1) {
-			app.workspace.setPanels([...panels, documentPanel]);
+			app.workspace.setPanels([documentPanel]);
 		} else {
 			app.workspace.setPanels([panels[0]!, documentPanel]);
 		}
@@ -284,8 +286,10 @@
 
 		if (panels.length === 0) {
 			app.workspace.setPanels([folderPanel]);
+		} else if (panels.length === 1 && panels[0]!.type === 'chat') {
+			app.workspace.setPanels([panels[0]!, folderPanel]);
 		} else if (panels.length === 1) {
-			app.workspace.setPanels([...panels, folderPanel]);
+			app.workspace.setPanels([folderPanel]);
 		} else {
 			app.workspace.setPanels([panels[0]!, folderPanel]);
 		}
@@ -443,7 +447,7 @@
 									<ChatView
 										bind:this={chatViewRef}
 										onFocusComposer={focusComposer}
-										onClose={() => closePanel(index)}
+										onClose={isSplit ? () => closePanel(index) : undefined}
 										onScrollAwayChange={(away) => (chatScrolledAway = away)}
 									/>
 								{:else if panel.type === 'side-chat'}

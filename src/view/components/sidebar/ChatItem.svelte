@@ -41,72 +41,55 @@
 </script>
 
 <Sidebar.MenuItem>
-	{#if isEditing}
-		<div class="chat-item-editing" class:chat-item-indented={indented}>
-			<MessageSquare size={16} class="shrink-0" />
+	<Sidebar.MenuButton
+		{isActive}
+		tooltipContent={chat.name}
+		onclick={onSelect}
+		class={`chat-item-button ${indented ? 'chat-item-button-indented' : 'chat-item-button-root'}`}
+	>
+		<MessageSquare size={16} class="shrink-0" />
+		{#if isEditing}
 			<InlineRenameInput
 				bind:value={editingName}
 				onCommit={onCommitRename}
 				onCancel={onCancelRename}
 			/>
-		</div>
-	{:else}
-		<Sidebar.MenuButton
-			{isActive}
-			tooltipContent={chat.name}
-			onclick={onSelect}
-			class={`chat-item-button ${indented ? 'chat-item-button-indented' : 'chat-item-button-root'}`}
-		>
-			<MessageSquare size={16} class="shrink-0" />
+		{:else}
 			<span data-chat-label>{chat.name}</span>
-		</Sidebar.MenuButton>
-	{/if}
-	<DropdownMenu.Root>
-		<DropdownMenu.Trigger class="chat-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
-			<EllipsisVertical size={18} />
-		</DropdownMenu.Trigger>
-		<DropdownMenu.Portal>
-			<DropdownMenu.Content align="start" side="right" class="item-menu-content">
-				<DropdownMenu.Item class="item-menu-action" onclick={onStartRename}>
-					<Pencil size={14} />
-					Rename
-				</DropdownMenu.Item>
-				<DropdownMenu.Item class="item-menu-action" onclick={onDownload}>
-					<Download size={14} />
-					Download
-				</DropdownMenu.Item>
-				{#if canDelete}
-					<DropdownMenu.Separator class="item-menu-separator" />
-					<DropdownMenu.Item
-						class="item-menu-action item-menu-action-destructive"
-						onclick={onDelete}
-					>
-						<Trash2 size={14} />
-						Delete
+		{/if}
+	</Sidebar.MenuButton>
+	{#if !isEditing}
+		<DropdownMenu.Root>
+			<DropdownMenu.Trigger class="chat-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
+				<EllipsisVertical size={18} />
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Portal>
+				<DropdownMenu.Content align="start" side="right" class="item-menu-content">
+					<DropdownMenu.Item class="item-menu-action" onclick={onStartRename}>
+						<Pencil size={14} />
+						Rename
 					</DropdownMenu.Item>
-				{/if}
-			</DropdownMenu.Content>
-		</DropdownMenu.Portal>
-	</DropdownMenu.Root>
+					<DropdownMenu.Item class="item-menu-action" onclick={onDownload}>
+						<Download size={14} />
+						Download
+					</DropdownMenu.Item>
+					{#if canDelete}
+						<DropdownMenu.Separator class="item-menu-separator" />
+						<DropdownMenu.Item
+							class="item-menu-action item-menu-action-destructive"
+							onclick={onDelete}
+						>
+							<Trash2 size={14} />
+							Delete
+						</DropdownMenu.Item>
+					{/if}
+				</DropdownMenu.Content>
+			</DropdownMenu.Portal>
+		</DropdownMenu.Root>
+	{/if}
 </Sidebar.MenuItem>
 
 <style>
-	.chat-item-editing {
-		display: flex;
-		width: 100%;
-		align-items: center;
-		gap: 0.5rem;
-		overflow: hidden;
-		border-radius: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		text-align: left;
-	}
-
-	.chat-item-indented {
-		padding-left: 2rem;
-		padding-right: 0.75rem;
-	}
-
 	:global([data-chat-label]) {
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -131,7 +114,10 @@
 
 	:global(li[data-sidebar='menu-item']:hover .chat-item-button),
 	:global(li[data-sidebar='menu-item']:has([data-state='open']) .chat-item-button),
-	:global(li[data-sidebar='menu-item']:has(.bits-sidebar-menu-button[data-active='true']) .chat-item-button) {
+	:global(
+		li[data-sidebar='menu-item']:has(.bits-sidebar-menu-button[data-active='true'])
+			.chat-item-button
+	) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
 		padding-right: 2.25rem;
@@ -161,7 +147,10 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .chat-item-menu-trigger),
-	:global(li[data-sidebar='menu-item']:has(.bits-sidebar-menu-button[data-active='true']) .chat-item-menu-trigger),
+	:global(
+		li[data-sidebar='menu-item']:has(.bits-sidebar-menu-button[data-active='true'])
+			.chat-item-menu-trigger
+	),
 	:global(li[data-sidebar='menu-item']:has([data-state='open']) .chat-item-menu-trigger) {
 		opacity: 1;
 	}
