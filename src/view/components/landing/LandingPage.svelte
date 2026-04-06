@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
-	import { MessageSquare, Layers, Bot, FileText, Plug } from 'lucide-svelte';
+	import { MessageSquare, Zap, Bot, Sliders, FlaskConical } from 'lucide-svelte';
 	import FlowChat from './flows/FlowChat.svelte';
 
 	function goToApp() {
@@ -14,37 +14,42 @@
 		{
 			label: 'Power Tools', icon: MessageSquare,
 			flows: [
-				{ question: 'Multiple questions for a single response?',   feature: 'Side Chats' },
-				{ question: 'Side chats that branch from any message?',    feature: 'Multi Streaming' },
-				{ question: 'Ask anything without leaving context?',       feature: 'Quick Ask' },
+				{ question: 'Run parallel chats off any message?',          feature: 'Side Chats' },
+				{ question: 'Stream multiple responses at once?',            feature: 'Simultaneous Streams' },
+				{ question: 'Ask anything without losing your place?',       feature: 'Auto Ask' },
+				{ question: 'Prune any exchange from the thread?',           feature: 'Delete Exchanges' },
+				{ question: 'Branch a conversation from any point?',         feature: 'Fork Chats' },
 			],
 		},
 		{
-			label: 'Context', icon: Layers,
+			label: 'Agent Mode', icon: Bot,
 			flows: [
-				{ question: 'Context windows you can actually manage?',    feature: 'Context Window' },
-				{ question: 'Choose exactly how your tokens get pruned?',  feature: 'Context Strategy' },
+				{ question: 'An agent that does whatever you can?',          feature: 'Full Agent Control' },
+				{ question: 'Create a doc, write chapters, add charts?',     feature: 'Document Authoring' },
+				{ question: 'Inline SVGs and visualizations, generated?',    feature: 'Charts & SVGs' },
 			],
 		},
 		{
-			label: 'Agents', icon: Bot,
+			label: 'Context Control', icon: Sliders,
 			flows: [
-				{ question: 'Agents that use only the tools you allow?',   feature: 'Agent Mode' },
-				{ question: 'Watch tool calls stream in real time?',        feature: 'Streaming Tools' },
+				{ question: 'Know exactly how many tokens you\'re using?',   feature: 'Token Monitor' },
+				{ question: 'See your full context window at a glance?',     feature: 'Context Window' },
+				{ question: 'Choose which tools your agent can reach?',      feature: 'Tool Selection' },
+				{ question: 'Pick the strategy for pruning context?',        feature: 'Context Strategy' },
 			],
 		},
 		{
-			label: 'Documents', icon: FileText,
+			label: 'Model Selection', icon: Zap,
 			flows: [
-				{ question: 'Documents with rendered math and plots?',     feature: 'Rendered Docs' },
-				{ question: 'Export any conversation as a file?',           feature: 'Export' },
+				{ question: 'Frontier models, one keystroke away?',          feature: 'Frontier Labs' },
+				{ question: 'Local models that never leave your machine?',   feature: 'Secure & Local' },
+				{ question: 'Any Ollama model, plug and play?',              feature: 'Ollama' },
 			],
 		},
 		{
-			label: 'Providers', icon: Plug,
+			label: 'Experimental', icon: FlaskConical,
 			flows: [
-				{ question: 'Providers that never see your keys?',         feature: 'Local Keys' },
-				{ question: 'Switch models mid-conversation?',             feature: 'Model Switching' },
+				{ question: 'Your entire conversation as a visual tree?',    feature: 'Chat Tree' },
 			],
 		},
 	];
@@ -52,50 +57,70 @@
 	// Duration of each video in ms
 	const FLOW_DURATION = 18000;
 
-	let questionText = $state('');
-	let showIntro = $state(true);
-	let introEl: HTMLElement;
+	const DEFAULT_ACCENT = 'Power Users';
+
+	let accentText = $state(DEFAULT_ACCENT);
+	let accentIsQuestion = $state(false);  // true → use shimmer gradient
+	let showCursor = $state(false);
 
 	let tabIndex = $state(0);   // which tab
 	let flowIndex = $state(0);  // which flow within tab
 	let key = $state(0);
 	let progress = $state(0);
+	let showVideo = $state(false);
 
 	let rafId: number;
 	let startTime: number;
 	let currentTl: gsap.core.Timeline | null = null;
 
-function startProgress() {
+	function startProgress() {
 		cancelAnimationFrame(rafId);
 		progress = 0;
 		startTime = performance.now();
-		function tick() {
+		function frame() {
 			const elapsed = performance.now() - startTime;
 			progress = Math.min(elapsed / FLOW_DURATION, 1);
-			if (progress < 1) rafId = requestAnimationFrame(tick);
+			if (progress < 1) rafId = requestAnimationFrame(frame);
 		}
-		rafId = requestAnimationFrame(tick);
+		rafId = requestAnimationFrame(frame);
 	}
 
-	function playQuestion(question: string, onDone: () => void) {
+	async function playQuestion(question: string, onDone: () => void) {
 		if (currentTl) currentTl.kill();
-		showIntro = true;
-		questionText = '';
-		gsap.set(introEl, { opacity: 1, y: 0 });
+		showCursor = true;
+
 		const tl = gsap.timeline();
 		currentTl = tl;
 
+		// 1. Delete "Power Users" (or current accent) char by char
+		const startText = accentText;
 		tl.to({}, {
-			duration: question.length * 0.038,
+			duration: startText.length * 0.04,
 			ease: 'none',
 			onUpdate() {
-				questionText = question.slice(0, Math.floor(this.progress() * question.length));
-			}
+				const remaining = Math.ceil((1 - this.progress()) * startText.length);
+				accentText = startText.slice(0, remaining);
+			},
+			onComplete() { accentText = ''; }
 		});
-		tl.to({}, { duration: 0.8 });
-		tl.to(introEl, { opacity: 0, y: -16, duration: 0.35, ease: 'power2.in' });
-		tl.set({}, { onComplete: () => { showIntro = false; questionText = ''; } });
-		tl.call(onDone);
+
+		// 2. Switch to question style, type question in
+		tl.set({}, { onComplete: () => { accentIsQuestion = true; accentText = ''; } });
+		tl.to({}, {
+			duration: question.length * 0.032,
+			ease: 'none',
+			onUpdate() {
+				const chars = Math.floor(this.progress() * question.length);
+				accentText = question.slice(0, chars);
+			},
+			onComplete() { accentText = question; }
+		});
+
+		// 3. Hold — question fully visible
+		tl.to({}, { duration: 0.6 });
+
+		// 4. Start video — question stays up top for the entire video duration
+		tl.set({}, { onComplete: () => { showVideo = true; key++; startProgress(); showCursor = false; } });
 	}
 
 	// Called when a video finishes
@@ -103,25 +128,23 @@ function startProgress() {
 		const tab = tabs[tabIndex];
 		const nextFlow = flowIndex + 1;
 		if (nextFlow < tab.flows.length) {
-			// Next flow in same tab
 			flowIndex = nextFlow;
-			playQuestion(tab.flows[flowIndex].question, () => { key++; startProgress(); });
+			playQuestion(tab.flows[flowIndex].question, () => {});
 		} else {
-			// Advance to next tab, first flow
 			tabIndex = (tabIndex + 1) % tabs.length;
 			flowIndex = 0;
-			playQuestion(tabs[tabIndex].flows[0].question, () => { key++; startProgress(); });
+			playQuestion(tabs[tabIndex].flows[0].question, () => {});
 		}
 	}
 
 	function selectTab(i: number) {
 		tabIndex = i;
 		flowIndex = 0;
-		playQuestion(tabs[i].flows[0].question, () => { key++; startProgress(); });
+		playQuestion(tabs[i].flows[0].question, () => {});
 	}
 
 	onMount(() => {
-		playQuestion(tabs[0].flows[0].question, () => { key++; startProgress(); });
+		playQuestion(tabs[0].flows[0].question, () => {});
 		return () => {
 			currentTl?.kill();
 			cancelAnimationFrame(rafId);
@@ -161,7 +184,7 @@ function startProgress() {
 
 		<!-- Hero -->
 		<div class="hero">
-			<h1 class="tagline">LLMs for <span class="tagline-accent">Power Users</span></h1>
+			<h1 class="tagline">LLMs for <span class="tagline-accent" class:tagline-accent-question={accentIsQuestion}>{accentText}{#if showCursor}<span class="tagline-cursor">|</span>{/if}</span></h1>
 		</div>
 
 		<!-- Content row -->
@@ -181,20 +204,14 @@ function startProgress() {
 			<!-- Right: viewport + tabs -->
 			<div class="viewport-wrap">
 				<div class="viewport">
-					{#if showIntro}
-						<!-- Blank placeholder keeps viewport sized; intro overlays on top -->
-						<div class="viewport-placeholder"></div>
-						<div class="intro-wrap" bind:this={introEl}>
-							<p class="intro-question">
-								{questionText}<span class="intro-cursor">|</span>
-							</p>
-						</div>
-					{:else}
+					{#if showVideo}
 						{#key key}
 							<div style="display:contents; height:100%">
 								<FlowChat onComplete={onVideoComplete} />
 							</div>
 						{/key}
+					{:else}
+						<div class="viewport-placeholder"></div>
 					{/if}
 				</div>
 
@@ -230,6 +247,12 @@ function startProgress() {
 </div>
 
 <style>
+	@property --shimmer-x {
+		syntax: '<percentage>';
+		inherits: false;
+		initial-value: -100%;
+	}
+
 	.page {
 		height: 100vh;
 		background: white;
@@ -319,40 +342,6 @@ function startProgress() {
 		background: hsl(0 0% 98%);
 	}
 
-	.intro-wrap {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: hsl(0 0% 98%);
-		z-index: 10;
-		border-radius: 12px;
-	}
-
-	.intro-question {
-		font-size: 28px;
-		font-weight: 600;
-		letter-spacing: -0.5px;
-		color: rgba(23,23,23,0.88);
-		margin: 0;
-		max-width: 640px;
-		text-align: center;
-		background: linear-gradient(90deg, hsl(158 85% 40%), hsl(175 90% 38%));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
-	.intro-cursor {
-		-webkit-text-fill-color: hsl(158 85% 50%);
-		animation: blink 0.7s ease infinite;
-	}
-
-	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
-	}
 
 /* ── Dark card ────────────────────────────────────────── */
 	.dark-card {
@@ -394,6 +383,40 @@ function startProgress() {
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
+	}
+
+	.tagline-accent-question {
+		--shimmer-x: 200%;
+		background: linear-gradient(
+			90deg,
+			hsl(162 80% 38%) 0%,
+			hsl(162 80% 38%) calc(var(--shimmer-x) - 30%),
+			hsl(158 90% 62%) calc(var(--shimmer-x) - 10%),
+			hsl(175 90% 70%) var(--shimmer-x),
+			hsl(158 90% 62%) calc(var(--shimmer-x) + 10%),
+			hsl(162 80% 38%) calc(var(--shimmer-x) + 30%),
+			hsl(162 80% 38%) 100%
+		);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		animation: shimmer-sweep 1.8s ease-in-out 1 forwards;
+	}
+
+	@keyframes shimmer-sweep {
+		from { --shimmer-x: -100%; }
+		to   { --shimmer-x: 200%; }
+	}
+
+	.tagline-cursor {
+		-webkit-text-fill-color: hsl(162 80% 38%);
+		animation: blink 0.7s ease infinite;
+		margin-left: 2px;
+	}
+
+	@keyframes blink {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0; }
 	}
 
 	.subline {
