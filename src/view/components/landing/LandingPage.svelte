@@ -14,42 +14,42 @@
 		{
 			label: 'Power Tools', icon: MessageSquare,
 			flows: [
-				{ question: 'Run parallel chats off any message?',          feature: 'Side Chats' },
-				{ question: 'Stream multiple responses at once?',            feature: 'Simultaneous Streams' },
-				{ question: 'Ask anything without losing your place?',       feature: 'Auto Ask' },
-				{ question: 'Prune any exchange from the thread?',           feature: 'Delete Exchanges' },
-				{ question: 'Branch a conversation from any point?',         feature: 'Fork Chats' },
-			],
-		},
-		{
-			label: 'Agent Mode', icon: Bot,
-			flows: [
-				{ question: 'An agent that does whatever you can?',          feature: 'Full Agent Control' },
-				{ question: 'Create a doc, write chapters, add charts?',     feature: 'Document Authoring' },
-				{ question: 'Inline SVGs and visualizations, generated?',    feature: 'Charts & SVGs' },
-			],
-		},
-		{
-			label: 'Context Control', icon: Sliders,
-			flows: [
-				{ question: 'Know exactly how many tokens you\'re using?',   feature: 'Token Monitor' },
-				{ question: 'See your full context window at a glance?',     feature: 'Context Window' },
-				{ question: 'Choose which tools your agent can reach?',      feature: 'Tool Selection' },
-				{ question: 'Pick the strategy for pruning context?',        feature: 'Context Strategy' },
+				{ before: 'Branch ', green: 'side chats',          after: ' off any message.',             feature: 'Side Chats' },
+				{ before: 'Stream ', green: 'multiple responses',   after: ' at once.',                     feature: 'Simultaneous Streams' },
+				{ before: 'Ask anything with ', green: 'Auto Ask',  after: ' — no context switch.',         feature: 'Auto Ask' },
+				{ before: 'Delete any exchange, ', green: 'clean and instant', after: '.',                  feature: 'Delete Exchanges' },
+				{ before: 'Fork any conversation ', green: 'from any point',   after: '.',                  feature: 'Fork Chats' },
 			],
 		},
 		{
 			label: 'Model Selection', icon: Zap,
 			flows: [
-				{ question: 'Frontier models, one keystroke away?',          feature: 'Frontier Labs' },
-				{ question: 'Local models that never leave your machine?',   feature: 'Secure & Local' },
-				{ question: 'Any Ollama model, plug and play?',              feature: 'Ollama' },
+				{ before: 'Access ', green: 'frontier models',             after: ' with one keystroke.',         feature: 'Frontier Labs' },
+				{ before: 'Run models ', green: 'locally',                 after: ' — your keys never transmit.', feature: 'Secure & Local' },
+				{ before: 'Any ', green: 'Ollama model',                   after: ', plug and play.',             feature: 'Ollama' },
+			],
+		},
+		{
+			label: 'Agent Mode', icon: Bot,
+			flows: [
+				{ before: 'An agent that does ', green: 'whatever you can', after: '.',                           feature: 'Full Agent Control' },
+				{ before: 'Create docs, write chapters, ', green: 'add charts', after: '.',                       feature: 'Document Authoring' },
+				{ before: 'SVGs and visualizations, ', green: 'generated inline', after: '.',                     feature: 'Charts & SVGs' },
+			],
+		},
+		{
+			label: 'Context Control', icon: Sliders,
+			flows: [
+				{ before: 'Live ', green: 'token usage',                   after: ', always visible.',            feature: 'Token Monitor' },
+				{ before: 'See and control ', green: "exactly what's in window", after: '.',                      feature: 'Context Window' },
+				{ before: 'Pick exactly ', green: 'which tools',           after: ' your agent can use.',         feature: 'Tool Selection' },
+				{ before: 'Choose the ', green: 'context strategy',        after: ' that fits.',                  feature: 'Context Strategy' },
 			],
 		},
 		{
 			label: 'Experimental', icon: FlaskConical,
 			flows: [
-				{ question: 'Your entire conversation as a visual tree?',    feature: 'Chat Tree' },
+				{ before: 'Your conversation as ', green: 'a visual tree', after: '.',                            feature: 'Chat Tree' },
 			],
 		},
 	];
@@ -57,11 +57,11 @@
 	// Duration of each video in ms
 	const FLOW_DURATION = 18000;
 
-	const DEFAULT_ACCENT = 'Power Users';
-
-	let accentText = $state(DEFAULT_ACCENT);
-	let accentIsQuestion = $state(false);  // true → use shimmer gradient
-	let showCursor = $state(false);
+	// Typed text split into segments for rendering
+	let typedBefore = $state('');
+	let typedGreen  = $state('');
+	let typedAfter  = $state('');
+	let showCursor  = $state(false);
 
 	let tabIndex = $state(0);   // which tab
 	let flowIndex = $state(0);  // which flow within tab
@@ -85,66 +85,67 @@
 		rafId = requestAnimationFrame(frame);
 	}
 
-	async function playQuestion(question: string, onDone: () => void) {
+	function playFlow(before: string, green: string, after: string) {
 		if (currentTl) currentTl.kill();
-		showCursor = true;
+		typedBefore = '';
+		typedGreen  = '';
+		typedAfter  = '';
+		showCursor  = true;
 
 		const tl = gsap.timeline();
 		currentTl = tl;
 
-		// 1. Delete "Power Users" (or current accent) char by char
-		const startText = accentText;
+		const full = before + green + after;
+		const greenStart = before.length;
+		const greenEnd   = before.length + green.length;
+
+		// Type the full string, splitting into segments as cursor advances
 		tl.to({}, {
-			duration: startText.length * 0.04,
+			duration: full.length * 0.034,
 			ease: 'none',
 			onUpdate() {
-				const remaining = Math.ceil((1 - this.progress()) * startText.length);
-				accentText = startText.slice(0, remaining);
+				const n = Math.floor(this.progress() * full.length);
+				typedBefore = full.slice(0, Math.min(n, greenStart));
+				typedGreen  = n > greenStart ? full.slice(greenStart, Math.min(n, greenEnd)) : '';
+				typedAfter  = n > greenEnd   ? full.slice(greenEnd, n) : '';
 			},
-			onComplete() { accentText = ''; }
+			onComplete() {
+				typedBefore = before;
+				typedGreen  = green;
+				typedAfter  = after;
+			}
 		});
 
-		// 2. Switch to question style, type question in
-		tl.set({}, { onComplete: () => { accentIsQuestion = true; accentText = ''; } });
-		tl.to({}, {
-			duration: question.length * 0.032,
-			ease: 'none',
-			onUpdate() {
-				const chars = Math.floor(this.progress() * question.length);
-				accentText = question.slice(0, chars);
-			},
-			onComplete() { accentText = question; }
-		});
+		// Hold — text fully visible
+		tl.to({}, { duration: 0.8 });
 
-		// 3. Hold — question fully visible
-		tl.to({}, { duration: 0.6 });
-
-		// 4. Start video — question stays up top for the entire video duration
+		// Start video — text stays up for the whole flow
 		tl.set({}, { onComplete: () => { showVideo = true; key++; startProgress(); showCursor = false; } });
 	}
 
-	// Called when a video finishes
 	function onVideoComplete() {
 		const tab = tabs[tabIndex];
 		const nextFlow = flowIndex + 1;
 		if (nextFlow < tab.flows.length) {
 			flowIndex = nextFlow;
-			playQuestion(tab.flows[flowIndex].question, () => {});
 		} else {
 			tabIndex = (tabIndex + 1) % tabs.length;
 			flowIndex = 0;
-			playQuestion(tabs[tabIndex].flows[0].question, () => {});
 		}
+		const f = tabs[tabIndex].flows[flowIndex] as any;
+		playFlow(f.before, f.green, f.after);
 	}
 
 	function selectTab(i: number) {
 		tabIndex = i;
 		flowIndex = 0;
-		playQuestion(tabs[i].flows[0].question, () => {});
+		const f = tabs[i].flows[0] as any;
+		playFlow(f.before, f.green, f.after);
 	}
 
 	onMount(() => {
-		playQuestion(tabs[0].flows[0].question, () => {});
+		const f = tabs[0].flows[0] as any;
+		playFlow(f.before, f.green, f.after);
 		return () => {
 			currentTl?.kill();
 			cancelAnimationFrame(rafId);
@@ -184,7 +185,7 @@
 
 		<!-- Hero -->
 		<div class="hero">
-			<h1 class="tagline">LLMs for <span class="tagline-accent" class:tagline-accent-question={accentIsQuestion}>{accentText}{#if showCursor}<span class="tagline-cursor">|</span>{/if}</span></h1>
+			<h1 class="tagline">{typedBefore}<span class="tagline-accent">{typedGreen}</span>{typedAfter}{#if showCursor}<span class="tagline-cursor">|</span>{/if}</h1>
 		</div>
 
 		<!-- Content row -->
@@ -247,12 +248,6 @@
 </div>
 
 <style>
-	@property --shimmer-x {
-		syntax: '<percentage>';
-		inherits: false;
-		initial-value: -100%;
-	}
-
 	.page {
 		height: 100vh;
 		background: white;
@@ -385,33 +380,10 @@
 		background-clip: text;
 	}
 
-	.tagline-accent-question {
-		--shimmer-x: 200%;
-		background: linear-gradient(
-			90deg,
-			hsl(162 80% 38%) 0%,
-			hsl(162 80% 38%) calc(var(--shimmer-x) - 30%),
-			hsl(158 90% 62%) calc(var(--shimmer-x) - 10%),
-			hsl(175 90% 70%) var(--shimmer-x),
-			hsl(158 90% 62%) calc(var(--shimmer-x) + 10%),
-			hsl(162 80% 38%) calc(var(--shimmer-x) + 30%),
-			hsl(162 80% 38%) 100%
-		);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		animation: shimmer-sweep 1.8s ease-in-out 1 forwards;
-	}
-
-	@keyframes shimmer-sweep {
-		from { --shimmer-x: -100%; }
-		to   { --shimmer-x: 200%; }
-	}
-
 	.tagline-cursor {
-		-webkit-text-fill-color: hsl(162 80% 38%);
+		color: hsl(162 80% 40%);
 		animation: blink 0.7s ease infinite;
-		margin-left: 2px;
+		margin-left: 1px;
 	}
 
 	@keyframes blink {
