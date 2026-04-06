@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
-	import { Plus, Split, X, ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { Plus, Split, X, ChevronLeft, ChevronRight, GitFork, Trash2 } from 'lucide-svelte';
 
 	interface Props {
 		onComplete: () => void;
+		startChapter?: number;
 	}
 
-	const { onComplete }: Props = $props();
+	const { onComplete, startChapter = 0 }: Props = $props();
 
 	const prompt1 = 'How does attention work in transformers?';
 	const response1Lines = [
@@ -25,6 +26,9 @@
 		'For the token "sat", the model computes attention scores',
 		'across all tokens…'
 	];
+
+	const prompt3 = 'What is K?';
+	const response3Lines = ['The <strong>key</strong> vector represents what each token "offers" — high dot-product with Q means strong attention.'];
 
 	const sideChats = [
 		{
@@ -48,10 +52,20 @@
 	let activeSide = $state(0);
 	let sideOpen = $state(false);
 
+	// Multi-stream state
+	let mainThinking  = $state(false);
+	let sideThinking  = $state([false, false]);
+	let sideCount     = $state(1);   // how many side chats visible
+	let sideResponded = $state([false, false]);
+
 	let frameEl: HTMLElement;
 	let sidebarEl: HTMLElement;
 	let mainEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
+	let tl: gsap.core.Timeline;
+
+	export function pause()  { tl?.pause();  }
+	export function resume() { tl?.resume(); }
 
 	function pulse(tl: gsap.core.Timeline, targetId: string) {
 		tl.call(() => {
@@ -96,74 +110,81 @@
 	}
 
 	onMount(() => {
-		const tl = gsap.timeline();
+		tl = gsap.timeline({ paused: true });
 
-		// 1. Type prompt 1, pulse send
-		typeInto(tl, s => { composerText = s; }, prompt1);
-		tl.to({}, { duration: 0.15 });
-		pulse(tl, 'composer-send');
-		tl.fromTo('#bubble-1', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' });
-		tl.set({}, { onComplete: () => { composerText = ''; } });
-		tl.to({}, { duration: 0.3 });
+		// Pre-set state for chapters that start mid-way
+		if (startChapter >= 1) {
+			sideOpen = true;
+			sideCount = 1;
+			sideBadgeCount = 1;
+			sideCounter = '1 / 1';
+			sideResponded = [true, false];
+			activeSide = 0;
+		}
 
-		// 2. Stream response 1
-		response1Lines.forEach((_, i) => {
-			tl.fromTo(`#r1-${i}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
-		});
-		tl.to({}, { duration: 0.4 });
+		// Brief pause before side chat animation begins
+		tl.to({}, { duration: 1.0 });
 
-		// 3. Side badge appears
-		tl.fromTo('#side-badge', { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'back.out(1.5)' });
-		tl.to({}, { duration: 0.3 });
-
-		// 4. Type prompt 2, pulse send
-		typeInto(tl, s => { composerText = s; }, prompt2);
-		tl.to({}, { duration: 0.15 });
-		pulse(tl, 'composer-send');
-		tl.fromTo('#bubble-2', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' });
-		tl.set({}, { onComplete: () => { composerText = ''; } });
-		tl.to({}, { duration: 0.3 });
-
-		// 5. Partial response 2 streams
-		response2Lines.forEach((_, i) => {
-			tl.fromTo(`#r2-${i}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
-		});
-		tl.to({}, { duration: 0.5 });
-
-		// 6. Pulse side badge, panel opens
+		// 1. Pulse side chat button, panel opens
 		pulse(tl, 'side-badge');
 		tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
 		tl.set({}, { onComplete: () => { sideOpen = true; } });
 		tl.to({}, { duration: 0.3 });
 
-		// 7–9. Three side chats
-		sideChats.forEach((chat, idx) => {
-			tl.set({}, { onComplete: () => { activeSide = idx; } });
+		// One side chat
+		const chat = sideChats[0];
+		typeInto(tl, s => { sideComposerText = s; }, chat.prompt, 0.05);
+		tl.to({}, { duration: 0.15 });
+		pulse(tl, 'composer-send');
+		tl.fromTo('#side-bubble-0', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+		tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 1; sideCounter = '1 / 1'; } });
+		tl.to({}, { duration: 0.3 });
 
-			typeInto(tl, s => { sideComposerText = s; }, chat.prompt, 0.05);
-			tl.to({}, { duration: 0.15 });
-			pulse(tl, 'composer-send');
-			tl.fromTo(`#side-bubble-${idx}`, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
-			tl.set({}, { onComplete: () => { sideComposerText = ''; } });
-			tl.to({}, { duration: 0.3 });
-
-			chat.lines.forEach((_, li) => {
-				tl.fromTo(`#side-r${idx}-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
-			});
-			tl.set({}, { onComplete: () => {
-				sideBadgeCount = idx + 1;
-				sideCounter = `${idx + 1} / ${idx + 1}`;
-			}});
-			tl.to({}, { duration: 0.5 });
-
-			if (idx < sideChats.length - 1) {
-				pulse(tl, 'side-plus-btn');
-				tl.to({}, { duration: 0.2 });
-			}
+		// Side chat 1 response streams in
+		chat.lines.forEach((_, li) => {
+			tl.fromTo(`#side-r0-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 		});
+		tl.set({}, { onComplete: () => { sideResponded = [true, false, false]; } });
+		tl.to({}, { duration: 0.6 });
+
+		// ── Chapter 2: Simultaneous streams ──────────────────
+		tl.addLabel('chapter2');
+		// Stay in side panel — ask another question there (What is K?)
+		tl.set({}, { onComplete: () => { sideCount = 2; activeSide = 1; sideCounter = '2 / 2'; } });
+		typeInto(tl, s => { sideComposerText = s; }, sideChats[1].prompt, 0.05);
+		tl.to({}, { duration: 0.15 });
+		pulse(tl, 'composer-send');
+		tl.set({}, { onComplete: () => { sideComposerText = ''; sideThinking = [false, true]; } });
+		tl.to({}, { duration: 0.3 });
+
+		// Now switch to main chat — composer shifts left, ask a question there
+		tl.set({}, { onComplete: () => { sideOpen = false; } });
+		typeInto(tl, s => { composerText = s; }, sideChats[1].prompt);
+		tl.to({}, { duration: 0.15 });
+		pulse(tl, 'composer-send');
+		tl.set({}, { onComplete: () => { composerText = ''; mainThinking = true; sideOpen = true; } });
+		tl.to({}, { duration: 0.3 });
+
+		// Both thinking at the same time — hold so viewer sees it
+		tl.to({}, { duration: 0.8 });
+
+		// Side chat responds first
+		tl.set({}, { onComplete: () => { sideThinking = [false, false, false]; sideResponded = [true, true, false]; sideBadgeCount = 2; sideCounter = '2 / 2'; } });
+		sideChats[1].lines.forEach((_, li) => {
+			tl.fromTo(`#side-r1-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+		});
+		tl.to({}, { duration: 0.4 });
+
+		// Main chat responds
+		tl.set({}, { onComplete: () => { mainThinking = false; } });
+		tl.fromTo('#main-r3-0', { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' });
+		tl.to({}, { duration: 0.8 });
 
 		tl.to({}, { duration: 1 });
 		tl.call(onComplete);
+
+		// Seek to the right chapter if needed (state was pre-set above)
+		if (startChapter >= 1) tl.seek('chapter2');
 	});
 </script>
 
@@ -179,35 +200,55 @@
 
 			<div class="messages">
 				<div class="messages-inner">
-					<!-- Exchange 1 — side badge lives here -->
-					<div id="bubble-1" class="user-bubble" style="opacity:0">{prompt1}</div>
+					<!-- Exchange 1 — pre-rendered, already visible -->
+					<div class="user-bubble">{prompt1}</div>
 					<div class="exchange-block">
 						<div class="response">
 							{#each response1Lines as line, i}
 								{#if line === ''}
-									<div id="r1-{i}" class="resp-spacer" style="opacity:0"></div>
+									<div class="resp-spacer"></div>
 								{:else}
-									<div id="r1-{i}" class="resp-line" style="opacity:0">{@html line}</div>
+									<div class="resp-line">{@html line}</div>
 								{/if}
 							{/each}
 						</div>
-						<div class="badge-row">
-							<button id="side-badge" class="side-badge" style="opacity:0">
-								<Split size={13} style="transform: scaleY(-1)" />
-								{#if sideBadgeCount > 0}<span>{sideBadgeCount}</span>{/if}
+					</div>
+
+					<!-- Exchange 2 — pre-rendered, already visible -->
+					<div class="user-bubble">{prompt2}</div>
+					<div class="exchange-block">
+						<div class="response">
+							{#each response2Lines as line}
+								<div class="resp-line">{@html line}</div>
+							{/each}
+						</div>
+						<div class="msg-toolbar">
+							<button id="side-badge" class="icon-chip icon-chip-side" class:icon-chip-active={sideBadgeCount > 0}>
+								<span style="display:inline-flex;transform:scaleY(-1)"><Split size={14} /></span>
+								{#if sideBadgeCount > 0}<span class="badge-count">{sideBadgeCount}</span>{/if}
 							</button>
+							<button class="icon-chip"><GitFork size={14} /></button>
+							<button class="icon-chip"><Trash2 size={14} /></button>
 						</div>
 					</div>
 
-					<!-- Exchange 2 -->
-					<div id="bubble-2" class="user-bubble" style="opacity:0">{prompt2}</div>
-					<div class="exchange-block">
-						<div class="response">
-							{#each response2Lines as line, i}
-								<div id="r2-{i}" class="resp-line" style="opacity:0">{@html line}</div>
-							{/each}
-						</div>
-					</div>
+					<!-- Exchange 3 — appears during multi-stream chapter -->
+					{#if composerText || mainThinking || sideBadgeCount >= 2}
+						<div class="user-bubble">{prompt3}</div>
+						{#if mainThinking}
+							<div class="thinking-indicator">
+								<span class="thinking-dot"></span>
+								<span class="thinking-dot"></span>
+								<span class="thinking-dot"></span>
+							</div>
+						{:else}
+							<div class="response">
+								{#each response3Lines as line, i}
+									<div id="main-r3-{i}" class="resp-line" style="opacity:0">{@html line}</div>
+								{/each}
+							</div>
+						{/if}
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -227,14 +268,22 @@
 			</div>
 
 			<div class="side-messages">
-				{#each sideChats as chat, idx}
+				{#each sideChats.slice(0, sideCount) as chat, idx}
 					<div class="side-chat-view" class:side-chat-active={activeSide === idx}>
-						<div id="side-bubble-{idx}" class="user-bubble" style="opacity:0">{chat.prompt}</div>
-						<div class="response">
-							{#each chat.lines as line, li}
-								<div id="side-r{idx}-{li}" class="resp-line" style="opacity:0">{@html line}</div>
-							{/each}
-						</div>
+						<div id="side-bubble-{idx}" class="user-bubble" style="opacity: {idx === 0 ? 1 : 0}">{chat.prompt}</div>
+						{#if sideThinking[idx]}
+							<div class="thinking-indicator">
+								<span class="thinking-dot"></span>
+								<span class="thinking-dot"></span>
+								<span class="thinking-dot"></span>
+							</div>
+						{:else if sideResponded[idx]}
+							<div class="response">
+								{#each chat.lines as line, li}
+									<div id="side-r{idx}-{li}" class="resp-line" style="opacity: {idx === 0 ? 1 : 0}">{@html line}</div>
+								{/each}
+							</div>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -350,11 +399,6 @@
 		gap: 0.4rem;
 	}
 
-	.badge-row {
-		display: flex;
-		justify-content: flex-end;
-	}
-
 	.user-bubble {
 		align-self: flex-end;
 		max-width: 65%;
@@ -374,21 +418,77 @@
 	}
 
 	.resp-line { display: block; }
+
+	.thinking-indicator {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 4px 0;
+	}
+
+	.thinking-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: hsl(0 0% 70%);
+		animation: thinking-bounce 1.2s ease-in-out infinite;
+	}
+
+	.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+	.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+	@keyframes thinking-bounce {
+		0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+		40%            { transform: scale(1);   opacity: 1; }
+	}
 	.resp-spacer { display: block; height: 0.6em; }
 
-	/* ── Side badge ───────────────────────────────────────── */
-	.side-badge {
-		display: inline-flex;
+
+
+	/* ── Message toolbar ─────────────────────────────────── */
+	.msg-toolbar {
+		display: flex;
 		align-items: center;
-		gap: 0.3rem;
-		align-self: flex-start;
-		padding: 0.22rem 0.5rem;
-		border: 1px solid hsl(0 0% 88%);
-		border-radius: 999px;
-		background: white;
-		color: rgba(23,23,23,0.56);
-		font-size: 12px;
+		justify-content: flex-end;
+		gap: 0.2rem;
+		margin-top: 0.25rem;
+	}
+
+	.icon-chip {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 26px;
+		height: 26px;
+		border: none;
+		border-radius: 6px;
+		background: transparent;
+		color: rgba(23,23,23,0.4);
 		cursor: pointer;
+	}
+
+	.icon-chip:hover {
+		background: hsl(0 0% 94%);
+		color: rgba(23,23,23,0.8);
+	}
+
+	.icon-chip-side {
+		width: auto;
+		padding: 0 0.5rem;
+		gap: 0.3rem;
+		border-radius: 999px;
+		border: 1px solid hsl(0 0% 88%);
+	}
+
+	.icon-chip-active {
+		color: hsl(158 70% 38%);
+		border-color: hsl(158 60% 72%);
+		background: hsl(158 60% 96%);
+	}
+
+	.badge-count {
+		font-size: 11.5px;
+		font-weight: 500;
 	}
 
 	/* ── Composer — single, floats over full width ────────── */
