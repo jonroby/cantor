@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { gsap } from 'gsap';
 	import { MessageSquare, Layers, Bot, FileText, Plug } from 'lucide-svelte';
 	import FlowChat from './flows/FlowChat.svelte';
 
@@ -7,33 +8,64 @@
 		window.location.hash = '#/';
 	}
 
+	// Each tab has a label and a list of flows.
+	// Each flow = { question, feature } — question plays first, then video plays.
 	const tabs = [
-		{ label: 'Side Chats', icon: MessageSquare },
-		{ label: 'Context',    icon: Layers },
-		{ label: 'Agents',     icon: Bot },
-		{ label: 'Documents',  icon: FileText },
-		{ label: 'Providers',  icon: Plug },
+		{
+			label: 'Power Tools', icon: MessageSquare,
+			flows: [
+				{ question: 'Multiple questions for a single response?',   feature: 'Side Chats' },
+				{ question: 'Side chats that branch from any message?',    feature: 'Multi Streaming' },
+				{ question: 'Ask anything without leaving context?',       feature: 'Quick Ask' },
+			],
+		},
+		{
+			label: 'Context', icon: Layers,
+			flows: [
+				{ question: 'Context windows you can actually manage?',    feature: 'Context Window' },
+				{ question: 'Choose exactly how your tokens get pruned?',  feature: 'Context Strategy' },
+			],
+		},
+		{
+			label: 'Agents', icon: Bot,
+			flows: [
+				{ question: 'Agents that use only the tools you allow?',   feature: 'Agent Mode' },
+				{ question: 'Watch tool calls stream in real time?',        feature: 'Streaming Tools' },
+			],
+		},
+		{
+			label: 'Documents', icon: FileText,
+			flows: [
+				{ question: 'Documents with rendered math and plots?',     feature: 'Rendered Docs' },
+				{ question: 'Export any conversation as a file?',           feature: 'Export' },
+			],
+		},
+		{
+			label: 'Providers', icon: Plug,
+			flows: [
+				{ question: 'Providers that never see your keys?',         feature: 'Local Keys' },
+				{ question: 'Switch models mid-conversation?',             feature: 'Model Switching' },
+			],
+		},
 	];
 
-	const features = [
-		'Side Chats',
-		'Multi Streaming',
-		'Quick Ask',
-		'Delete Nodes',
-		'Fork Chats',
-	];
-
-	// Duration of each flow in ms — will tighten later
+	// Duration of each video in ms
 	const FLOW_DURATION = 18000;
 
-	let activeIndex = $state(0);
+	let questionText = $state('');
+	let showIntro = $state(true);
+	let introEl: HTMLElement;
+
+	let tabIndex = $state(0);   // which tab
+	let flowIndex = $state(0);  // which flow within tab
 	let key = $state(0);
-	let progress = $state(0); // 0–1
+	let progress = $state(0);
 
 	let rafId: number;
 	let startTime: number;
+	let currentTl: gsap.core.Timeline | null = null;
 
-	function startProgress() {
+function startProgress() {
 		cancelAnimationFrame(rafId);
 		progress = 0;
 		startTime = performance.now();
@@ -45,21 +77,55 @@
 		rafId = requestAnimationFrame(tick);
 	}
 
-	function advance() {
-		activeIndex = (activeIndex + 1) % tabs.length;
-		key++;
-		startProgress();
+	function playQuestion(question: string, onDone: () => void) {
+		if (currentTl) currentTl.kill();
+		showIntro = true;
+		questionText = '';
+		gsap.set(introEl, { opacity: 1, y: 0 });
+		const tl = gsap.timeline();
+		currentTl = tl;
+
+		tl.to({}, {
+			duration: question.length * 0.038,
+			ease: 'none',
+			onUpdate() {
+				questionText = question.slice(0, Math.floor(this.progress() * question.length));
+			}
+		});
+		tl.to({}, { duration: 0.8 });
+		tl.to(introEl, { opacity: 0, y: -16, duration: 0.35, ease: 'power2.in' });
+		tl.set({}, { onComplete: () => { showIntro = false; questionText = ''; } });
+		tl.call(onDone);
+	}
+
+	// Called when a video finishes
+	function onVideoComplete() {
+		const tab = tabs[tabIndex];
+		const nextFlow = flowIndex + 1;
+		if (nextFlow < tab.flows.length) {
+			// Next flow in same tab
+			flowIndex = nextFlow;
+			playQuestion(tab.flows[flowIndex].question, () => { key++; startProgress(); });
+		} else {
+			// Advance to next tab, first flow
+			tabIndex = (tabIndex + 1) % tabs.length;
+			flowIndex = 0;
+			playQuestion(tabs[tabIndex].flows[0].question, () => { key++; startProgress(); });
+		}
 	}
 
 	function selectTab(i: number) {
-		activeIndex = i;
-		key++;
-		startProgress();
+		tabIndex = i;
+		flowIndex = 0;
+		playQuestion(tabs[i].flows[0].question, () => { key++; startProgress(); });
 	}
 
 	onMount(() => {
-		startProgress();
-		return () => cancelAnimationFrame(rafId);
+		playQuestion(tabs[0].flows[0].question, () => { key++; startProgress(); });
+		return () => {
+			currentTl?.kill();
+			cancelAnimationFrame(rafId);
+		};
 	});
 </script>
 
@@ -103,10 +169,10 @@
 
 			<!-- Left: feature list -->
 			<div class="feature-col">
-				<p class="feature-label">Power Tools</p>
+				<p class="feature-label">{tabs[tabIndex].label}</p>
 				<ul class="feature-list">
-					{#each features as f, i}
-						<li class="feature-item" class:feature-item-active={i === activeIndex % features.length}>{f}</li>
+					{#each tabs[tabIndex].flows as f, i}
+						<li class="feature-item" class:feature-item-active={i === flowIndex}>{f.feature}</li>
 					{/each}
 				</ul>
 			</div>
@@ -115,38 +181,50 @@
 			<!-- Right: viewport + tabs -->
 			<div class="viewport-wrap">
 				<div class="viewport">
-					{#key key}
-						<div style="display:contents; height:100%">
-							<FlowChat onComplete={advance} />
+					{#if showIntro}
+						<!-- Blank placeholder keeps viewport sized; intro overlays on top -->
+						<div class="viewport-placeholder"></div>
+						<div class="intro-wrap" bind:this={introEl}>
+							<p class="intro-question">
+								{questionText}<span class="intro-cursor">|</span>
+							</p>
 						</div>
-					{/key}
+					{:else}
+						{#key key}
+							<div style="display:contents; height:100%">
+								<FlowChat onComplete={onVideoComplete} />
+							</div>
+						{/key}
+					{/if}
 				</div>
 
-				<!-- Tab bar -->
-				<div class="tab-bar">
-					<div class="tab-pill">
-						{#each tabs as { label, icon }, i}
-							{#if i > 0}<span class="tab-divider" class:hidden={activeIndex === i || activeIndex === i - 1}></span>{/if}
-							<button
-								class="tab"
-								class:active={activeIndex === i}
-								onclick={() => selectTab(i)}
-							>
-								{#if activeIndex === i}
-									<span class="tab-fill" style="width: {progress * 100}%"></span>
-								{/if}
-								<span class="tab-icon"><svelte:component this={icon} size={14} /></span>
-								<span class="tab-label">{label}</span>
-							</button>
-						{/each}
-					</div>
-				</div>
 			</div>
 
 			<!-- Right spacer to balance left col -->
 			<div class="feature-col"></div>
 
 		</div>
+
+		<!-- Tab bar — outside content-row, always visible, truly centered -->
+		<div class="tab-bar">
+			<div class="tab-pill">
+				{#each tabs as { label, icon }, i}
+					{#if i > 0}<span class="tab-divider" class:hidden={tabIndex === i || tabIndex === i - 1}></span>{/if}
+					<button
+						class="tab"
+						class:active={tabIndex === i}
+						onclick={() => selectTab(i)}
+					>
+						{#if tabIndex === i}
+							<span class="tab-fill" style="width: {progress * 100}%"></span>
+						{/if}
+						<span class="tab-icon"><svelte:component this={icon} size={14} /></span>
+						<span class="tab-label">{label}</span>
+					</button>
+				{/each}
+			</div>
+		</div>
+
 	</div>
 
 </div>
@@ -234,7 +312,49 @@
 		cursor: pointer;
 	}
 
-	/* ── Dark card ────────────────────────────────────────── */
+	/* ── Intro ────────────────────────────────────────────── */
+	.viewport-placeholder {
+		width: 100%;
+		height: 100%;
+		background: hsl(0 0% 98%);
+	}
+
+	.intro-wrap {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: hsl(0 0% 98%);
+		z-index: 10;
+		border-radius: 12px;
+	}
+
+	.intro-question {
+		font-size: 28px;
+		font-weight: 600;
+		letter-spacing: -0.5px;
+		color: rgba(23,23,23,0.88);
+		margin: 0;
+		max-width: 640px;
+		text-align: center;
+		background: linear-gradient(90deg, hsl(158 85% 40%), hsl(175 90% 38%));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.intro-cursor {
+		-webkit-text-fill-color: hsl(158 85% 50%);
+		animation: blink 0.7s ease infinite;
+	}
+
+	@keyframes blink {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0; }
+	}
+
+/* ── Dark card ────────────────────────────────────────── */
 	.dark-card {
 		position: relative;
 		flex: 1;
@@ -388,6 +508,7 @@
 	}
 
 	.viewport {
+		position: relative;
 		width: 100%;
 		aspect-ratio: 16 / 9;
 		border-radius: 12px;
