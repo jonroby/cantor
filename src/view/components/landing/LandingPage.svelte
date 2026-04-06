@@ -3,6 +3,7 @@
 	import { gsap } from 'gsap';
 	import { MessageSquare, Zap, Bot, Sliders, FlaskConical } from 'lucide-svelte';
 	import FlowChat from './flows/FlowChat.svelte';
+	import ModelSelection from './ModelSelection.svelte';
 
 	function goToApp() {
 		window.location.hash = '#/';
@@ -34,6 +35,7 @@
 	let showVideo   = $state(false);
 
 	let flowChatRef: { pause: () => void; resume: () => void } | null = $state(null);
+	let startChapter = $state(0);
 
 	let rafId: number;
 	let startTime: number;
@@ -82,6 +84,19 @@
 
 		tl.to({}, { duration: 0.8 });
 		tl.set({}, { onComplete: () => { flowChatRef?.resume(); startProgress(); } });
+	}
+
+	// Tab index → FlowChat chapter mapping
+	const flowChapters = [0, 1, 1, 1, 1];
+
+	function switchFlow(i: number) {
+		if (i === flowIndex) return;
+		flowChatRef?.pause();
+		flowIndex = i;
+		startChapter = flowChapters[i];
+		key++;
+		const f = powerToolsFlows[i];
+		playFlow(f.before, f.green, f.after);
 	}
 
 	function onVideoComplete() {
@@ -144,7 +159,7 @@
 			<div class="viewport">
 				{#if showVideo}
 					{#key key}
-						<FlowChat bind:this={flowChatRef} onComplete={onVideoComplete} />
+						<FlowChat bind:this={flowChatRef} onComplete={onVideoComplete} startChapter={startChapter} />
 					{/key}
 				{:else}
 					<div class="viewport-placeholder"></div>
@@ -157,7 +172,7 @@
 			<div class="tab-pill">
 				{#each powerToolsFlows as f, i}
 					{#if i > 0}<span class="tab-divider" class:hidden={flowIndex === i || flowIndex === i - 1}></span>{/if}
-					<button class="tab" class:active={flowIndex === i}>
+					<button class="tab" class:active={flowIndex === i} onclick={() => switchFlow(i)}>
 						{#if flowIndex === i}
 							<span class="tab-fill" style="width: {progress * 100}%"></span>
 						{/if}
@@ -181,9 +196,15 @@
 					<p class="feature-section-desc">{desc}</p>
 				</div>
 				<div class="feature-section-media">
-					<div class="media-placeholder">
-						<span class="media-placeholder-text">{label}</span>
-					</div>
+					{#if label === 'Model Selection'}
+						<div class="media-component">
+							<ModelSelection />
+						</div>
+					{:else}
+						<div class="media-placeholder">
+							<span class="media-placeholder-text">{label}</span>
+						</div>
+					{/if}
 				</div>
 			</div>
 		</section>
@@ -461,6 +482,16 @@
 	.feature-section-media {
 		flex: 1;
 		min-width: 0;
+	}
+
+	.media-component {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow:
+			0 0 0 1px rgba(23,23,23,0.08),
+			0 4px 16px rgba(0,0,0,0.07);
 	}
 
 	.media-placeholder {
