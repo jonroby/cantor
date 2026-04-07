@@ -83,6 +83,23 @@
 		{ name: 'Hermes-3-Llama-3.2-3B-q4f16_1-MLC',       size: '2.2GB' },
 		{ name: 'Hermes-3-Llama-3.1-8B-q4f32_1-MLC',       size: '5.6GB' },
 	];
+
+	let ollamaSearch = $state('');
+	let webllmSearch = $state('');
+	let webllmContext = $state('4K');
+	const contextOptions = ['4K', '8K', '16K', 'Low memory'];
+
+	const filteredOllama = $derived(
+		ollamaSearch
+			? ollamaModels.filter(m => m.toLowerCase().includes(ollamaSearch.toLowerCase()))
+			: ollamaModels
+	);
+
+	const filteredWebllm = $derived(
+		webllmSearch
+			? webllmModels.filter(m => m.name.toLowerCase().includes(webllmSearch.toLowerCase()))
+			: webllmModels
+	);
 </script>
 
 <div class="model-selection">
@@ -117,35 +134,67 @@
 
 	<!-- Ollama -->
 	{#if activeTab === 1}
-		<div class="ollama-content">
-			<div class="ollama-header">
-				<div class="ollama-header-left">
+		<div class="single-card-wrap">
+			<div class="provider-card single-card">
+				<div class="provider-header">
 					<img src={PROVIDER_LOGOS['ollama']} alt="Ollama" class="provider-logo" />
 					<span class="provider-name">OLLAMA</span>
 				</div>
-				<button class="reconnect-btn">Reconnect</button>
-			</div>
-			<div class="url-bar">http://localhost:11434</div>
-			<div class="ollama-model-list">
-				{#each ollamaModels as model, i}
-					<div class="ollama-model-item" class:ollama-model-active={i === 0}>{model}</div>
-				{/each}
+				<input
+					class="search-bar"
+					type="text"
+					placeholder="Search models..."
+					bind:value={ollamaSearch}
+				/>
+				<div class="ollama-model-list">
+					{#each filteredOllama as model}
+						<div class="ollama-model-item">{model}</div>
+					{/each}
+					{#if filteredOllama.length === 0}
+						<div class="no-results">No models match "{ollamaSearch}"</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 	{/if}
 
 	<!-- WebLLM -->
 	{#if activeTab === 2}
-		<div class="webllm-content">
-			<div class="webllm-grid">
-				{#each webllmModels as m}
-					<div class="webllm-row">
-						<span class="webllm-name">{m.name}</span>
-						<span class="webllm-size">{m.size}</span>
-					</div>
-				{/each}
+		<div class="single-card-wrap">
+			<div class="provider-card single-card">
+				<div class="provider-header">
+					<img src={PROVIDER_LOGOS['webllm']} alt="WebLLM" class="provider-logo" />
+					<span class="provider-name">WEBLLM</span>
+				</div>
+				<div class="context-row">
+					<span class="context-label">Context window:</span>
+					{#each contextOptions as opt}
+						<button
+							class="context-btn"
+							class:context-btn-active={webllmContext === opt}
+							onclick={() => webllmContext = opt}
+						>{opt}</button>
+					{/each}
+				</div>
+				<input
+					class="search-bar"
+					type="text"
+					placeholder="Search models (e.g. Llama, Phi, Qwen, SmolLM...)"
+					bind:value={webllmSearch}
+				/>
+				<div class="webllm-grid">
+					{#each filteredWebllm as m}
+						<div class="webllm-row">
+							<span class="webllm-name">{m.name}</span>
+							<span class="webllm-size">{m.size}</span>
+						</div>
+					{/each}
+					{#if filteredWebllm.length === 0}
+						<div class="no-results" style="grid-column: span 2">No models match "{webllmSearch}"</div>
+					{/if}
+				</div>
+				<div class="webllm-footer">139 models available.</div>
 			</div>
-			<div class="webllm-footer">139 models available.</div>
 		</div>
 	{/if}
 
@@ -202,7 +251,7 @@
 		border-radius: 999px 999px 0 0;
 	}
 
-	/* ── Shared logo ──────────────────────────────────────── */
+	/* ── Shared ───────────────────────────────────────────── */
 	.provider-logo {
 		width: 16px;
 		height: 16px;
@@ -215,6 +264,30 @@
 		font-weight: 700;
 		color: rgba(23,23,23,0.75);
 		letter-spacing: 0.05em;
+	}
+
+	.search-bar {
+		width: 100%;
+		padding: 7px 10px;
+		border: 1px solid hsl(0 0% 88%);
+		border-radius: 6px;
+		font-size: 12.5px;
+		color: rgba(23,23,23,0.7);
+		background: white;
+		font-family: inherit;
+		box-sizing: border-box;
+		outline: none;
+		margin-bottom: 0;
+		flex-shrink: 0;
+	}
+
+	.search-bar::placeholder { color: rgba(23,23,23,0.3); }
+	.search-bar:focus { border-color: hsl(0 0% 70%); }
+
+	.no-results {
+		padding: 12px 16px;
+		font-size: 12.5px;
+		color: rgba(23,23,23,0.35);
 	}
 
 	/* ── Frontier grid ────────────────────────────────────── */
@@ -252,73 +325,64 @@
 		line-height: 1.5;
 	}
 
-	/* ── Ollama ───────────────────────────────────────────── */
-	.ollama-content {
+	/* ── Single-card layout (Ollama + WebLLM) ────────────── */
+	.single-card-wrap {
+		padding: 10px;
 		flex: 1;
+		min-height: 0;
 		display: flex;
 		flex-direction: column;
+	}
+
+	.single-card {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
 		overflow: hidden;
-	}
-
-	.ollama-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 12px 16px;
-	}
-
-	.ollama-header-left {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-
-	.reconnect-btn {
-		padding: 5px 12px;
-		border: 1px solid hsl(0 0% 85%);
-		border-radius: 6px;
-		background: white;
-		font-size: 12.5px;
-		color: rgba(23,23,23,0.6);
-		cursor: pointer;
-		font-family: inherit;
-	}
-
-	.url-bar {
-		margin: 0 12px 4px;
-		padding: 8px 12px;
-		border: 1px solid hsl(0 0% 88%);
-		border-radius: 6px;
-		font-size: 12.5px;
-		color: rgba(23,23,23,0.5);
-		background: white;
 	}
 
 	.ollama-model-list {
 		flex: 1;
 		overflow-y: auto;
-		padding: 4px 0;
+		margin: 4px -14px 0;
 	}
 
 	.ollama-model-item {
-		padding: 7px 16px;
+		padding: 7px 14px;
 		font-size: 13px;
 		color: rgba(23,23,23,0.7);
 	}
 
-	.ollama-model-active {
-		background: hsl(0 0% 96%);
-		font-weight: 600;
-		color: rgba(23,23,23,0.9);
+	/* ── WebLLM ───────────────────────────────────────────── */
+	.context-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 8px;
 	}
 
-	/* ── WebLLM ───────────────────────────────────────────── */
-	.webllm-content {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		padding: 10px 14px 0;
+	.context-label {
+		font-size: 12px;
+		color: rgba(23,23,23,0.45);
+		margin-right: 2px;
+	}
+
+	.context-btn {
+		padding: 3px 9px;
+		border: 1px solid hsl(0 0% 85%);
+		border-radius: 5px;
+		background: white;
+		font-size: 12px;
+		color: rgba(23,23,23,0.55);
+		cursor: pointer;
+		font-family: inherit;
+	}
+
+	.context-btn-active {
+		background: hsl(0 0% 18%);
+		border-color: hsl(0 0% 18%);
+		color: white;
 	}
 
 	.webllm-grid {
@@ -328,6 +392,8 @@
 		column-gap: 24px;
 		overflow-y: auto;
 		align-content: start;
+		margin: 4px -14px 0;
+		padding: 0 14px;
 	}
 
 	.webllm-row {
@@ -354,7 +420,7 @@
 	}
 
 	.webllm-footer {
-		padding: 10px 0 10px;
+		padding: 8px 0 2px;
 		font-size: 12px;
 		color: rgba(23,23,23,0.3);
 		flex-shrink: 0;

@@ -4,6 +4,7 @@
 	import { MessageSquare, Zap, Bot, Sliders, FlaskConical } from 'lucide-svelte';
 	import FlowChat from './flows/FlowChat.svelte';
 	import ModelSelection from './ModelSelection.svelte';
+	import ContextControl from './ContextControl.svelte';
 
 	function goToApp() {
 		window.location.hash = '#/';
@@ -186,28 +187,32 @@
 
 	<!-- ── Feature sections (scroll) ─────────────────────────── -->
 	{#each sections as { label, icon, desc }, i}
-		<section class="feature-section" class:feature-section-alt={i % 2 === 1}>
-			<div class="feature-section-inner">
-				<div class="feature-section-label">
-					<div class="feature-section-icon">
-						<svelte:component this={icon} size={20} />
+		{#if label === 'Context Control'}
+			<ContextControl />
+		{:else}
+			<section class="feature-section" class:feature-section-alt={i % 2 === 1}>
+				<div class="feature-section-inner">
+					<div class="feature-section-label">
+						<div class="feature-section-icon">
+							<svelte:component this={icon} size={20} />
+						</div>
+						<h2 class="feature-section-title">{label}</h2>
+						<p class="feature-section-desc">{desc}</p>
 					</div>
-					<h2 class="feature-section-title">{label}</h2>
-					<p class="feature-section-desc">{desc}</p>
+					<div class="feature-section-media">
+						{#if label === 'Model Selection'}
+							<div class="media-component">
+								<ModelSelection />
+							</div>
+						{:else}
+							<div class="media-placeholder">
+								<span class="media-placeholder-text">{label}</span>
+							</div>
+						{/if}
+					</div>
 				</div>
-				<div class="feature-section-media">
-					{#if label === 'Model Selection'}
-						<div class="media-component">
-							<ModelSelection />
-						</div>
-					{:else}
-						<div class="media-placeholder">
-							<span class="media-placeholder-text">{label}</span>
-						</div>
-					{/if}
-				</div>
-			</div>
-		</section>
+			</section>
+		{/if}
 	{/each}
 
 	<!-- Footer -->
@@ -219,7 +224,9 @@
 
 <style>
 	.page {
-		min-height: 100vh;
+		height: 100vh;
+		overflow-y: scroll;
+		scroll-snap-type: y mandatory;
 		background: white;
 		display: flex;
 		flex-direction: column;
@@ -228,8 +235,10 @@
 
 	/* ── Nav ──────────────────────────────────────────────── */
 	.nav {
-		position: sticky;
+		position: fixed;
 		top: 0;
+		left: 0;
+		right: 0;
 		z-index: 100;
 		display: flex;
 		align-items: center;
@@ -305,10 +314,11 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		/* fill viewport minus nav */
-		min-height: calc(100vh - 56px);
-		padding: 48px 48px 0;
+		height: 100vh;
+		padding: calc(56px + 48px) 48px 0;
 		box-sizing: border-box;
+		scroll-snap-align: start;
+		flex-shrink: 0;
 	}
 
 	.hero-text {
@@ -432,8 +442,14 @@
 
 	/* ── Feature sections ─────────────────────────────────── */
 	.feature-section {
-		padding: 80px 48px;
+		height: 100vh;
+		padding: 0 48px;
 		border-top: 1px solid rgba(23,23,23,0.06);
+		display: flex;
+		align-items: center;
+		scroll-snap-align: start;
+		flex-shrink: 0;
+		box-sizing: border-box;
 	}
 
 	.feature-section-alt {
@@ -513,10 +529,14 @@
 
 	/* ── Footer ───────────────────────────────────────────── */
 	.footer {
-		padding: 24px 48px;
+		height: 100vh;
+		padding: 0 48px;
 		border-top: 1px solid rgba(23,23,23,0.06);
 		display: flex;
 		align-items: center;
+		scroll-snap-align: start;
+		flex-shrink: 0;
+		box-sizing: border-box;
 	}
 
 	.footer-text {
