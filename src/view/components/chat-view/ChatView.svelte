@@ -345,7 +345,7 @@
 	function resizeSpacer(el: Element) {
 		if (!mainScrollContainer || !bottomSpacerEl) return;
 		const needed = mainScrollContainer.clientHeight - (el as HTMLElement).offsetHeight;
-		bottomSpacerEl.style.height = `${Math.max(128, needed)}px`;
+		bottomSpacerEl.style.height = `${Math.max(128, needed) + 310}px`;
 	}
 
 	export async function scrollToNode(nodeId: string | null) {

@@ -6,6 +6,7 @@
 	import ModelSelection from './ModelSelection.svelte';
 	import ContextControl from './ContextControl.svelte';
 	import Experimental from './Experimental.svelte';
+	import AgentMode from './AgentMode.svelte';
 
 	function goToApp() {
 		window.location.hash = '#/';
@@ -195,6 +196,8 @@
 			<ContextControl />
 		{:else if label === 'Model Selection'}
 			<ModelSelection />
+		{:else if label === 'Agent Mode'}
+			<AgentMode />
 		{:else if label === 'Experimental'}
 			<Experimental />
 		{:else}
