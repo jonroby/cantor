@@ -357,9 +357,16 @@
 	}
 
 	async function handleSearchSelect(result: { chatIndex: number; exchangeId: string }) {
-		selectChat(result.chatIndex);
-		await tick();
-		chatViewRef?.revealExchange(result.exchangeId);
+		if (routerState.route === 'canvas') {
+			app.chat.selectChat(result.chatIndex);
+			app.chat.selectExchange(result.exchangeId);
+			await tick();
+			canvasViewRef?.scrollToNode(result.exchangeId);
+		} else {
+			selectChat(result.chatIndex);
+			await tick();
+			chatViewRef?.revealExchange(result.exchangeId);
+		}
 	}
 
 	const fileFeedback = {

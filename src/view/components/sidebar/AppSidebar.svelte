@@ -295,6 +295,7 @@
 								>
 									<Workflow size={16} class="shrink-0" />
 									<span>Canvas</span>
+									<span class="sidebar-experimental-badge">Experimental</span>
 								</Sidebar.MenuButton>
 							</Sidebar.MenuItem>
 						</Sidebar.Menu>
@@ -535,14 +536,29 @@
 		align-items: center;
 		margin-top: 3px;
 		margin-left: 0.25rem;
-		border: 1px solid hsl(215 80% 45%);
+		border: 1px solid hsl(158 85% 40%);
 		border-radius: 9999px;
-		background: hsl(215 90% 92%);
+		background: hsl(162 80% 88%);
 		padding: 0.125rem 0.45rem;
 		font-size: 11px;
 		font-weight: var(--font-weight-normal);
 		line-height: 1.2;
-		color: hsl(215 80% 35%);
+		color: hsl(158 85% 28%);
+	}
+
+	.sidebar-experimental-badge {
+		display: inline-flex;
+		align-items: center;
+		margin-top: 3px;
+		margin-left: 0.25rem;
+		border: 1px solid hsl(158 85% 40%);
+		border-radius: 9999px;
+		background: hsl(162 80% 88%);
+		padding: 0.125rem 0.45rem;
+		font-size: 11px;
+		font-weight: var(--font-weight-normal);
+		line-height: 1.2;
+		color: hsl(158 85% 28%);
 	}
 
 	.sidebar-alpha-trigger {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
+	import { onMount } from 'svelte';
 	import * as app from '@/app';
 	import { Button } from '@/view/primitives';
 	import * as Tooltip from '@/view/primitives/tooltip';
@@ -30,7 +31,7 @@
 
 	const MIN_ZOOM = 0.1;
 	const MAX_ZOOM = 2;
-	const NODE_WIDTH = 768;
+	const NODE_WIDTH = 720;
 	const NODE_MIN_HEIGHT = 260;
 	const COLUMN_GAP = 80;
 	const ROW_GAP = 80;
@@ -326,6 +327,13 @@
 		return () => {
 			if (headerTimer) clearTimeout(headerTimer);
 		};
+	});
+
+	onMount(() => {
+		if (!containerEl) return;
+		const rect = containerEl.getBoundingClientRect();
+		tx = rect.width / 2 - (PADDING_X + NODE_WIDTH / 2);
+		ty = 0;
 	});
 </script>
 
