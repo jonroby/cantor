@@ -175,7 +175,7 @@
 				<div class="sc-sub">TOKEN USAGE</div>
 				<div class="sc-token-row">
 					<span>Estimated next context window</span>
-					<span class="sc-token-val">{strategyTokens[strategy].next}</span>
+					<span class="sc-token-val sc-token-badge" class:sc-token-badge-red={strategy === 'Full'} class:sc-token-badge-green={strategy !== 'Full'}>{strategyTokens[strategy].next}</span>
 				</div>
 				<div class="sc-token-row">
 					<span>Total session cost</span>
@@ -469,6 +469,26 @@
 	}
 
 	.sc-token-val { font-weight: 600; color: rgba(23,23,23,0.78); }
+
+	.sc-token-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: 9999px;
+		padding: 2px 10px;
+		font-size: 13px;
+	}
+
+	.sc-token-badge-red {
+		background: hsl(4 85% 94%);
+		border: 1px solid hsl(4 85% 78%);
+		color: hsl(4 75% 40%);
+	}
+
+	.sc-token-badge-green {
+		background: hsl(158 70% 92%);
+		border: 1px solid hsl(158 75% 60%);
+		color: hsl(158 75% 28%);
+	}
 
 	/* ── Tools card ───────────────────────────────────────── */
 	.tools-card input[type="checkbox"] {
