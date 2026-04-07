@@ -205,11 +205,31 @@
 		}
 	}
 
+	function setTop(x: number, y: number, opts?: { zoom?: number; duration?: number }) {
+		if (!containerEl) return;
+		const targetScale = opts?.zoom ?? scale;
+		const rect = containerEl.getBoundingClientRect();
+		const targetTx = rect.width / 2 - x * targetScale;
+		const targetTy = ROW_GAP - y * targetScale;
+
+		if (opts?.duration && opts.duration > 0) {
+			animating = true;
+			tx = targetTx;
+			ty = targetTy;
+			scale = targetScale;
+			setTimeout(() => { animating = false; }, opts.duration);
+		} else {
+			tx = targetTx;
+			ty = targetTy;
+			scale = targetScale;
+		}
+	}
+
 	export function scrollToNode(nodeId: string | null) {
 		if (!nodeId || !containerEl) return;
 		const node = nodeLookup.get(nodeId);
 		if (!node) return;
-		setCenter(node.x + NODE_WIDTH / 2, node.y + 160, { zoom: 1, duration: 250 });
+		setTop(node.x + NODE_WIDTH / 2, node.y, { zoom: 1, duration: 250 });
 	}
 
 	export function fitView() {
@@ -239,12 +259,25 @@
 	export function scrollToTop() {
 		const first = graph.nodes[0];
 		if (!first || !containerEl) return;
-		setCenter(first.x + NODE_WIDTH / 2, first.y + 160, { zoom: 1, duration: 250 });
+		setTop(first.x + NODE_WIDTH / 2, first.y, { zoom: 1, duration: 250 });
 	}
 
-	export function expandSideChat(exchangeId: string) {
-		expandedSideChatParent = exchangeId;
-		sideChatIndex = 0;
+	export function expandSideChat(parentExchangeId: string, targetExchangeId?: string) {
+		expandedSideChatParent = parentExchangeId;
+		const sideChats = app.chat.getSideChats(tree, parentExchangeId);
+		if (targetExchangeId) {
+			const idx = sideChats.findIndex((sc) => sc.some((e) => e.id === targetExchangeId));
+			sideChatIndex = idx >= 0 ? idx : sideChats.length - 1;
+		} else {
+			sideChatIndex = 0;
+		}
+		// Select the tail of the active side chat so the composer submits into it
+		const activeSideChat = sideChats[sideChatIndex];
+		const tail = activeSideChat?.at(-1);
+		if (tail) app.chat.selectExchange(tail.id);
+		if (targetExchangeId) {
+			requestAnimationFrame(() => scrollToNode(targetExchangeId));
+		}
 	}
 
 	export function resetUIState() {
@@ -314,9 +347,13 @@
 		if (expandedSideChatParent === exchangeId) {
 			expandedSideChatParent = null;
 			sideChatIndex = 0;
+			app.chat.selectExchange(exchangeId);
 		} else {
 			expandedSideChatParent = exchangeId;
 			sideChatIndex = app.canvas.getSideChatIndexFromSelection(tree, exchangeId, activeExchangeId);
+			const sideChats = app.chat.getSideChats(tree, exchangeId);
+			const tail = sideChats[sideChatIndex]?.at(-1);
+			if (tail) app.chat.selectExchange(tail.id);
 		}
 	}
 
@@ -333,7 +370,7 @@
 		if (!containerEl) return;
 		const rect = containerEl.getBoundingClientRect();
 		tx = rect.width / 2 - (PADDING_X + NODE_WIDTH / 2);
-		ty = 0;
+		ty = ROW_GAP - PADDING_Y;
 	});
 </script>
 
@@ -418,25 +455,7 @@
 		</div>
 	</Tooltip.Provider>
 
-	{#if expandedSideChatParent && expandedSideChats.length > 0}
-		<div class="side-chat-nav">
-			<button
-				class="side-chat-nav-btn"
-				disabled={sideChatIndex === 0}
-				onclick={() => { sideChatIndex = Math.max(0, sideChatIndex - 1); }}
-			>
-				<ChevronLeft size={14} />
-			</button>
-			<span class="side-chat-nav-label">Side chat {sideChatIndex + 1} of {expandedSideChats.length}</span>
-			<button
-				class="side-chat-nav-btn"
-				disabled={sideChatIndex >= expandedSideChats.length - 1}
-				onclick={() => { sideChatIndex = Math.min(expandedSideChats.length - 1, sideChatIndex + 1); }}
-			>
-				<ChevronRight size={14} />
-			</button>
-		</div>
-	{/if}
+
 
 	<div
 		class="canvas-container"

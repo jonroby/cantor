@@ -385,6 +385,7 @@
 	<SidebarPrimitive.Provider
 		bind:open={workspaceState.sidebarOpen}
 		onOpenChange={(open) => app.workspace.setSidebarOpen(open)}
+		class={routerState.route === 'canvas' ? 'canvas-mode' : ''}
 	>
 		<AppSidebar
 			bind:expandedFolders={workspaceState.expandedFolders}
@@ -441,7 +442,7 @@
 						onScrollToBottom={() => canvasViewRef?.scrollToTop?.()}
 						onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
 						onScrollToNode={(nodeId) => canvasViewRef?.scrollToNode?.(nodeId)}
-						onExpandSideChat={(exchangeId) => canvasViewRef?.expandSideChat?.(exchangeId)}
+						onExpandSideChat={(parentId, targetId) => canvasViewRef?.expandSideChat?.(parentId, targetId)}
 						onComposerPinChange={() => {}}
 					/>
 				</div>
@@ -580,7 +581,7 @@
 							ensureChatPanel();
 							tick().then(() => activeViewRef?.scrollToNode(nodeId));
 						}}
-						onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
+						onExpandSideChat={(parentId, targetId) => chatViewRef?.expandSideChat(parentId, targetId)}
 						onComposerPinChange={(side) => (composerPinned = side)}
 					/>
 				</div>
@@ -628,6 +629,22 @@
 
 	.panel-layout-split .panel-slot:first-child {
 		border-right: 1px solid var(--border-color);
+	}
+
+	:global(.canvas-mode .bits-sidebar-wrapper) {
+		position: relative;
+	}
+
+	:global(.canvas-mode .bits-sidebar-root) {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		z-index: 30;
+	}
+
+	:global(.canvas-mode .bits-sidebar-inset) {
+		width: 100%;
 	}
 
 	.welcome-container {

@@ -5,6 +5,7 @@
 	import FlowChat from './flows/FlowChat.svelte';
 	import ModelSelection from './ModelSelection.svelte';
 	import ContextControl from './ContextControl.svelte';
+	import Experimental from './Experimental.svelte';
 
 	function goToApp() {
 		window.location.hash = '#/';
@@ -191,6 +192,8 @@
 			<ContextControl />
 		{:else if label === 'Model Selection'}
 			<ModelSelection />
+		{:else if label === 'Experimental'}
+			<Experimental />
 		{:else}
 			<section class="feature-section" class:feature-section-alt={i % 2 === 1}>
 				<div class="feature-section-inner">

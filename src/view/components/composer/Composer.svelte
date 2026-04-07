@@ -8,7 +8,7 @@
 
 	interface Props {
 		onScrollToNode: (nodeId: string | null) => void;
-		onExpandSideChat: (exchangeId: string) => void;
+		onExpandSideChat: (parentExchangeId: string, targetExchangeId: string) => void;
 		agentMode?: boolean;
 		liveDocumentContent?: string;
 		activeDocumentKey?: { folderId: string; fileId: string } | null;
@@ -117,13 +117,15 @@
 		}
 
 		if (result.hasSideChildren) {
-			onExpandSideChat(result.parentId);
+			onExpandSideChat(result.parentId, result.id);
 		}
 
 		composerValue = '';
 		pendingImages = [];
-		await tick();
-		onScrollToNode(result.id);
+		if (!result.hasSideChildren) {
+			await tick();
+			onScrollToNode(result.id);
+		}
 	}
 </script>
 

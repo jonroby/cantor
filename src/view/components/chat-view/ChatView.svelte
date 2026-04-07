@@ -377,7 +377,7 @@
 		}
 	}
 
-	export function expandSideChat(exchangeId: string) {
+	export function expandSideChat(exchangeId: string, _targetExchangeId?: string) {
 		openSidePanel(exchangeId);
 		tick().then(() => onFocusComposer?.());
 	}
