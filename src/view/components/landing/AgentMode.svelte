@@ -1,3 +1,22 @@
+<script lang="ts">
+	import { Pause, Play } from 'lucide-svelte';
+
+	let videoEl: HTMLVideoElement | null = $state(null);
+	let paused = $state(false);
+	let hovered = $state(false);
+
+	function toggle() {
+		if (!videoEl) return;
+		if (paused) {
+			videoEl.play();
+			paused = false;
+		} else {
+			videoEl.pause();
+			paused = true;
+		}
+	}
+</script>
+
 <section class="panel">
 
 	<div class="title-block">
@@ -6,15 +25,37 @@
 	</div>
 
 	<div class="demo">
-		<video
-			class="video"
-			src="/agent.mp4"
-			autoplay
-			loop
-			muted
-			playsinline
-			oncanplay={(e) => { e.currentTarget.playbackRate = 1.5; }}
-		></video>
+		<div
+			class="video-wrap"
+			role="button"
+			tabindex="0"
+			onmouseenter={() => (hovered = true)}
+			onmouseleave={() => (hovered = false)}
+			onclick={toggle}
+			onkeydown={(e) => e.key === ' ' || e.key === 'Enter' ? toggle() : null}
+		>
+			<video
+				bind:this={videoEl}
+				class="video"
+				src="/agent.mp4"
+				autoplay
+				loop
+				muted
+				playsinline
+				oncanplay={(e) => { e.currentTarget.playbackRate = 1.5; }}
+			></video>
+			{#if hovered}
+				<div class="overlay">
+					<div class="play-btn">
+						{#if paused}
+							<Play size={28} fill="white" color="white" />
+						{:else}
+							<Pause size={28} fill="white" color="white" />
+						{/if}
+					</div>
+				</div>
+			{/if}
+		</div>
 	</div>
 
 </section>
@@ -74,12 +115,40 @@
 		padding: 32px 0;
 	}
 
-	.video {
+	.video-wrap {
+		position: relative;
 		width: 100%;
-		display: block;
+		cursor: pointer;
 		border-radius: 14px;
+		overflow: hidden;
 		box-shadow:
 			0 0 0 1px rgba(23,23,23,0.08),
 			0 8px 24px rgba(0,0,0,0.1);
+	}
+
+	.video {
+		width: 100%;
+		display: block;
+	}
+
+	.overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0,0,0,0.15);
+		border-radius: 14px;
+	}
+
+	.play-btn {
+		width: 64px;
+		height: 64px;
+		border-radius: 50%;
+		background: rgba(0,0,0,0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		backdrop-filter: blur(4px);
 	}
 </style>
