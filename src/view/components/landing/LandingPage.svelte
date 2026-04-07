@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
-	import { MessageSquare, Zap, Bot, Sliders, FlaskConical } from 'lucide-svelte';
+	import { MessageSquare, Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
 	import FlowChat from './flows/FlowChat.svelte';
 	import ModelSelection from './ModelSelection.svelte';
 	import ContextControl from './ContextControl.svelte';
@@ -146,7 +146,10 @@
 		</div>
 		<div class="nav-btns">
 			<button class="btn-ghost">Request a Key</button>
-			<button class="btn-dark" onclick={goToApp}>Get Started</button>
+			<button class="btn-dark" onclick={goToApp}>
+				Get Started
+				<span class="btn-arrow"><ArrowRight size={12} /></span>
+			</button>
 		</div>
 	</nav>
 
@@ -294,19 +297,39 @@
 	.btn-ghost:hover { color: rgba(23,23,23,0.9); }
 
 	.btn-dark {
-		padding: 7px 16px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 7px 8px 7px 16px;
 		background: hsl(0 0% 11%);
 		color: white;
 		border: none;
 		border-radius: 999px;
 		font-size: 13px;
-		font-weight: 600;
+		font-weight: 400;
 		cursor: pointer;
 		font-family: inherit;
 		transition: opacity 0.15s;
 	}
 
 	.btn-dark:hover { opacity: 0.85; }
+
+	.btn-arrow {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: hsl(0 0% 11%);
+		border: 1px solid white;
+		color: white;
+		flex-shrink: 0;
+	}
+
+	.btn-arrow :global(svg) {
+		stroke: white;
+	}
 
 	/* ── Hero section ─────────────────────────────────────── */
 	.hero-section {
