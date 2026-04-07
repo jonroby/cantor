@@ -100,115 +100,192 @@
 			? webllmModels.filter(m => m.name.toLowerCase().includes(webllmSearch.toLowerCase()))
 			: webllmModels
 	);
+
+	const descs: Record<string, string> = {
+		Frontier: 'Access every major frontier model — Claude, GPT, Gemini, and more.',
+		Ollama:   'Run any Ollama model locally, fully private and offline.',
+		WebLLM:   'Run models directly in the browser with no server required.',
+	};
 </script>
 
-<div class="model-selection">
+<section class="panel">
 
-	<!-- Tab bar -->
-	<div class="tab-row">
-		{#each tabs as label, i}
-			<button class="tab" class:tab-active={activeTab === i} onclick={() => activeTab = i}>
-				{label}
-			</button>
-		{/each}
+	<!-- Title -->
+	<div class="title-block">
+		<h2 class="heading">Model <span class="accent">Selection</span></h2>
+		<p class="title-desc">{descs[tabs[activeTab]]}</p>
 	</div>
 
-	<!-- Frontier -->
-	{#if activeTab === 0}
-		<div class="provider-grid">
-			{#each frontierProviders as p}
-				<div class="provider-card">
-					<div class="provider-header">
-						<img src={PROVIDER_LOGOS[p.id]} alt={p.name} class="provider-logo" />
-						<span class="provider-name">{p.name}</span>
-					</div>
-					<div class="model-list">
-						{#each p.models as model}
-							<div class="model-item">{model}</div>
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
+	<!-- Demo -->
+	<div class="demo">
+		<div class="card">
 
-	<!-- Ollama -->
-	{#if activeTab === 1}
-		<div class="single-card-wrap">
-			<div class="provider-card single-card">
-				<div class="provider-header">
-					<img src={PROVIDER_LOGOS['ollama']} alt="Ollama" class="provider-logo" />
-					<span class="provider-name">OLLAMA</span>
-				</div>
-				<input
-					class="search-bar"
-					type="text"
-					placeholder="Search models..."
-					bind:value={ollamaSearch}
-				/>
-				<div class="ollama-model-list">
-					{#each filteredOllama as model}
-						<div class="ollama-model-item">{model}</div>
-					{/each}
-					{#if filteredOllama.length === 0}
-						<div class="no-results">No models match "{ollamaSearch}"</div>
-					{/if}
-				</div>
+			<!-- Tab bar -->
+			<div class="tab-row">
+				{#each tabs as label, i}
+					<button class="tab" class:tab-active={activeTab === i} onclick={() => activeTab = i}>
+						{label}
+					</button>
+				{/each}
 			</div>
-		</div>
-	{/if}
 
-	<!-- WebLLM -->
-	{#if activeTab === 2}
-		<div class="single-card-wrap">
-			<div class="provider-card single-card">
-				<div class="provider-header">
-					<img src={PROVIDER_LOGOS['webllm']} alt="WebLLM" class="provider-logo" />
-					<span class="provider-name">WEBLLM</span>
-				</div>
-				<div class="context-row">
-					<span class="context-label">Context window:</span>
-					{#each contextOptions as opt}
-						<button
-							class="context-btn"
-							class:context-btn-active={webllmContext === opt}
-							onclick={() => webllmContext = opt}
-						>{opt}</button>
-					{/each}
-				</div>
-				<input
-					class="search-bar"
-					type="text"
-					placeholder="Search models (e.g. Llama, Phi, Qwen, SmolLM...)"
-					bind:value={webllmSearch}
-				/>
-				<div class="webllm-grid">
-					{#each filteredWebllm as m}
-						<div class="webllm-row">
-							<span class="webllm-name">{m.name}</span>
-							<span class="webllm-size">{m.size}</span>
+			<!-- Frontier -->
+			{#if activeTab === 0}
+				<div class="provider-grid">
+					{#each frontierProviders as p}
+						<div class="provider-card">
+							<div class="provider-header">
+								<img src={PROVIDER_LOGOS[p.id]} alt={p.name} class="provider-logo" />
+								<span class="provider-name">{p.name}</span>
+							</div>
+							<div class="model-list">
+								{#each p.models as model}
+									<div class="model-item">{model}</div>
+								{/each}
+							</div>
 						</div>
 					{/each}
-					{#if filteredWebllm.length === 0}
-						<div class="no-results" style="grid-column: span 2">No models match "{webllmSearch}"</div>
-					{/if}
 				</div>
-				<div class="webllm-footer">139 models available.</div>
-			</div>
-		</div>
-	{/if}
+			{/if}
 
-</div>
+			<!-- Ollama -->
+			{#if activeTab === 1}
+				<div class="single-card-wrap">
+					<div class="provider-card single-card">
+						<div class="provider-header">
+							<img src={PROVIDER_LOGOS['ollama']} alt="Ollama" class="provider-logo" />
+							<span class="provider-name">OLLAMA</span>
+						</div>
+						<input
+							class="search-bar"
+							type="text"
+							placeholder="Search models..."
+							bind:value={ollamaSearch}
+						/>
+						<div class="ollama-model-list">
+							{#each filteredOllama as model}
+								<div class="ollama-model-item">{model}</div>
+							{/each}
+							{#if filteredOllama.length === 0}
+								<div class="no-results">No models match "{ollamaSearch}"</div>
+							{/if}
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- WebLLM -->
+			{#if activeTab === 2}
+				<div class="single-card-wrap">
+					<div class="provider-card single-card">
+						<div class="provider-header">
+							<img src={PROVIDER_LOGOS['webllm']} alt="WebLLM" class="provider-logo" />
+							<span class="provider-name">WEBLLM</span>
+						</div>
+						<div class="context-row">
+							<span class="context-label">Context window:</span>
+							{#each contextOptions as opt}
+								<button
+									class="context-btn"
+									class:context-btn-active={webllmContext === opt}
+									onclick={() => webllmContext = opt}
+								>{opt}</button>
+							{/each}
+						</div>
+						<input
+							class="search-bar"
+							type="text"
+							placeholder="Search models (e.g. Llama, Phi, Qwen, SmolLM...)"
+							bind:value={webllmSearch}
+						/>
+						<div class="webllm-grid">
+							{#each filteredWebllm as m}
+								<div class="webllm-row">
+									<span class="webllm-name">{m.name}</span>
+									<span class="webllm-size">{m.size}</span>
+								</div>
+							{/each}
+							{#if filteredWebllm.length === 0}
+								<div class="no-results" style="grid-column: span 2">No models match "{webllmSearch}"</div>
+							{/if}
+						</div>
+						<div class="webllm-footer">139 models available.</div>
+					</div>
+				</div>
+			{/if}
+
+		</div>
+	</div>
+
+</section>
 
 <style>
-	.model-selection {
+	.panel {
+		height: 100vh;
+		flex-shrink: 0;
+		scroll-snap-align: start;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: space-between;
+		padding: 80px 48px 64px;
+		box-sizing: border-box;
+		font-family: Inter, system-ui, sans-serif;
+		border-top: 1px solid rgba(23,23,23,0.06);
+		background: hsl(0 0% 98.5%);
+	}
+
+	/* ── Title ────────────────────────────────────────────── */
+	.title-block {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.heading {
+		font-size: clamp(36px, 4.5vw, 56px);
+		font-weight: 800;
+		letter-spacing: -2px;
+		color: rgba(23,23,23,0.92);
+		margin: 0 0 10px;
+		text-align: center;
+	}
+
+	.accent {
+		background: linear-gradient(90deg, hsl(158 85% 40%), hsl(175 90% 38%));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.title-desc {
+		font-size: 16px;
+		color: rgba(23,23,23,0.45);
+		margin: 0;
+		text-align: center;
+	}
+
+	/* ── Demo ─────────────────────────────────────────────── */
+	.demo {
+		flex: 1;
+		width: 100%;
+		max-width: 860px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 0;
+		padding: 32px 0;
+	}
+
+	.card {
 		width: 100%;
 		height: 100%;
 		background: white;
-		border-radius: 12px;
+		border-radius: 14px;
+		border: 1px solid hsl(0 0% 88%);
+		box-shadow: 0 4px 24px rgba(0,0,0,0.06);
 		display: flex;
 		flex-direction: column;
-		font-family: Inter, system-ui, sans-serif;
 		overflow: hidden;
 	}
 
@@ -277,7 +354,6 @@
 		font-family: inherit;
 		box-sizing: border-box;
 		outline: none;
-		margin-bottom: 0;
 		flex-shrink: 0;
 	}
 

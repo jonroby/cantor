@@ -189,6 +189,8 @@
 	{#each sections as { label, icon, desc }, i}
 		{#if label === 'Context Control'}
 			<ContextControl />
+		{:else if label === 'Model Selection'}
+			<ModelSelection />
 		{:else}
 			<section class="feature-section" class:feature-section-alt={i % 2 === 1}>
 				<div class="feature-section-inner">
@@ -200,15 +202,9 @@
 						<p class="feature-section-desc">{desc}</p>
 					</div>
 					<div class="feature-section-media">
-						{#if label === 'Model Selection'}
-							<div class="media-component">
-								<ModelSelection />
-							</div>
-						{:else}
-							<div class="media-placeholder">
-								<span class="media-placeholder-text">{label}</span>
-							</div>
-						{/if}
+						<div class="media-placeholder">
+							<span class="media-placeholder-text">{label}</span>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -246,7 +242,7 @@
 		height: 56px;
 		padding: 0 24px;
 		background: white;
-		border-bottom: 1px solid rgba(23,23,23,0.06);
+		border-bottom: none;
 	}
 
 	.logo-area {
