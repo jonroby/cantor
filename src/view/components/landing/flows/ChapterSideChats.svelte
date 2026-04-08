@@ -19,6 +19,10 @@
 		'weights that sum the values into the final output.'
 	];
 
+	const prompt2 = 'Can you describe self-attention?';
+	const response2Para1 = 'Self-attention lets every token in a sequence look at every other token simultaneously. For each position, the model computes a weighted sum of all token representations — the weights reflect how relevant each token is to the current one.';
+	const response2Para2 = 'Those weights come from dot products between query and key vectors, scaled and passed through a softmax. The result is a new representation for each token that blends information from the entire context window.';
+
 	const sideChats = [
 		{
 			prompt: 'What is a query?',
@@ -177,6 +181,17 @@
 							</button>
 							<button class="icon-chip"><GitFork size={14} /></button>
 							<button class="icon-chip"><Trash2 size={14} /></button>
+						</div>
+					</div>
+
+					<div class="exchange-divider"></div>
+
+					<!-- Exchange 2 -->
+					<div class="user-bubble">{prompt2}</div>
+					<div class="exchange-block">
+						<div class="response">
+							<div class="resp-para">{response2Para1}</div>
+							<div class="resp-para">{response2Para2}</div>
 						</div>
 					</div>
 				</div>
@@ -361,6 +376,15 @@
 
 	.resp-line { display: block; }
 	.resp-spacer { display: block; height: 0.6em; }
+
+	.resp-para {
+		display: block;
+		margin-bottom: 0.6em;
+	}
+
+	.resp-para:last-child {
+		margin-bottom: 0;
+	}
 
 	.msg-toolbar {
 		display: flex;
