@@ -393,6 +393,7 @@
 			activeChatIndex={hasChatPanel ? app.chat.getActiveChatIndex() : -1}
 			onSelectChat={selectChat}
 			onNewChat={newChat}
+			onSearchOpen={() => (searchOpen = true)}
 			onDeleteChat={doDeleteChat}
 			onRenameChat={app.chat.renameChat}
 			onDownloadChat={app.chat.exportChat}
@@ -457,7 +458,6 @@
 										onFocusComposer={focusComposer}
 										onClose={() => closePanel(index)}
 										onScrollAwayChange={(away) => (chatScrolledAway = away)}
-										onSearchOpen={() => (searchOpen = true)}
 									/>
 								{:else if panel.type === 'side-chat'}
 									{@const activeTree = {

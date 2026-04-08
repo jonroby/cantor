@@ -24,7 +24,17 @@
 	const response2Lines = [
 		'Sure. Take the sentence "The cat sat on the mat".',
 		'For the token "sat", the model computes attention scores',
-		'across all tokens…'
+		'across all tokens in context.'
+	];
+
+	// The phrase the user highlights for Auto Ask
+	const highlightedPhrase = 'the model computes attention scores across all tokens in context';
+	const autoAskPrompt = `Can you say more about: ${highlightedPhrase}`;
+	const autoAskResponse = [
+		'For each token, the model scores it against every other token in',
+		'the sequence using dot-product similarity. Those scores are scaled,',
+		'softmaxed into weights, then used to compute a weighted sum of',
+		'value vectors — that sum becomes the token\'s output representation.'
 	];
 
 	const sideChats = [
@@ -42,17 +52,28 @@
 		},
 	];
 
-	let composerText    = $state('');
+	// ── Shared state ───────────────────────────────────────────
+	let composerText     = $state('');
 	let sideComposerText = $state('');
-	let sideCounter     = $state('1 / 1');
-	let sideBadgeCount  = $state(0);
-	let activeSide      = $state(0);
-	let sideOpen        = $state(false);
-	let sideCount       = $state(0);
-	let sideResponded   = $state([false, false, false]);
+	let sideCounter      = $state('1 / 1');
+	let sideBadgeCount   = $state(0);
+	let activeSide       = $state(0);
+	let sideOpen         = $state(false);
+	let sideCount        = $state(0);
+	let sideResponded    = $state([false, false, false]);
+
+	// ── Auto Ask state ─────────────────────────────────────────
+	let highlightActive  = $state(false);   // response2 line 2+3 highlighted
+	let contextMenuVisible = $state(false);
+	let contextMenuX     = $state(0);
+	let contextMenuY     = $state(0);
+	let showAutoAsk      = $state(false);   // exchange 3 visible
+	let autoAskThinking  = $state(false);
+	let autoAskResponded = $state(false);
 
 	let frameEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
+	let highlightRef: HTMLElement;
 	let tl: gsap.core.Timeline;
 
 	export function pause()  { tl?.pause();  }
@@ -62,6 +83,37 @@
 		tl.call(() => {
 			const frame = frameEl.getBoundingClientRect();
 			const target = document.getElementById(targetId)?.getBoundingClientRect();
+			if (!target) return;
+			const ring = document.createElement('div');
+			ring.style.cssText = `
+				position: absolute;
+				left: ${target.left - frame.left + target.width / 2}px;
+				top: ${target.top - frame.top + target.height / 2}px;
+				width: 0; height: 0;
+				border-radius: 50%;
+				background: rgba(16, 185, 129, 0.55);
+				box-shadow: 0 0 0 0 rgba(16, 185, 129, 1);
+				transform: translate(-50%, -50%);
+				pointer-events: none;
+				z-index: 200;
+			`;
+			frameEl.appendChild(ring);
+			gsap.to(ring, {
+				width: 72, height: 72,
+				opacity: 0,
+				boxShadow: '0 0 0 28px rgba(16,185,129,0)',
+				duration: 0.85,
+				ease: 'power2.out',
+				onComplete: () => ring.remove()
+			});
+		});
+		tl.to({}, { duration: 0.5 });
+	}
+
+	function pulseEl(tl: gsap.core.Timeline, el: () => HTMLElement | null) {
+		tl.call(() => {
+			const frame = frameEl.getBoundingClientRect();
+			const target = el()?.getBoundingClientRect();
 			if (!target) return;
 			const ring = document.createElement('div');
 			ring.style.cssText = `
@@ -100,84 +152,129 @@
 		});
 	}
 
+	// ── Chapter snapshots ──────────────────────────────────────
+	function applyChapter1State() {
+		sideOpen       = false;
+		sideCount      = 3;
+		sideBadgeCount = 3;
+		sideCounter    = '3 / 3';
+		activeSide     = 2;
+		sideResponded  = [true, true, true];
+		// side panel collapsed
+		if (sidePanelEl) {
+			sidePanelEl.style.width = '0';
+			sidePanelEl.style.opacity = '0';
+		}
+	}
+
 	onMount(() => {
 		tl = gsap.timeline({ paused: true });
 
-		// Brief pause before animation begins
-		tl.to({}, { duration: 1.2 });
+		// ── Chapter 1: Side Chats ──────────────────────────────
+		tl.addLabel('chapter1');
 
-		// ── Click side chat button on exchange 2 ──────────────
-		pulse(tl, 'side-badge');
+		if (startChapter < 2) {
+			tl.to({}, { duration: 1.2 });
 
-		// Side panel slides open
-		tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
-		tl.set({}, { onComplete: () => { sideOpen = true; sideCount = 1; } });
-		tl.to({}, { duration: 0.4 });
+			pulse(tl, 'side-badge');
+			tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
+			tl.set({}, { onComplete: () => { sideOpen = true; sideCount = 1; } });
+			tl.to({}, { duration: 0.4 });
 
-		// ── Side chat 1: "What is a query?" ──────────────────
-		typeInto(tl, s => { sideComposerText = s; }, sideChats[0].prompt, 0.05);
-		tl.to({}, { duration: 0.2 });
-		pulse(tl, 'composer-send');
-		tl.fromTo('#side-bubble-0', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+			typeInto(tl, s => { sideComposerText = s; }, sideChats[0].prompt, 0.05);
+			tl.to({}, { duration: 0.2 });
+			pulse(tl, 'composer-send');
+			tl.fromTo('#side-bubble-0', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+			tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 1; sideCounter = '1 / 1'; activeSide = 0; } });
+			tl.to({}, { duration: 0.3 });
+			sideChats[0].lines.forEach((_, li) => {
+				tl.fromTo(`#side-r0-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+			});
+			tl.set({}, { onComplete: () => { sideResponded = [true, false, false]; } });
+			tl.to({}, { duration: 0.8 });
+
+			pulse(tl, 'side-plus-btn');
+			tl.set({}, { onComplete: () => { sideCount = 2; activeSide = 1; sideCounter = '2 / 2'; } });
+			tl.to({}, { duration: 0.3 });
+			typeInto(tl, s => { sideComposerText = s; }, sideChats[1].prompt, 0.05);
+			tl.to({}, { duration: 0.2 });
+			pulse(tl, 'composer-send');
+			tl.fromTo('#side-bubble-1', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+			tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 2; } });
+			tl.to({}, { duration: 0.3 });
+			sideChats[1].lines.forEach((_, li) => {
+				tl.fromTo(`#side-r1-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+			});
+			tl.set({}, { onComplete: () => { sideResponded = [true, true, false]; } });
+			tl.to({}, { duration: 0.8 });
+
+			pulse(tl, 'side-plus-btn');
+			tl.set({}, { onComplete: () => { sideCount = 3; activeSide = 2; sideCounter = '3 / 3'; } });
+			tl.to({}, { duration: 0.3 });
+			typeInto(tl, s => { sideComposerText = s; }, sideChats[2].prompt, 0.05);
+			tl.to({}, { duration: 0.2 });
+			pulse(tl, 'composer-send');
+			tl.fromTo('#side-bubble-2', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+			tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 3; } });
+			tl.to({}, { duration: 0.3 });
+			sideChats[2].lines.forEach((_, li) => {
+				tl.fromTo(`#side-r2-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+			});
+			tl.set({}, { onComplete: () => { sideResponded = [true, true, true]; } });
+			tl.to({}, { duration: 1.2 });
+		}
+
+		// ── Chapter 2: Auto Ask ────────────────────────────────
+		tl.addLabel('chapter2');
+
+		if (startChapter >= 2) {
+			tl.set({}, { onComplete: () => applyChapter1State() });
+			tl.to({}, { duration: 1.0 });
+		}
+
+		// Close side panel
+		pulse(tl, 'side-close-btn');
+		tl.to(sidePanelEl, { width: 0, opacity: 0, duration: 0.35, ease: 'power3.inOut' });
+		tl.set({}, { onComplete: () => { sideOpen = false; } });
+		tl.to({}, { duration: 0.6 });
+
+		// Highlight the phrase in exchange 2
+		tl.set({}, { onComplete: () => { highlightActive = true; } });
+		tl.to({}, { duration: 0.5 });
+
+		// Right-click → context menu appears near the highlight
+		pulseEl(tl, () => highlightRef);
 		tl.set({}, { onComplete: () => {
-			sideComposerText = '';
-			sideBadgeCount = 1;
-			sideCounter = '1 / 1';
-			activeSide = 0;
+			if (highlightRef) {
+				const frame = frameEl.getBoundingClientRect();
+				const r = highlightRef.getBoundingClientRect();
+				contextMenuX = r.right - frame.left - 20;
+				contextMenuY = r.bottom - frame.top + 4;
+			}
+			contextMenuVisible = true;
 		}});
-		tl.to({}, { duration: 0.3 });
+		tl.to({}, { duration: 0.6 });
 
-		sideChats[0].lines.forEach((_, li) => {
-			tl.fromTo(`#side-r0-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
-		});
-		tl.set({}, { onComplete: () => { sideResponded = [true, false, false]; } });
+		// Click "Quick Ask"
+		pulse(tl, 'quick-ask-btn');
+		tl.set({}, { onComplete: () => {
+			contextMenuVisible = false;
+			highlightActive = false;
+			showAutoAsk = true;
+			autoAskThinking = true;
+		}});
 		tl.to({}, { duration: 0.8 });
 
-		// ── Side chat 2: "What is a value?" ──────────────────
-		// Click the + button to open a new side chat
-		pulse(tl, 'side-plus-btn');
-		tl.set({}, { onComplete: () => { sideCount = 2; activeSide = 1; sideCounter = '2 / 2'; } });
-		tl.to({}, { duration: 0.3 });
-
-		typeInto(tl, s => { sideComposerText = s; }, sideChats[1].prompt, 0.05);
-		tl.to({}, { duration: 0.2 });
-		pulse(tl, 'composer-send');
-		tl.fromTo('#side-bubble-1', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
-		tl.set({}, { onComplete: () => {
-			sideComposerText = '';
-			sideBadgeCount = 2;
-		}});
-		tl.to({}, { duration: 0.3 });
-
-		sideChats[1].lines.forEach((_, li) => {
-			tl.fromTo(`#side-r1-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+		// Response streams in
+		tl.set({}, { onComplete: () => { autoAskThinking = false; autoAskResponded = true; } });
+		autoAskResponse.forEach((_, li) => {
+			tl.fromTo(`#auto-ask-r-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 		});
-		tl.set({}, { onComplete: () => { sideResponded = [true, true, false]; } });
-		tl.to({}, { duration: 0.8 });
-
-		// ── Side chat 3: "What is a key?" ────────────────────
-		// Click the + button again
-		pulse(tl, 'side-plus-btn');
-		tl.set({}, { onComplete: () => { sideCount = 3; activeSide = 2; sideCounter = '3 / 3'; } });
-		tl.to({}, { duration: 0.3 });
-
-		typeInto(tl, s => { sideComposerText = s; }, sideChats[2].prompt, 0.05);
-		tl.to({}, { duration: 0.2 });
-		pulse(tl, 'composer-send');
-		tl.fromTo('#side-bubble-2', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
-		tl.set({}, { onComplete: () => {
-			sideComposerText = '';
-			sideBadgeCount = 3;
-		}});
-		tl.to({}, { duration: 0.3 });
-
-		sideChats[2].lines.forEach((_, li) => {
-			tl.fromTo(`#side-r2-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
-		});
-		tl.set({}, { onComplete: () => { sideResponded = [true, true, true]; } });
 		tl.to({}, { duration: 1.2 });
 
-		// Play immediately
+		// Seek to the right chapter if tab was clicked
+		if (startChapter >= 2) tl.seek('chapter2');
+
 		tl.play();
 	});
 </script>
@@ -194,7 +291,7 @@
 
 			<div class="messages">
 				<div class="messages-inner">
-					<!-- Exchange 1 — pre-rendered, has side chat toolbar -->
+					<!-- Exchange 1 -->
 					<div class="user-bubble">{prompt1}</div>
 					<div class="exchange-block">
 						<div class="response">
@@ -218,15 +315,39 @@
 
 					<div class="exchange-divider"></div>
 
-					<!-- Exchange 2 — pre-rendered -->
+					<!-- Exchange 2 -->
 					<div class="user-bubble">{prompt2}</div>
 					<div class="exchange-block">
 						<div class="response">
-							{#each response2Lines as line}
-								<div class="resp-line">{@html line}</div>
-							{/each}
+							<div class="resp-line">{response2Lines[0]}</div>
+							<div class="resp-line">For the token "sat", <span
+								bind:this={highlightRef}
+								class="resp-highlight"
+								class:resp-highlight-active={highlightActive}
+							>the model computes attention scores across all tokens in context</span>.</div>
 						</div>
 					</div>
+
+					<!-- Exchange 3: Auto Ask -->
+					{#if showAutoAsk}
+						<div class="exchange-divider"></div>
+						<div class="user-bubble">{autoAskPrompt}</div>
+						<div class="exchange-block">
+							{#if autoAskThinking}
+								<div class="thinking-indicator">
+									<span class="thinking-dot"></span>
+									<span class="thinking-dot"></span>
+									<span class="thinking-dot"></span>
+								</div>
+							{:else if autoAskResponded}
+								<div class="response">
+									{#each autoAskResponse as line, li}
+										<div id="auto-ask-r-{li}" class="resp-line" style="opacity:0">{line}</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -241,14 +362,13 @@
 				</div>
 				<div class="side-panel-actions">
 					<button id="side-plus-btn" class="side-nav-btn"><Plus size={14} /></button>
-					<button class="side-nav-btn"><X size={14} /></button>
+					<button id="side-close-btn" class="side-nav-btn"><X size={14} /></button>
 				</div>
 			</div>
 
 			<div class="side-messages">
 				{#each sideChats as chat, idx}
 					<div class="side-chat-view" class:side-chat-active={activeSide === idx && idx < sideCount}>
-						<!-- Copied context from main exchange -->
 						<div class="branch-context">
 							<div class="user-bubble branch-bubble">{prompt1}</div>
 							<div class="exchange-block">
@@ -281,7 +401,14 @@
 
 	</div>
 
-	<!-- Composer — shifts right when side panel is open -->
+	<!-- Context menu -->
+	{#if contextMenuVisible}
+		<div class="context-menu" style="left: {contextMenuX}px; top: {contextMenuY}px;">
+			<button id="quick-ask-btn" class="context-menu-item">Quick Ask</button>
+		</div>
+	{/if}
+
+	<!-- Composer -->
 	<div class="composer-outer" class:composer-shifted={sideOpen}>
 		<div class="composer-wrap">
 			<div class="composer">
@@ -415,6 +542,41 @@
 	.resp-line { display: block; }
 	.resp-spacer { display: block; height: 0.6em; }
 
+	/* ── Highlight ────────────────────────────────────────── */
+	.resp-highlight {
+		border-radius: 3px;
+		transition: background 0.2s, color 0.2s;
+	}
+
+	.resp-highlight-active {
+		background: hsl(210 90% 88%);
+		color: hsl(210 80% 25%);
+	}
+
+	/* ── Thinking indicator ───────────────────────────────── */
+	.thinking-indicator {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 4px 0;
+	}
+
+	.thinking-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: hsl(0 0% 70%);
+		animation: thinking-bounce 1.2s ease-in-out infinite;
+	}
+
+	.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+	.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+	@keyframes thinking-bounce {
+		0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+		40%            { transform: scale(1);   opacity: 1; }
+	}
+
 	/* ── Message toolbar ──────────────────────────────────── */
 	.msg-toolbar {
 		display: flex;
@@ -459,6 +621,35 @@
 	.badge-count {
 		font-size: 11.5px;
 		font-weight: 500;
+	}
+
+	/* ── Context menu ─────────────────────────────────────── */
+	.context-menu {
+		position: absolute;
+		background: white;
+		border: 1px solid hsl(0 0% 88%);
+		border-radius: 8px;
+		box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+		overflow: hidden;
+		z-index: 300;
+		min-width: 110px;
+	}
+
+	.context-menu-item {
+		display: block;
+		width: 100%;
+		padding: 7px 12px;
+		text-align: left;
+		background: transparent;
+		border: none;
+		font-size: 13px;
+		font-family: inherit;
+		color: hsl(0 0% 9%);
+		cursor: pointer;
+	}
+
+	.context-menu-item:hover {
+		background: hsl(0 0% 96%);
 	}
 
 	/* ── Composer ─────────────────────────────────────────── */
@@ -613,7 +804,6 @@
 	.branch-response {
 		pointer-events: none;
 	}
-
 
 	.side-chat-active {
 		display: flex;

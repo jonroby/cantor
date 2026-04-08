@@ -14,7 +14,7 @@
 
 	const powerToolsFlows = [
 		{ before: 'Branch ', green: 'side chats',          after: ' off any message.',             feature: 'Side Chats' },
-		{ before: 'Stream ', green: 'multiple responses',   after: ' at once.',                     feature: 'Simultaneous Streams' },
+		// { before: 'Stream ', green: 'multiple responses',   after: ' at once.',                     feature: 'Simultaneous Streams' },
 		{ before: 'Ask anything with ', green: 'Auto Ask',  after: ' — no context switch.',         feature: 'Auto Ask' },
 		{ before: 'Delete any exchange, ', green: 'clean and instant', after: '.',                  feature: 'Delete Exchanges' },
 		{ before: 'Fork any conversation ', green: 'from any point',   after: '.',                  feature: 'Fork Chats' },
@@ -66,12 +66,19 @@
 		});
 	}
 
+	// Tab index → FlowChat startChapter
+	const flowChapters = [1, 2, 3, 4]; // Side Chats=1, Auto Ask=2, Delete=3, Fork=4
+
 	function switchFlow(i: number) {
 		if (i === flowIndex) return;
 		flowIndex = i;
 		key++;
 		const f = powerToolsFlows[i];
 		playTagline(f.before, f.green, f.after);
+	}
+
+	function getStartChapter(i: number) {
+		return flowChapters[i] ?? 1;
 	}
 
 	onMount(() => {
@@ -123,7 +130,7 @@
 			<div class="viewport">
 				{#if showVideo}
 					{#key key}
-						<FlowChat onComplete={() => {}} />
+						<FlowChat onComplete={() => {}} startChapter={getStartChapter(flowIndex)} />
 					{/key}
 				{:else}
 					<div class="viewport-placeholder"></div>

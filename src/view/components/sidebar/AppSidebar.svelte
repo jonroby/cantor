@@ -6,7 +6,7 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import { MessageSquarePlus, Upload, FolderPlus, Workflow, MessagesSquare } from 'lucide-svelte';
+	import { MessageSquarePlus, Upload, FolderPlus, Search, Workflow, MessagesSquare } from 'lucide-svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
@@ -43,6 +43,7 @@
 		onMoveDocument: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
 		activeRoute?: Route;
 		onNavigate?: (route: Route) => void;
+		onSearchOpen?: () => void;
 		expandedFolders?: Record<string, boolean>;
 	}
 
@@ -72,6 +73,7 @@
 		onMoveDocument,
 		activeRoute = 'chat',
 		onNavigate,
+		onSearchOpen,
 		expandedFolders = $bindable({})
 	}: Props = $props();
 
@@ -261,6 +263,17 @@
 								>
 									<FolderPlus size={16} class="shrink-0" />
 									<span>New folder</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="Search"
+									onclick={() => onSearchOpen?.()}
+									class="sidebar-primary-action"
+								>
+									<Search size={16} class="shrink-0" />
+									<span>Search</span>
 								</Sidebar.MenuButton>
 							</Sidebar.MenuItem>
 						</Sidebar.Menu>
