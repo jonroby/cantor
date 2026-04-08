@@ -108,7 +108,7 @@
 		tl.set({}, { onComplete: () => { activeChat = 'original'; chatTitle = 'Transformers'; } });
 		tl.to({}, { duration: 0.3 });
 		tl.to(sidebarEl, { width: 0, opacity: 0, duration: 0.35, ease: 'power3.inOut' });
-		tl.to({}, { duration: 1.2 });
+		tl.to({}, { duration: 1.5 });
 		tl.call(onComplete);
 
 		tl.play();

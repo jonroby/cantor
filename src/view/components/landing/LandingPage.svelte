@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { gsap } from 'gsap';
 	import { Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
 	import ChapterSideChats from './flows/ChapterSideChats.svelte';
@@ -30,14 +30,25 @@
 		{ label: 'Experimental',     icon: FlaskConical, desc: 'Chat Tree and other features in early development.' },
 	];
 
+	const flowComponents = [
+		ChapterSideChats,
+		ChapterAutoAsk,
+		ChapterDeleteExchanges,
+		ChapterForkChats,
+	] as const;
+
 	let typedBefore = $state('LLMs for ');
 	let typedGreen  = $state('Power Users');
 	let typedAfter  = $state('');
 	let flowIndex   = $state(0);
 	let key         = $state(0);
 	let showVideo   = $state(false);
+	let flowRunId   = $state(0);
+	let activeTabStyle = $state('opacity: 0;');
+	const ActiveFlow = $derived(flowComponents[flowIndex]);
 
 	let currentTl: gsap.core.Timeline | null = null;
+	let tabPillEl: HTMLElement;
 
 	function playTagline(before: string, green: string, after: string) {
 		if (currentTl) currentTl.kill();
@@ -69,25 +80,47 @@
 		});
 	}
 
+	async function updateActiveTabIndicator() {
+		await tick();
+		const activeTab = tabPillEl?.querySelector<HTMLButtonElement>(`[data-flow-index="${flowIndex}"]`);
+		if (!tabPillEl || !activeTab) {
+			activeTabStyle = 'opacity: 0;';
+			return;
+		}
+
+		activeTabStyle = `width: ${activeTab.offsetWidth}px; transform: translateX(${activeTab.offsetLeft}px); opacity: 1;`;
+	}
+
 	function switchFlow(i: number) {
 		if (i === flowIndex) return;
 		flowIndex = i;
 		key++;
+		flowRunId++;
 		const f = powerToolsFlows[i];
 		playTagline(f.before, f.green, f.after);
+		void updateActiveTabIndicator();
 	}
 
-	function advanceFlow() {
+	function handleFlowComplete(runId: number) {
+		if (runId !== flowRunId) return;
 		switchFlow((flowIndex + 1) % powerToolsFlows.length);
 	}
 
 	onMount(() => {
 		showVideo = true;
+		void updateActiveTabIndicator();
+
+		const resizeObserver = new ResizeObserver(() => {
+			void updateActiveTabIndicator();
+		});
+		if (tabPillEl) resizeObserver.observe(tabPillEl);
+
 		setTimeout(() => {
 			playTagline(powerToolsFlows[0].before, powerToolsFlows[0].green, powerToolsFlows[0].after);
 		}, 2000);
 		return () => {
 			currentTl?.kill();
+			resizeObserver.disconnect();
 		};
 	});
 </script>
@@ -130,15 +163,7 @@
 			<div class="viewport">
 				{#if showVideo}
 					{#key key}
-						{#if flowIndex === 0}
-							<ChapterSideChats onComplete={advanceFlow} />
-						{:else if flowIndex === 1}
-							<ChapterAutoAsk onComplete={advanceFlow} />
-						{:else if flowIndex === 2}
-							<ChapterDeleteExchanges onComplete={advanceFlow} />
-						{:else}
-							<ChapterForkChats onComplete={advanceFlow} />
-						{/if}
+						<ActiveFlow onComplete={() => handleFlowComplete(flowRunId)} />
 					{/key}
 				{:else}
 					<div class="viewport-placeholder"></div>
@@ -148,10 +173,11 @@
 
 		<!-- Tab bar showing Power Tools subsections -->
 		<div class="tab-bar">
-			<div class="tab-pill">
+			<div class="tab-pill" bind:this={tabPillEl}>
+				<span class="tab-active-pill" style={activeTabStyle}></span>
 				{#each powerToolsFlows as f, i}
 					{#if i > 0}<span class="tab-divider" class:hidden={flowIndex === i || flowIndex === i - 1}></span>{/if}
-					<button class="tab" class:active={flowIndex === i} onclick={() => switchFlow(i)}>
+					<button class="tab" class:active={flowIndex === i} data-flow-index={i} onclick={() => switchFlow(i)}>
 						<span class="tab-label">{f.feature}</span>
 					</button>
 				{/each}
@@ -379,6 +405,7 @@
 	}
 
 	.tab-pill {
+		position: relative;
 		display: flex;
 		align-items: center;
 		background: white;
@@ -387,8 +414,24 @@
 		box-shadow: 0 0 0 1px rgba(23,23,23,0.08), 0 2px 8px rgba(23,23,23,0.06);
 	}
 
+	.tab-active-pill {
+		position: absolute;
+		top: 5px;
+		left: 0;
+		bottom: 5px;
+		border-radius: 999px;
+		background: linear-gradient(90deg, hsl(158 85% 28%), hsl(175 85% 28%));
+		box-shadow: 0 0 0 1px hsl(158 75% 42% / 0.4);
+		pointer-events: none;
+		transition:
+			transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.15s ease;
+	}
+
 	.tab {
 		position: relative;
+		z-index: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -409,18 +452,7 @@
 	.tab:hover { color: rgba(23,23,23,0.75); }
 
 	.tab.active {
-		background: linear-gradient(90deg, hsl(158 85% 28%), hsl(175 85% 28%));
 		color: hsl(162 80% 88%);
-		box-shadow: 0 0 0 1px hsl(158 75% 42% / 0.4);
-	}
-
-	.tab-fill {
-		position: absolute;
-		inset: 0;
-		left: 0;
-		background: hsl(162 72% 38%);
-		border-radius: 999px 0 0 999px;
-		pointer-events: none;
 	}
 
 	.tab-label { position: relative; }

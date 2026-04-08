@@ -20,8 +20,10 @@
 	];
 
 	const prompt2 = 'Can you describe self-attention?';
-	const response2Para1 = 'Self-attention lets every token in a sequence look at every other token simultaneously. For each position, the model computes a weighted sum of all token representations — the weights reflect how relevant each token is to the current one.';
-	const response2Para2 = 'Those weights come from dot products between query and key vectors, scaled and passed through a softmax. The result is a new representation for each token that blends information from the entire context window.';
+	const response2Lines = [
+		'Self-attention lets every token in a sequence look at every other token simultaneously. For each position, the model computes a weighted sum of all token representations — the weights reflect how relevant each token is to the current one.',
+		'Those weights come from dot products between query and key vectors, scaled and passed through a softmax. The result is a new representation for each token that blends information from the entire context window.'
+	];
 
 	const sideChats = [
 		{
@@ -46,6 +48,8 @@
 	let sideOpen         = $state(false);
 	let sideCount        = $state(0);
 	let sideResponded    = $state([false, false, false]);
+	let exchange2Visible = $state(false);
+	let exchange2Answered = $state(false);
 
 	let frameEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
@@ -99,7 +103,19 @@
 	onMount(() => {
 		tl = gsap.timeline({ paused: true });
 
-		tl.to({}, { duration: 1.2 });
+		tl.to({}, { duration: 0.55 });
+
+		typeInto(tl, s => { composerText = s; }, prompt2, 0.042);
+		tl.to({}, { duration: 0.18 });
+		pulse(tl, 'composer-send');
+		tl.set({}, { onComplete: () => { composerText = ''; exchange2Visible = true; } });
+		tl.fromTo('#exchange-2-bubble', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+		tl.to({}, { duration: 0.28 });
+		response2Lines.forEach((_, li) => {
+			tl.fromTo(`#exchange-2-r-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+		});
+		tl.set({}, { onComplete: () => { exchange2Answered = true; } });
+		tl.to({}, { duration: 0.9 });
 
 		pulse(tl, 'side-badge');
 		tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
@@ -185,16 +201,19 @@
 						</div>
 					</div>
 
-					<div class="exchange-divider"></div>
+					{#if exchange2Visible}
+						<div class="exchange-divider"></div>
 
-					<!-- Exchange 2 -->
-					<div class="user-bubble">{prompt2}</div>
-					<div class="exchange-block">
-						<div class="response">
-							<div class="resp-para">{response2Para1}</div>
-							<div class="resp-para">{response2Para2}</div>
+						<!-- Exchange 2 -->
+						<div id="exchange-2-bubble" class="user-bubble">{prompt2}</div>
+						<div class="exchange-block">
+							<div class="response">
+								{#each response2Lines as line, li}
+									<div id="exchange-2-r-{li}" class="resp-para" style:opacity={exchange2Answered ? 1 : 0}>{line}</div>
+								{/each}
+							</div>
 						</div>
-					</div>
+					{/if}
 				</div>
 			</div>
 		</div>
