@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
-	import { Plus, GitFork, Trash2 } from 'lucide-svelte';
+	import { Plus, GitFork, Trash2, MessageSquare } from 'lucide-svelte';
 
 	interface Props {
 		onComplete: () => void;
@@ -26,12 +26,15 @@
 		'that token has on the output.'
 	];
 
-	let forkVisible    = $state(false);
-	let forkResponded  = $state(false);
+	let chatTitle        = $state('Transformers');
+	let forkVisible      = $state(false);
+	let forkResponded    = $state(false);
 	let forkButtonActive = $state(false);
-	let composerText   = $state('');
+	let composerText     = $state('');
+	let activeChat       = $state<'original' | 'fork'>('fork');
 
 	let frameEl: HTMLElement;
+	let sidebarEl: HTMLElement;
 	let tl: gsap.core.Timeline;
 
 	export function pause()  { tl?.pause();  }
@@ -84,27 +87,27 @@
 
 		tl.to({}, { duration: 1.0 });
 
-		// Highlight fork button
+		// Pulse fork button → title changes, fork exchange appears
 		tl.set({}, { onComplete: () => { forkButtonActive = true; } });
 		pulse(tl, 'fork-btn');
-		tl.set({}, { onComplete: () => { forkButtonActive = false; forkVisible = true; } });
+		tl.set({}, { onComplete: () => { forkButtonActive = false; forkVisible = true; chatTitle = 'Transformers (Fork)'; } });
 		tl.to({}, { duration: 0.3 });
 
-		// Fork prompt appears
+		// Fork bubble appears
 		tl.fromTo('#fork-bubble', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' });
 		tl.to({}, { duration: 0.2 });
 
-		// Type into composer then send
-		typeInto(tl, s => { composerText = s; }, forkPrompt, 0.05);
-		tl.to({}, { duration: 0.2 });
-		pulse(tl, 'composer-send');
-		tl.set({}, { onComplete: () => { composerText = ''; forkResponded = true; } });
-		tl.to({}, { duration: 0.1 });
+		tl.to({}, { duration: 0.8 });
 
-		// Stream in fork response
-		forkResponseLines.forEach((_, li) => {
-			tl.fromTo(`#fork-r-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
-		});
+		// Sidebar slides in
+		tl.to(sidebarEl, { width: 200, opacity: 1, duration: 0.35, ease: 'power3.inOut' });
+		tl.to({}, { duration: 1.0 });
+
+		// Pulse "Transformers" → switch active, update title, close sidebar
+		pulse(tl, 'sidebar-original');
+		tl.set({}, { onComplete: () => { activeChat = 'original'; chatTitle = 'Transformers'; } });
+		tl.to({}, { duration: 0.3 });
+		tl.to(sidebarEl, { width: 0, opacity: 0, duration: 0.35, ease: 'power3.inOut' });
 		tl.to({}, { duration: 1.2 });
 
 		tl.play();
@@ -114,10 +117,25 @@
 <div class="demo-frame" bind:this={frameEl}>
 	<div class="content-area">
 
+		<!-- Sidebar -->
+		<div class="sidebar" bind:this={sidebarEl}>
+			<div class="sidebar-inner">
+				<div class="sidebar-section-label">Chats</div>
+				<div id="sidebar-original" class="sidebar-item" class:sidebar-item-active={activeChat === 'original'}>
+					<MessageSquare size={13} />
+					<span class="sidebar-item-label">Transformers</span>
+				</div>
+				<div class="sidebar-item" class:sidebar-item-active={activeChat === 'fork'}>
+					<MessageSquare size={13} />
+					<span class="sidebar-item-label">Transformers (Fork)</span>
+				</div>
+			</div>
+		</div>
+
 		<div class="main">
 			<div class="chat-header">
 				<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="rgba(23,23,23,0.4)" viewBox="0 0 256 256"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></svg>
-				<span class="chat-title">Transformers</span>
+				<span class="chat-title">{chatTitle}</span>
 			</div>
 
 			<div class="messages">
@@ -144,9 +162,8 @@
 						</div>
 					</div>
 
-					<!-- Forked exchange -->
+					<!-- Forked exchange (no divider) -->
 					{#if forkVisible}
-						<div class="exchange-divider"></div>
 						<div id="fork-bubble" class="user-bubble" style="opacity:0">{forkPrompt}</div>
 						{#if forkResponded}
 							<div class="exchange-block">
@@ -210,6 +227,59 @@
 		display: flex;
 	}
 
+	/* ── Sidebar ──────────────────────────────────────────── */
+	.sidebar {
+		width: 0;
+		opacity: 0;
+		background: hsl(0 0% 97%);
+		border-right: 1px solid hsl(0 0% 91%);
+		flex-shrink: 0;
+		overflow: hidden;
+	}
+
+	.sidebar-inner {
+		width: 200px;
+		padding: 1rem 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	.sidebar-section-label {
+		font-size: 10.5px;
+		font-weight: 600;
+		color: rgba(23,23,23,0.35);
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		padding: 0 0.5rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.sidebar-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4rem 0.5rem;
+		border-radius: 6px;
+		color: rgba(23,23,23,0.55);
+		cursor: pointer;
+		white-space: nowrap;
+		overflow: hidden;
+	}
+
+	.sidebar-item-active {
+		background: hsl(0 0% 91%);
+		color: rgba(23,23,23,0.85);
+		font-weight: 500;
+	}
+
+	.sidebar-item-label {
+		font-size: 12.75px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* ── Main panel ───────────────────────────────────────── */
 	.main {
 		position: relative;
 		flex: 1;
@@ -252,12 +322,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.85rem;
-	}
-
-	.exchange-divider {
-		height: 1px;
-		background: hsl(0 0% 91%);
-		margin: 0.25rem 0;
 	}
 
 	.exchange-block {
@@ -314,6 +378,7 @@
 		background: hsl(158 60% 96%);
 	}
 
+	/* ── Composer ─────────────────────────────────────────── */
 	.composer-outer {
 		position: absolute;
 		bottom: 1.25rem;
