@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
-	import { Plus, GitFork, Trash2 } from 'lucide-svelte';
+	import { Plus, GitFork, Trash2, Split } from 'lucide-svelte';
 
 	interface Props {
 		onComplete: () => void;
@@ -25,11 +25,11 @@
 		'For the token "sat", the model computes attention scores across all tokens in context.'
 	];
 
-	let exchange2Visible = $state(true);
+	let exchange1Visible = $state(true);
 	let deleteButtonActive = $state(false);
 
 	let frameEl: HTMLElement;
-	let exchange2El: HTMLElement;
+	let exchange1El: HTMLElement;
 	let tl: gsap.core.Timeline;
 
 	export function pause()  { tl?.pause();  }
@@ -79,10 +79,10 @@
 		pulse(tl, () => document.getElementById('delete-btn'));
 		tl.to({}, { duration: 0.2 });
 
-		// Animate exchange 2 out
+		// Animate exchange 1 out
 		tl.set({}, { onComplete: () => { deleteButtonActive = false; } });
-		tl.to(exchange2El, { opacity: 0, height: 0, marginTop: 0, duration: 0.35, ease: 'power2.inOut' });
-		tl.set({}, { onComplete: () => { exchange2Visible = false; } });
+		tl.to(exchange1El, { opacity: 0, height: 0, marginBottom: 0, duration: 0.35, ease: 'power2.inOut' });
+		tl.set({}, { onComplete: () => { exchange1Visible = false; } });
 		tl.to({}, { duration: 1.2 });
 
 		tl.play();
@@ -101,35 +101,24 @@
 			<div class="messages">
 				<div class="messages-inner">
 					<!-- Exchange 1 -->
-					<div class="user-bubble">{prompt1}</div>
-					<div class="exchange-block">
-						<div class="response">
-							{#each response1Lines as line}
-								{#if line === ''}
-									<div class="resp-spacer"></div>
-								{:else}
-									<div class="resp-line">{@html line}</div>
-								{/if}
-							{/each}
-						</div>
-						<div class="msg-toolbar">
-							<button class="icon-chip"><GitFork size={14} /></button>
-							<button class="icon-chip"><Trash2 size={14} /></button>
-						</div>
-					</div>
-
-					<!-- Exchange 2 -->
-					{#if exchange2Visible}
-						<div bind:this={exchange2El} class="exchange2-wrap">
-							<div class="exchange-divider"></div>
-							<div class="user-bubble">{prompt2}</div>
+					{#if exchange1Visible}
+						<div bind:this={exchange1El} class="exchange1-wrap">
+							<div class="user-bubble">{prompt1}</div>
 							<div class="exchange-block">
 								<div class="response">
-									{#each response2Lines as line}
-										<div class="resp-line">{line}</div>
+									{#each response1Lines as line}
+										{#if line === ''}
+											<div class="resp-spacer"></div>
+										{:else}
+											<div class="resp-line">{@html line}</div>
+										{/if}
 									{/each}
 								</div>
 								<div class="msg-toolbar">
+									<button class="icon-chip icon-chip-side icon-chip-active">
+										<span style="display:inline-flex;transform:scaleY(-1)"><Split size={14} /></span>
+										<span class="badge-count">3</span>
+									</button>
 									<button class="icon-chip"><GitFork size={14} /></button>
 									<button
 										id="delete-btn"
@@ -140,6 +129,20 @@
 							</div>
 						</div>
 					{/if}
+
+					<!-- Exchange 2 -->
+					<div class="user-bubble">{prompt2}</div>
+					<div class="exchange-block">
+						<div class="response">
+							{#each response2Lines as line}
+								<div class="resp-line">{line}</div>
+							{/each}
+						</div>
+						<div class="msg-toolbar">
+							<button class="icon-chip"><GitFork size={14} /></button>
+							<button class="icon-chip"><Trash2 size={14} /></button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -232,7 +235,7 @@
 		gap: 0.85rem;
 	}
 
-	.exchange2-wrap {
+	.exchange1-wrap {
 		display: flex;
 		flex-direction: column;
 		gap: 0.85rem;
@@ -292,6 +295,25 @@
 		color: rgba(23,23,23,0.4);
 		cursor: pointer;
 		transition: color 0.15s, background 0.15s;
+	}
+
+	.icon-chip-side {
+		width: auto;
+		padding: 0 0.5rem;
+		gap: 0.3rem;
+		border-radius: 999px;
+		border: 1px solid hsl(0 0% 88%);
+	}
+
+	.icon-chip-active {
+		color: hsl(158 70% 38%);
+		border-color: hsl(158 60% 72%);
+		background: hsl(158 60% 96%);
+	}
+
+	.badge-count {
+		font-size: 11.5px;
+		font-weight: 500;
 	}
 
 	.icon-chip-delete {
