@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
-	import { MessageSquare, Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
+	import { Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
 	import FlowChat from './flows/FlowChat.svelte';
 	import ModelSelection from './ModelSelection.svelte';
 	import ContextControl from './ContextControl.svelte';
@@ -27,36 +27,16 @@
 		{ label: 'Experimental',     icon: FlaskConical, desc: 'Chat Tree and other features in early development.' },
 	];
 
-	const FLOW_DURATION = 18000;
-
 	let typedBefore = $state('LLMs for ');
 	let typedGreen  = $state('Power Users');
 	let typedAfter  = $state('');
 	let flowIndex   = $state(0);
 	let key         = $state(0);
-	let progress    = $state(0);
 	let showVideo   = $state(false);
 
-	let flowChatRef: { pause: () => void; resume: () => void } | null = $state(null);
-	let startChapter = $state(0);
-
-	let rafId: number;
-	let startTime: number;
 	let currentTl: gsap.core.Timeline | null = null;
 
-	function startProgress() {
-		cancelAnimationFrame(rafId);
-		progress = 0;
-		startTime = performance.now();
-		function frame() {
-			const elapsed = performance.now() - startTime;
-			progress = Math.min(elapsed / FLOW_DURATION, 1);
-			if (progress < 1) rafId = requestAnimationFrame(frame);
-		}
-		rafId = requestAnimationFrame(frame);
-	}
-
-	function playFlow(before: string, green: string, after: string) {
+	function playTagline(before: string, green: string, after: string) {
 		if (currentTl) currentTl.kill();
 		typedBefore = '';
 		typedGreen  = '';
@@ -84,45 +64,23 @@
 				typedAfter  = after;
 			}
 		});
-
-		tl.to({}, { duration: 0.8 });
-		tl.set({}, { onComplete: () => { flowChatRef?.resume(); startProgress(); } });
 	}
-
-	// Tab index → FlowChat chapter mapping
-	const flowChapters = [0, 1, 1, 1, 1];
 
 	function switchFlow(i: number) {
 		if (i === flowIndex) return;
-		flowChatRef?.pause();
 		flowIndex = i;
-		startChapter = flowChapters[i];
 		key++;
 		const f = powerToolsFlows[i];
-		playFlow(f.before, f.green, f.after);
-	}
-
-	function onVideoComplete() {
-		const nextFlow = flowIndex + 1;
-		if (nextFlow < powerToolsFlows.length) {
-			flowIndex = nextFlow;
-			const f = powerToolsFlows[nextFlow];
-			playFlow(f.before, f.green, f.after);
-		} else {
-			flowIndex = 0;
-			key++;
-			playFlow(powerToolsFlows[0].before, powerToolsFlows[0].green, powerToolsFlows[0].after);
-		}
+		playTagline(f.before, f.green, f.after);
 	}
 
 	onMount(() => {
 		showVideo = true;
 		setTimeout(() => {
-			playFlow(powerToolsFlows[0].before, powerToolsFlows[0].green, powerToolsFlows[0].after);
+			playTagline(powerToolsFlows[0].before, powerToolsFlows[0].green, powerToolsFlows[0].after);
 		}, 2000);
 		return () => {
 			currentTl?.kill();
-			cancelAnimationFrame(rafId);
 		};
 	});
 </script>
@@ -165,7 +123,7 @@
 			<div class="viewport">
 				{#if showVideo}
 					{#key key}
-						<FlowChat bind:this={flowChatRef} onComplete={onVideoComplete} startChapter={startChapter} />
+						<FlowChat onComplete={() => {}} />
 					{/key}
 				{:else}
 					<div class="viewport-placeholder"></div>
@@ -179,9 +137,6 @@
 				{#each powerToolsFlows as f, i}
 					{#if i > 0}<span class="tab-divider" class:hidden={flowIndex === i || flowIndex === i - 1}></span>{/if}
 					<button class="tab" class:active={flowIndex === i} onclick={() => switchFlow(i)}>
-						{#if flowIndex === i}
-							<span class="tab-fill" style="width: {progress * 100}%"></span>
-						{/if}
 						<span class="tab-label">{f.feature}</span>
 					</button>
 				{/each}
@@ -554,12 +509,10 @@
 
 	/* ── Footer ───────────────────────────────────────────── */
 	.footer {
-		height: 100vh;
-		padding: 0 48px;
+		padding: 24px 48px;
 		border-top: 1px solid rgba(23,23,23,0.06);
 		display: flex;
 		align-items: center;
-		scroll-snap-align: start;
 		flex-shrink: 0;
 		box-sizing: border-box;
 	}

@@ -27,40 +27,31 @@
 		'across all tokens…'
 	];
 
-	const prompt3 = 'What is K?';
-	const response3Lines = ['The <strong>key</strong> vector represents what each token "offers" — high dot-product with Q means strong attention.'];
-
 	const sideChats = [
 		{
-			prompt: 'What is Q?',
-			lines: ['The <strong>query</strong> vector represents what the current token is "looking for" — it scores relevance against all keys.']
+			prompt: 'What is a query?',
+			lines: ['The <strong>query</strong> vector represents what the current token is "looking for" — it scores relevance against all keys in the sequence.']
 		},
 		{
-			prompt: 'What is K?',
-			lines: ['The <strong>key</strong> vector represents what each token "offers". A high dot-product between Q and K means strong attention.']
+			prompt: 'What is a key?',
+			lines: ['The <strong>key</strong> vector represents what each token "offers". A high dot-product between a query and a key means strong attention.']
 		},
 		{
-			prompt: 'What is V?',
-			lines: ['The <strong>value</strong> vector is the content retrieved. Attention weights sum the values to produce the final output.']
-		}
+			prompt: 'What is a value?',
+			lines: ['The <strong>value</strong> vector is the content retrieved. Attention weights are applied to the values and summed to produce the final output.']
+		},
 	];
 
-	let composerText = $state('');
+	let composerText    = $state('');
 	let sideComposerText = $state('');
-	let sideCounter = $state('1 / 1');
-	let sideBadgeCount = $state(0);
-	let activeSide = $state(0);
-	let sideOpen = $state(false);
-
-	// Multi-stream state
-	let mainThinking  = $state(false);
-	let sideThinking  = $state([false, false]);
-	let sideCount     = $state(1);   // how many side chats visible
-	let sideResponded = $state([false, false]);
+	let sideCounter     = $state('1 / 1');
+	let sideBadgeCount  = $state(0);
+	let activeSide      = $state(0);
+	let sideOpen        = $state(false);
+	let sideCount       = $state(0);
+	let sideResponded   = $state([false, false, false]);
 
 	let frameEl: HTMLElement;
-	let sidebarEl: HTMLElement;
-	let mainEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
 	let tl: gsap.core.Timeline;
 
@@ -112,79 +103,82 @@
 	onMount(() => {
 		tl = gsap.timeline({ paused: true });
 
-		// Pre-set state for chapters that start mid-way
-		if (startChapter >= 1) {
-			sideOpen = true;
-			sideCount = 1;
-			sideBadgeCount = 1;
-			sideCounter = '1 / 1';
-			sideResponded = [true, false];
-			activeSide = 0;
-		}
+		// Brief pause before animation begins
+		tl.to({}, { duration: 1.2 });
 
-		// Brief pause before side chat animation begins
-		tl.to({}, { duration: 1.0 });
-
-		// 1. Pulse side chat button, panel opens
+		// ── Click side chat button on exchange 2 ──────────────
 		pulse(tl, 'side-badge');
-		tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
-		tl.set({}, { onComplete: () => { sideOpen = true; } });
-		tl.to({}, { duration: 0.3 });
 
-		// One side chat
-		const chat = sideChats[0];
-		typeInto(tl, s => { sideComposerText = s; }, chat.prompt, 0.05);
-		tl.to({}, { duration: 0.15 });
+		// Side panel slides open
+		tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
+		tl.set({}, { onComplete: () => { sideOpen = true; sideCount = 1; } });
+		tl.to({}, { duration: 0.4 });
+
+		// ── Side chat 1: "What is a query?" ──────────────────
+		typeInto(tl, s => { sideComposerText = s; }, sideChats[0].prompt, 0.05);
+		tl.to({}, { duration: 0.2 });
 		pulse(tl, 'composer-send');
 		tl.fromTo('#side-bubble-0', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
-		tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 1; sideCounter = '1 / 1'; } });
+		tl.set({}, { onComplete: () => {
+			sideComposerText = '';
+			sideBadgeCount = 1;
+			sideCounter = '1 / 1';
+			activeSide = 0;
+		}});
 		tl.to({}, { duration: 0.3 });
 
-		// Side chat 1 response streams in
-		chat.lines.forEach((_, li) => {
+		sideChats[0].lines.forEach((_, li) => {
 			tl.fromTo(`#side-r0-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 		});
 		tl.set({}, { onComplete: () => { sideResponded = [true, false, false]; } });
-		tl.to({}, { duration: 0.6 });
-
-		// ── Chapter 2: Simultaneous streams ──────────────────
-		tl.addLabel('chapter2');
-		// Stay in side panel — ask another question there (What is K?)
-		tl.set({}, { onComplete: () => { sideCount = 2; activeSide = 1; sideCounter = '2 / 2'; } });
-		typeInto(tl, s => { sideComposerText = s; }, sideChats[1].prompt, 0.05);
-		tl.to({}, { duration: 0.15 });
-		pulse(tl, 'composer-send');
-		tl.set({}, { onComplete: () => { sideComposerText = ''; sideThinking = [false, true]; } });
-		tl.to({}, { duration: 0.3 });
-
-		// Now switch to main chat — composer shifts left, ask a question there
-		tl.set({}, { onComplete: () => { sideOpen = false; } });
-		typeInto(tl, s => { composerText = s; }, sideChats[1].prompt);
-		tl.to({}, { duration: 0.15 });
-		pulse(tl, 'composer-send');
-		tl.set({}, { onComplete: () => { composerText = ''; mainThinking = true; sideOpen = true; } });
-		tl.to({}, { duration: 0.3 });
-
-		// Both thinking at the same time — hold so viewer sees it
 		tl.to({}, { duration: 0.8 });
 
-		// Side chat responds first
-		tl.set({}, { onComplete: () => { sideThinking = [false, false, false]; sideResponded = [true, true, false]; sideBadgeCount = 2; sideCounter = '2 / 2'; } });
+		// ── Side chat 2: "What is a value?" ──────────────────
+		// Click the + button to open a new side chat
+		pulse(tl, 'side-plus-btn');
+		tl.set({}, { onComplete: () => { sideCount = 2; activeSide = 1; sideCounter = '2 / 2'; } });
+		tl.to({}, { duration: 0.3 });
+
+		typeInto(tl, s => { sideComposerText = s; }, sideChats[1].prompt, 0.05);
+		tl.to({}, { duration: 0.2 });
+		pulse(tl, 'composer-send');
+		tl.fromTo('#side-bubble-1', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+		tl.set({}, { onComplete: () => {
+			sideComposerText = '';
+			sideBadgeCount = 2;
+		}});
+		tl.to({}, { duration: 0.3 });
+
 		sideChats[1].lines.forEach((_, li) => {
 			tl.fromTo(`#side-r1-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 		});
-		tl.to({}, { duration: 0.4 });
-
-		// Main chat responds
-		tl.set({}, { onComplete: () => { mainThinking = false; } });
-		tl.fromTo('#main-r3-0', { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' });
+		tl.set({}, { onComplete: () => { sideResponded = [true, true, false]; } });
 		tl.to({}, { duration: 0.8 });
 
-		tl.to({}, { duration: 1 });
-		tl.call(onComplete);
+		// ── Side chat 3: "What is a key?" ────────────────────
+		// Click the + button again
+		pulse(tl, 'side-plus-btn');
+		tl.set({}, { onComplete: () => { sideCount = 3; activeSide = 2; sideCounter = '3 / 3'; } });
+		tl.to({}, { duration: 0.3 });
 
-		// Seek to the right chapter if needed (state was pre-set above)
-		if (startChapter >= 1) tl.seek('chapter2');
+		typeInto(tl, s => { sideComposerText = s; }, sideChats[2].prompt, 0.05);
+		tl.to({}, { duration: 0.2 });
+		pulse(tl, 'composer-send');
+		tl.fromTo('#side-bubble-2', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
+		tl.set({}, { onComplete: () => {
+			sideComposerText = '';
+			sideBadgeCount = 3;
+		}});
+		tl.to({}, { duration: 0.3 });
+
+		sideChats[2].lines.forEach((_, li) => {
+			tl.fromTo(`#side-r2-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+		});
+		tl.set({}, { onComplete: () => { sideResponded = [true, true, true]; } });
+		tl.to({}, { duration: 1.2 });
+
+		// Play immediately
+		tl.play();
 	});
 </script>
 
@@ -192,7 +186,7 @@
 	<div class="content-area">
 
 		<!-- Main panel -->
-		<div class="main" bind:this={mainEl}>
+		<div class="main">
 			<div class="chat-header">
 				<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="rgba(23,23,23,0.4)" viewBox="0 0 256 256"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></svg>
 				<span class="chat-title">Transformers</span>
@@ -200,26 +194,16 @@
 
 			<div class="messages">
 				<div class="messages-inner">
-					<!-- Exchange 1 — pre-rendered, already visible -->
+					<!-- Exchange 1 — pre-rendered, has side chat toolbar -->
 					<div class="user-bubble">{prompt1}</div>
 					<div class="exchange-block">
 						<div class="response">
-							{#each response1Lines as line, i}
+							{#each response1Lines as line}
 								{#if line === ''}
 									<div class="resp-spacer"></div>
 								{:else}
 									<div class="resp-line">{@html line}</div>
 								{/if}
-							{/each}
-						</div>
-					</div>
-
-					<!-- Exchange 2 — pre-rendered, already visible -->
-					<div class="user-bubble">{prompt2}</div>
-					<div class="exchange-block">
-						<div class="response">
-							{#each response2Lines as line}
-								<div class="resp-line">{@html line}</div>
 							{/each}
 						</div>
 						<div class="msg-toolbar">
@@ -232,23 +216,17 @@
 						</div>
 					</div>
 
-					<!-- Exchange 3 — appears during multi-stream chapter -->
-					{#if composerText || mainThinking || sideBadgeCount >= 2}
-						<div class="user-bubble">{prompt3}</div>
-						{#if mainThinking}
-							<div class="thinking-indicator">
-								<span class="thinking-dot"></span>
-								<span class="thinking-dot"></span>
-								<span class="thinking-dot"></span>
-							</div>
-						{:else}
-							<div class="response">
-								{#each response3Lines as line, i}
-									<div id="main-r3-{i}" class="resp-line" style="opacity:0">{@html line}</div>
-								{/each}
-							</div>
-						{/if}
-					{/if}
+					<div class="exchange-divider"></div>
+
+					<!-- Exchange 2 — pre-rendered -->
+					<div class="user-bubble">{prompt2}</div>
+					<div class="exchange-block">
+						<div class="response">
+							{#each response2Lines as line}
+								<div class="resp-line">{@html line}</div>
+							{/each}
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -268,22 +246,34 @@
 			</div>
 
 			<div class="side-messages">
-				{#each sideChats.slice(0, sideCount) as chat, idx}
-					<div class="side-chat-view" class:side-chat-active={activeSide === idx}>
-						<div id="side-bubble-{idx}" class="user-bubble" style="opacity: {idx === 0 ? 1 : 0}">{chat.prompt}</div>
-						{#if sideThinking[idx]}
-							<div class="thinking-indicator">
-								<span class="thinking-dot"></span>
-								<span class="thinking-dot"></span>
-								<span class="thinking-dot"></span>
+				{#each sideChats as chat, idx}
+					<div class="side-chat-view" class:side-chat-active={activeSide === idx && idx < sideCount}>
+						<!-- Copied context from main exchange -->
+						<div class="branch-context">
+							<div class="user-bubble branch-bubble">{prompt1}</div>
+							<div class="exchange-block">
+								<div class="response branch-response">
+									{#each response1Lines as line}
+										{#if line === ''}
+											<div class="resp-spacer"></div>
+										{:else}
+											<div class="resp-line">{@html line}</div>
+										{/if}
+									{/each}
+								</div>
+								<div class="msg-toolbar">
+									<button class="icon-chip"><GitFork size={14} /></button>
+									<button class="icon-chip"><Trash2 size={14} /></button>
+								</div>
 							</div>
-						{:else if sideResponded[idx]}
-							<div class="response">
-								{#each chat.lines as line, li}
-									<div id="side-r{idx}-{li}" class="resp-line" style="opacity: {idx === 0 ? 1 : 0}">{@html line}</div>
-								{/each}
-							</div>
-						{/if}
+						</div>
+						<div class="exchange-divider"></div>
+						<div id="side-bubble-{idx}" class="user-bubble" style="opacity: 0">{chat.prompt}</div>
+						<div class="response">
+							{#each chat.lines as line, li}
+								<div id="side-r{idx}-{li}" class="resp-line" style="opacity: 0">{@html line}</div>
+							{/each}
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -291,7 +281,7 @@
 
 	</div>
 
-	<!-- Single composer — shifts right when side panel opens -->
+	<!-- Composer — shifts right when side panel is open -->
 	<div class="composer-outer" class:composer-shifted={sideOpen}>
 		<div class="composer-wrap">
 			<div class="composer">
@@ -322,7 +312,6 @@
 			</div>
 		</div>
 	</div>
-
 
 </div>
 
@@ -393,6 +382,12 @@
 		gap: 0.85rem;
 	}
 
+	.exchange-divider {
+		height: 1px;
+		background: hsl(0 0% 91%);
+		margin: 0.25rem 0;
+	}
+
 	.exchange-block {
 		display: flex;
 		flex-direction: column;
@@ -418,34 +413,9 @@
 	}
 
 	.resp-line { display: block; }
-
-	.thinking-indicator {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		padding: 4px 0;
-	}
-
-	.thinking-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		background: hsl(0 0% 70%);
-		animation: thinking-bounce 1.2s ease-in-out infinite;
-	}
-
-	.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
-	.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
-
-	@keyframes thinking-bounce {
-		0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
-		40%            { transform: scale(1);   opacity: 1; }
-	}
 	.resp-spacer { display: block; height: 0.6em; }
 
-
-
-	/* ── Message toolbar ─────────────────────────────────── */
+	/* ── Message toolbar ──────────────────────────────────── */
 	.msg-toolbar {
 		display: flex;
 		align-items: center;
@@ -491,7 +461,7 @@
 		font-weight: 500;
 	}
 
-	/* ── Composer — single, floats over full width ────────── */
+	/* ── Composer ─────────────────────────────────────────── */
 	.composer-outer {
 		position: absolute;
 		bottom: 1.25rem;
@@ -624,15 +594,32 @@
 		display: none;
 		flex-direction: column;
 		gap: 0.85rem;
-		padding: 1.25rem 1.25rem 7rem;
+		padding: 1.5rem 1.5rem 7rem 1.5rem;
 		height: 100%;
+		overflow-y: auto;
 	}
+
+	.branch-context {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+		opacity: 0.4;
+	}
+
+	.branch-bubble {
+		pointer-events: none;
+	}
+
+	.branch-response {
+		pointer-events: none;
+	}
+
 
 	.side-chat-active {
 		display: flex;
 	}
 
-@keyframes blink {
+	@keyframes blink {
 		0%, 100% { opacity: 1; }
 		50% { opacity: 0; }
 	}

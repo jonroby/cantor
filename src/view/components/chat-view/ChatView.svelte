@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { MessageSquare, X } from 'lucide-svelte';
-	import { Header } from '@/view/primitives';
+	import { MessageSquare, Search, X } from 'lucide-svelte';
+	import { Button, Header } from '@/view/primitives';
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { createMainChatPanel, createDocumentPanel } from '@/view/components/panel';
 	import type { Panel } from '@/view/components/panel';
@@ -25,10 +25,11 @@
 		onClose?: () => void;
 		onFocusComposer?: () => void;
 		onScrollAwayChange?: (away: boolean) => void;
+		onSearchOpen?: () => void;
 		sideChat?: SideChatProps;
 	}
 
-	let { onClose, onFocusComposer, onScrollAwayChange, sideChat }: Props = $props();
+	let { onClose, onFocusComposer, onScrollAwayChange, onSearchOpen, sideChat }: Props = $props();
 
 	// ── Panel state ─────────────────────────────────────────────────────────
 	let mainPanel: Panel = $state(createMainChatPanel());
@@ -492,6 +493,25 @@
 			<div class="chatview-title-inner">
 				<MessageSquare size={14} />
 				{activeChat.name}
+				{#if onSearchOpen}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									class="chatview-header-btn"
+									variant="ghost"
+									size="icon"
+									onclick={onSearchOpen}
+									aria-label="Search"
+								>
+									<Search size={14} />
+								</Button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content>Search</Tooltip.Content>
+					</Tooltip.Root>
+				{/if}
 				{#if onClose}
 					<Tooltip.Root>
 						<Tooltip.Trigger>
@@ -623,6 +643,13 @@
 		align-items: center;
 		gap: 8px;
 		width: 100%;
+	}
+
+	:global(.chatview-header-btn) {
+		margin-left: auto;
+		height: 1.75rem;
+		width: 1.75rem;
+		color: hsl(var(--muted-foreground));
 	}
 
 	.chatview-close-btn {

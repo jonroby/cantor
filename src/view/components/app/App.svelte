@@ -457,6 +457,7 @@
 										onFocusComposer={focusComposer}
 										onClose={() => closePanel(index)}
 										onScrollAwayChange={(away) => (chatScrolledAway = away)}
+										onSearchOpen={() => (searchOpen = true)}
 									/>
 								{:else if panel.type === 'side-chat'}
 									{@const activeTree = {
