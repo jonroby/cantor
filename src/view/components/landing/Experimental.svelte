@@ -1,21 +1,12 @@
 <section class="panel">
-
 	<div class="title-block">
 		<h2 class="heading"><span class="accent">Experimental</span> View</h2>
 		<p class="title-desc">Chat Tree and other features in early development.</p>
 	</div>
 
 	<div class="demo">
-		<video
-			class="video"
-			src="/experimental.mp4"
-			autoplay
-			loop
-			muted
-			playsinline
-		></video>
+		<video class="video" src="/experimental.mp4" autoplay loop muted playsinline></video>
 	</div>
-
 </section>
 
 <style>
@@ -30,7 +21,7 @@
 		padding: 80px 48px 64px;
 		box-sizing: border-box;
 		font-family: Inter, system-ui, sans-serif;
-		border-top: 1px solid rgba(23,23,23,0.06);
+		border-top: 1px solid rgba(23, 23, 23, 0.06);
 		background: hsl(0 0% 98.5%);
 	}
 
@@ -44,7 +35,7 @@
 		font-size: clamp(36px, 4.5vw, 56px);
 		font-weight: 800;
 		letter-spacing: -2px;
-		color: rgba(23,23,23,0.92);
+		color: rgba(23, 23, 23, 0.92);
 		margin: 0 0 10px;
 		text-align: center;
 	}
@@ -58,7 +49,7 @@
 
 	.title-desc {
 		font-size: 16px;
-		color: rgba(23,23,23,0.45);
+		color: rgba(23, 23, 23, 0.45);
 		margin: 0;
 		text-align: center;
 	}
@@ -79,7 +70,7 @@
 		display: block;
 		border-radius: 14px;
 		box-shadow:
-			0 0 0 1px rgba(23,23,23,0.08),
-			0 8px 24px rgba(0,0,0,0.1);
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 8px 24px rgba(0, 0, 0, 0.1);
 	}
 </style>

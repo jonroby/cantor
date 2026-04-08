@@ -37,7 +37,7 @@
 
 	let providerState = $derived(app.providers.getState());
 	let agentState = $derived(app.agent.getState());
-	let hasModel = $derived(!!providerState.activeModel);
+	let _hasModel = $derived(!!providerState.activeModel);
 	let hasChatPanel = $derived(workspaceState.panels.some((p) => p.type === 'chat'));
 	let _hasDocPanel = $derived(
 		workspaceState.panels.some((p) => p.type === 'document' || p.type === 'folder')
@@ -443,7 +443,8 @@
 						onScrollToBottom={() => canvasViewRef?.scrollToTop?.()}
 						onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
 						onScrollToNode={(nodeId) => canvasViewRef?.scrollToNode?.(nodeId)}
-						onExpandSideChat={(parentId, targetId) => canvasViewRef?.expandSideChat?.(parentId, targetId)}
+						onExpandSideChat={(parentId, targetId) =>
+							canvasViewRef?.expandSideChat?.(parentId, targetId)}
 						onComposerPinChange={() => {}}
 					/>
 				</div>
@@ -582,7 +583,8 @@
 							ensureChatPanel();
 							tick().then(() => activeViewRef?.scrollToNode(nodeId));
 						}}
-						onExpandSideChat={(parentId, targetId) => chatViewRef?.expandSideChat(parentId, targetId)}
+						onExpandSideChat={(parentId, targetId) =>
+							chatViewRef?.expandSideChat(parentId, targetId)}
 						onComposerPinChange={(side) => (composerPinned = side)}
 					/>
 				</div>

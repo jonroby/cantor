@@ -6,7 +6,14 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import { MessageSquarePlus, Upload, FolderPlus, Search, Workflow, MessagesSquare } from 'lucide-svelte';
+	import {
+		MessageSquarePlus,
+		Upload,
+		FolderPlus,
+		Search,
+		Workflow,
+		MessagesSquare
+	} from 'lucide-svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';

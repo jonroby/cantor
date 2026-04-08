@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { gsap } from 'gsap';
 	import { Plus, Split, X, ChevronLeft, ChevronRight, GitFork, Trash2 } from 'lucide-svelte';
 
@@ -8,7 +8,7 @@
 		startChapter?: number;
 	}
 
-	const { onComplete, startChapter = 0 }: Props = $props();
+	const { onComplete: _onComplete, startChapter = 0 }: Props = $props();
 
 	const prompt1 = 'How does attention work in transformers?';
 	const response1Lines = [
@@ -34,50 +34,57 @@
 		'For each token, the model scores it against every other token in',
 		'the sequence using dot-product similarity. Those scores are scaled,',
 		'softmaxed into weights, then used to compute a weighted sum of',
-		'value vectors — that sum becomes the token\'s output representation.'
+		"value vectors — that sum becomes the token's output representation."
 	];
 
 	const sideChats = [
 		{
 			prompt: 'What is a query?',
-			lines: ['The <strong>query</strong> vector represents what the current token is "looking for" — it scores relevance against all keys in the sequence.']
+			lines: [
+				'The <strong>query</strong> vector represents what the current token is "looking for" — it scores relevance against all keys in the sequence.'
+			]
 		},
 		{
 			prompt: 'What is a key?',
-			lines: ['The <strong>key</strong> vector represents what each token "offers". A high dot-product between a query and a key means strong attention.']
+			lines: [
+				'The <strong>key</strong> vector represents what each token "offers". A high dot-product between a query and a key means strong attention.'
+			]
 		},
 		{
 			prompt: 'What is a value?',
-			lines: ['The <strong>value</strong> vector is the content retrieved. Attention weights are applied to the values and summed to produce the final output.']
-		},
+			lines: [
+				'The <strong>value</strong> vector is the content retrieved. Attention weights are applied to the values and summed to produce the final output.'
+			]
+		}
 	];
 
 	// ── Shared state ───────────────────────────────────────────
-	let composerText     = $state('');
+	let composerText = $state('');
 	let sideComposerText = $state('');
-	let sideCounter      = $state('1 / 1');
-	let sideBadgeCount   = $state(0);
-	let activeSide       = $state(0);
-	let sideOpen         = $state(false);
-	let sideCount        = $state(0);
-	let sideResponded    = $state([false, false, false]);
+	let sideCounter = $state('1 / 1');
+	let sideBadgeCount = $state(0);
+	let activeSide = $state(0);
+	let sideOpen = $state(false);
+	let sideCount = $state(0);
 
 	// ── Auto Ask state ─────────────────────────────────────────
-	let highlightActive  = $state(false);   // response2 line 2+3 highlighted
+	let highlightActive = $state(false); // response2 line 2+3 highlighted
 	let contextMenuVisible = $state(false);
-	let contextMenuX     = $state(0);
-	let contextMenuY     = $state(0);
-	let showAutoAsk      = $state(false);   // exchange 3 visible
-	let autoAskResponded = $state(false);
+	let contextMenuX = $state(0);
+	let contextMenuY = $state(0);
+	let showAutoAsk = $state(false); // exchange 3 visible
 
 	let frameEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
 	let highlightRef: HTMLElement;
-	let messagesEl: HTMLElement;
 	let tl: gsap.core.Timeline;
 
-	export function pause()  { tl?.pause();  }
-	export function resume() { tl?.resume(); }
+	export function pause() {
+		tl?.pause();
+	}
+	export function resume() {
+		tl?.resume();
+	}
 
 	function pulse(tl: gsap.core.Timeline, targetId: string) {
 		tl.call(() => {
@@ -97,9 +104,11 @@
 				pointer-events: none;
 				z-index: 200;
 			`;
+			// eslint-disable-next-line svelte/no-dom-manipulating
 			frameEl.appendChild(ring);
 			gsap.to(ring, {
-				width: 72, height: 72,
+				width: 72,
+				height: 72,
 				opacity: 0,
 				boxShadow: '0 0 0 28px rgba(16,185,129,0)',
 				duration: 0.85,
@@ -128,9 +137,11 @@
 				pointer-events: none;
 				z-index: 200;
 			`;
+			// eslint-disable-next-line svelte/no-dom-manipulating
 			frameEl.appendChild(ring);
 			gsap.to(ring, {
-				width: 72, height: 72,
+				width: 72,
+				height: 72,
 				opacity: 0,
 				boxShadow: '0 0 0 28px rgba(16,185,129,0)',
 				duration: 0.85,
@@ -141,25 +152,32 @@
 		tl.to({}, { duration: 0.5 });
 	}
 
-	function typeInto(tl: gsap.core.Timeline, setter: (s: string) => void, text: string, cps = 0.042) {
-		tl.to({}, {
-			duration: text.length * cps,
-			ease: 'none',
-			onUpdate() {
-				const chars = Math.floor(this.progress() * text.length);
-				setter(text.slice(0, chars));
+	function typeInto(
+		tl: gsap.core.Timeline,
+		setter: (s: string) => void,
+		text: string,
+		cps = 0.042
+	) {
+		tl.to(
+			{},
+			{
+				duration: text.length * cps,
+				ease: 'none',
+				onUpdate() {
+					const chars = Math.floor(this.progress() * text.length);
+					setter(text.slice(0, chars));
+				}
 			}
-		});
+		);
 	}
 
 	// ── Chapter snapshots ──────────────────────────────────────
 	function applyChapter1State() {
-		sideOpen       = false;
-		sideCount      = 3;
+		sideOpen = false;
+		sideCount = 3;
 		sideBadgeCount = 3;
-		sideCounter    = '3 / 3';
-		activeSide     = 2;
-		sideResponded  = [true, true, true];
+		sideCounter = '3 / 3';
+		activeSide = 2;
 		// side panel collapsed
 		if (sidePanelEl) {
 			sidePanelEl.style.width = '0';
@@ -180,49 +198,146 @@
 
 			pulse(tl, 'side-badge');
 			tl.to(sidePanelEl, { width: '50%', opacity: 1, duration: 0.4, ease: 'power3.inOut' });
-			tl.set({}, { onComplete: () => { sideOpen = true; sideCount = 1; } });
+			tl.set(
+				{},
+				{
+					onComplete: () => {
+						sideOpen = true;
+						sideCount = 1;
+					}
+				}
+			);
 			tl.to({}, { duration: 0.4 });
 
-			typeInto(tl, s => { sideComposerText = s; }, sideChats[0].prompt, 0.05);
+			typeInto(
+				tl,
+				(s) => {
+					sideComposerText = s;
+				},
+				sideChats[0].prompt,
+				0.05
+			);
 			tl.to({}, { duration: 0.2 });
 			pulse(tl, 'composer-send');
-			tl.fromTo('#side-bubble-0', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
-			tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 1; sideCounter = '1 / 1'; activeSide = 0; } });
+			tl.fromTo(
+				'#side-bubble-0',
+				{ opacity: 0, y: 8 },
+				{ opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' }
+			);
+			tl.set(
+				{},
+				{
+					onComplete: () => {
+						sideComposerText = '';
+						sideBadgeCount = 1;
+						sideCounter = '1 / 1';
+						activeSide = 0;
+					}
+				}
+			);
 			tl.to({}, { duration: 0.3 });
 			sideChats[0].lines.forEach((_, li) => {
-				tl.fromTo(`#side-r0-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+				tl.fromTo(
+					`#side-r0-${li}`,
+					{ opacity: 0, y: 4 },
+					{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' },
+					'<+0.18'
+				);
 			});
-			tl.set({}, { onComplete: () => { sideResponded = [true, false, false]; } });
 			tl.to({}, { duration: 0.8 });
 
 			pulse(tl, 'side-plus-btn');
-			tl.set({}, { onComplete: () => { sideCount = 2; activeSide = 1; sideCounter = '2 / 2'; } });
+			tl.set(
+				{},
+				{
+					onComplete: () => {
+						sideCount = 2;
+						activeSide = 1;
+						sideCounter = '2 / 2';
+					}
+				}
+			);
 			tl.to({}, { duration: 0.3 });
-			typeInto(tl, s => { sideComposerText = s; }, sideChats[1].prompt, 0.05);
+			typeInto(
+				tl,
+				(s) => {
+					sideComposerText = s;
+				},
+				sideChats[1].prompt,
+				0.05
+			);
 			tl.to({}, { duration: 0.2 });
 			pulse(tl, 'composer-send');
-			tl.fromTo('#side-bubble-1', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
-			tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 2; } });
+			tl.fromTo(
+				'#side-bubble-1',
+				{ opacity: 0, y: 8 },
+				{ opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' }
+			);
+			tl.set(
+				{},
+				{
+					onComplete: () => {
+						sideComposerText = '';
+						sideBadgeCount = 2;
+					}
+				}
+			);
 			tl.to({}, { duration: 0.3 });
 			sideChats[1].lines.forEach((_, li) => {
-				tl.fromTo(`#side-r1-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+				tl.fromTo(
+					`#side-r1-${li}`,
+					{ opacity: 0, y: 4 },
+					{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' },
+					'<+0.18'
+				);
 			});
-			tl.set({}, { onComplete: () => { sideResponded = [true, true, false]; } });
 			tl.to({}, { duration: 0.8 });
 
 			pulse(tl, 'side-plus-btn');
-			tl.set({}, { onComplete: () => { sideCount = 3; activeSide = 2; sideCounter = '3 / 3'; } });
+			tl.set(
+				{},
+				{
+					onComplete: () => {
+						sideCount = 3;
+						activeSide = 2;
+						sideCounter = '3 / 3';
+					}
+				}
+			);
 			tl.to({}, { duration: 0.3 });
-			typeInto(tl, s => { sideComposerText = s; }, sideChats[2].prompt, 0.05);
+			typeInto(
+				tl,
+				(s) => {
+					sideComposerText = s;
+				},
+				sideChats[2].prompt,
+				0.05
+			);
 			tl.to({}, { duration: 0.2 });
 			pulse(tl, 'composer-send');
-			tl.fromTo('#side-bubble-2', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
-			tl.set({}, { onComplete: () => { sideComposerText = ''; sideBadgeCount = 3; } });
+			tl.fromTo(
+				'#side-bubble-2',
+				{ opacity: 0, y: 8 },
+				{ opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' }
+			);
+			tl.set(
+				{},
+				{
+					onComplete: () => {
+						sideComposerText = '';
+						sideBadgeCount = 3;
+					}
+				}
+			);
 			tl.to({}, { duration: 0.3 });
 			sideChats[2].lines.forEach((_, li) => {
-				tl.fromTo(`#side-r2-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
+				tl.fromTo(
+					`#side-r2-${li}`,
+					{ opacity: 0, y: 4 },
+					{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' },
+					'<+0.18'
+				);
 			});
-			tl.set({}, { onComplete: () => { sideResponded = [true, true, true]; } });
 			tl.to({}, { duration: 1.2 });
 		}
 
@@ -233,44 +348,68 @@
 			// Close side panel
 			pulse(tl, 'side-close-btn');
 			tl.to(sidePanelEl, { width: 0, opacity: 0, duration: 0.35, ease: 'power3.inOut' });
-			tl.set({}, { onComplete: () => { sideOpen = false; } });
+			tl.set(
+				{},
+				{
+					onComplete: () => {
+						sideOpen = false;
+					}
+				}
+			);
 			tl.to({}, { duration: 0.6 });
 		}
 
 		// Highlight the phrase in exchange 2
-		tl.set({}, { onComplete: () => { highlightActive = true; } });
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					highlightActive = true;
+				}
+			}
+		);
 		tl.to({}, { duration: 0.5 });
 
 		// Right-click → context menu appears near the highlight
 		pulseEl(tl, () => highlightRef);
-		tl.set({}, { onComplete: () => {
-			if (highlightRef) {
-				const frame = frameEl.getBoundingClientRect();
-				const r = highlightRef.getBoundingClientRect();
-				contextMenuX = r.right - frame.left - 20;
-				contextMenuY = r.bottom - frame.top + 4;
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					if (highlightRef) {
+						const frame = frameEl.getBoundingClientRect();
+						const r = highlightRef.getBoundingClientRect();
+						contextMenuX = r.right - frame.left - 20;
+						contextMenuY = r.bottom - frame.top + 4;
+					}
+					contextMenuVisible = true;
+				}
 			}
-			contextMenuVisible = true;
-		}});
+		);
 		tl.to({}, { duration: 0.6 });
 
 		// Click "Quick Ask"
 		pulse(tl, 'quick-ask-btn');
-		tl.set({}, { onComplete: () => {
-			contextMenuVisible = false;
-			highlightActive = false;
-			showAutoAsk = true;
-			autoAskResponded = true;
-			// Wait for Svelte to render the response lines, then animate them
-			tick().then(() => {
-				autoAskResponse.forEach((_, li) => {
-					gsap.fromTo(`#auto-ask-r-${li}`,
-						{ opacity: 0, y: 4 },
-						{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out', delay: li * 0.18 }
-					);
-				});
-			});
-		}});
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					contextMenuVisible = false;
+					highlightActive = false;
+					showAutoAsk = true;
+					// Wait for Svelte to render the response lines, then animate them
+					tick().then(() => {
+						autoAskResponse.forEach((_, li) => {
+							gsap.fromTo(
+								`#auto-ask-r-${li}`,
+								{ opacity: 0, y: 4 },
+								{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out', delay: li * 0.18 }
+							);
+						});
+					});
+				}
+			}
+		);
 		tl.to({}, { duration: autoAskResponse.length * 0.18 + 0.3 });
 		tl.to({}, { duration: 1.2 });
 
@@ -280,11 +419,19 @@
 
 <div class="demo-frame" bind:this={frameEl}>
 	<div class="content-area">
-
 		<!-- Main panel -->
 		<div class="main">
 			<div class="chat-header">
-				<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="rgba(23,23,23,0.4)" viewBox="0 0 256 256"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="17"
+					height="17"
+					fill="rgba(23,23,23,0.4)"
+					viewBox="0 0 256 256"
+					><path
+						d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"
+					/></svg
+				>
 				<span class="chat-title">Transformers</span>
 			</div>
 
@@ -295,16 +442,21 @@
 						<div class="user-bubble">{prompt1}</div>
 						<div class="exchange-block">
 							<div class="response">
-								{#each response1Lines as line}
+								{#each response1Lines as line (line)}
 									{#if line === ''}
 										<div class="resp-spacer"></div>
 									{:else}
+										<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 										<div class="resp-line">{@html line}</div>
 									{/if}
 								{/each}
 							</div>
 							<div class="msg-toolbar">
-								<button id="side-badge" class="icon-chip icon-chip-side" class:icon-chip-active={sideBadgeCount > 0}>
+								<button
+									id="side-badge"
+									class="icon-chip icon-chip-side"
+									class:icon-chip-active={sideBadgeCount > 0}
+								>
 									<span style="display:inline-flex;transform:scaleY(-1)"><Split size={14} /></span>
 									{#if sideBadgeCount > 0}<span class="badge-count">{sideBadgeCount}</span>{/if}
 								</button>
@@ -320,11 +472,14 @@
 						<div class="exchange-block">
 							<div class="response">
 								<div class="resp-line">{response2Lines[0]}</div>
-								<div class="resp-line">For the token "sat", <span
-									bind:this={highlightRef}
-									class="resp-highlight"
-									class:resp-highlight-active={highlightActive}
-								>the model computes attention scores across all tokens in context</span>.</div>
+								<div class="resp-line">
+									For the token "sat", <span
+										bind:this={highlightRef}
+										class="resp-highlight"
+										class:resp-highlight-active={highlightActive}
+										>the model computes attention scores across all tokens in context</span
+									>.
+								</div>
 							</div>
 						</div>
 					{:else}
@@ -332,7 +487,7 @@
 						<div class="user-bubble">{autoAskPrompt}</div>
 						<div class="exchange-block">
 							<div class="response">
-								{#each autoAskResponse as line, li}
+								{#each autoAskResponse as line, li (li)}
 									<div id="auto-ask-r-{li}" class="resp-line" style="opacity:0">{line}</div>
 								{/each}
 							</div>
@@ -357,16 +512,20 @@
 			</div>
 
 			<div class="side-messages">
-				{#each sideChats as chat, idx}
-					<div class="side-chat-view" class:side-chat-active={activeSide === idx && idx < sideCount}>
+				{#each sideChats as chat, idx (idx)}
+					<div
+						class="side-chat-view"
+						class:side-chat-active={activeSide === idx && idx < sideCount}
+					>
 						<div class="branch-context">
 							<div class="user-bubble branch-bubble">{prompt1}</div>
 							<div class="exchange-block">
 								<div class="response branch-response">
-									{#each response1Lines as line}
+									{#each response1Lines as line (line)}
 										{#if line === ''}
 											<div class="resp-spacer"></div>
 										{:else}
+											<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 											<div class="resp-line">{@html line}</div>
 										{/if}
 									{/each}
@@ -380,7 +539,8 @@
 						<div class="exchange-divider"></div>
 						<div id="side-bubble-{idx}" class="user-bubble" style="opacity: 0">{chat.prompt}</div>
 						<div class="response">
-							{#each chat.lines as line, li}
+							{#each chat.lines as line, li (li)}
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 								<div id="side-r{idx}-{li}" class="resp-line" style="opacity: 0">{@html line}</div>
 							{/each}
 						</div>
@@ -388,7 +548,6 @@
 				{/each}
 			</div>
 		</div>
-
 	</div>
 
 	<!-- Context menu -->
@@ -407,20 +566,30 @@
 					<div id="composer-input" class="composer-input">
 						{#if sideOpen}
 							{#if sideComposerText}
-								<span class="composer-text">{sideComposerText}<span class="composer-cursor">|</span></span>
+								<span class="composer-text"
+									>{sideComposerText}<span class="composer-cursor">|</span></span
+								>
 							{:else}
 								<span class="composer-placeholder">Chat...</span>
 							{/if}
+						{:else if composerText}
+							<span class="composer-text">{composerText}<span class="composer-cursor">|</span></span
+							>
 						{:else}
-							{#if composerText}
-								<span class="composer-text">{composerText}<span class="composer-cursor">|</span></span>
-							{:else}
-								<span class="composer-placeholder">Chat...</span>
-							{/if}
+							<span class="composer-placeholder">Chat...</span>
 						{/if}
 					</div>
 					<button id="composer-send" class="composer-send">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
 							<line x1="12" y1="19" x2="12" y2="5"></line>
 							<polyline points="5 12 12 5 19 12"></polyline>
 						</svg>
@@ -429,7 +598,6 @@
 			</div>
 		</div>
 	</div>
-
 </div>
 
 <style>
@@ -478,7 +646,7 @@
 	.chat-title {
 		font-size: 13.75px;
 		font-weight: 600;
-		color: rgba(23,23,23,0.8);
+		color: rgba(23, 23, 23, 0.8);
 	}
 
 	/* ── Messages ─────────────────────────────────────────── */
@@ -521,7 +689,7 @@
 		align-self: flex-end;
 		max-width: 65%;
 		background: hsl(0 0% 12%);
-		color: rgba(255,255,255,0.92);
+		color: rgba(255, 255, 255, 0.92);
 		padding: 0.65rem 1rem;
 		border-radius: 12px;
 		font-size: 13.75px;
@@ -535,13 +703,20 @@
 		color: hsl(0 0% 9%);
 	}
 
-	.resp-line { display: block; }
-	.resp-spacer { display: block; height: 0.6em; }
+	.resp-line {
+		display: block;
+	}
+	.resp-spacer {
+		display: block;
+		height: 0.6em;
+	}
 
 	/* ── Highlight ────────────────────────────────────────── */
 	.resp-highlight {
 		border-radius: 3px;
-		transition: background 0.2s, color 0.2s;
+		transition:
+			background 0.2s,
+			color 0.2s;
 	}
 
 	.resp-highlight-active {
@@ -565,12 +740,24 @@
 		animation: thinking-bounce 1.2s ease-in-out infinite;
 	}
 
-	.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
-	.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+	.thinking-dot:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+	.thinking-dot:nth-child(3) {
+		animation-delay: 0.4s;
+	}
 
 	@keyframes thinking-bounce {
-		0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
-		40%            { transform: scale(1);   opacity: 1; }
+		0%,
+		80%,
+		100% {
+			transform: scale(0.7);
+			opacity: 0.4;
+		}
+		40% {
+			transform: scale(1);
+			opacity: 1;
+		}
 	}
 
 	/* ── Message toolbar ──────────────────────────────────── */
@@ -591,13 +778,13 @@
 		border: none;
 		border-radius: 6px;
 		background: transparent;
-		color: rgba(23,23,23,0.4);
+		color: rgba(23, 23, 23, 0.4);
 		cursor: pointer;
 	}
 
 	.icon-chip:hover {
 		background: hsl(0 0% 94%);
-		color: rgba(23,23,23,0.8);
+		color: rgba(23, 23, 23, 0.8);
 	}
 
 	.icon-chip-side {
@@ -625,7 +812,7 @@
 		background: white;
 		border: 1px solid hsl(0 0% 88%);
 		border-radius: 8px;
-		box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 		overflow: hidden;
 		z-index: 300;
 		min-width: 110px;
@@ -657,7 +844,7 @@
 		display: flex;
 		justify-content: center;
 		pointer-events: none;
-		transition: transform 0.4s cubic-bezier(0.77,0,0.18,1);
+		transition: transform 0.4s cubic-bezier(0.77, 0, 0.18, 1);
 	}
 
 	.composer-shifted {
@@ -673,7 +860,7 @@
 		background: white;
 		border: 1px solid hsl(0 0% 88%);
 		border-radius: 20px;
-		box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 		overflow: hidden;
 	}
 
@@ -693,7 +880,7 @@
 		border-radius: 50%;
 		border: 1px solid hsl(0 0% 88%);
 		background: white;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 		flex-shrink: 0;
 		cursor: pointer;
 	}
@@ -704,11 +891,15 @@
 		min-height: 20px;
 	}
 
-	.composer-text { color: hsl(0 0% 9%); }
-	.composer-placeholder { color: rgba(23,23,23,0.3); }
+	.composer-text {
+		color: hsl(0 0% 9%);
+	}
+	.composer-placeholder {
+		color: rgba(23, 23, 23, 0.3);
+	}
 
 	.composer-cursor {
-		color: rgba(23,23,23,0.7);
+		color: rgba(23, 23, 23, 0.7);
 		animation: blink 0.7s ease infinite;
 	}
 
@@ -745,7 +936,8 @@
 		padding: 0 0.75rem;
 	}
 
-	.side-panel-nav, .side-panel-actions {
+	.side-panel-nav,
+	.side-panel-actions {
 		display: flex;
 		align-items: center;
 		gap: 0.2rem;
@@ -753,7 +945,7 @@
 
 	.side-counter {
 		font-size: 12px;
-		color: rgba(23,23,23,0.45);
+		color: rgba(23, 23, 23, 0.45);
 		min-width: 2.5rem;
 		text-align: center;
 	}
@@ -767,7 +959,7 @@
 		border: none;
 		border-radius: 6px;
 		background: transparent;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 		cursor: pointer;
 	}
 
@@ -806,7 +998,12 @@
 	}
 
 	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 </style>

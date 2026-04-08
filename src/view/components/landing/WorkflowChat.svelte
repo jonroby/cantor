@@ -25,37 +25,50 @@
 		// ── 0. Zoom into composer ─────────────────────────────
 		// The composer sits at the bottom-center of the frame.
 		// We scale the frame up and shift it so the composer fills view.
-		tl.fromTo(frameEl,
+		tl.fromTo(
+			frameEl,
 			{ scale: 1, y: 0 },
 			{ scale: 2.2, y: '-38%', duration: 0.8, ease: 'power3.inOut' }
 		);
 		tl.to({}, { duration: 0.4 });
 
 		// ── 1. Type into composer ─────────────────────────────
-		tl.to({}, {
-			duration: userPrompt.length * 0.042,
-			ease: 'none',
-			onUpdate() {
-				const progress = this.progress();
-				const chars = Math.floor(progress * userPrompt.length);
-				composerText = userPrompt.slice(0, chars);
+		tl.to(
+			{},
+			{
+				duration: userPrompt.length * 0.042,
+				ease: 'none',
+				onUpdate() {
+					const progress = this.progress();
+					const chars = Math.floor(progress * userPrompt.length);
+					composerText = userPrompt.slice(0, chars);
+				}
 			}
-		});
+		);
 
 		tl.to({}, { duration: 0.3 });
 
 		// ── 2. Send ───────────────────────────────────────────
-		tl.fromTo('#user-bubble',
+		tl.fromTo(
+			'#user-bubble',
 			{ opacity: 0, y: 8 },
 			{ opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }
 		);
-		tl.set({}, { onComplete: () => { composerText = ''; } });
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					composerText = '';
+				}
+			}
+		);
 
 		tl.to({}, { duration: 0.5 });
 
 		// ── 3. Stream response lines ──────────────────────────
 		responseLines.forEach((_, i) => {
-			tl.fromTo(`#resp-${i}`,
+			tl.fromTo(
+				`#resp-${i}`,
 				{ opacity: 0, y: 4 },
 				{ opacity: 1, y: 0, duration: 0.18, ease: 'power1.out' },
 				'<+0.2'
@@ -69,13 +82,13 @@
 
 		// ── 4. Collapse sidebar ───────────────────────────────
 		tl.to(sidebarEl, { width: 0, duration: 0.4, ease: 'power3.inOut' });
-		tl.to(mainEl,  { marginLeft: 0, duration: 0.4, ease: 'power3.inOut' }, '<');
+		tl.to(mainEl, { marginLeft: 0, duration: 0.4, ease: 'power3.inOut' }, '<');
 
 		tl.to({}, { duration: 1.5 });
 
 		// ── 5. Expand sidebar ─────────────────────────────────
 		tl.to(sidebarEl, { width: 216, duration: 0.4, ease: 'power3.inOut' });
-		tl.to(mainEl,  { marginLeft: 216, duration: 0.4, ease: 'power3.inOut' }, '<');
+		tl.to(mainEl, { marginLeft: 216, duration: 0.4, ease: 'power3.inOut' }, '<');
 
 		tl.to({}, { duration: 0.5 });
 
@@ -88,7 +101,6 @@
 </script>
 
 <div class="demo-frame" bind:this={frameEl}>
-
 	<!-- Sidebar -->
 	<div class="sidebar" bind:this={sidebarEl}>
 		<div class="sidebar-header">
@@ -113,7 +125,7 @@
 				<MessageSquare size={14} />
 				<span>Transformers</span>
 			</div>
-			{#each ['Chat (1)', 'Chat (2)', 'Chat (3)', 'Chat (4)'] as name}
+			{#each ['Chat (1)', 'Chat (2)', 'Chat (3)', 'Chat (4)'] as name (name)}
 				<div class="sidebar-item">
 					<MessageSquare size={14} />
 					<span>{name}</span>
@@ -124,7 +136,7 @@
 		<div class="sidebar-divider"></div>
 		<div class="sidebar-section-label">Folders</div>
 		<div class="sidebar-items">
-			{#each ['Probability', 'Research', 'New Folder'] as name}
+			{#each ['Probability', 'Research', 'New Folder'] as name (name)}
 				<div class="sidebar-item">
 					<span class="folder-chevron">›</span>
 					<span>{name}</span>
@@ -135,7 +147,6 @@
 
 	<!-- Main panel -->
 	<div class="main" bind:this={mainEl} style="margin-left: 216px;">
-
 		<!-- Chat header -->
 		<div class="chat-header">
 			<span class="chat-title">Transformers</span>
@@ -143,7 +154,6 @@
 
 		<!-- Messages -->
 		<div class="messages">
-
 			<!-- User bubble -->
 			<div id="user-bubble" class="user-bubble" style="opacity:0">
 				{userPrompt}
@@ -151,18 +161,18 @@
 
 			<!-- Response -->
 			<div class="response">
-				{#each responseLines as line, i}
+				{#each responseLines as line, i (i)}
 					{#if line === ''}
 						<div id="resp-{i}" class="resp-spacer" style="opacity:0"></div>
 					{:else}
 						<div id="resp-{i}" class="resp-line" style="opacity:0">
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 							{@html line}
 						</div>
 					{/if}
 				{/each}
 				<span id="resp-cursor" class="resp-cursor" style="opacity:0">|</span>
 			</div>
-
 		</div>
 
 		<!-- Composer -->
@@ -172,7 +182,8 @@
 					<button class="composer-attach"><Plus size={18} /></button>
 					<div class="composer-input">
 						{#if composerText}
-							<span class="composer-text">{composerText}<span class="composer-cursor">|</span></span>
+							<span class="composer-text">{composerText}<span class="composer-cursor">|</span></span
+							>
 						{:else}
 							<span class="composer-placeholder">Chat...</span>
 						{/if}
@@ -196,7 +207,6 @@
 				</div>
 			</div>
 		</div>
-
 	</div>
 </div>
 
@@ -241,7 +251,7 @@
 	.sidebar-brand {
 		font-size: 17px;
 		font-weight: 600;
-		color: rgba(23,23,23,0.88);
+		color: rgba(23, 23, 23, 0.88);
 	}
 
 	.sidebar-actions {
@@ -257,7 +267,7 @@
 		border: none;
 		border-radius: 6px;
 		background: transparent;
-		color: rgba(23,23,23,0.6);
+		color: rgba(23, 23, 23, 0.6);
 		font-size: 13.75px;
 		cursor: pointer;
 		text-align: left;
@@ -274,7 +284,7 @@
 		margin-bottom: 0.25rem;
 		font-size: 12px;
 		font-weight: 500;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 	}
 
 	.sidebar-items {
@@ -287,21 +297,21 @@
 		gap: 0.5rem;
 		padding: 0.45rem 1rem;
 		border-radius: 6px;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 		font-size: 13.75px;
 		white-space: nowrap;
 		overflow: hidden;
 	}
 
 	.sidebar-item-active {
-		background: rgba(23,23,23,0.07);
-		color: rgba(23,23,23,0.88);
+		background: rgba(23, 23, 23, 0.07);
+		color: rgba(23, 23, 23, 0.88);
 		font-weight: 500;
 	}
 
 	.folder-chevron {
 		font-size: 15px;
-		color: rgba(23,23,23,0.4);
+		color: rgba(23, 23, 23, 0.4);
 	}
 
 	/* ── Main ─────────────────────────────────────────────── */
@@ -329,7 +339,7 @@
 	.chat-title {
 		font-size: 13.75px;
 		font-weight: 600;
-		color: rgba(23,23,23,0.8);
+		color: rgba(23, 23, 23, 0.8);
 	}
 
 	/* ── Messages ─────────────────────────────────────────── */
@@ -346,7 +356,7 @@
 		align-self: flex-end;
 		max-width: 60%;
 		background: hsl(0 0% 12%);
-		color: rgba(255,255,255,0.9);
+		color: rgba(255, 255, 255, 0.9);
 		padding: 0.75rem 1.1rem;
 		border-radius: 12px;
 		font-size: 13.75px;
@@ -371,14 +381,19 @@
 
 	.resp-cursor {
 		display: inline;
-		color: rgba(23,23,23,0.6);
+		color: rgba(23, 23, 23, 0.6);
 		font-weight: 300;
 		animation: blink 0.9s ease infinite;
 	}
 
 	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 
 	/* ── Composer ─────────────────────────────────────────── */
@@ -394,7 +409,7 @@
 		background: white;
 		border: 1px solid hsl(0 0% 88%);
 		border-radius: 20px;
-		box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
 		overflow: hidden;
 	}
 
@@ -414,7 +429,7 @@
 		border-radius: 50%;
 		border: 1px solid hsl(0 0% 88%);
 		background: white;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 		flex-shrink: 0;
 		cursor: pointer;
 	}
@@ -430,11 +445,11 @@
 	}
 
 	.composer-placeholder {
-		color: rgba(23,23,23,0.3);
+		color: rgba(23, 23, 23, 0.3);
 	}
 
 	.composer-cursor {
-		color: rgba(23,23,23,0.7);
+		color: rgba(23, 23, 23, 0.7);
 		animation: blink 0.7s ease infinite;
 	}
 
@@ -466,7 +481,8 @@
 		gap: 0.5rem;
 	}
 
-	.model-chip, .mode-chip {
+	.model-chip,
+	.mode-chip {
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
@@ -477,7 +493,7 @@
 		background: white;
 		font-size: 11.5px;
 		font-weight: 500;
-		color: rgba(23,23,23,0.7);
+		color: rgba(23, 23, 23, 0.7);
 		white-space: nowrap;
 	}
 
@@ -496,12 +512,16 @@
 		margin-left: auto;
 		padding-left: 0.75rem;
 		border-left: 1px solid hsl(0 0% 91%);
-		color: rgba(23,23,23,0.45);
+		color: rgba(23, 23, 23, 0.45);
 		font-size: 11.5px;
 	}
 
-	.ctx-label { white-space: nowrap; }
-	.ctx-count { white-space: nowrap; }
+	.ctx-label {
+		white-space: nowrap;
+	}
+	.ctx-count {
+		white-space: nowrap;
+	}
 
 	.ctx-track {
 		width: 80px;
@@ -515,6 +535,6 @@
 		width: 26%;
 		height: 100%;
 		border-radius: inherit;
-		background: rgba(23,23,23,0.75);
+		background: rgba(23, 23, 23, 0.75);
 	}
 </style>

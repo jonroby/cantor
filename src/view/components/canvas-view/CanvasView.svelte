@@ -6,7 +6,16 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { renderRichText } from '@/view/lib/katex';
-	import { Search, Maximize2, ArrowUpToLine, CircleDot, GitFork, Trash2, ArrowUp, ChevronLeft, ChevronRight, Split } from 'lucide-svelte';
+	import {
+		Search,
+		Maximize2,
+		ArrowUpToLine,
+		CircleDot,
+		GitFork,
+		Trash2,
+		ArrowUp,
+		Split
+	} from 'lucide-svelte';
 
 	interface Props {
 		onSearchOpen?: () => void;
@@ -50,20 +59,16 @@
 
 	let activeChat = $derived(app.chat.getChat());
 	let activeExchangeId = $derived(app.chat.getActiveExchangeId());
-	let selectedExchangeId = $state<string | null>(null);
+	let selectedExchangeId: string | null = $derived(activeExchangeId);
 
-	$effect(() => {
-		selectedExchangeId = activeExchangeId;
-	});
 	let expandedSideChatParent: string | null = $state(null);
 	let sideChatIndex = $state(0);
 	let tree = $derived({ rootId: activeChat.rootId, exchanges: activeChat.exchanges });
-	let hiddenExchangeIds = $derived(app.canvas.getHiddenExchangeIds(tree, expandedSideChatParent, sideChatIndex));
+	let hiddenExchangeIds = $derived(
+		app.canvas.getHiddenExchangeIds(tree, expandedSideChatParent, sideChatIndex)
+	);
 	let graph = $derived(computeLayout());
 	let nodeLookup = $derived(new Map(graph.nodes.map((node) => [node.id, node])));
-	let expandedSideChats = $derived(
-		expandedSideChatParent ? app.chat.getSideChats(tree, expandedSideChatParent) : []
-	);
 
 	function computeLayout() {
 		const nodes: CanvasNode[] = [];
@@ -76,6 +81,7 @@
 
 		// Track how many columns are in use so side branches get fresh columns
 		let nextFreeColumn = 0;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const columnBottoms = new Map<number, number>();
 		let maxBottom = PADDING_Y;
 
@@ -122,7 +128,10 @@
 		return {
 			nodes,
 			edges,
-			width: Math.max(1200, PADDING_X * 2 + nextFreeColumn * NODE_WIDTH + (nextFreeColumn - 1) * COLUMN_GAP),
+			width: Math.max(
+				1200,
+				PADDING_X * 2 + nextFreeColumn * NODE_WIDTH + (nextFreeColumn - 1) * COLUMN_GAP
+			),
 			height: Math.max(900, maxBottom + PADDING_Y)
 		};
 	}
@@ -217,7 +226,9 @@
 			tx = targetTx;
 			ty = targetTy;
 			scale = targetScale;
-			setTimeout(() => { animating = false; }, opts.duration);
+			setTimeout(() => {
+				animating = false;
+			}, opts.duration);
 		} else {
 			tx = targetTx;
 			ty = targetTy;
@@ -307,16 +318,6 @@
 	function selectNode(exchangeId: string) {
 		selectedExchangeId = exchangeId;
 		app.chat.selectExchange(exchangeId);
-	}
-
-	function handleNodePointerDown(event: PointerEvent, exchangeId: string) {
-		event.stopPropagation();
-		selectNode(exchangeId);
-	}
-
-	function handleNodeMouseDown(event: MouseEvent, exchangeId: string) {
-		event.stopPropagation();
-		selectNode(exchangeId);
 	}
 
 	function copyExchange(exchangeId: string) {
@@ -455,15 +456,17 @@
 		</div>
 	</Tooltip.Provider>
 
-
-
 	<div
 		class="canvas-container"
 		bind:this={containerEl}
 		onwheel={onWheel}
 		style={`--tx:${tx}px;--ty:${ty}px;--scale:${scale};`}
 	>
-		<div class="canvas-layer" class:canvas-animating={animating} style={`width:${graph.width}px;height:${graph.height}px;--layer-w:${graph.width}px;--layer-h:${graph.height}px;`}>
+		<div
+			class="canvas-layer"
+			class:canvas-animating={animating}
+			style={`width:${graph.width}px;height:${graph.height}px;--layer-w:${graph.width}px;--layer-h:${graph.height}px;`}
+		>
 			{#each graph.nodes as node (node.id)}
 				{@const exchange = getExchange(node.id)}
 				{#if exchange}
@@ -511,9 +514,14 @@
 													class="icon-chip"
 													variant="ghost"
 													size="icon"
-													onclick={(event) => { event.stopPropagation(); toggleSideChat(exchange.id); }}
+													onclick={(event) => {
+														event.stopPropagation();
+														toggleSideChat(exchange.id);
+													}}
 												>
-													<span style="display:inline-flex;transform:scaleY(-1)"><Split size={15} /></span>
+													<span style="display:inline-flex;transform:scaleY(-1)"
+														><Split size={15} /></span
+													>
 												</Button>
 											{/snippet}
 										</Tooltip.Trigger>
@@ -606,7 +614,6 @@
 			</svg>
 		</div>
 	</div>
-
 </div>
 
 <style>
@@ -951,5 +958,4 @@
 	:global(.exchange-response .katex) {
 		font-size: 20px;
 	}
-
 </style>

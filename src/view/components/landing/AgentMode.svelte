@@ -18,7 +18,6 @@
 </script>
 
 <section class="panel">
-
 	<div class="title-block">
 		<h2 class="heading"><span class="accent">Agent</span> Mode</h2>
 		<p class="title-desc">Full agent control, document authoring, and inline visualizations.</p>
@@ -32,7 +31,7 @@
 			onmouseenter={() => (hovered = true)}
 			onmouseleave={() => (hovered = false)}
 			onclick={toggle}
-			onkeydown={(e) => e.key === ' ' || e.key === 'Enter' ? toggle() : null}
+			onkeydown={(e) => (e.key === ' ' || e.key === 'Enter' ? toggle() : null)}
 		>
 			<video
 				bind:this={videoEl}
@@ -42,7 +41,9 @@
 				loop
 				muted
 				playsinline
-				oncanplay={(e) => { e.currentTarget.playbackRate = 1.5; }}
+				oncanplay={(e) => {
+					e.currentTarget.playbackRate = 1.5;
+				}}
 			></video>
 			{#if hovered}
 				<div class="overlay">
@@ -57,7 +58,6 @@
 			{/if}
 		</div>
 	</div>
-
 </section>
 
 <style>
@@ -72,7 +72,7 @@
 		padding: 80px 48px 64px;
 		box-sizing: border-box;
 		font-family: Inter, system-ui, sans-serif;
-		border-top: 1px solid rgba(23,23,23,0.06);
+		border-top: 1px solid rgba(23, 23, 23, 0.06);
 	}
 
 	.title-block {
@@ -85,7 +85,7 @@
 		font-size: clamp(36px, 4.5vw, 56px);
 		font-weight: 800;
 		letter-spacing: -2px;
-		color: rgba(23,23,23,0.92);
+		color: rgba(23, 23, 23, 0.92);
 		margin: 0 0 10px;
 		text-align: center;
 	}
@@ -99,7 +99,7 @@
 
 	.title-desc {
 		font-size: 16px;
-		color: rgba(23,23,23,0.45);
+		color: rgba(23, 23, 23, 0.45);
 		margin: 0;
 		text-align: center;
 	}
@@ -122,8 +122,8 @@
 		border-radius: 14px;
 		overflow: hidden;
 		box-shadow:
-			0 0 0 1px rgba(23,23,23,0.08),
-			0 8px 24px rgba(0,0,0,0.1);
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 8px 24px rgba(0, 0, 0, 0.1);
 	}
 
 	.video {
@@ -137,7 +137,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(0,0,0,0.15);
+		background: rgba(0, 0, 0, 0.15);
 		border-radius: 14px;
 	}
 
@@ -145,7 +145,7 @@
 		width: 64px;
 		height: 64px;
 		border-radius: 50%;
-		background: rgba(0,0,0,0.5);
+		background: rgba(0, 0, 0, 0.5);
 		display: flex;
 		align-items: center;
 		justify-content: center;

@@ -33,8 +33,12 @@
 	let exchange2El: HTMLElement;
 	let tl: gsap.core.Timeline;
 
-	export function pause()  { tl?.pause();  }
-	export function resume() { tl?.resume(); }
+	export function pause() {
+		tl?.pause();
+	}
+	export function resume() {
+		tl?.resume();
+	}
 
 	function pulse(tl: gsap.core.Timeline, el: () => HTMLElement | null) {
 		tl.call(() => {
@@ -54,9 +58,11 @@
 				pointer-events: none;
 				z-index: 200;
 			`;
+			// eslint-disable-next-line svelte/no-dom-manipulating
 			frameEl.appendChild(ring);
 			gsap.to(ring, {
-				width: 72, height: 72,
+				width: 72,
+				height: 72,
 				opacity: 0,
 				boxShadow: '0 0 0 28px rgba(239,68,68,0)',
 				duration: 0.85,
@@ -73,7 +79,14 @@
 		tl.to({}, { duration: CHAPTER_START_DELAY_S });
 
 		// Highlight the delete button
-		tl.set({}, { onComplete: () => { deleteButtonActive = true; } });
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					deleteButtonActive = true;
+				}
+			}
+		);
 		tl.to({}, { duration: 0.3 });
 
 		// Pulse the delete button
@@ -81,9 +94,29 @@
 		tl.to({}, { duration: 0.2 });
 
 		// Animate exchange 2 out
-		tl.set({}, { onComplete: () => { deleteButtonActive = false; } });
-		tl.to(exchange2El, { opacity: 0, height: 0, marginBottom: 0, duration: 0.35, ease: 'power2.inOut' });
-		tl.set({}, { onComplete: () => { exchange2Visible = false; } });
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					deleteButtonActive = false;
+				}
+			}
+		);
+		tl.to(exchange2El, {
+			opacity: 0,
+			height: 0,
+			marginBottom: 0,
+			duration: 0.35,
+			ease: 'power2.inOut'
+		});
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					exchange2Visible = false;
+				}
+			}
+		);
 		tl.to({}, { duration: 1.2 });
 		tl.call(onComplete);
 
@@ -93,10 +126,18 @@
 
 <div class="demo-frame" bind:this={frameEl}>
 	<div class="content-area">
-
 		<div class="main">
 			<div class="chat-header">
-				<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="rgba(23,23,23,0.4)" viewBox="0 0 256 256"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="17"
+					height="17"
+					fill="rgba(23,23,23,0.4)"
+					viewBox="0 0 256 256"
+					><path
+						d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"
+					/></svg
+				>
 				<span class="chat-title">Transformers</span>
 			</div>
 
@@ -106,10 +147,11 @@
 					<div class="user-bubble">{prompt1}</div>
 					<div class="exchange-block">
 						<div class="response">
-							{#each response1Lines as line}
+							{#each response1Lines as line (line)}
 								{#if line === ''}
 									<div class="resp-spacer"></div>
 								{:else}
+									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 									<div class="resp-line">{@html line}</div>
 								{/if}
 							{/each}
@@ -131,7 +173,7 @@
 							<div class="user-bubble">{prompt2}</div>
 							<div class="exchange-block">
 								<div class="response">
-									{#each response2Lines as line}
+									{#each response2Lines as line (line)}
 										<div class="resp-line">{line}</div>
 									{/each}
 								</div>
@@ -140,8 +182,8 @@
 									<button
 										id="delete-btn"
 										class="icon-chip"
-										class:icon-chip-delete={deleteButtonActive}
-									><Trash2 size={14} /></button>
+										class:icon-chip-delete={deleteButtonActive}><Trash2 size={14} /></button
+									>
 								</div>
 							</div>
 						</div>
@@ -149,7 +191,6 @@
 				</div>
 			</div>
 		</div>
-
 	</div>
 
 	<div class="composer-outer">
@@ -161,7 +202,16 @@
 						<span class="composer-placeholder">Chat...</span>
 					</div>
 					<button class="composer-send">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
 							<line x1="12" y1="19" x2="12" y2="5"></line>
 							<polyline points="5 12 12 5 19 12"></polyline>
 						</svg>
@@ -170,7 +220,6 @@
 			</div>
 		</div>
 	</div>
-
 </div>
 
 <style>
@@ -218,7 +267,7 @@
 	.chat-title {
 		font-size: 13.75px;
 		font-weight: 600;
-		color: rgba(23,23,23,0.8);
+		color: rgba(23, 23, 23, 0.8);
 	}
 
 	.messages {
@@ -261,7 +310,7 @@
 		align-self: flex-end;
 		max-width: 65%;
 		background: hsl(0 0% 12%);
-		color: rgba(255,255,255,0.92);
+		color: rgba(255, 255, 255, 0.92);
 		padding: 0.65rem 1rem;
 		border-radius: 12px;
 		font-size: 13.75px;
@@ -275,8 +324,13 @@
 		color: hsl(0 0% 9%);
 	}
 
-	.resp-line { display: block; }
-	.resp-spacer { display: block; height: 0.6em; }
+	.resp-line {
+		display: block;
+	}
+	.resp-spacer {
+		display: block;
+		height: 0.6em;
+	}
 
 	.msg-toolbar {
 		display: flex;
@@ -295,9 +349,11 @@
 		border: none;
 		border-radius: 6px;
 		background: transparent;
-		color: rgba(23,23,23,0.4);
+		color: rgba(23, 23, 23, 0.4);
 		cursor: pointer;
-		transition: color 0.15s, background 0.15s;
+		transition:
+			color 0.15s,
+			background 0.15s;
 	}
 
 	.icon-chip-side {
@@ -343,7 +399,7 @@
 		background: white;
 		border: 1px solid hsl(0 0% 88%);
 		border-radius: 20px;
-		box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 		overflow: hidden;
 	}
 
@@ -363,7 +419,7 @@
 		border-radius: 50%;
 		border: 1px solid hsl(0 0% 88%);
 		background: white;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 		flex-shrink: 0;
 		cursor: pointer;
 	}
@@ -374,7 +430,9 @@
 		min-height: 20px;
 	}
 
-	.composer-placeholder { color: rgba(23,23,23,0.3); }
+	.composer-placeholder {
+		color: rgba(23, 23, 23, 0.3);
+	}
 
 	.composer-send {
 		display: flex;

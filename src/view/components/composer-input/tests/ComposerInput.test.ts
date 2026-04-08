@@ -88,9 +88,9 @@ describe('ComposerInput', () => {
 		expect(screen.getByText(/1,500 \/ 128,000/)).toBeInTheDocument();
 	});
 
-	it('shows "Context Window" label', () => {
+	it('shows "Context" label', () => {
 		renderComposerInput();
-		expect(screen.getByText('Context Window')).toBeInTheDocument();
+		expect(screen.getByText('Context')).toBeInTheDocument();
 	});
 
 	it('gear button fires onOpenContextPalette', async () => {

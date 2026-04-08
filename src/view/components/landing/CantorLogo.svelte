@@ -11,10 +11,10 @@
 	// Colors: top = hsl(158 85% 38%), bottom = hsl(175 85% 62%)
 	// Interpolated per row
 	const dotColors = [
-		'hsl(158, 85%, 38%)',  // row 0 — top, darkest
-		'hsl(162, 85%, 46%)',  // row 1
-		'hsl(168, 85%, 54%)',  // row 2
-		'hsl(175, 85%, 62%)',  // row 3 — bottom, lightest
+		'hsl(158, 85%, 38%)', // row 0 — top, darkest
+		'hsl(162, 85%, 46%)', // row 1
+		'hsl(168, 85%, 54%)', // row 2
+		'hsl(175, 85%, 62%)' // row 3 — bottom, lightest
 	];
 
 	// Dot positions [col, row] — same layout as existing logo
@@ -30,7 +30,7 @@
 		{ col: 0, row: 2 }, // 4: lower-left
 		{ col: 1, row: 2 }, // 5: lower-center
 		{ col: 2, row: 2 }, // 6: lower-right
-		{ col: 1, row: 3 }, // 7: bottom
+		{ col: 1, row: 3 } // 7: bottom
 	];
 
 	// Lines: [from-dot-index, to-dot-index]
@@ -52,16 +52,20 @@
 		// mid → top (converge)
 		[1, 0], // mid-left → top
 		[2, 0], // mid-center → top
-		[3, 0], // mid-right → top
+		[3, 0] // mid-right → top
 	];
 
-	const R = 7;       // dot radius
-	const GAP_X = 28;  // horizontal spacing
-	const GAP_Y = 24;  // vertical spacing
+	const R = 7; // dot radius
+	const GAP_X = 28; // horizontal spacing
+	const GAP_Y = 24; // vertical spacing
 	const PAD = 10;
 
-	function dotX(d: typeof dots[0]) { return PAD + d.col * GAP_X; }
-	function dotY(d: typeof dots[0]) { return PAD + d.row * GAP_Y; }
+	function dotX(d: (typeof dots)[0]) {
+		return PAD + d.col * GAP_X;
+	}
+	function dotY(d: (typeof dots)[0]) {
+		return PAD + d.row * GAP_Y;
+	}
 
 	const W = PAD * 2 + 2 * GAP_X;
 	const H = PAD * 2 + 3 * GAP_Y;
@@ -80,12 +84,20 @@
 
 		// 1. Dots appear bottom to top
 		[7, 4, 5, 6, 1, 2, 3, 0].forEach((di, i) => {
-			tl.to(dotEls[di], { opacity: 1, attr: { r: R }, duration: 0.18, ease: 'back.out(2)' }, i * 0.06);
+			tl.to(
+				dotEls[di],
+				{ opacity: 1, attr: { r: R }, duration: 0.18, ease: 'back.out(2)' },
+				i * 0.06
+			);
 		});
 
 		// 2. Lines draw bottom to top (staggered)
 		lines.forEach((_, i) => {
-			tl.to(lineEls[i], { strokeDashoffset: 0, opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.5 + i * 0.07);
+			tl.to(
+				lineEls[i],
+				{ strokeDashoffset: 0, opacity: 1, duration: 0.35, ease: 'power2.out' },
+				0.5 + i * 0.07
+			);
 		});
 
 		// 3. Hold
@@ -107,7 +119,7 @@
 	xmlns="http://www.w3.org/2000/svg"
 >
 	<!-- Lines (drawn first, behind dots) -->
-	{#each lines as [from, to], i}
+	{#each lines as [from, to] (from + '-' + to)}
 		<line
 			x1={dotX(dots[from])}
 			y1={dotY(dots[from])}
@@ -123,13 +135,7 @@
 	{/each}
 
 	<!-- Dots -->
-	{#each dots as d, i}
-		<circle
-			cx={dotX(d)}
-			cy={dotY(d)}
-			r={R}
-			fill={dotColors[d.row]}
-			opacity="0"
-		/>
+	{#each dots as d (d.col + '-' + d.row)}
+		<circle cx={dotX(d)} cy={dotY(d)} r={R} fill={dotColors[d.row]} opacity="0" />
 	{/each}
 </svg>

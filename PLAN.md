@@ -21,13 +21,13 @@ This plan is for the `landing` branch of the Cantor repo at `/Users/jonroby/ai/c
 
 ### Files
 
-| File | Status |
-|------|--------|
-| `src/view/components/landing/LandingPage.svelte` | Active — full layout with nav, hero, feature list, viewport, tab bar |
-| `src/view/components/landing/flows/FlowChat.svelte` | Done — Flow 1 animation (side chats demo) |
-| `src/view/components/landing/CantorLogo.svelte` | Saved for later — animated SVG logo with green dots and criss-crossing lines |
-| `src/view/components/landing/WorkflowChat.svelte` | Obsolete — superseded by FlowChat |
-| `package.json` | gsap 3.14.2 added |
+| File                                                | Status                                                                       |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `src/view/components/landing/LandingPage.svelte`    | Active — full layout with nav, hero, feature list, viewport, tab bar         |
+| `src/view/components/landing/flows/FlowChat.svelte` | Done — Flow 1 animation (side chats demo)                                    |
+| `src/view/components/landing/CantorLogo.svelte`     | Saved for later — animated SVG logo with green dots and criss-crossing lines |
+| `src/view/components/landing/WorkflowChat.svelte`   | Obsolete — superseded by FlowChat                                            |
+| `package.json`                                      | gsap 3.14.2 added                                                            |
 
 ### Layout (LandingPage.svelte)
 
@@ -50,6 +50,7 @@ This plan is for the `landing` branch of the Cantor repo at `/Users/jonroby/ai/c
 ### Flow data format
 
 Each subsection has `{ before, green, after, feature }`:
+
 - `before` + `green` + `after` = full hero sentence
 - `green` words render in emerald gradient
 - `feature` = label shown in left feature col
@@ -96,6 +97,7 @@ Each subsection has `{ before, green, after, feature }`:
 ### 1. Subsection pause/resume (next up)
 
 FlowChat needs to expose pause/resume so LandingPage can freeze the animation while the hero title types, then unfreeze. Options:
+
 - Export `pause()` / `resume()` functions via `bind:this` on the component
 - Pass a `paused` reactive prop that FlowChat watches
 
@@ -112,17 +114,8 @@ Model Selection, Agent Mode, Context Control, Experimental — all need FlowChat
 ## Real App CSS Variables (exact values)
 
 ```css
---background: 0 0% 98%      /* #f9f9f9 */
---foreground: 0 0% 9%       /* #171717 */
---card: 0 0% 100%           /* white */
---muted: 0 0% 96%           /* #f5f5f5 */
---muted-foreground: 0 0% 45% /* #737373 */
---border: 0 0% 88%          /* #e0e0e0 */
---sidebar: 0 0% 97%         /* #f7f7f7 */
---primary: 0 0% 12%         /* #1f1f1f */
---text-sm: 12px
---text-base: 12.75px
---text-md: 13.75px
---text-lg: 15px
---header-height: 52px
+--background: 0 0% 98% /* #f9f9f9 */ --foreground: 0 0% 9% /* #171717 */ --card: 0 0% 100%
+	/* white */ --muted: 0 0% 96% /* #f5f5f5 */ --muted-foreground: 0 0% 45% /* #737373 */ --border: 0
+	0% 88% /* #e0e0e0 */ --sidebar: 0 0% 97% /* #f7f7f7 */ --primary: 0 0% 12% /* #1f1f1f */
+	--text-sm: 12px --text-base: 12.75px --text-md: 13.75px --text-lg: 15px --header-height: 52px;
 ```

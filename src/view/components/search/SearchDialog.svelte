@@ -175,6 +175,7 @@
 	}
 
 	function groupByChat(items: SearchResult[]): ChatGroup[] {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const map = new Map<number, ChatGroup>();
 		for (const item of items) {
 			let group = map.get(item.chatIndex);
@@ -335,7 +336,9 @@
 		background: transparent;
 		color: hsl(var(--muted-foreground));
 		cursor: pointer;
-		transition: background 120ms, color 120ms;
+		transition:
+			background 120ms,
+			color 120ms;
 	}
 
 	.search-close-btn:hover {

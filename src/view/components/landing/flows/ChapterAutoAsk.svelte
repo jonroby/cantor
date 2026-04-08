@@ -21,33 +21,40 @@
 	];
 
 	const prompt2 = 'Can you describe self-attention?';
-	const response2Para1 = 'Self-attention lets every token in a sequence look at every other token simultaneously. For each position, the model computes a weighted sum of all token representations — the weights reflect how relevant each token is to the current one.';
-	const response2Para2 = 'Those weights come from dot products between query and key vectors, scaled and passed through a softmax. The result is a new representation for each token that blends information from the entire context window.';
+	const response2Para1 =
+		'Self-attention lets every token in a sequence look at every other token simultaneously. For each position, the model computes a weighted sum of all token representations — the weights reflect how relevant each token is to the current one.';
+	const response2Para2 =
+		'Those weights come from dot products between query and key vectors, scaled and passed through a softmax. The result is a new representation for each token that blends information from the entire context window.';
 
-	const autoAskPrompt = 'Can you say more about: Those weights come from dot products between query and key vectors...';
+	const autoAskPrompt =
+		'Can you say more about: Those weights come from dot products between query and key vectors...';
 	const autoAskResponseLines = [
 		'The dot product measures alignment between a query and a key —',
 		'high similarity means high attention weight. Scaling by √d_k',
 		'prevents the softmax from saturating in high dimensions.',
 		'',
 		'After softmax, the weights sum to 1 and act as a mixing',
-		'distribution over value vectors. Each token\'s output is',
+		"distribution over value vectors. Each token's output is",
 		'the weighted average of all values in the sequence.'
 	];
 
-	let highlightActive    = $state(false);
+	let highlightActive = $state(false);
 	let contextMenuVisible = $state(false);
-	let contextMenuX       = $state(0);
-	let contextMenuY       = $state(0);
-	let quickAskActive     = $state(false);
-	let showAutoAsk        = $state(false);
+	let contextMenuX = $state(0);
+	let contextMenuY = $state(0);
+	let quickAskActive = $state(false);
+	let showAutoAsk = $state(false);
 
 	let frameEl: HTMLElement;
 	let highlightRef: HTMLElement;
 	let tl: gsap.core.Timeline;
 
-	export function pause()  { tl?.pause();  }
-	export function resume() { tl?.resume(); }
+	export function pause() {
+		tl?.pause();
+	}
+	export function resume() {
+		tl?.resume();
+	}
 
 	function pulse(tl: gsap.core.Timeline, targetId: string) {
 		tl.call(() => {
@@ -67,9 +74,11 @@
 				pointer-events: none;
 				z-index: 200;
 			`;
+			// eslint-disable-next-line svelte/no-dom-manipulating
 			frameEl.appendChild(ring);
 			gsap.to(ring, {
-				width: 72, height: 72,
+				width: 72,
+				height: 72,
 				opacity: 0,
 				boxShadow: '0 0 0 28px rgba(16,185,129,0)',
 				duration: 0.85,
@@ -98,9 +107,11 @@
 				pointer-events: none;
 				z-index: 200;
 			`;
+			// eslint-disable-next-line svelte/no-dom-manipulating
 			frameEl.appendChild(ring);
 			gsap.to(ring, {
-				width: 72, height: 72,
+				width: 72,
+				height: 72,
 				opacity: 0,
 				boxShadow: '0 0 0 28px rgba(16,185,129,0)',
 				duration: 0.85,
@@ -117,42 +128,67 @@
 		tl.to({}, { duration: CHAPTER_START_DELAY_S });
 
 		// Highlight the phrase
-		tl.set({}, { onComplete: () => { highlightActive = true; } });
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					highlightActive = true;
+				}
+			}
+		);
 		tl.to({}, { duration: 0.5 });
 
 		// Right-click → context menu
 		pulseEl(tl, () => highlightRef);
-		tl.set({}, { onComplete: () => {
-			if (highlightRef) {
-				const frame = frameEl.getBoundingClientRect();
-				const r = highlightRef.getBoundingClientRect();
-				contextMenuX = r.right - frame.left - 120;
-				contextMenuY = r.bottom - frame.top - 36;
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					if (highlightRef) {
+						const frame = frameEl.getBoundingClientRect();
+						const r = highlightRef.getBoundingClientRect();
+						contextMenuX = r.right - frame.left - 120;
+						contextMenuY = r.bottom - frame.top - 36;
+					}
+					contextMenuVisible = true;
+				}
 			}
-			contextMenuVisible = true;
-		}});
+		);
 		tl.to({}, { duration: 0.6 });
 
 		// Click "Quick Ask" → highlight button then swap view
-		tl.set({}, { onComplete: () => { quickAskActive = true; } });
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					quickAskActive = true;
+				}
+			}
+		);
 		pulse(tl, 'quick-ask-btn');
-		tl.set({}, { onComplete: () => {
-			quickAskActive = false;
-			contextMenuVisible = false;
-			highlightActive = false;
-			showAutoAsk = true;
-		}});
+		tl.set(
+			{},
+			{
+				onComplete: () => {
+					quickAskActive = false;
+					contextMenuVisible = false;
+					highlightActive = false;
+					showAutoAsk = true;
+				}
+			}
+		);
 		tl.to({}, { duration: 0.05 });
 
 		// Wait for Svelte to render the new elements, then stream in the response
-		tl.call(async () => {
-			await tick();
-			autoAskResponseLines.forEach((_, li) => {
-				gsap.fromTo(
-					`#auto-ask-r-${li}`,
-					{ opacity: 0, y: 4 },
-					{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out', delay: li * 0.18 }
-				);
+		tl.call(() => {
+			tick().then(() => {
+				autoAskResponseLines.forEach((_, li) => {
+					gsap.fromTo(
+						`#auto-ask-r-${li}`,
+						{ opacity: 0, y: 4 },
+						{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out', delay: li * 0.18 }
+					);
+				});
 			});
 		});
 
@@ -165,10 +201,18 @@
 
 <div class="demo-frame" bind:this={frameEl}>
 	<div class="content-area">
-
 		<div class="main">
 			<div class="chat-header">
-				<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="rgba(23,23,23,0.4)" viewBox="0 0 256 256"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="17"
+					height="17"
+					fill="rgba(23,23,23,0.4)"
+					viewBox="0 0 256 256"
+					><path
+						d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"
+					/></svg
+				>
 				<span class="chat-title">Transformers</span>
 			</div>
 
@@ -179,10 +223,11 @@
 						<div class="user-bubble">{prompt1}</div>
 						<div class="exchange-block">
 							<div class="response">
-								{#each response1Lines as line}
+								{#each response1Lines as line (line)}
 									{#if line === ''}
 										<div class="resp-spacer"></div>
 									{:else}
+										<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 										<div class="resp-line">{@html line}</div>
 									{/if}
 								{/each}
@@ -204,7 +249,9 @@
 									bind:this={highlightRef}
 									class="resp-para resp-highlight"
 									class:resp-highlight-active={highlightActive}
-								>{response2Para2}</div>
+								>
+									{response2Para2}
+								</div>
 							</div>
 						</div>
 					{:else}
@@ -212,7 +259,7 @@
 						<div class="user-bubble auto-ask-bubble">{autoAskPrompt}</div>
 						<div class="exchange-block">
 							<div class="response">
-								{#each autoAskResponseLines as line, li}
+								{#each autoAskResponseLines as line, li (li)}
 									{#if line === ''}
 										<div id="auto-ask-r-{li}" class="resp-spacer" style="opacity:0"></div>
 									{:else}
@@ -225,13 +272,16 @@
 				</div>
 			</div>
 		</div>
-
 	</div>
 
 	<!-- Context menu -->
 	{#if contextMenuVisible}
 		<div class="context-menu" style="left: {contextMenuX}px; top: {contextMenuY}px;">
-			<button id="quick-ask-btn" class="context-menu-item" class:context-menu-item-active={quickAskActive}>Quick Ask</button>
+			<button
+				id="quick-ask-btn"
+				class="context-menu-item"
+				class:context-menu-item-active={quickAskActive}>Quick Ask</button
+			>
 		</div>
 	{/if}
 
@@ -245,7 +295,16 @@
 						<span class="composer-placeholder">Chat...</span>
 					</div>
 					<button class="composer-send">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
 							<line x1="12" y1="19" x2="12" y2="5"></line>
 							<polyline points="5 12 12 5 19 12"></polyline>
 						</svg>
@@ -254,7 +313,6 @@
 			</div>
 		</div>
 	</div>
-
 </div>
 
 <style>
@@ -302,7 +360,7 @@
 	.chat-title {
 		font-size: 13.75px;
 		font-weight: 600;
-		color: rgba(23,23,23,0.8);
+		color: rgba(23, 23, 23, 0.8);
 	}
 
 	.messages {
@@ -338,7 +396,7 @@
 		align-self: flex-end;
 		max-width: 65%;
 		background: hsl(0 0% 12%);
-		color: rgba(255,255,255,0.92);
+		color: rgba(255, 255, 255, 0.92);
 		padding: 0.65rem 1rem;
 		border-radius: 12px;
 		font-size: 13.75px;
@@ -352,8 +410,13 @@
 		color: hsl(0 0% 9%);
 	}
 
-	.resp-line { display: block; }
-	.resp-spacer { display: block; height: 0.6em; }
+	.resp-line {
+		display: block;
+	}
+	.resp-spacer {
+		display: block;
+		height: 0.6em;
+	}
 
 	.resp-para {
 		display: block;
@@ -371,7 +434,9 @@
 
 	.resp-highlight {
 		border-radius: 4px;
-		transition: background 0.2s, color 0.2s;
+		transition:
+			background 0.2s,
+			color 0.2s;
 		position: relative;
 		z-index: 1;
 	}
@@ -399,7 +464,7 @@
 		border: none;
 		border-radius: 6px;
 		background: transparent;
-		color: rgba(23,23,23,0.4);
+		color: rgba(23, 23, 23, 0.4);
 		cursor: pointer;
 	}
 
@@ -408,7 +473,7 @@
 		background: white;
 		border: 1px solid hsl(0 0% 88%);
 		border-radius: 8px;
-		box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 		overflow: hidden;
 		z-index: 300;
 		min-width: 110px;
@@ -455,7 +520,7 @@
 		background: white;
 		border: 1px solid hsl(0 0% 88%);
 		border-radius: 20px;
-		box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 		overflow: hidden;
 	}
 
@@ -475,7 +540,7 @@
 		border-radius: 50%;
 		border: 1px solid hsl(0 0% 88%);
 		background: white;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 		flex-shrink: 0;
 		cursor: pointer;
 	}
@@ -486,7 +551,9 @@
 		min-height: 20px;
 	}
 
-	.composer-placeholder { color: rgba(23,23,23,0.3); }
+	.composer-placeholder {
+		color: rgba(23, 23, 23, 0.3);
+	}
 
 	.composer-send {
 		display: flex;

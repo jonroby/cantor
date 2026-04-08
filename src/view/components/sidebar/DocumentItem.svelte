@@ -93,10 +93,7 @@
 					Download
 				</DropdownMenu.Item>
 				<DropdownMenu.Separator class="item-menu-separator" />
-				<DropdownMenu.Item
-					class="item-menu-action item-menu-action-destructive"
-					onclick={onDelete}
-				>
+				<DropdownMenu.Item class="item-menu-action item-menu-action-destructive" onclick={onDelete}>
 					<Trash2 size={14} />
 					Delete
 				</DropdownMenu.Item>
@@ -171,6 +168,4 @@
 	:global(.document-item-menu-trigger:focus-visible) {
 		box-shadow: 0 0 0 2px var(--focus-ring-color);
 	}
-
-
 </style>

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { gsap } from 'gsap';
 	import { Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
 	import ChapterSideChats from './flows/ChapterSideChats.svelte';
 	import ChapterAutoAsk from './flows/ChapterAutoAsk.svelte';
@@ -16,31 +15,57 @@
 	}
 
 	const powerToolsFlows = [
-		{ before: 'Branch ', green: 'side chats',          after: ' off any message.',             feature: 'Side Chats' },
+		{ before: 'Branch ', green: 'side chats', after: ' off any message.', feature: 'Side Chats' },
 		// { before: 'Stream ', green: 'multiple responses',   after: ' at once.',                     feature: 'Simultaneous Streams' },
-		{ before: 'Ask anything with ', green: 'Quick Ask',  after: ' — no context switch.',         feature: 'Quick Ask' },
-		{ before: 'Delete any exchange, ', green: 'clean and instant', after: '.',                  feature: 'Delete Exchanges' },
-		{ before: 'Fork any conversation ', green: 'from any point',   after: '.',                  feature: 'Fork Chats' },
+		{
+			before: 'Ask anything with ',
+			green: 'Quick Ask',
+			after: ' — no context switch.',
+			feature: 'Quick Ask'
+		},
+		{
+			before: 'Delete any exchange, ',
+			green: 'clean and instant',
+			after: '.',
+			feature: 'Delete Exchanges'
+		},
+		{ before: 'Fork any conversation ', green: 'from any point', after: '.', feature: 'Fork Chats' }
 	];
 
 	const sections = [
-		{ label: 'Model Selection',  icon: Zap,          desc: 'Access frontier models, run locally, or connect any Ollama model.' },
-		{ label: 'Agent Mode',       icon: Bot,          desc: 'Full agent control, document authoring, and inline visualizations.' },
-		{ label: 'Context Control',  icon: Sliders,      desc: 'Token monitor, context window visibility, tool selection, and strategy.' },
-		{ label: 'Experimental',     icon: FlaskConical, desc: 'Chat Tree and other features in early development.' },
+		{
+			label: 'Model Selection',
+			icon: Zap,
+			desc: 'Access frontier models, run locally, or connect any Ollama model.'
+		},
+		{
+			label: 'Agent Mode',
+			icon: Bot,
+			desc: 'Full agent control, document authoring, and inline visualizations.'
+		},
+		{
+			label: 'Context Control',
+			icon: Sliders,
+			desc: 'Token monitor, context window visibility, tool selection, and strategy.'
+		},
+		{
+			label: 'Experimental',
+			icon: FlaskConical,
+			desc: 'Chat Tree and other features in early development.'
+		}
 	];
 
 	const flowComponents = [
 		ChapterSideChats,
 		ChapterAutoAsk,
 		ChapterDeleteExchanges,
-		ChapterForkChats,
+		ChapterForkChats
 	] as const;
 
-	let flowIndex   = $state(0);
-	let key         = $state(0);
-	let showVideo   = $state(false);
-	let flowRunId   = $state(0);
+	let flowIndex = $state(0);
+	let key = $state(0);
+	let showVideo = $state(false);
+	let flowRunId = $state(0);
 	let activeTabStyle = $state('opacity: 0;');
 	const ActiveFlow = $derived(flowComponents[flowIndex]);
 	const CHAPTER_TRANSITION_DELAY_MS = 1250;
@@ -106,7 +131,6 @@
 </script>
 
 <div class="page">
-
 	<!-- Sticky nav -->
 	<nav class="nav">
 		<div class="logo-area">
@@ -134,7 +158,6 @@
 
 	<!-- ── Hero section (viewport height) ───────────────────── -->
 	<section class="hero-section">
-
 		<div class="hero-text">
 			<h1 class="tagline">LLMs for <span class="tagline-accent">Power Users</span></h1>
 		</div>
@@ -155,19 +178,19 @@
 		<div class="tab-bar">
 			<div class="tab-pill" bind:this={tabPillEl}>
 				<span class="tab-active-pill" style={activeTabStyle}></span>
-				{#each powerToolsFlows as f, i}
-					{#if i > 0}<span class="tab-divider" class:hidden={flowIndex === i || flowIndex === i - 1}></span>{/if}
+				{#each powerToolsFlows as f, i (f.feature)}
+					{#if i > 0}<span class="tab-divider" class:hidden={flowIndex === i || flowIndex === i - 1}
+						></span>{/if}
 					<div class="tab" class:active={flowIndex === i} data-flow-index={i}>
 						<span class="tab-label">{f.feature}</span>
 					</div>
 				{/each}
 			</div>
 		</div>
-
 	</section>
 
 	<!-- ── Feature sections (scroll) ─────────────────────────── -->
-	{#each sections as { label, icon, desc }, i}
+	{#each sections as { label, icon, desc }, i (label)}
 		{#if label === 'Context Control'}
 			<ContextControl />
 		{:else if label === 'Model Selection'}
@@ -200,7 +223,6 @@
 	<footer class="footer">
 		<span class="footer-text">© 2026 Cantor</span>
 	</footer>
-
 </div>
 
 <style>
@@ -239,7 +261,7 @@
 	.logo-name {
 		font-size: 20px;
 		font-weight: 600;
-		color: rgba(23,23,23,0.88);
+		color: rgba(23, 23, 23, 0.88);
 		letter-spacing: -0.3px;
 	}
 
@@ -264,7 +286,7 @@
 	.btn-ghost {
 		padding: 7px 14px;
 		background: transparent;
-		color: rgba(23,23,23,0.6);
+		color: rgba(23, 23, 23, 0.6);
 		border: none;
 		border-radius: 999px;
 		font-size: 13px;
@@ -273,7 +295,9 @@
 		font-family: inherit;
 	}
 
-	.btn-ghost:hover { color: rgba(23,23,23,0.9); }
+	.btn-ghost:hover {
+		color: rgba(23, 23, 23, 0.9);
+	}
 
 	.btn-dark {
 		display: flex;
@@ -291,7 +315,9 @@
 		transition: opacity 0.15s;
 	}
 
-	.btn-dark:hover { opacity: 0.85; }
+	.btn-dark:hover {
+		opacity: 0.85;
+	}
 
 	.btn-arrow {
 		display: flex;
@@ -333,7 +359,7 @@
 	.tagline {
 		font-size: 56px;
 		font-weight: 800;
-		color: rgba(23,23,23,0.92);
+		color: rgba(23, 23, 23, 0.92);
 		margin: 0;
 		letter-spacing: -0.06em;
 		line-height: 0.94;
@@ -365,8 +391,8 @@
 		border-radius: 12px;
 		overflow: hidden;
 		box-shadow:
-			0 0 0 1px rgba(23,23,23,0.08),
-			0 8px 24px rgba(0,0,0,0.1);
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 8px 24px rgba(0, 0, 0, 0.1);
 	}
 
 	.viewport-placeholder {
@@ -391,7 +417,9 @@
 		background: white;
 		border-radius: 999px;
 		padding: 5px;
-		box-shadow: 0 0 0 1px rgba(23,23,23,0.08), 0 2px 8px rgba(23,23,23,0.06);
+		box-shadow:
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 2px 8px rgba(23, 23, 23, 0.06);
 	}
 
 	.tab-active-pill {
@@ -418,7 +446,7 @@
 		padding: 7px 18px;
 		border-radius: 999px;
 		background: transparent;
-		color: rgba(23,23,23,0.45);
+		color: rgba(23, 23, 23, 0.45);
 		font-size: 13px;
 		font-weight: 500;
 		white-space: nowrap;
@@ -430,23 +458,27 @@
 		color: hsl(162 80% 88%);
 	}
 
-	.tab-label { position: relative; }
+	.tab-label {
+		position: relative;
+	}
 
 	.tab-divider {
 		width: 1px;
 		height: 16px;
-		background: rgba(23,23,23,0.1);
+		background: rgba(23, 23, 23, 0.1);
 		flex-shrink: 0;
 		transition: opacity 0.15s;
 	}
 
-	.tab-divider.hidden { opacity: 0; }
+	.tab-divider.hidden {
+		opacity: 0;
+	}
 
 	/* ── Feature sections ─────────────────────────────────── */
 	.feature-section {
 		height: 100vh;
 		padding: 0 48px;
-		border-top: 1px solid rgba(23,23,23,0.06);
+		border-top: 1px solid rgba(23, 23, 23, 0.06);
 		display: flex;
 		align-items: center;
 		scroll-snap-align: start;
@@ -485,14 +517,14 @@
 	.feature-section-title {
 		font-size: 26px;
 		font-weight: 700;
-		color: rgba(23,23,23,0.9);
+		color: rgba(23, 23, 23, 0.9);
 		letter-spacing: -0.5px;
 		margin: 0 0 12px;
 	}
 
 	.feature-section-desc {
 		font-size: 15px;
-		color: rgba(23,23,23,0.5);
+		color: rgba(23, 23, 23, 0.5);
 		line-height: 1.6;
 		margin: 0;
 	}
@@ -508,8 +540,8 @@
 		border-radius: 12px;
 		overflow: hidden;
 		box-shadow:
-			0 0 0 1px rgba(23,23,23,0.08),
-			0 4px 16px rgba(0,0,0,0.07);
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 4px 16px rgba(0, 0, 0, 0.07);
 	}
 
 	.media-placeholder {
@@ -517,7 +549,7 @@
 		aspect-ratio: 16 / 9;
 		border-radius: 12px;
 		background: hsl(0 0% 95%);
-		border: 1px dashed rgba(23,23,23,0.15);
+		border: 1px dashed rgba(23, 23, 23, 0.15);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -525,14 +557,14 @@
 
 	.media-placeholder-text {
 		font-size: 14px;
-		color: rgba(23,23,23,0.25);
+		color: rgba(23, 23, 23, 0.25);
 		font-weight: 500;
 	}
 
 	/* ── Footer ───────────────────────────────────────────── */
 	.footer {
 		padding: 24px 48px;
-		border-top: 1px solid rgba(23,23,23,0.06);
+		border-top: 1px solid rgba(23, 23, 23, 0.06);
 		display: flex;
 		align-items: center;
 		flex-shrink: 0;
@@ -541,6 +573,6 @@
 
 	.footer-text {
 		font-size: 13px;
-		color: rgba(23,23,23,0.35);
+		color: rgba(23, 23, 23, 0.35);
 	}
 </style>
