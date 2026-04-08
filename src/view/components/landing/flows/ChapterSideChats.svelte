@@ -49,8 +49,6 @@
 	let sideOpen         = $state(false);
 	let sideCount        = $state(0);
 	let sideResponded    = $state([false, false, false]);
-	let exchange2Visible = $state(false);
-	let exchange2Answered = $state(false);
 
 	let frameEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
@@ -109,13 +107,13 @@
 		typeInto(tl, s => { composerText = s; }, prompt2, 0.042);
 		tl.to({}, { duration: 0.18 });
 		pulse(tl, 'composer-send');
-		tl.set({}, { onComplete: () => { composerText = ''; exchange2Visible = true; } });
+		tl.set({}, { onComplete: () => { composerText = ''; } });
+		tl.to('#exchange-2-divider', { opacity: 1, duration: 0.18, ease: 'power2.out' });
 		tl.fromTo('#exchange-2-bubble', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.18, ease: 'power2.out' });
 		tl.to({}, { duration: 0.28 });
 		response2Lines.forEach((_, li) => {
 			tl.fromTo(`#exchange-2-r-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
 		});
-		tl.set({}, { onComplete: () => { exchange2Answered = true; } });
 		tl.to({}, { duration: 0.9 });
 
 		pulse(tl, 'side-badge');
@@ -202,19 +200,17 @@
 						</div>
 					</div>
 
-					{#if exchange2Visible}
-						<div class="exchange-divider"></div>
+					<div id="exchange-2-divider" class="exchange-divider" style="opacity: 0"></div>
 
-						<!-- Exchange 2 -->
-						<div id="exchange-2-bubble" class="user-bubble">{prompt2}</div>
-						<div class="exchange-block">
-							<div class="response">
-								{#each response2Lines as line, li}
-									<div id="exchange-2-r-{li}" class="resp-para" style:opacity={exchange2Answered ? 1 : 0}>{line}</div>
-								{/each}
-							</div>
+					<!-- Exchange 2 -->
+					<div id="exchange-2-bubble" class="user-bubble" style="opacity: 0">{prompt2}</div>
+					<div class="exchange-block">
+						<div class="response">
+							{#each response2Lines as line, li}
+								<div id="exchange-2-r-{li}" class="resp-para" style="opacity: 0">{line}</div>
+							{/each}
 						</div>
-					{/if}
+					</div>
 				</div>
 			</div>
 		</div>

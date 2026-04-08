@@ -18,7 +18,7 @@
 	const powerToolsFlows = [
 		{ before: 'Branch ', green: 'side chats',          after: ' off any message.',             feature: 'Side Chats' },
 		// { before: 'Stream ', green: 'multiple responses',   after: ' at once.',                     feature: 'Simultaneous Streams' },
-		{ before: 'Ask anything with ', green: 'Auto Ask',  after: ' — no context switch.',         feature: 'Auto Ask' },
+		{ before: 'Ask anything with ', green: 'Quick Ask',  after: ' — no context switch.',         feature: 'Quick Ask' },
 		{ before: 'Delete any exchange, ', green: 'clean and instant', after: '.',                  feature: 'Delete Exchanges' },
 		{ before: 'Fork any conversation ', green: 'from any point',   after: '.',                  feature: 'Fork Chats' },
 	];
@@ -37,9 +37,6 @@
 		ChapterForkChats,
 	] as const;
 
-	let typedBefore = $state('LLMs for ');
-	let typedGreen  = $state('Power Users');
-	let typedAfter  = $state('');
 	let flowIndex   = $state(0);
 	let key         = $state(0);
 	let showVideo   = $state(false);
@@ -48,7 +45,6 @@
 	const ActiveFlow = $derived(flowComponents[flowIndex]);
 	const CHAPTER_TRANSITION_DELAY_MS = 1250;
 
-	let currentTl: gsap.core.Timeline | null = null;
 	let initialTaglineTimeout: number | null = null;
 	let pendingFlowAdvanceTimeout: number | null = null;
 	let tabPillEl: HTMLElement;
@@ -59,39 +55,9 @@
 		pendingFlowAdvanceTimeout = null;
 	}
 
-	function playTagline(before: string, green: string, after: string) {
-		if (currentTl) currentTl.kill();
-		typedBefore = '';
-		typedGreen  = '';
-		typedAfter  = '';
-
-		const tl = gsap.timeline();
-		currentTl = tl;
-
-		const full = before + green + after;
-		const greenStart = before.length;
-		const greenEnd   = before.length + green.length;
-
-		tl.to({}, {
-			duration: full.length * 0.034,
-			ease: 'none',
-			onUpdate() {
-				const n = Math.floor(this.progress() * full.length);
-				typedBefore = full.slice(0, Math.min(n, greenStart));
-				typedGreen  = n > greenStart ? full.slice(greenStart, Math.min(n, greenEnd)) : '';
-				typedAfter  = n > greenEnd   ? full.slice(greenEnd, n) : '';
-			},
-			onComplete() {
-				typedBefore = before;
-				typedGreen  = green;
-				typedAfter  = after;
-			}
-		});
-	}
-
 	async function updateActiveTabIndicator() {
 		await tick();
-		const activeTab = tabPillEl?.querySelector<HTMLButtonElement>(`[data-flow-index="${flowIndex}"]`);
+		const activeTab = tabPillEl?.querySelector<HTMLElement>(`[data-flow-index="${flowIndex}"]`);
 		if (!tabPillEl || !activeTab) {
 			activeTabStyle = 'opacity: 0;';
 			return;
@@ -106,8 +72,6 @@
 		flowIndex = i;
 		key++;
 		flowRunId++;
-		const f = powerToolsFlows[i];
-		playTagline(f.before, f.green, f.after);
 		void updateActiveTabIndicator();
 	}
 
@@ -131,13 +95,11 @@
 		if (tabPillEl) resizeObserver.observe(tabPillEl);
 
 		initialTaglineTimeout = window.setTimeout(() => {
-			playTagline(powerToolsFlows[0].before, powerToolsFlows[0].green, powerToolsFlows[0].after);
 			initialTaglineTimeout = null;
 		}, 2000);
 		return () => {
 			if (initialTaglineTimeout !== null) window.clearTimeout(initialTaglineTimeout);
 			clearPendingFlowAdvance();
-			currentTl?.kill();
 			resizeObserver.disconnect();
 		};
 	});
@@ -174,7 +136,7 @@
 	<section class="hero-section">
 
 		<div class="hero-text">
-			<h1 class="tagline">{typedBefore}<span class="tagline-accent">{typedGreen}</span>{typedAfter}</h1>
+			<h1 class="tagline">LLMs for <span class="tagline-accent">Power Users</span></h1>
 		</div>
 
 		<div class="viewport-wrap">
@@ -195,9 +157,9 @@
 				<span class="tab-active-pill" style={activeTabStyle}></span>
 				{#each powerToolsFlows as f, i}
 					{#if i > 0}<span class="tab-divider" class:hidden={flowIndex === i || flowIndex === i - 1}></span>{/if}
-					<button class="tab" class:active={flowIndex === i} data-flow-index={i} onclick={() => switchFlow(i)}>
+					<div class="tab" class:active={flowIndex === i} data-flow-index={i}>
 						<span class="tab-label">{f.feature}</span>
-					</button>
+					</div>
 				{/each}
 			</div>
 		</div>
@@ -361,7 +323,7 @@
 	}
 
 	.hero-text {
-		height: 80px;
+		height: 132px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -369,17 +331,17 @@
 	}
 
 	.tagline {
-		font-size: 44px;
-		font-weight: 700;
+		font-size: 56px;
+		font-weight: 800;
 		color: rgba(23,23,23,0.92);
 		margin: 0;
-		letter-spacing: -2px;
-		line-height: 1.08;
+		letter-spacing: -0.06em;
+		line-height: 0.94;
 		text-align: center;
 	}
 
 	.tagline-accent {
-		background: linear-gradient(90deg, hsl(158 85% 40%), hsl(175 90% 38%));
+		background: linear-gradient(90deg, hsl(156 78% 42%), hsl(177 82% 40%));
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
@@ -454,20 +416,15 @@
 		align-items: center;
 		justify-content: center;
 		padding: 7px 18px;
-		border: none;
 		border-radius: 999px;
 		background: transparent;
 		color: rgba(23,23,23,0.45);
 		font-size: 13px;
 		font-weight: 500;
-		cursor: pointer;
 		white-space: nowrap;
-		font-family: inherit;
 		overflow: hidden;
 		transition: color 0.15s;
 	}
-
-	.tab:hover { color: rgba(23,23,23,0.75); }
 
 	.tab.active {
 		color: hsl(162 80% 88%);

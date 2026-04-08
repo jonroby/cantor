@@ -26,11 +26,11 @@
 		'For the token "sat", the model computes attention scores across all tokens in context.'
 	];
 
-	let exchange1Visible = $state(true);
+	let exchange2Visible = $state(true);
 	let deleteButtonActive = $state(false);
 
 	let frameEl: HTMLElement;
-	let exchange1El: HTMLElement;
+	let exchange2El: HTMLElement;
 	let tl: gsap.core.Timeline;
 
 	export function pause()  { tl?.pause();  }
@@ -80,10 +80,10 @@
 		pulse(tl, () => document.getElementById('delete-btn'));
 		tl.to({}, { duration: 0.2 });
 
-		// Animate exchange 1 out
+		// Animate exchange 2 out
 		tl.set({}, { onComplete: () => { deleteButtonActive = false; } });
-		tl.to(exchange1El, { opacity: 0, height: 0, marginBottom: 0, duration: 0.35, ease: 'power2.inOut' });
-		tl.set({}, { onComplete: () => { exchange1Visible = false; } });
+		tl.to(exchange2El, { opacity: 0, height: 0, marginBottom: 0, duration: 0.35, ease: 'power2.inOut' });
+		tl.set({}, { onComplete: () => { exchange2Visible = false; } });
 		tl.to({}, { duration: 1.2 });
 		tl.call(onComplete);
 
@@ -103,24 +103,39 @@
 			<div class="messages">
 				<div class="messages-inner">
 					<!-- Exchange 1 -->
-					{#if exchange1Visible}
-						<div bind:this={exchange1El} class="exchange1-wrap">
-							<div class="user-bubble">{prompt1}</div>
+					<div class="user-bubble">{prompt1}</div>
+					<div class="exchange-block">
+						<div class="response">
+							{#each response1Lines as line}
+								{#if line === ''}
+									<div class="resp-spacer"></div>
+								{:else}
+									<div class="resp-line">{@html line}</div>
+								{/if}
+							{/each}
+						</div>
+						<div class="msg-toolbar">
+							<button class="icon-chip icon-chip-side icon-chip-active">
+								<span style="display:inline-flex;transform:scaleY(-1)"><Split size={14} /></span>
+								<span class="badge-count">3</span>
+							</button>
+							<button class="icon-chip"><GitFork size={14} /></button>
+							<button class="icon-chip"><Trash2 size={14} /></button>
+						</div>
+					</div>
+
+					<!-- Exchange 2 -->
+					{#if exchange2Visible}
+						<div bind:this={exchange2El} class="exchange2-wrap">
+							<div class="exchange-divider"></div>
+							<div class="user-bubble">{prompt2}</div>
 							<div class="exchange-block">
 								<div class="response">
-									{#each response1Lines as line}
-										{#if line === ''}
-											<div class="resp-spacer"></div>
-										{:else}
-											<div class="resp-line">{@html line}</div>
-										{/if}
+									{#each response2Lines as line}
+										<div class="resp-line">{line}</div>
 									{/each}
 								</div>
 								<div class="msg-toolbar">
-									<button class="icon-chip icon-chip-side icon-chip-active">
-										<span style="display:inline-flex;transform:scaleY(-1)"><Split size={14} /></span>
-										<span class="badge-count">3</span>
-									</button>
 									<button class="icon-chip"><GitFork size={14} /></button>
 									<button
 										id="delete-btn"
@@ -130,23 +145,7 @@
 								</div>
 							</div>
 						</div>
-
-						<div class="exchange-divider"></div>
 					{/if}
-
-					<!-- Exchange 2 -->
-					<div class="user-bubble">{prompt2}</div>
-					<div class="exchange-block">
-						<div class="response">
-							{#each response2Lines as line}
-								<div class="resp-line">{line}</div>
-							{/each}
-						</div>
-						<div class="msg-toolbar">
-							<button class="icon-chip"><GitFork size={14} /></button>
-							<button class="icon-chip"><Trash2 size={14} /></button>
-						</div>
-					</div>
 				</div>
 			</div>
 		</div>
@@ -239,7 +238,7 @@
 		gap: 0.85rem;
 	}
 
-	.exchange1-wrap {
+	.exchange2-wrap {
 		display: flex;
 		flex-direction: column;
 		gap: 0.85rem;
