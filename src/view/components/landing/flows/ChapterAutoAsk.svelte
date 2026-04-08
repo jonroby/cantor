@@ -156,6 +156,7 @@
 		});
 
 		tl.to({}, { duration: autoAskResponseLines.length * 0.18 + 1.0 });
+		tl.call(onComplete);
 
 		tl.play();
 	});

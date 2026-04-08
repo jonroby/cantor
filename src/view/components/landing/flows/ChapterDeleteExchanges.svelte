@@ -84,6 +84,7 @@
 		tl.to(exchange1El, { opacity: 0, height: 0, marginBottom: 0, duration: 0.35, ease: 'power2.inOut' });
 		tl.set({}, { onComplete: () => { exchange1Visible = false; } });
 		tl.to({}, { duration: 1.2 });
+		tl.call(onComplete);
 
 		tl.play();
 	});

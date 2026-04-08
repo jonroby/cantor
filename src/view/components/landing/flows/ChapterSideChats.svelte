@@ -147,6 +147,7 @@
 		});
 		tl.set({}, { onComplete: () => { sideResponded = [true, true, true]; } });
 		tl.to({}, { duration: 1.2 });
+		tl.call(onComplete);
 
 		tl.play();
 	});

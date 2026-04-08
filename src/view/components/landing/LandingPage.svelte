@@ -77,6 +77,10 @@
 		playTagline(f.before, f.green, f.after);
 	}
 
+	function advanceFlow() {
+		switchFlow((flowIndex + 1) % powerToolsFlows.length);
+	}
+
 	onMount(() => {
 		showVideo = true;
 		setTimeout(() => {
@@ -127,13 +131,13 @@
 				{#if showVideo}
 					{#key key}
 						{#if flowIndex === 0}
-							<ChapterSideChats onComplete={() => {}} />
+							<ChapterSideChats onComplete={advanceFlow} />
 						{:else if flowIndex === 1}
-							<ChapterAutoAsk onComplete={() => {}} />
+							<ChapterAutoAsk onComplete={advanceFlow} />
 						{:else if flowIndex === 2}
-							<ChapterDeleteExchanges onComplete={() => {}} />
+							<ChapterDeleteExchanges onComplete={advanceFlow} />
 						{:else}
-							<ChapterForkChats onComplete={() => {}} />
+							<ChapterForkChats onComplete={advanceFlow} />
 						{/if}
 					{/key}
 				{:else}
