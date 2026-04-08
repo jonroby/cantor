@@ -8,6 +8,7 @@
 	}
 
 	const { onComplete }: Props = $props();
+	const CHAPTER_START_DELAY_S = 1.25;
 
 	const prompt1 = 'How does attention work in transformers?';
 	const response1Lines = [
@@ -103,7 +104,7 @@
 	onMount(() => {
 		tl = gsap.timeline({ paused: true });
 
-		tl.to({}, { duration: 0.55 });
+		tl.to({}, { duration: CHAPTER_START_DELAY_S });
 
 		typeInto(tl, s => { composerText = s; }, prompt2, 0.042);
 		tl.to({}, { duration: 0.18 });

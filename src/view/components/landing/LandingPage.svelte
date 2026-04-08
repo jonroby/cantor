@@ -46,9 +46,18 @@
 	let flowRunId   = $state(0);
 	let activeTabStyle = $state('opacity: 0;');
 	const ActiveFlow = $derived(flowComponents[flowIndex]);
+	const CHAPTER_TRANSITION_DELAY_MS = 1250;
 
 	let currentTl: gsap.core.Timeline | null = null;
+	let initialTaglineTimeout: number | null = null;
+	let pendingFlowAdvanceTimeout: number | null = null;
 	let tabPillEl: HTMLElement;
+
+	function clearPendingFlowAdvance() {
+		if (pendingFlowAdvanceTimeout === null) return;
+		window.clearTimeout(pendingFlowAdvanceTimeout);
+		pendingFlowAdvanceTimeout = null;
+	}
 
 	function playTagline(before: string, green: string, after: string) {
 		if (currentTl) currentTl.kill();
@@ -92,6 +101,7 @@
 	}
 
 	function switchFlow(i: number) {
+		clearPendingFlowAdvance();
 		if (i === flowIndex) return;
 		flowIndex = i;
 		key++;
@@ -103,7 +113,12 @@
 
 	function handleFlowComplete(runId: number) {
 		if (runId !== flowRunId) return;
-		switchFlow((flowIndex + 1) % powerToolsFlows.length);
+		clearPendingFlowAdvance();
+		pendingFlowAdvanceTimeout = window.setTimeout(() => {
+			pendingFlowAdvanceTimeout = null;
+			if (runId !== flowRunId) return;
+			switchFlow((flowIndex + 1) % powerToolsFlows.length);
+		}, CHAPTER_TRANSITION_DELAY_MS);
 	}
 
 	onMount(() => {
@@ -115,10 +130,13 @@
 		});
 		if (tabPillEl) resizeObserver.observe(tabPillEl);
 
-		setTimeout(() => {
+		initialTaglineTimeout = window.setTimeout(() => {
 			playTagline(powerToolsFlows[0].before, powerToolsFlows[0].green, powerToolsFlows[0].after);
+			initialTaglineTimeout = null;
 		}, 2000);
 		return () => {
+			if (initialTaglineTimeout !== null) window.clearTimeout(initialTaglineTimeout);
+			clearPendingFlowAdvance();
 			currentTl?.kill();
 			resizeObserver.disconnect();
 		};

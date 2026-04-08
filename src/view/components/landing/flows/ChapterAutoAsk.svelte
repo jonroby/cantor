@@ -8,6 +8,7 @@
 	}
 
 	const { onComplete }: Props = $props();
+	const CHAPTER_START_DELAY_S = 1.25;
 
 	const prompt1 = 'How does attention work in transformers?';
 	const response1Lines = [
@@ -113,7 +114,7 @@
 	onMount(() => {
 		tl = gsap.timeline({ paused: true });
 
-		tl.to({}, { duration: 1.0 });
+		tl.to({}, { duration: CHAPTER_START_DELAY_S });
 
 		// Highlight the phrase
 		tl.set({}, { onComplete: () => { highlightActive = true; } });
