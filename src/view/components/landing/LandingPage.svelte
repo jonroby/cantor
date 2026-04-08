@@ -2,7 +2,10 @@
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap';
 	import { Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
-	import FlowChat from './flows/FlowChat.svelte';
+	import ChapterSideChats from './flows/ChapterSideChats.svelte';
+	import ChapterAutoAsk from './flows/ChapterAutoAsk.svelte';
+	import ChapterDeleteExchanges from './flows/ChapterDeleteExchanges.svelte';
+	import ChapterForkChats from './flows/ChapterForkChats.svelte';
 	import ModelSelection from './ModelSelection.svelte';
 	import ContextControl from './ContextControl.svelte';
 	import Experimental from './Experimental.svelte';
@@ -66,19 +69,12 @@
 		});
 	}
 
-	// Tab index → FlowChat startChapter
-	const flowChapters = [1, 2, 3, 4]; // Side Chats=1, Auto Ask=2, Delete=3, Fork=4
-
 	function switchFlow(i: number) {
 		if (i === flowIndex) return;
 		flowIndex = i;
 		key++;
 		const f = powerToolsFlows[i];
 		playTagline(f.before, f.green, f.after);
-	}
-
-	function getStartChapter(i: number) {
-		return flowChapters[i] ?? 1;
 	}
 
 	onMount(() => {
@@ -130,7 +126,15 @@
 			<div class="viewport">
 				{#if showVideo}
 					{#key key}
-						<FlowChat onComplete={() => {}} startChapter={getStartChapter(flowIndex)} />
+						{#if flowIndex === 0}
+							<ChapterSideChats onComplete={() => {}} />
+						{:else if flowIndex === 1}
+							<ChapterAutoAsk onComplete={() => {}} />
+						{:else if flowIndex === 2}
+							<ChapterDeleteExchanges onComplete={() => {}} />
+						{:else}
+							<ChapterForkChats onComplete={() => {}} />
+						{/if}
 					{/key}
 				{:else}
 					<div class="viewport-placeholder"></div>

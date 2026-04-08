@@ -68,12 +68,12 @@
 	let contextMenuX     = $state(0);
 	let contextMenuY     = $state(0);
 	let showAutoAsk      = $state(false);   // exchange 3 visible
-	let autoAskThinking  = $state(false);
 	let autoAskResponded = $state(false);
 
 	let frameEl: HTMLElement;
 	let sidePanelEl: HTMLElement;
 	let highlightRef: HTMLElement;
+	let messagesEl: HTMLElement;
 	let tl: gsap.core.Timeline;
 
 	export function pause()  { tl?.pause();  }
@@ -168,6 +168,8 @@
 	}
 
 	onMount(() => {
+		if (startChapter >= 2) applyChapter1State();
+
 		tl = gsap.timeline({ paused: true });
 
 		// ── Chapter 1: Side Chats ──────────────────────────────
@@ -227,16 +229,13 @@
 		// ── Chapter 2: Auto Ask ────────────────────────────────
 		tl.addLabel('chapter2');
 
-		if (startChapter >= 2) {
-			tl.set({}, { onComplete: () => applyChapter1State() });
-			tl.to({}, { duration: 1.0 });
+		if (startChapter < 2) {
+			// Close side panel
+			pulse(tl, 'side-close-btn');
+			tl.to(sidePanelEl, { width: 0, opacity: 0, duration: 0.35, ease: 'power3.inOut' });
+			tl.set({}, { onComplete: () => { sideOpen = false; } });
+			tl.to({}, { duration: 0.6 });
 		}
-
-		// Close side panel
-		pulse(tl, 'side-close-btn');
-		tl.to(sidePanelEl, { width: 0, opacity: 0, duration: 0.35, ease: 'power3.inOut' });
-		tl.set({}, { onComplete: () => { sideOpen = false; } });
-		tl.to({}, { duration: 0.6 });
 
 		// Highlight the phrase in exchange 2
 		tl.set({}, { onComplete: () => { highlightActive = true; } });
@@ -261,19 +260,19 @@
 			contextMenuVisible = false;
 			highlightActive = false;
 			showAutoAsk = true;
-			autoAskThinking = true;
+			autoAskResponded = true;
+			// Wait for Svelte to render the response lines, then animate them
+			tick().then(() => {
+				autoAskResponse.forEach((_, li) => {
+					gsap.fromTo(`#auto-ask-r-${li}`,
+						{ opacity: 0, y: 4 },
+						{ opacity: 1, y: 0, duration: 0.16, ease: 'power1.out', delay: li * 0.18 }
+					);
+				});
+			});
 		}});
-		tl.to({}, { duration: 0.8 });
-
-		// Response streams in
-		tl.set({}, { onComplete: () => { autoAskThinking = false; autoAskResponded = true; } });
-		autoAskResponse.forEach((_, li) => {
-			tl.fromTo(`#auto-ask-r-${li}`, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power1.out' }, '<+0.18');
-		});
+		tl.to({}, { duration: autoAskResponse.length * 0.18 + 0.3 });
 		tl.to({}, { duration: 1.2 });
-
-		// Seek to the right chapter if tab was clicked
-		if (startChapter >= 2) tl.seek('chapter2');
 
 		tl.play();
 	});
@@ -291,61 +290,52 @@
 
 			<div class="messages">
 				<div class="messages-inner">
-					<!-- Exchange 1 -->
-					<div class="user-bubble">{prompt1}</div>
-					<div class="exchange-block">
-						<div class="response">
-							{#each response1Lines as line}
-								{#if line === ''}
-									<div class="resp-spacer"></div>
-								{:else}
-									<div class="resp-line">{@html line}</div>
-								{/if}
-							{/each}
+					{#if !showAutoAsk}
+						<!-- Exchange 1 -->
+						<div class="user-bubble">{prompt1}</div>
+						<div class="exchange-block">
+							<div class="response">
+								{#each response1Lines as line}
+									{#if line === ''}
+										<div class="resp-spacer"></div>
+									{:else}
+										<div class="resp-line">{@html line}</div>
+									{/if}
+								{/each}
+							</div>
+							<div class="msg-toolbar">
+								<button id="side-badge" class="icon-chip icon-chip-side" class:icon-chip-active={sideBadgeCount > 0}>
+									<span style="display:inline-flex;transform:scaleY(-1)"><Split size={14} /></span>
+									{#if sideBadgeCount > 0}<span class="badge-count">{sideBadgeCount}</span>{/if}
+								</button>
+								<button class="icon-chip"><GitFork size={14} /></button>
+								<button class="icon-chip"><Trash2 size={14} /></button>
+							</div>
 						</div>
-						<div class="msg-toolbar">
-							<button id="side-badge" class="icon-chip icon-chip-side" class:icon-chip-active={sideBadgeCount > 0}>
-								<span style="display:inline-flex;transform:scaleY(-1)"><Split size={14} /></span>
-								{#if sideBadgeCount > 0}<span class="badge-count">{sideBadgeCount}</span>{/if}
-							</button>
-							<button class="icon-chip"><GitFork size={14} /></button>
-							<button class="icon-chip"><Trash2 size={14} /></button>
-						</div>
-					</div>
 
-					<div class="exchange-divider"></div>
-
-					<!-- Exchange 2 -->
-					<div class="user-bubble">{prompt2}</div>
-					<div class="exchange-block">
-						<div class="response">
-							<div class="resp-line">{response2Lines[0]}</div>
-							<div class="resp-line">For the token "sat", <span
-								bind:this={highlightRef}
-								class="resp-highlight"
-								class:resp-highlight-active={highlightActive}
-							>the model computes attention scores across all tokens in context</span>.</div>
-						</div>
-					</div>
-
-					<!-- Exchange 3: Auto Ask -->
-					{#if showAutoAsk}
 						<div class="exchange-divider"></div>
+
+						<!-- Exchange 2 -->
+						<div class="user-bubble">{prompt2}</div>
+						<div class="exchange-block">
+							<div class="response">
+								<div class="resp-line">{response2Lines[0]}</div>
+								<div class="resp-line">For the token "sat", <span
+									bind:this={highlightRef}
+									class="resp-highlight"
+									class:resp-highlight-active={highlightActive}
+								>the model computes attention scores across all tokens in context</span>.</div>
+							</div>
+						</div>
+					{:else}
+						<!-- Exchange 3: Auto Ask (at top) -->
 						<div class="user-bubble">{autoAskPrompt}</div>
 						<div class="exchange-block">
-							{#if autoAskThinking}
-								<div class="thinking-indicator">
-									<span class="thinking-dot"></span>
-									<span class="thinking-dot"></span>
-									<span class="thinking-dot"></span>
-								</div>
-							{:else if autoAskResponded}
-								<div class="response">
-									{#each autoAskResponse as line, li}
-										<div id="auto-ask-r-{li}" class="resp-line" style="opacity:0">{line}</div>
-									{/each}
-								</div>
-							{/if}
+							<div class="response">
+								{#each autoAskResponse as line, li}
+									<div id="auto-ask-r-{li}" class="resp-line" style="opacity:0">{line}</div>
+								{/each}
+							</div>
 						</div>
 					{/if}
 				</div>
@@ -494,11 +484,17 @@
 	/* ── Messages ─────────────────────────────────────────── */
 	.messages {
 		flex: 1;
-		overflow: hidden;
+		overflow-y: auto;
+		overflow-x: hidden;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		padding: 1.5rem 1.5rem 7rem;
+		scrollbar-width: none;
+	}
+
+	.messages::-webkit-scrollbar {
+		display: none;
 	}
 
 	.messages-inner {
