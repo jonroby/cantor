@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { gsap } from 'gsap';
 	import { Plus, Split, X, ChevronLeft, ChevronRight, GitFork, Trash2 } from 'lucide-svelte';
 
@@ -304,6 +304,10 @@
 		tl.call(onComplete);
 
 		tl.play();
+	});
+
+	onDestroy(() => {
+		tl?.kill();
 	});
 </script>
 
