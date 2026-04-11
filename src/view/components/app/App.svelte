@@ -8,7 +8,8 @@
 	import { SearchDialog } from '@/view/components/search';
 	import { Composer } from '@/view/components/composer';
 	import { LandingPage } from '@/view/components/landing';
-	import { routerState } from '@/view/routes/router.svelte';
+	import { CanvasView } from '@/view/components/canvas-view';
+	import { navigate, routerState } from '@/view/routes/router.svelte';
 	import { ChatView } from '@/view/components/chat-view';
 	import { preloadPlotly } from '@/view/components/document';
 	import { DocumentView } from '@/view/components/document-view';
@@ -29,13 +30,14 @@
 
 	let chatViewRef: ReturnType<typeof ChatView> | null = $state(null);
 	let sideChatViewRef: ReturnType<typeof ChatView> | null = $state(null);
+	let canvasViewRef: ReturnType<typeof CanvasView> | null = $state(null);
 	let composerRef: ReturnType<typeof Composer> | undefined = $state();
 	let chatScrolledAway = $state(false);
 	let workspaceState = $derived(app.workspace.getState());
 
 	let providerState = $derived(app.providers.getState());
 	let agentState = $derived(app.agent.getState());
-	let hasModel = $derived(!!providerState.activeModel);
+	let _hasModel = $derived(!!providerState.activeModel);
 	let hasChatPanel = $derived(workspaceState.panels.some((p) => p.type === 'chat'));
 	let _hasDocPanel = $derived(
 		workspaceState.panels.some((p) => p.type === 'document' || p.type === 'folder')
@@ -54,7 +56,17 @@
 		if (!isSplit) return null;
 		return composerPinned ?? 'left';
 	});
+
+	$effect(() => {
+		const hasSideChat = workspaceState.panels.some((p) => p.type === 'side-chat');
+		if (hasSideChat && composerPinned !== 'right') {
+			composerPinned = 'right';
+		} else if (!hasSideChat && composerPinned === 'right') {
+			composerPinned = null;
+		}
+	});
 	let activeViewRef = $derived.by(() => {
+		if (routerState.route === 'canvas') return canvasViewRef;
 		if (!composerSide) return chatViewRef;
 		const panelOnComposerSide = workspaceState.panels[composerSide === 'left' ? 0 : 1];
 		if (panelOnComposerSide?.type === 'side-chat') return sideChatViewRef;
@@ -63,6 +75,7 @@
 
 	// Sync activeExchangeId to the tail of whichever panel the composer is on
 	$effect(() => {
+		if (routerState.route === 'canvas') return;
 		const panelIndex = composerSide === 'right' ? 1 : 0;
 		const panel = workspaceState.panels[panelIndex];
 		if (!panel) return;
@@ -186,11 +199,34 @@
 	});
 
 	function resetUIState() {
+		canvasViewRef?.resetUIState?.();
 		chatViewRef?.resetUIState();
+		const panels = app.workspace.getState().panels;
+		const withoutSideChat = panels.filter((p) => p.type !== 'side-chat');
+		if (withoutSideChat.length !== panels.length) {
+			app.workspace.setPanels(withoutSideChat);
+		}
 	}
 
 	function focusComposer() {
 		composerRef?.focus();
+	}
+
+	function scrollCurrentViewDown() {
+		if (routerState.route === 'canvas') {
+			canvasViewRef?.scrollToTop?.();
+			return;
+		}
+		if (!composerSide) {
+			chatViewRef?.scrollToBottom();
+			return;
+		}
+		const panelOnComposerSide = workspaceState.panels[composerSide === 'left' ? 0 : 1];
+		if (panelOnComposerSide?.type === 'side-chat') {
+			sideChatViewRef?.scrollToBottom();
+			return;
+		}
+		chatViewRef?.scrollToBottom();
 	}
 
 	function getPanelDocumentKey(panel: PanelEntry) {
@@ -219,8 +255,10 @@
 
 		if (panels.length === 0) {
 			app.workspace.setPanels([documentPanel]);
+		} else if (panels.length === 1 && panels[0]!.type === 'chat') {
+			app.workspace.setPanels([panels[0]!, documentPanel]);
 		} else if (panels.length === 1) {
-			app.workspace.setPanels([...panels, documentPanel]);
+			app.workspace.setPanels([documentPanel]);
 		} else {
 			app.workspace.setPanels([panels[0]!, documentPanel]);
 		}
@@ -248,8 +286,10 @@
 
 		if (panels.length === 0) {
 			app.workspace.setPanels([folderPanel]);
+		} else if (panels.length === 1 && panels[0]!.type === 'chat') {
+			app.workspace.setPanels([panels[0]!, folderPanel]);
 		} else if (panels.length === 1) {
-			app.workspace.setPanels([...panels, folderPanel]);
+			app.workspace.setPanels([folderPanel]);
 		} else {
 			app.workspace.setPanels([panels[0]!, folderPanel]);
 		}
@@ -317,9 +357,16 @@
 	}
 
 	async function handleSearchSelect(result: { chatIndex: number; exchangeId: string }) {
-		selectChat(result.chatIndex);
-		await tick();
-		chatViewRef?.revealExchange(result.exchangeId);
+		if (routerState.route === 'canvas') {
+			app.chat.selectChat(result.chatIndex);
+			app.chat.selectExchange(result.exchangeId);
+			await tick();
+			canvasViewRef?.scrollToNode(result.exchangeId);
+		} else {
+			selectChat(result.chatIndex);
+			await tick();
+			chatViewRef?.revealExchange(result.exchangeId);
+		}
 	}
 
 	const fileFeedback = {
@@ -338,6 +385,7 @@
 	<SidebarPrimitive.Provider
 		bind:open={workspaceState.sidebarOpen}
 		onOpenChange={(open) => app.workspace.setSidebarOpen(open)}
+		class={routerState.route === 'canvas' ? 'canvas-mode' : ''}
 	>
 		<AppSidebar
 			bind:expandedFolders={workspaceState.expandedFolders}
@@ -345,6 +393,7 @@
 			activeChatIndex={hasChatPanel ? app.chat.getActiveChatIndex() : -1}
 			onSelectChat={selectChat}
 			onNewChat={newChat}
+			onSearchOpen={() => (searchOpen = true)}
 			onDeleteChat={doDeleteChat}
 			onRenameChat={app.chat.renameChat}
 			onDownloadChat={app.chat.exportChat}
@@ -369,146 +418,177 @@
 			onDeleteDocument={app.documents.deleteDocument}
 			onRenameDocument={app.documents.renameDocument}
 			onMoveDocument={app.documents.moveDocument}
+			activeRoute={routerState.route}
+			onNavigate={navigate}
 		/>
 		<SidebarPrimitive.Inset>
-			<div class="app-shell">
-				<div class="panel-layout" class:panel-layout-split={isSplit}>
-					{#each workspaceState.panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : panel.type === 'side-chat' ? `side-chat-${panel.parentExchangeId}` : 'chat')}
-						<div class="panel-slot">
-							{#if panel.type === 'chat'}
-								<ChatView
-									bind:this={chatViewRef}
-									onFocusComposer={focusComposer}
-									onClose={() => closePanel(index)}
-									onScrollAwayChange={(away) => (chatScrolledAway = away)}
-								/>
-							{:else if panel.type === 'side-chat'}
-								{@const activeTree = {
-									rootId: app.chat.getChat().rootId,
-									exchanges: app.chat.getChat().exchanges
-								}}
-								{@const sideChats = app.chat.getSideChats(activeTree, panel.parentExchangeId)}
-								<ChatView
-									bind:this={sideChatViewRef}
-									onFocusComposer={focusComposer}
-									onClose={() => closePanel(index)}
-									sideChat={{
-										parentExchangeId: panel.parentExchangeId,
-										sideChatIndex: panel.sideChatIndex,
-										onPrev: () => {
-											if (panel.sideChatIndex > 0) {
-												const newIndex = panel.sideChatIndex - 1;
-												app.workspace.setPanels(
-													workspaceState.panels.map((p, i) =>
-														i === index ? { ...p, sideChatIndex: newIndex } : p
-													)
-												);
-												const tail = sideChats[newIndex]?.at(-1);
-												if (tail) app.chat.selectExchange(tail.id);
-											}
-										},
-										onNext: () => {
-											if (panel.sideChatIndex < sideChats.length - 1) {
-												const newIndex = panel.sideChatIndex + 1;
-												app.workspace.setPanels(
-													workspaceState.panels.map((p, i) =>
-														i === index ? { ...p, sideChatIndex: newIndex } : p
-													)
-												);
-												const tail = sideChats[newIndex]?.at(-1);
-												if (tail) app.chat.selectExchange(tail.id);
-											}
-										},
-										onNew: () => {
-											if (sideChats.length > 0) {
-												app.workspace.setPanels(
-													workspaceState.panels.map((p, i) =>
-														i === index ? { ...p, sideChatIndex: sideChats.length } : p
-													)
-												);
-												app.chat.selectExchange(panel.parentExchangeId);
-											}
-										}
-									}}
-								/>
-							{:else if panel.type === 'document'}
-								<DocumentView
-									folderId={panel.folderId}
-									fileId={panel.fileId}
-									{showToc}
-									agentStreaming={false}
-									agentProvider={providerState.activeModel?.provider}
-									pendingContent={agentState.pendingContent}
-									onAcceptPending={() => app.agent.acceptPending(activeDocumentKey)}
-									onRejectPending={() => app.agent.rejectPending()}
-									onSwap={isSplit ? swapPanels : undefined}
-									onClose={() => closePanel(index)}
-								/>
-							{:else if panel.type === 'folder'}
-								{@const folder = app.documents.getFolder(panel.folderId)}
-								{@const folderFiles = folder?.files ?? []}
-								{@const activeFileId =
-									workspaceState.selectedFileIdsByFolderId[panel.folderId] ??
-									folderFiles[0]?.id ??
-									null}
-								<FolderDocumentView
-									folderId={panel.folderId}
-									folderName={folder?.name ?? 'Folder'}
-									{showToc}
-									files={folderFiles}
-									{activeFileId}
-									agentStreaming={false}
-									agentProvider={providerState.activeModel?.provider}
-									pendingContent={agentState.pendingContent}
-									onSelectFile={(fileId) => {
-										app.workspace.selectFolderFile(panel.folderId, fileId);
-										app.documents.openDocument(panel.folderId, fileId);
-									}}
-									onAcceptPending={() => app.agent.acceptPending(activeDocumentKey)}
-									onRejectPending={() => app.agent.rejectPending()}
-									onSwap={isSplit ? swapPanels : undefined}
-									resolveAsset={(name) => app.documents.resolveAsset(panel.folderId, name)}
-									onContentChange={activeFileId
-										? (c) =>
-												app.documents.updateOpenDocumentContent(panel.folderId, activeFileId, c)
-										: undefined}
-									onClose={() => closePanel(index)}
-								/>
-							{/if}
-						</div>
-					{/each}
+			{#if routerState.route === 'canvas'}
+				<div class="app-shell">
+					<CanvasView bind:this={canvasViewRef} onSearchOpen={() => (searchOpen = true)} />
+					<ComposerAnchor
+						composerSide={null}
+						isSplit={false}
+						{hasChatPanel}
+						chatScrolledAway={false}
+						{agentMode}
+						{activeDocumentFile}
+						{activeDocumentKey}
+						bind:composerRef
+						toolCallbacks={{
+							onOpenDocument: openDocumentInWorkspace,
+							onOpenFolder: openFolderPanel,
+							onClosePanel: closePanel,
+							onToggleSidebar: app.workspace.toggleSidebar
+						}}
+						onScrollToBottom={() => canvasViewRef?.scrollToTop?.()}
+						onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
+						onScrollToNode={(nodeId) => canvasViewRef?.scrollToNode?.(nodeId)}
+						onExpandSideChat={(parentId, targetId) =>
+							canvasViewRef?.expandSideChat?.(parentId, targetId)}
+						onComposerPinChange={() => {}}
+					/>
 				</div>
-
-				{#if workspaceState.panels.length === 0}
-					<div class="welcome-container">
-						<span class="welcome-text">{hasModel ? 'What can I help with?' : 'Welcome!'}</span>
+			{:else}
+				<div class="app-shell">
+					<div class="panel-layout" class:panel-layout-split={isSplit}>
+						{#each workspaceState.panels as panel, index (panel.type === 'document' ? `doc-${panel.folderId}-${panel.fileId}` : panel.type === 'folder' ? `folder-${panel.folderId}` : panel.type === 'side-chat' ? `side-chat-${panel.parentExchangeId}` : 'chat')}
+							<div class="panel-slot">
+								{#if panel.type === 'chat'}
+									<ChatView
+										bind:this={chatViewRef}
+										onFocusComposer={focusComposer}
+										onClose={() => closePanel(index)}
+										onScrollAwayChange={(away) => (chatScrolledAway = away)}
+									/>
+								{:else if panel.type === 'side-chat'}
+									{@const activeTree = {
+										rootId: app.chat.getChat().rootId,
+										exchanges: app.chat.getChat().exchanges
+									}}
+									{@const sideChats = app.chat.getSideChats(activeTree, panel.parentExchangeId)}
+									<ChatView
+										bind:this={sideChatViewRef}
+										onFocusComposer={focusComposer}
+										onClose={() => closePanel(index)}
+										sideChat={{
+											parentExchangeId: panel.parentExchangeId,
+											sideChatIndex: panel.sideChatIndex,
+											onPrev: () => {
+												if (panel.sideChatIndex > 0) {
+													const newIndex = panel.sideChatIndex - 1;
+													app.workspace.setPanels(
+														workspaceState.panels.map((p, i) =>
+															i === index ? { ...p, sideChatIndex: newIndex } : p
+														)
+													);
+													const tail = sideChats[newIndex]?.at(-1);
+													if (tail) app.chat.selectExchange(tail.id);
+												}
+											},
+											onNext: () => {
+												if (panel.sideChatIndex < sideChats.length - 1) {
+													const newIndex = panel.sideChatIndex + 1;
+													app.workspace.setPanels(
+														workspaceState.panels.map((p, i) =>
+															i === index ? { ...p, sideChatIndex: newIndex } : p
+														)
+													);
+													const tail = sideChats[newIndex]?.at(-1);
+													if (tail) app.chat.selectExchange(tail.id);
+												}
+											},
+											onNew: () => {
+												if (sideChats.length > 0) {
+													app.workspace.setPanels(
+														workspaceState.panels.map((p, i) =>
+															i === index ? { ...p, sideChatIndex: sideChats.length } : p
+														)
+													);
+													app.chat.selectExchange(panel.parentExchangeId);
+												}
+											}
+										}}
+									/>
+								{:else if panel.type === 'document'}
+									<DocumentView
+										folderId={panel.folderId}
+										fileId={panel.fileId}
+										{showToc}
+										agentStreaming={false}
+										agentProvider={providerState.activeModel?.provider}
+										pendingContent={agentState.pendingContent}
+										onAcceptPending={() => app.agent.acceptPending(activeDocumentKey)}
+										onRejectPending={() => app.agent.rejectPending()}
+										onSwap={isSplit ? swapPanels : undefined}
+										onClose={() => closePanel(index)}
+									/>
+								{:else if panel.type === 'folder'}
+									{@const folder = app.documents.getFolder(panel.folderId)}
+									{@const folderFiles = folder?.files ?? []}
+									{@const activeFileId =
+										workspaceState.selectedFileIdsByFolderId[panel.folderId] ??
+										folderFiles[0]?.id ??
+										null}
+									<FolderDocumentView
+										folderId={panel.folderId}
+										folderName={folder?.name ?? 'Folder'}
+										{showToc}
+										files={folderFiles}
+										{activeFileId}
+										agentStreaming={false}
+										agentProvider={providerState.activeModel?.provider}
+										pendingContent={agentState.pendingContent}
+										onSelectFile={(fileId) => {
+											app.workspace.selectFolderFile(panel.folderId, fileId);
+											app.documents.openDocument(panel.folderId, fileId);
+										}}
+										onAcceptPending={() => app.agent.acceptPending(activeDocumentKey)}
+										onRejectPending={() => app.agent.rejectPending()}
+										onSwap={isSplit ? swapPanels : undefined}
+										resolveAsset={(name) => app.documents.resolveAsset(panel.folderId, name)}
+										onContentChange={activeFileId
+											? (c) =>
+													app.documents.updateOpenDocumentContent(panel.folderId, activeFileId, c)
+											: undefined}
+										onClose={() => closePanel(index)}
+									/>
+								{/if}
+							</div>
+						{/each}
 					</div>
-				{/if}
-				<ComposerAnchor
-					{composerSide}
-					{isSplit}
-					{hasChatPanel}
-					{chatScrolledAway}
-					{agentMode}
-					{activeDocumentFile}
-					{activeDocumentKey}
-					bind:composerRef
-					toolCallbacks={{
-						onOpenDocument: openDocumentInWorkspace,
-						onOpenFolder: openFolderPanel,
-						onClosePanel: closePanel,
-						onToggleSidebar: app.workspace.toggleSidebar
-					}}
-					onScrollToBottom={() => activeViewRef?.scrollToBottom()}
-					onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
-					onScrollToNode={(nodeId) => {
-						ensureChatPanel();
-						tick().then(() => activeViewRef?.scrollToNode(nodeId));
-					}}
-					onExpandSideChat={(exchangeId) => chatViewRef?.expandSideChat(exchangeId)}
-					onComposerPinChange={(side) => (composerPinned = side)}
-				/>
-			</div>
+
+					{#if workspaceState.panels.length === 0}
+						<div class="welcome-container">
+							<span class="welcome-text">Start a chat or create a doc.</span>
+						</div>
+					{/if}
+					<ComposerAnchor
+						{composerSide}
+						{isSplit}
+						{hasChatPanel}
+						{chatScrolledAway}
+						{agentMode}
+						{activeDocumentFile}
+						{activeDocumentKey}
+						bind:composerRef
+						toolCallbacks={{
+							onOpenDocument: openDocumentInWorkspace,
+							onOpenFolder: openFolderPanel,
+							onClosePanel: closePanel,
+							onToggleSidebar: app.workspace.toggleSidebar
+						}}
+						onScrollToBottom={scrollCurrentViewDown}
+						onToggleMode={() => app.chat.setMode(agentMode ? 'chat' : 'agent')}
+						onScrollToNode={(nodeId) => {
+							ensureChatPanel();
+							tick().then(() => activeViewRef?.scrollToNode(nodeId));
+						}}
+						onExpandSideChat={(parentId, targetId) =>
+							chatViewRef?.expandSideChat(parentId, targetId)}
+						onComposerPinChange={(side) => (composerPinned = side)}
+					/>
+				</div>
+			{/if}
 
 			{#if searchOpen}
 				<SearchDialog
@@ -554,6 +634,22 @@
 		border-right: 1px solid var(--border-color);
 	}
 
+	:global(.canvas-mode .bits-sidebar-wrapper) {
+		position: relative;
+	}
+
+	:global(.canvas-mode .bits-sidebar-root) {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		z-index: 30;
+	}
+
+	:global(.canvas-mode .bits-sidebar-inset) {
+		width: 100%;
+	}
+
 	.welcome-container {
 		position: absolute;
 		top: 40%;
@@ -564,6 +660,7 @@
 	}
 
 	.welcome-text {
+		font-size: 26px;
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
 	}

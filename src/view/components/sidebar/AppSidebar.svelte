@@ -6,11 +6,19 @@
 	import * as Tooltip from '@/view/primitives/tooltip';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
 	import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
-	import { MessageSquarePlus, Upload, FolderPlus } from 'lucide-svelte';
+	import {
+		MessageSquarePlus,
+		Upload,
+		FolderPlus,
+		Search,
+		Workflow,
+		MessagesSquare
+	} from 'lucide-svelte';
 	import ChatItem from './ChatItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import ConfirmDeleteDialog from '@/view/primitives/confirm-delete-dialog/ConfirmDeleteDialog.svelte';
 	import powersetLogo from '@/view/assets/powerset-logo.svg';
+	import type { Route } from '@/view/routes/router.svelte';
 
 	interface Props {
 		chats: app.chat.Chat[];
@@ -40,6 +48,9 @@
 			name: string
 		) => { result: string | null; error?: string };
 		onMoveDocument: (fromFolderId: string, fileId: string, toFolderId: string) => boolean;
+		activeRoute?: Route;
+		onNavigate?: (route: Route) => void;
+		onSearchOpen?: () => void;
 		expandedFolders?: Record<string, boolean>;
 	}
 
@@ -67,6 +78,9 @@
 		onDeleteDocument,
 		onRenameDocument,
 		onMoveDocument,
+		activeRoute = 'chat',
+		onNavigate,
+		onSearchOpen,
 		expandedFolders = $bindable({})
 	}: Props = $props();
 
@@ -256,6 +270,52 @@
 								>
 									<FolderPlus size={16} class="shrink-0" />
 									<span>New folder</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="Search"
+									onclick={() => onSearchOpen?.()}
+									class="sidebar-primary-action"
+								>
+									<Search size={16} class="shrink-0" />
+									<span>Search</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						</Sidebar.Menu>
+					</Sidebar.GroupContent>
+				</Sidebar.Group>
+
+				<Sidebar.Separator class="sidebar-section-separator" />
+
+				<Sidebar.Group class="sidebar-group-reset">
+					<Sidebar.GroupLabel class="sidebar-section-label">
+						<span>Views</span>
+					</Sidebar.GroupLabel>
+					<Sidebar.GroupContent>
+						<Sidebar.Menu>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="Classic view"
+									onclick={() => onNavigate?.('chat')}
+									class={`sidebar-primary-action ${activeRoute === 'chat' ? 'is-selected' : ''}`}
+								>
+									<MessagesSquare size={16} class="shrink-0" />
+									<span>Classic</span>
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton
+									size="default"
+									tooltipContent="Canvas view"
+									onclick={() => onNavigate?.('canvas')}
+									class={`sidebar-primary-action ${activeRoute === 'canvas' ? 'is-selected' : ''}`}
+								>
+									<Workflow size={16} class="shrink-0" />
+									<span>Canvas</span>
+									<span class="sidebar-experimental-badge">Experimental</span>
 								</Sidebar.MenuButton>
 							</Sidebar.MenuItem>
 						</Sidebar.Menu>
@@ -496,14 +556,29 @@
 		align-items: center;
 		margin-top: 3px;
 		margin-left: 0.25rem;
-		border: 1px solid hsl(215 80% 45%);
+		border: 1px solid hsl(158 85% 40%);
 		border-radius: 9999px;
-		background: hsl(215 90% 92%);
+		background: hsl(162 80% 88%);
 		padding: 0.125rem 0.45rem;
 		font-size: 11px;
 		font-weight: var(--font-weight-normal);
 		line-height: 1.2;
-		color: hsl(215 80% 35%);
+		color: hsl(158 85% 28%);
+	}
+
+	.sidebar-experimental-badge {
+		display: inline-flex;
+		align-items: center;
+		margin-top: 3px;
+		margin-left: 0.25rem;
+		border: 1px solid hsl(158 85% 40%);
+		border-radius: 9999px;
+		background: hsl(162 80% 88%);
+		padding: 0.125rem 0.45rem;
+		font-size: 11px;
+		font-weight: var(--font-weight-normal);
+		line-height: 1.2;
+		color: hsl(158 85% 28%);
 	}
 
 	.sidebar-alpha-trigger {
@@ -534,6 +609,12 @@
 	.sidebar-icon-btn:hover {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
+	}
+
+	.is-selected {
+		border-color: hsl(193 78% 42% / 0.34);
+		background: linear-gradient(180deg, hsl(191 85% 95%), hsl(170 63% 94%));
+		color: hsl(191 67% 25%);
 	}
 
 	.sidebar-collapsed-header {

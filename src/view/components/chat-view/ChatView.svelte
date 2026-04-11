@@ -157,7 +157,6 @@
 		const panels = app.workspace.getState().panels;
 		const existing = panels.find((p) => p.type === 'side-chat' && p.parentExchangeId === parentId);
 		if (existing) {
-			onClose?.();
 			return;
 		}
 
@@ -346,7 +345,7 @@
 	function resizeSpacer(el: Element) {
 		if (!mainScrollContainer || !bottomSpacerEl) return;
 		const needed = mainScrollContainer.clientHeight - (el as HTMLElement).offsetHeight;
-		bottomSpacerEl.style.height = `${Math.max(128, needed)}px`;
+		bottomSpacerEl.style.height = `${Math.max(128, needed) + 310}px`;
 	}
 
 	export async function scrollToNode(nodeId: string | null) {
@@ -367,6 +366,8 @@
 
 	export async function scrollToBottom() {
 		if (!mainScrollContainer || mainChatPath.length === 0) return;
+		const lastExchange = mainChatPath[mainChatPath.length - 1]!;
+		if (mainChatPath.length === 1 && !lastExchange.prompt.text && !lastExchange.response) return;
 		const lastId = mainChatPath[mainChatPath.length - 1]!.id;
 		const el = mainScrollContainer.querySelector(`[data-exchange-id="${lastId}"]`);
 		if (el) {
@@ -376,7 +377,7 @@
 		}
 	}
 
-	export function expandSideChat(exchangeId: string) {
+	export function expandSideChat(exchangeId: string, _targetExchangeId?: string) {
 		openSidePanel(exchangeId);
 		tick().then(() => onFocusComposer?.());
 	}

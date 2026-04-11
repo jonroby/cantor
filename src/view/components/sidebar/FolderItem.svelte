@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import {
 		ChevronRight,
-		Ellipsis,
+		EllipsisVertical,
 		Folder,
 		FilePlus,
 		Upload,
@@ -147,6 +147,7 @@
 				/>
 			{:else}
 				<span
+					data-folder-label
 					ondblclick={(e) => {
 						e.stopPropagation();
 						startRenameFolder();
@@ -156,38 +157,38 @@
 		</Sidebar.MenuButton>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger class="folder-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
-				<Ellipsis size={14} />
+				<EllipsisVertical size={18} />
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Portal>
-				<DropdownMenu.Content align="start" side="right" class="folder-item-menu-content">
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onOpenFolder}>
+				<DropdownMenu.Content align="start" side="right" class="item-menu-content">
+					<DropdownMenu.Item class="item-menu-action" onclick={onOpenFolder}>
 						<Folder size={14} strokeWidth={1.5} />
 						Open
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="folder-item-menu-separator" />
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onNewDocument}>
+					<DropdownMenu.Separator class="item-menu-separator" />
+					<DropdownMenu.Item class="item-menu-action" onclick={onNewDocument}>
 						<FilePlus size={14} strokeWidth={1.5} />
 						New file
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onUploadDocument}>
+					<DropdownMenu.Item class="item-menu-action" onclick={onUploadDocument}>
 						<Upload size={14} strokeWidth={1.5} />
 						Upload file
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onUploadFolder}>
+					<DropdownMenu.Item class="item-menu-action" onclick={onUploadFolder}>
 						<FolderUp size={14} strokeWidth={1.5} />
 						Upload folder
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={startRenameFolder}>
+					<DropdownMenu.Item class="item-menu-action" onclick={startRenameFolder}>
 						<Pencil size={14} strokeWidth={1.5} />
 						Rename
 					</DropdownMenu.Item>
-					<DropdownMenu.Item class="folder-item-menu-action" onclick={onDownloadFolder}>
+					<DropdownMenu.Item class="item-menu-action" onclick={onDownloadFolder}>
 						<Download size={14} strokeWidth={1.5} />
 						Download
 					</DropdownMenu.Item>
-					<DropdownMenu.Separator class="folder-item-menu-separator" />
+					<DropdownMenu.Separator class="item-menu-separator" />
 					<DropdownMenu.Item
-						class="folder-item-menu-action folder-item-menu-action-destructive"
+						class="item-menu-action item-menu-action-destructive"
 						onclick={onDeleteFolder}
 					>
 						<Trash2 size={14} strokeWidth={1.5} />
@@ -280,9 +281,10 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .folder-item-button),
-	:global(li[data-sidebar='menu-item'][data-state='open'] .folder-item-button) {
+	:global(li[data-sidebar='menu-item']:has([data-state='open']) .folder-item-button) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
+		padding-right: 2.25rem;
 	}
 
 	:global(.folder-item-menu-trigger) {
@@ -290,8 +292,8 @@
 		top: 50%;
 		right: 0.25rem;
 		display: flex;
-		height: 1.5rem;
-		width: 1.5rem;
+		height: 2rem;
+		width: 2rem;
 		align-items: center;
 		justify-content: center;
 		transform: translateY(-50%);
@@ -301,6 +303,7 @@
 		color: var(--sidebar-icon-muted);
 		opacity: 0;
 		outline: none;
+		cursor: pointer;
 		transition:
 			opacity 120ms ease,
 			color 120ms ease,
@@ -308,55 +311,19 @@
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .folder-item-menu-trigger),
-	:global(.folder-item-menu-trigger[data-state='open']) {
+	:global(li[data-sidebar='menu-item']:has([data-state='open']) .folder-item-menu-trigger) {
 		opacity: 1;
 	}
 
-	:global(.folder-item-menu-trigger:hover) {
+	:global(.folder-item-menu-trigger:hover),
+	:global(.folder-item-menu-trigger:active) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
+		cursor: pointer;
 	}
 
 	:global(.folder-item-menu-trigger:focus-visible) {
 		box-shadow: 0 0 0 2px var(--focus-ring-color);
-	}
-
-	:global(.folder-item-menu-content) {
-		z-index: 50;
-		min-width: var(--dropdown-min-w);
-		padding: 0.25rem;
-		border: 1px solid var(--surface-floating-border);
-		border-radius: 0.5rem;
-		background: var(--surface-floating);
-		color: var(--surface-floating-foreground);
-		box-shadow: var(--surface-floating-shadow);
-	}
-
-	:global(.folder-item-menu-action) {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.375rem 0.5rem;
-		border-radius: 0.375rem;
-		cursor: pointer;
-	}
-
-	:global(.folder-item-menu-action:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.folder-item-menu-action-destructive) {
-		color: hsl(var(--destructive));
-	}
-
-	:global(.folder-item-menu-action-destructive:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.folder-item-menu-separator) {
-		height: 1px;
-		margin: 0.25rem 0;
-		background: var(--border-color);
 	}
 
 	.subfolder-btn {

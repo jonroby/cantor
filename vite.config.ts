@@ -5,6 +5,7 @@ import path from 'path';
 
 export default defineConfig({
 	plugins: [svelte(), devtoolsJson()],
+	publicDir: 'static',
 	build: {
 		chunkSizeWarningLimit: 6500,
 		rollupOptions: {

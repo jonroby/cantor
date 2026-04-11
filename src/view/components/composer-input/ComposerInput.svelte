@@ -255,7 +255,7 @@
 							</Tooltip.Trigger>
 							<Tooltip.Content side="top">Context settings</Tooltip.Content>
 						</Tooltip.Root>
-						<span class="context-strategy-label">Context Window</span>
+						<span class="context-strategy-label">Context</span>
 						{#if contextLength != null}
 							<div class="progress-track compact">
 								<div
@@ -371,15 +371,15 @@
 		cursor: pointer;
 		align-items: center;
 		justify-content: center;
-		border-radius: 50%;
-		border: 1px solid var(--border-color);
-		background: transparent;
-		color: hsl(var(--muted-foreground));
+		border-radius: var(--radius-control);
+		border: 1px solid var(--control-surface-border);
+		background: var(--control-surface-bg);
+		color: var(--control-surface-muted);
 	}
 
 	.composer-attach:hover {
-		background: hsl(var(--muted));
-		color: hsl(var(--foreground));
+		background: var(--control-surface-bg-hover);
+		color: var(--control-surface-foreground);
 	}
 
 	.composer-textarea {
@@ -429,6 +429,30 @@
 		color: hsl(var(--muted-foreground));
 	}
 
+	:global(.model-chip),
+	:global(.mode-chip) {
+		height: 2.7rem;
+		padding: 0 0.9rem !important;
+		font-size: 0.9rem;
+		font-weight: 600;
+	}
+
+	:global(.model-chip) {
+		max-width: 14.5rem;
+		justify-content: flex-start;
+		gap: 0.65rem;
+	}
+
+	:global(.mode-chip) {
+		min-width: 5.8rem;
+		justify-content: center;
+	}
+
+	:global(.model-chip:hover),
+	:global(.mode-chip:hover) {
+		box-shadow: none;
+	}
+
 	.progress-track {
 		flex: 1;
 		min-width: 0;
@@ -461,12 +485,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.375rem;
-		height: 1.375rem;
+		width: 1.75rem;
+		height: 1.75rem;
 		padding: 0;
 		border: none;
 		border-radius: var(--radius-sm);
 		background: transparent;
+		box-shadow: none;
 		color: hsl(var(--muted-foreground));
 		cursor: pointer;
 		transition:

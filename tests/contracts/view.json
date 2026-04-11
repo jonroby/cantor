@@ -1,11 +1,11 @@
 {
 	"AgentActivity": true,
+	"AppSidebar": true,
 	"ChatMessage": true,
 	"ChatView": true,
-	"DocumentView": true,
-	"FolderDocumentView": true,
-	"AppSidebar": true,
 	"Composer": true,
 	"ComposerInput": true,
+	"DocumentView": true,
+	"FolderDocumentView": true,
 	"SearchDialog": true
 }

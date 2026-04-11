@@ -67,36 +67,33 @@
 				onCancel={onCancelRename}
 			/>
 		{:else}
-			<span>{file.name}</span>
+			<span data-doc-label>{file.name}</span>
 		{/if}
 	</Sidebar.MenuButton>
 	<DropdownMenu.Root>
 		<DropdownMenu.Trigger class="document-item-menu-trigger" onclick={(e) => e.stopPropagation()}>
-			<EllipsisVertical size={22} />
+			<EllipsisVertical size={18} />
 		</DropdownMenu.Trigger>
 		<DropdownMenu.Portal>
-			<DropdownMenu.Content align="start" side="right" class="document-item-menu-content">
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onOpen}>
+			<DropdownMenu.Content align="start" side="right" class="item-menu-content">
+				<DropdownMenu.Item class="item-menu-action" onclick={onOpen}>
 					<FileText size={14} />
 					Open
 				</DropdownMenu.Item>
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onAddToChat}>
+				<DropdownMenu.Item class="item-menu-action" onclick={onAddToChat}>
 					<MessageCircle size={14} />
 					Add to chat
 				</DropdownMenu.Item>
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onStartRename}>
+				<DropdownMenu.Item class="item-menu-action" onclick={onStartRename}>
 					<Pencil size={14} />
 					Rename
 				</DropdownMenu.Item>
-				<DropdownMenu.Item class="document-item-menu-action" onclick={onDownload}>
+				<DropdownMenu.Item class="item-menu-action" onclick={onDownload}>
 					<Download size={14} />
 					Download
 				</DropdownMenu.Item>
-				<DropdownMenu.Separator class="document-item-menu-separator" />
-				<DropdownMenu.Item
-					class="document-item-menu-action document-item-menu-action-destructive"
-					onclick={onDelete}
-				>
+				<DropdownMenu.Separator class="item-menu-separator" />
+				<DropdownMenu.Item class="item-menu-action item-menu-action-destructive" onclick={onDelete}>
 					<Trash2 size={14} />
 					Delete
 				</DropdownMenu.Item>
@@ -119,17 +116,18 @@
 	}
 
 	:global(.document-item-button-root) {
-		padding-left: 1.5rem;
+		padding-left: 3.25rem;
 	}
 
 	:global(.document-item-button-indented) {
-		padding-left: 3rem;
+		padding-left: 4.5rem;
 	}
 
 	:global(li[data-sidebar='menu-item']:hover .document-item-button),
 	:global(li[data-sidebar='menu-item']:has([data-state='open']) .document-item-button) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-surface-tint-foreground);
+		padding-right: 2.25rem;
 	}
 
 	:global(.document-item-menu-trigger) {
@@ -148,6 +146,7 @@
 		color: var(--sidebar-icon-muted);
 		opacity: 0;
 		outline: none;
+		cursor: pointer;
 		transition:
 			opacity 120ms ease,
 			color 120ms ease,
@@ -159,51 +158,14 @@
 		opacity: 1;
 	}
 
-	:global(.document-item-menu-trigger:hover) {
+	:global(.document-item-menu-trigger:hover),
+	:global(.document-item-menu-trigger:active) {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
+		cursor: pointer;
 	}
 
 	:global(.document-item-menu-trigger:focus-visible) {
 		box-shadow: 0 0 0 2px var(--focus-ring-color);
-	}
-
-	:global(.document-item-menu-content) {
-		z-index: 50;
-		min-width: var(--dropdown-min-w);
-		padding: 0.25rem;
-		border: 1px solid var(--surface-floating-border);
-		border-radius: 0.5rem;
-		background: var(--surface-floating);
-		color: var(--surface-floating-foreground);
-		box-shadow: var(--surface-floating-shadow);
-	}
-
-	:global(.document-item-menu-action) {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.375rem 0.5rem;
-		border-radius: 0.375rem;
-		font-size: 1rem;
-		cursor: pointer;
-	}
-
-	:global(.document-item-menu-action:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.document-item-menu-action-destructive) {
-		color: hsl(var(--destructive));
-	}
-
-	:global(.document-item-menu-action-destructive:hover) {
-		background: var(--surface-tint);
-	}
-
-	:global(.document-item-menu-separator) {
-		height: 1px;
-		margin: 0.25rem 0;
-		background: var(--border-color);
 	}
 </style>

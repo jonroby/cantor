@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
-	import { Search } from 'lucide-svelte';
-	import { Input } from '@/view/primitives';
+	import { MessageCircle, X } from 'lucide-svelte';
 	import type * as app from '@/app';
 
 	interface Snippet {
@@ -49,6 +48,12 @@
 		onClose,
 		onSelect
 	}: Props = $props();
+
+	let inputEl: HTMLInputElement | null = $state(null);
+
+	$effect(() => {
+		inputEl?.focus();
+	});
 
 	function buildSearchQuery(query: string): SearchQuery {
 		const normalized = query.trim().toLowerCase();
@@ -162,118 +167,253 @@
 			.map(({ score: _, ...result }) => result);
 	}
 
+	// Group results by chat
+	interface ChatGroup {
+		chatIndex: number;
+		chatName: string;
+		results: SearchResult[];
+	}
+
+	function groupByChat(items: SearchResult[]): ChatGroup[] {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const map = new Map<number, ChatGroup>();
+		for (const item of items) {
+			let group = map.get(item.chatIndex);
+			if (!group) {
+				group = {
+					chatIndex: item.chatIndex,
+					chatName: chats[item.chatIndex]?.name ?? 'Chat',
+					results: []
+				};
+				map.set(item.chatIndex, group);
+			}
+			group.results.push(item);
+		}
+		return [...map.values()];
+	}
+
 	let searchItems = $derived(
 		searchQuery.trim() ? searchItemsForQuery(searchQuery.trim()) : getDefaultItems()
 	);
+
+	let grouped = $derived(groupByChat(searchItems.slice(0, 40)));
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') onClose();
+	}
 </script>
 
 <button class="modal-scrim" type="button" aria-label="Close search" onclick={onClose}></button>
-<div class="modal-panel search-panel">
+
+<div class="search-panel" role="dialog" aria-modal="true">
 	<div class="search-header">
-		<Search size={18} />
-		<Input
-			id="search"
+		<input
+			bind:this={inputEl}
 			bind:value={searchQuery}
 			class="search-input"
-			placeholder="Search chats and projects"
+			placeholder="Search chats..."
+			onkeydown={handleKeydown}
+			autocomplete="off"
+			spellcheck="false"
 		/>
-		<label class="search-all-label">
-			<input type="checkbox" bind:checked={searchAllChats} />
-			<span>All chats</span>
-		</label>
+		<div class="search-header-right">
+			<label class="search-all-label">
+				<input type="checkbox" bind:checked={searchAllChats} />
+				<span>All chats</span>
+			</label>
+			<button class="search-close-btn" type="button" onclick={onClose} aria-label="Close">
+				<X size={16} />
+			</button>
+		</div>
 	</div>
+
 	<div class="search-results">
 		{#if searchItems.length === 0}
 			<div class="search-empty">
 				{searchQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}
 			</div>
-		{/if}
-		{#each searchItems.slice(0, 40) as result (result.chatIndex + ':' + result.exchangeId)}
-			<button
-				class="search-result-btn"
-				type="button"
-				onclick={() => {
-					onSelect(result);
-					onClose();
-				}}
-			>
-				<div class="search-result-prompt">{result.prompt}</div>
-				{#if result.snippets[0]}
-					<div class="search-result-snippet">{result.snippets[0].text}</div>
+		{:else}
+			{#each grouped as group (group.chatIndex)}
+				{#if searchAllChats}
+					<div class="search-group-label">{group.chatName}</div>
 				{/if}
-			</button>
-		{/each}
+				{#each group.results as result (result.chatIndex + ':' + result.exchangeId)}
+					<button
+						class="search-result-btn"
+						type="button"
+						onclick={() => {
+							onSelect(result);
+							onClose();
+						}}
+					>
+						<MessageCircle size={16} class="search-result-icon" />
+						<div class="search-result-text">
+							<div class="search-result-prompt">{result.prompt}</div>
+							{#if result.snippets[0] && result.snippets[0].text !== result.prompt}
+								<div class="search-result-snippet">{result.snippets[0].text}</div>
+							{/if}
+						</div>
+					</button>
+				{/each}
+			{/each}
+		{/if}
 	</div>
 </div>
 
 <style>
+	.modal-scrim {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		background: transparent;
+		border: none;
+		cursor: default;
+	}
+
 	.search-panel {
+		position: fixed;
 		top: 6rem;
-		width: min(768px, calc(100vw - 2rem));
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 51;
+		width: min(680px, calc(100vw - 2rem));
+		background: hsl(var(--card));
+		border-radius: 1.25rem;
+		box-shadow:
+			0 0 0 1px hsl(var(--border) / 0.6),
+			0 24px 64px rgba(0, 0, 0, 0.14),
+			0 8px 24px rgba(0, 0, 0, 0.08);
 		overflow: hidden;
-		padding: 0;
 	}
 
 	.search-header {
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		padding: 1.1rem 1.4rem;
+		border-bottom: 1px solid hsl(var(--border) / 0.6);
+	}
+
+	.search-input {
+		flex: 1;
+		border: none;
+		background: transparent;
+		outline: none;
+		font-size: 1.05rem;
+		color: hsl(var(--foreground));
+		line-height: 1.4;
+	}
+
+	.search-input::placeholder {
+		color: hsl(var(--muted-foreground) / 0.6);
+	}
+
+	.search-header-right {
+		display: flex;
+		align-items: center;
 		gap: 0.75rem;
-		border-bottom: 1px solid var(--border-color);
-		padding: 1rem 1.2rem;
+		flex-shrink: 0;
 	}
 
 	.search-all-label {
 		display: flex;
 		align-items: center;
-		gap: 0.45rem;
-		white-space: nowrap;
+		gap: 0.4rem;
+		font-size: 0.82rem;
 		color: hsl(var(--muted-foreground));
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.search-close-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.6rem;
+		height: 1.6rem;
+		border: none;
+		border-radius: 0.4rem;
+		background: transparent;
+		color: hsl(var(--muted-foreground));
+		cursor: pointer;
+		transition:
+			background 120ms,
+			color 120ms;
+	}
+
+	.search-close-btn:hover {
+		background: hsl(var(--muted));
+		color: hsl(var(--foreground));
 	}
 
 	.search-results {
 		display: flex;
-		max-height: 28rem;
 		flex-direction: column;
-		overflow: auto;
-		padding: 0.4rem 0;
+		max-height: 26rem;
+		overflow-y: auto;
+		padding: 0.5rem 0 0.75rem;
 	}
 
 	.search-empty {
-		padding: 2rem 1.2rem;
+		padding: 2.5rem 1.4rem;
 		text-align: center;
 		color: hsl(var(--muted-foreground));
+		font-size: 0.9rem;
+	}
+
+	.search-group-label {
+		padding: 0.6rem 1.4rem 0.25rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: hsl(var(--muted-foreground) / 0.65);
 	}
 
 	.search-result-btn {
 		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
+		align-items: flex-start;
+		gap: 0.75rem;
+		width: 100%;
+		padding: 0.7rem 1.4rem;
+		border: none;
 		border-radius: 0;
-		border: 0;
 		background: transparent;
-		padding: 0.8rem 1.2rem;
-		box-shadow: none;
 		text-align: left;
 		cursor: pointer;
-		width: 100%;
+		transition: background 100ms;
 	}
 
 	.search-result-btn:hover {
-		background: hsl(var(--muted) / 0.75);
+		background: hsl(var(--muted) / 0.6);
+	}
+
+	:global(.search-result-icon) {
+		flex-shrink: 0;
+		margin-top: 0.15rem;
+		color: hsl(var(--muted-foreground) / 0.55);
+	}
+
+	.search-result-text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		min-width: 0;
+	}
+
+	.search-result-prompt {
+		font-size: 0.95rem;
+		color: hsl(var(--foreground));
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.search-result-snippet {
+		font-size: 0.8rem;
 		color: hsl(var(--muted-foreground));
-	}
-
-	:global(.search-input) {
-		border: 0;
-		background: transparent;
-		box-shadow: none;
-	}
-
-	:global(.search-input:focus) {
-		border-color: transparent;
-		box-shadow: none;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 </style>

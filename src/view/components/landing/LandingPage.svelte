@@ -1,422 +1,578 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { ArrowRight, GitBranch, Shield, LayoutDashboard, Sun } from 'lucide-svelte';
-
-	let canvas: HTMLCanvasElement;
-	let animationId: number;
-	let mouseX = -1000;
-	let mouseY = -1000;
-
-	const SPACING = 80;
-	const MAX_RADIUS = 350;
-	const BASE_DOT = 3;
-	const MAX_DOT = 14;
-
-	function setupCanvas() {
-		const dpr = window.devicePixelRatio || 1;
-		const w = window.innerWidth;
-		const h = window.innerHeight;
-		canvas.width = w * dpr;
-		canvas.height = h * dpr;
-		canvas.style.width = w + 'px';
-		canvas.style.height = h + 'px';
-		const ctx = canvas.getContext('2d');
-		if (ctx) ctx.scale(dpr, dpr);
-	}
-
-	function animate() {
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
-
-		const dpr = window.devicePixelRatio || 1;
-		const w = canvas.width / dpr;
-		const h = canvas.height / dpr;
-
-		ctx.save();
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, w, h);
-
-		const cols = Math.ceil(w / SPACING) + 1;
-		const rows = Math.ceil(h / SPACING) + 1;
-		const offsetX = (w - (cols - 1) * SPACING) / 2;
-		const offsetY = (h - (rows - 1) * SPACING) / 2;
-
-		for (let r = 0; r < rows; r++) {
-			for (let c = 0; c < cols; c++) {
-				const x = offsetX + c * SPACING;
-				const y = offsetY + r * SPACING;
-
-				const dx = x - mouseX;
-				const dy = y - mouseY;
-				const dist = Math.sqrt(dx * dx + dy * dy);
-
-				// concentric: closer to mouse = bigger & darker
-				const t = dist < MAX_RADIUS ? 1 - dist / MAX_RADIUS : 0;
-				const radius = BASE_DOT + t * (MAX_DOT - BASE_DOT);
-				const opacity = 0.15 + t * 0.7;
-
-				ctx.beginPath();
-				ctx.arc(x, y, radius, 0, Math.PI * 2);
-				ctx.fillStyle = `rgba(30, 30, 30, ${opacity})`;
-				ctx.fill();
-			}
-		}
-
-		ctx.restore();
-		animationId = requestAnimationFrame(animate);
-	}
-
-	function handleResize() {
-		if (!canvas) return;
-		setupCanvas();
-	}
-
-	function handleMouseMove(e: MouseEvent) {
-		mouseX = e.clientX;
-		mouseY = e.clientY;
-	}
+	import { onMount, tick } from 'svelte';
+	import { Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
+	import ChapterSideChats from './flows/ChapterSideChats.svelte';
+	import ChapterAutoAsk from './flows/ChapterAutoAsk.svelte';
+	import ChapterDeleteExchanges from './flows/ChapterDeleteExchanges.svelte';
+	import ChapterForkChats from './flows/ChapterForkChats.svelte';
+	import ModelSelection from './ModelSelection.svelte';
+	import ContextControl from './ContextControl.svelte';
+	import Experimental from './Experimental.svelte';
+	import AgentMode from './AgentMode.svelte';
 
 	function goToApp() {
 		window.location.hash = '#/';
 	}
 
+	const powerToolsFlows = [
+		{ before: 'Branch ', green: 'side chats', after: ' off any message.', feature: 'Side Chats' },
+		// { before: 'Stream ', green: 'multiple responses',   after: ' at once.',                     feature: 'Simultaneous Streams' },
+		{
+			before: 'Ask anything with ',
+			green: 'Quick Ask',
+			after: ' — no context switch.',
+			feature: 'Quick Ask'
+		},
+		{
+			before: 'Delete any exchange, ',
+			green: 'clean and instant',
+			after: '.',
+			feature: 'Delete Exchanges'
+		},
+		{ before: 'Fork any conversation ', green: 'from any point', after: '.', feature: 'Fork Chats' }
+	];
+
+	const sections = [
+		{
+			label: 'Model Selection',
+			icon: Zap,
+			desc: 'Access frontier models, run locally, or connect any Ollama model.'
+		},
+		{
+			label: 'Agent Mode',
+			icon: Bot,
+			desc: 'Full agent control, document authoring, and inline visualizations.'
+		},
+		{
+			label: 'Context Control',
+			icon: Sliders,
+			desc: 'Token monitor, context window visibility, tool selection, and strategy.'
+		},
+		{
+			label: 'Experimental',
+			icon: FlaskConical,
+			desc: 'Chat Tree and other features in early development.'
+		}
+	];
+
+	const flowComponents = [
+		ChapterSideChats,
+		ChapterAutoAsk,
+		ChapterDeleteExchanges,
+		ChapterForkChats
+	] as const;
+
+	let flowIndex = $state(0);
+	let key = $state(0);
+	let showVideo = $state(false);
+	let flowRunId = $state(0);
+	let activeTabStyle = $state('opacity: 0;');
+	const ActiveFlow = $derived(flowComponents[flowIndex]);
+	const CHAPTER_TRANSITION_DELAY_MS = 1250;
+
+	let initialTaglineTimeout: number | null = null;
+	let pendingFlowAdvanceTimeout: number | null = null;
+	let tabPillEl: HTMLElement;
+
+	function clearPendingFlowAdvance() {
+		if (pendingFlowAdvanceTimeout === null) return;
+		window.clearTimeout(pendingFlowAdvanceTimeout);
+		pendingFlowAdvanceTimeout = null;
+	}
+
+	async function updateActiveTabIndicator() {
+		await tick();
+		const activeTab = tabPillEl?.querySelector<HTMLElement>(`[data-flow-index="${flowIndex}"]`);
+		if (!tabPillEl || !activeTab) {
+			activeTabStyle = 'opacity: 0;';
+			return;
+		}
+
+		activeTabStyle = `width: ${activeTab.offsetWidth}px; transform: translateX(${activeTab.offsetLeft}px); opacity: 1;`;
+	}
+
+	function switchFlow(i: number) {
+		clearPendingFlowAdvance();
+		if (i === flowIndex) return;
+		flowIndex = i;
+		key++;
+		flowRunId++;
+		void updateActiveTabIndicator();
+	}
+
+	function handleFlowComplete(runId: number) {
+		if (runId !== flowRunId) return;
+		clearPendingFlowAdvance();
+		pendingFlowAdvanceTimeout = window.setTimeout(() => {
+			pendingFlowAdvanceTimeout = null;
+			if (runId !== flowRunId) return;
+			switchFlow((flowIndex + 1) % powerToolsFlows.length);
+		}, CHAPTER_TRANSITION_DELAY_MS);
+	}
+
 	onMount(() => {
-		setupCanvas();
-		animate();
+		showVideo = true;
+		void updateActiveTabIndicator();
 
-		window.addEventListener('resize', handleResize);
-		window.addEventListener('mousemove', handleMouseMove);
+		const resizeObserver = new ResizeObserver(() => {
+			void updateActiveTabIndicator();
+		});
+		if (tabPillEl) resizeObserver.observe(tabPillEl);
 
+		initialTaglineTimeout = window.setTimeout(() => {
+			initialTaglineTimeout = null;
+		}, 2000);
 		return () => {
-			cancelAnimationFrame(animationId);
-			window.removeEventListener('resize', handleResize);
-			window.removeEventListener('mousemove', handleMouseMove);
+			if (initialTaglineTimeout !== null) window.clearTimeout(initialTaglineTimeout);
+			clearPendingFlowAdvance();
+			resizeObserver.disconnect();
 		};
 	});
 </script>
 
-<div class="landing">
-	<canvas bind:this={canvas} class="particle-canvas"></canvas>
-
+<div class="page">
+	<!-- Sticky nav -->
 	<nav class="nav">
-		<div class="nav-left">
-			<svg
-				class="logo-icon"
-				width="35"
-				height="40"
-				viewBox="0 0 140 160"
-				xmlns="http://www.w3.org/2000/svg"
-			>
-				<circle cx="70" cy="25" r="8.5" fill="hsl(var(--foreground))" />
-				<circle cx="30" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
-				<circle cx="70" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
-				<circle cx="110" cy="60" r="8.5" fill="hsl(var(--foreground)/0.65)" />
-				<circle cx="30" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
-				<circle cx="70" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
-				<circle cx="110" cy="95" r="8.5" fill="hsl(var(--foreground)/0.4)" />
-				<circle cx="70" cy="130" r="8.5" fill="hsl(var(--foreground)/0.2)" />
+		<div class="logo-area">
+			<svg width="28" height="32" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+				<circle cx="70" cy="25" r="8.5" fill="rgba(23,23,23,0.9)" />
+				<circle cx="30" cy="60" r="8.5" fill="rgba(23,23,23,0.55)" />
+				<circle cx="70" cy="60" r="8.5" fill="rgba(23,23,23,0.55)" />
+				<circle cx="110" cy="60" r="8.5" fill="rgba(23,23,23,0.55)" />
+				<circle cx="30" cy="95" r="8.5" fill="rgba(23,23,23,0.25)" />
+				<circle cx="70" cy="95" r="8.5" fill="rgba(23,23,23,0.25)" />
+				<circle cx="110" cy="95" r="8.5" fill="rgba(23,23,23,0.25)" />
+				<circle cx="70" cy="130" r="8.5" fill="rgba(23,23,23,0.1)" />
 			</svg>
-			<span class="logo">Powerset Labs</span>
+			<span class="logo-name">Cantor</span>
+			<span class="alpha-badge">Alpha</span>
 		</div>
-		<div class="nav-right">
-			<a href="#/landing" class="nav-link">Features</a>
-			<a href="https://github.com" class="nav-link" target="_blank" rel="noopener">GitHub</a>
-			<button class="launch-btn" onclick={goToApp}>
-				Launch App
-				<ArrowRight size={16} />
+		<div class="nav-btns">
+			<button class="btn-ghost">Request a Key</button>
+			<button class="btn-dark" onclick={goToApp}>
+				Get Started
+				<span class="btn-arrow"><ArrowRight size={12} /></span>
 			</button>
 		</div>
 	</nav>
 
-	<main class="hero">
-		<div class="hero-badge">Side Chat Interface</div>
-		<h1 class="hero-title">
-			<span class="gradient-text">CANTOR</span>
-		</h1>
-		<p class="hero-subtitle">
-			Copy conversations. Explore side chats. Visualize your thinking on a canvas. One interface for
-			Claude, Gemini, Ollama, OpenAI, and WebLLM.
-		</p>
-		<div class="hero-actions">
-			<button class="cta-primary" onclick={goToApp}>
-				Start Chatting
-				<ArrowRight size={18} strokeWidth={2.5} />
-			</button>
-			<button class="cta-secondary" onclick={goToApp}>See Features</button>
+	<!-- ── Hero section (viewport height) ───────────────────── -->
+	<section class="hero-section">
+		<div class="hero-text">
+			<h1 class="tagline">LLMs for <span class="tagline-accent">Power Users</span></h1>
 		</div>
 
-		<div class="features-grid">
-			<div class="feature-card">
-				<div class="feature-icon">
-					<GitBranch size={24} />
-				</div>
-				<h3>Side Chat Conversations</h3>
-				<p>Copy any message to explore alternative directions without losing context.</p>
-			</div>
-			<div class="feature-card">
-				<div class="feature-icon">
-					<LayoutDashboard size={24} />
-				</div>
-				<h3>Canvas View</h3>
-				<p>Visualize your entire conversation tree as a zoomable node graph.</p>
-			</div>
-			<div class="feature-card">
-				<div class="feature-icon">
-					<Sun size={24} />
-				</div>
-				<h3>Multi-Provider</h3>
-				<p>Claude, Gemini, Ollama, OpenAI-compatible, and WebLLM — all in one place.</p>
-			</div>
-			<div class="feature-card">
-				<div class="feature-icon">
-					<Shield size={24} />
-				</div>
-				<h3>Local-First</h3>
-				<p>All data stays in your browser. No accounts, no servers, no tracking.</p>
+		<div class="viewport-wrap">
+			<div class="viewport">
+				{#if showVideo}
+					{#key key}
+						<ActiveFlow onComplete={() => handleFlowComplete(flowRunId)} />
+					{/key}
+				{:else}
+					<div class="viewport-placeholder"></div>
+				{/if}
 			</div>
 		</div>
-	</main>
+
+		<!-- Tab bar showing Power Tools subsections -->
+		<div class="tab-bar">
+			<div class="tab-pill" bind:this={tabPillEl}>
+				<span class="tab-active-pill" style={activeTabStyle}></span>
+				{#each powerToolsFlows as f, i (f.feature)}
+					{#if i > 0}<span class="tab-divider" class:hidden={flowIndex === i || flowIndex === i - 1}
+						></span>{/if}
+					<div class="tab" class:active={flowIndex === i} data-flow-index={i}>
+						<span class="tab-label">{f.feature}</span>
+					</div>
+				{/each}
+			</div>
+		</div>
+	</section>
+
+	<!-- ── Feature sections (scroll) ─────────────────────────── -->
+	{#each sections as { label, icon, desc }, i (label)}
+		{#if label === 'Context Control'}
+			<ContextControl />
+		{:else if label === 'Model Selection'}
+			<ModelSelection />
+		{:else if label === 'Agent Mode'}
+			<AgentMode />
+		{:else if label === 'Experimental'}
+			<Experimental />
+		{:else}
+			<section class="feature-section" class:feature-section-alt={i % 2 === 1}>
+				<div class="feature-section-inner">
+					<div class="feature-section-label">
+						<div class="feature-section-icon">
+							<svelte:component this={icon} size={20} />
+						</div>
+						<h2 class="feature-section-title">{label}</h2>
+						<p class="feature-section-desc">{desc}</p>
+					</div>
+					<div class="feature-section-media">
+						<div class="media-placeholder">
+							<span class="media-placeholder-text">{label}</span>
+						</div>
+					</div>
+				</div>
+			</section>
+		{/if}
+	{/each}
+
+	<!-- Footer -->
+	<footer class="footer">
+		<span class="footer-text">© 2026 Cantor</span>
+	</footer>
 </div>
 
 <style>
-	.landing {
-		position: relative;
-		min-height: 100vh;
-		background: hsl(var(--background));
-		font-family: 'Inter', ui-sans-serif, sans-serif;
-		overflow-x: hidden;
+	.page {
+		height: 100vh;
+		overflow-y: scroll;
+		scroll-snap-type: y mandatory;
+		background: white;
+		display: flex;
+		flex-direction: column;
+		font-family: Inter, system-ui, sans-serif;
 	}
 
-	.particle-canvas {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	/* Nav */
+	/* ── Nav ──────────────────────────────────────────────── */
 	.nav {
 		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
+		z-index: 100;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 16px 40px;
-		z-index: 10;
-		backdrop-filter: blur(12px);
-		background: hsl(var(--background) / 0.7);
+		height: 56px;
+		padding: 0 24px;
+		background: white;
+		border-bottom: none;
 	}
 
-	.nav-left {
+	.logo-area {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 	}
 
-	.logo {
-		font-weight: var(--font-weight-bold);
-		letter-spacing: -0.5px;
-		color: hsl(var(--foreground));
+	.logo-name {
+		font-size: 20px;
+		font-weight: 600;
+		color: rgba(23, 23, 23, 0.88);
+		letter-spacing: -0.3px;
 	}
 
-	.nav-right {
+	.alpha-badge {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid hsl(158 75% 42%);
+		border-radius: 9999px;
+		background: hsl(158 70% 90%);
+		padding: 0.1rem 0.45rem;
+		font-size: 11px;
+		color: hsl(158 80% 25%);
+		margin-top: 1px;
+	}
+
+	.nav-btns {
 		display: flex;
 		align-items: center;
-		gap: 24px;
+		gap: 10px;
 	}
 
-	.nav-link {
-		font-weight: var(--font-weight-medium);
-		color: hsl(var(--muted-foreground));
-		text-decoration: none;
-		transition: color 0.2s;
-	}
-
-	.nav-link:hover {
-		color: hsl(var(--foreground));
-	}
-
-	.launch-btn {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		background: hsl(var(--primary));
-		color: hsl(var(--primary-foreground));
+	.btn-ghost {
+		padding: 7px 14px;
+		background: transparent;
+		color: rgba(23, 23, 23, 0.6);
 		border: none;
-		border-radius: var(--radius-full);
-		padding: 8px 20px;
-		font-weight: var(--font-weight-semibold);
+		border-radius: 999px;
+		font-size: 13px;
+		font-weight: 500;
 		cursor: pointer;
-		transition: opacity 0.2s;
+		font-family: inherit;
 	}
 
-	.launch-btn:hover {
-		opacity: 0.88;
+	.btn-ghost:hover {
+		color: rgba(23, 23, 23, 0.9);
 	}
 
-	/* Hero */
-	.hero {
-		position: relative;
-		z-index: 1;
+	.btn-dark {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 7px 8px 7px 16px;
+		background: hsl(0 0% 11%);
+		color: white;
+		border: none;
+		border-radius: 999px;
+		font-size: 13px;
+		font-weight: 400;
+		cursor: pointer;
+		font-family: inherit;
+		transition: opacity 0.15s;
+	}
+
+	.btn-dark:hover {
+		opacity: 0.85;
+	}
+
+	.btn-arrow {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: hsl(0 0% 11%);
+		border: 1px solid white;
+		color: white;
+		flex-shrink: 0;
+	}
+
+	.btn-arrow :global(svg) {
+		stroke: white;
+	}
+
+	/* ── Hero section ─────────────────────────────────────── */
+	.hero-section {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		text-align: center;
-		padding: 160px 24px 80px;
-		max-width: 900px;
-		margin: 0 auto;
+		height: 100vh;
+		padding: calc(56px + 48px) 48px 0;
+		box-sizing: border-box;
+		scroll-snap-align: start;
+		flex-shrink: 0;
 	}
 
-	.hero-badge {
-		display: inline-flex;
+	.hero-text {
+		height: 132px;
+		display: flex;
 		align-items: center;
-		padding: 6px 16px;
-		background: hsl(var(--accent));
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-full);
-		font-weight: var(--font-weight-semibold);
-		color: hsl(var(--accent-foreground));
-		margin-bottom: 24px;
-		letter-spacing: 0.02em;
+		justify-content: center;
+		flex-shrink: 0;
 	}
 
-	.hero-title {
-		font-weight: var(--font-weight-extrabold);
-		line-height: 1.05;
-		letter-spacing: 0.02em;
-		color: hsl(var(--foreground));
-		margin: 0 0 20px;
+	.tagline {
+		font-size: 56px;
+		font-weight: 800;
+		color: rgba(23, 23, 23, 0.92);
+		margin: 0;
+		letter-spacing: -0.06em;
+		line-height: 0.94;
+		text-align: center;
 	}
 
-	.gradient-text {
-		background: linear-gradient(135deg, #6366f1 0%, #ec4899 50%, #f59e0b 100%);
+	.tagline-accent {
+		background: linear-gradient(90deg, hsl(156 78% 42%), hsl(177 82% 40%));
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
 	}
 
-	.hero-subtitle {
-		line-height: 1.6;
-		color: hsl(var(--muted-foreground));
-		max-width: 560px;
-		margin: 0 0 36px;
-	}
-
-	.hero-actions {
+	/* ── Viewport ─────────────────────────────────────────── */
+	.viewport-wrap {
+		width: 100%;
+		max-width: 1100px;
+		flex: 1;
+		min-height: 0;
 		display: flex;
-		gap: 12px;
-		margin-bottom: 80px;
+		flex-direction: column;
+		justify-content: center;
+		padding-bottom: 8px;
 	}
 
-	.cta-primary {
+	.viewport {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow:
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 8px 24px rgba(0, 0, 0, 0.1);
+	}
+
+	.viewport-placeholder {
+		width: 100%;
+		height: 100%;
+		background: hsl(0 0% 98%);
+	}
+
+	/* ── Tab bar ──────────────────────────────────────────── */
+	.tab-bar {
+		display: flex;
+		justify-content: center;
+		padding: 20px 0 28px;
+		flex-shrink: 0;
+		width: 100%;
+	}
+
+	.tab-pill {
+		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 14px 32px;
-		background: hsl(var(--primary));
-		color: hsl(var(--primary-foreground));
-		border: none;
-		border-radius: var(--radius-lg);
-		font-weight: var(--font-weight-semibold);
-		cursor: pointer;
-		transition: all 0.2s;
+		background: white;
+		border-radius: 999px;
+		padding: 5px;
+		box-shadow:
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 2px 8px rgba(23, 23, 23, 0.06);
 	}
 
-	.cta-primary:hover {
-		opacity: 0.88;
-		transform: translateY(-1px);
+	.tab-active-pill {
+		position: absolute;
+		top: 5px;
+		left: 0;
+		bottom: 5px;
+		border-radius: 999px;
+		background: linear-gradient(90deg, hsl(158 85% 28%), hsl(175 85% 28%));
+		box-shadow: 0 0 0 1px hsl(158 75% 42% / 0.4);
+		pointer-events: none;
+		transition:
+			transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.15s ease;
 	}
 
-	.cta-secondary {
-		padding: 14px 32px;
-		background: transparent;
-		color: hsl(var(--foreground));
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-lg);
-		font-weight: var(--font-weight-semibold);
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.cta-secondary:hover {
-		background: hsl(var(--accent));
-	}
-
-	/* Features */
-	.features-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 20px;
-		width: 100%;
-		max-width: 700px;
-	}
-
-	.feature-card {
-		background: hsl(var(--card) / 0.8);
-		backdrop-filter: blur(8px);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-lg);
-		padding: 28px 24px;
-		text-align: left;
-		transition: all 0.25s;
-	}
-
-	.feature-card:hover {
-		border-color: hsl(var(--ring));
-		transform: translateY(-2px);
-		box-shadow: 0 8px 30px hsl(var(--foreground) / 0.06);
-	}
-
-	.feature-icon {
-		width: 40px;
-		height: 40px;
+	.tab {
+		position: relative;
+		z-index: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: hsl(var(--accent));
-		border-radius: var(--radius-md);
-		margin-bottom: 14px;
-		color: hsl(var(--accent-foreground));
+		padding: 7px 18px;
+		border-radius: 999px;
+		background: transparent;
+		color: rgba(23, 23, 23, 0.45);
+		font-size: 13px;
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		transition: color 0.15s;
 	}
 
-	.feature-card h3 {
-		font-weight: var(--font-weight-bold);
-		color: hsl(var(--foreground));
-		margin: 0 0 6px;
+	.tab.active {
+		color: hsl(162 80% 88%);
 	}
 
-	.feature-card p {
-		line-height: 1.5;
-		color: hsl(var(--muted-foreground));
+	.tab-label {
+		position: relative;
+	}
+
+	.tab-divider {
+		width: 1px;
+		height: 16px;
+		background: rgba(23, 23, 23, 0.1);
+		flex-shrink: 0;
+		transition: opacity 0.15s;
+	}
+
+	.tab-divider.hidden {
+		opacity: 0;
+	}
+
+	/* ── Feature sections ─────────────────────────────────── */
+	.feature-section {
+		height: 100vh;
+		padding: 0 48px;
+		border-top: 1px solid rgba(23, 23, 23, 0.06);
+		display: flex;
+		align-items: center;
+		scroll-snap-align: start;
+		flex-shrink: 0;
+		box-sizing: border-box;
+	}
+
+	.feature-section-alt {
+		background: hsl(0 0% 98.5%);
+	}
+
+	.feature-section-inner {
+		max-width: 1100px;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		gap: 64px;
+	}
+
+	.feature-section-label {
+		flex: 0 0 280px;
+	}
+
+	.feature-section-icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: hsl(158 60% 94%);
+		color: hsl(158 75% 35%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 16px;
+	}
+
+	.feature-section-title {
+		font-size: 26px;
+		font-weight: 700;
+		color: rgba(23, 23, 23, 0.9);
+		letter-spacing: -0.5px;
+		margin: 0 0 12px;
+	}
+
+	.feature-section-desc {
+		font-size: 15px;
+		color: rgba(23, 23, 23, 0.5);
+		line-height: 1.6;
 		margin: 0;
 	}
 
-	@media (max-width: 640px) {
-		.nav {
-			padding: 12px 20px;
-		}
-		.nav-link {
-			display: none;
-		}
-		.hero {
-			padding: 120px 20px 60px;
-		}
-		.hero-actions {
-			flex-direction: column;
-			width: 100%;
-		}
-		.cta-primary,
-		.cta-secondary {
-			width: 100%;
-			justify-content: center;
-		}
-		.features-grid {
-			grid-template-columns: 1fr;
-		}
+	.feature-section-media {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.media-component {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow:
+			0 0 0 1px rgba(23, 23, 23, 0.08),
+			0 4px 16px rgba(0, 0, 0, 0.07);
+	}
+
+	.media-placeholder {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		border-radius: 12px;
+		background: hsl(0 0% 95%);
+		border: 1px dashed rgba(23, 23, 23, 0.15);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.media-placeholder-text {
+		font-size: 14px;
+		color: rgba(23, 23, 23, 0.25);
+		font-weight: 500;
+	}
+
+	/* ── Footer ───────────────────────────────────────────── */
+	.footer {
+		padding: 24px 48px;
+		border-top: 1px solid rgba(23, 23, 23, 0.06);
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+		box-sizing: border-box;
+	}
+
+	.footer-text {
+		font-size: 13px;
+		color: rgba(23, 23, 23, 0.35);
 	}
 </style>

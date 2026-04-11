@@ -242,6 +242,8 @@
 
 .palette-field .ui-input {
 	height: 2.25rem;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .palette-hint {

@@ -21,7 +21,7 @@
 		onScrollToBottom: () => void;
 		onToggleMode: () => void;
 		onScrollToNode: (nodeId: string | null) => void;
-		onExpandSideChat: (exchangeId: string) => void;
+		onExpandSideChat: (parentExchangeId: string, targetExchangeId: string) => void;
 		onComposerPinChange: (side: 'left' | 'right') => void;
 	}
 

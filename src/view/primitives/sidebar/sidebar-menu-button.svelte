@@ -123,7 +123,7 @@
 	:global(.bits-sidebar-menu-button[data-active='true']) {
 		background: hsl(var(--sidebar-accent));
 		color: hsl(var(--sidebar-accent-foreground));
-		font-weight: var(--font-weight-medium);
+		font-weight: inherit;
 	}
 
 	:global(.bits-sidebar-menu-button-default) {

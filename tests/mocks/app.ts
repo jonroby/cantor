@@ -228,6 +228,17 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			streamText: mockFn<typeof app.providers.streamText>(),
 			unlockCredentials: mockFn<typeof app.providers.unlockCredentials>()
 		},
+		canvas: {
+			getDeleteMode: mockFn<typeof app.canvas.getDeleteMode>(() => 'exchange'),
+			getExpandedParentFromSelection: mockFn<typeof app.canvas.getExpandedParentFromSelection>(
+				() => null
+			),
+			getHiddenExchangeIds: mockFn<typeof app.canvas.getHiddenExchangeIds>(() => new Set()),
+			getSideChatIndexFromSelection: mockFn<typeof app.canvas.getSideChatIndexFromSelection>(
+				() => 0
+			),
+			isSideRoot: mockFn<typeof app.canvas.isSideRoot>(() => false)
+		},
 		workspace: {
 			clearOpenDocument: mockFn<typeof app.workspace.clearOpenDocument>(),
 			getState: mockFn<typeof app.workspace.getState>(() => ({
