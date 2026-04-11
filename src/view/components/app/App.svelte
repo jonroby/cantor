@@ -559,7 +559,7 @@
 
 					{#if workspaceState.panels.length === 0}
 						<div class="welcome-container">
-							<span class="welcome-text">Start a chat or create a doc.</span>
+							<span class="welcome-text">Open a chat or create a document to get started</span>
 						</div>
 					{/if}
 					<ComposerAnchor
