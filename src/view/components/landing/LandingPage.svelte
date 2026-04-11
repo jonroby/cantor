@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
+	import { navigate } from '@/view/routes/router.svelte';
 	import ChapterSideChats from './flows/ChapterSideChats.svelte';
 	import ChapterAutoAsk from './flows/ChapterAutoAsk.svelte';
 	import ChapterDeleteExchanges from './flows/ChapterDeleteExchanges.svelte';
@@ -11,7 +12,7 @@
 	import AgentMode from './AgentMode.svelte';
 
 	function goToApp() {
-		window.location.hash = '#/';
+		navigate('chat');
 	}
 
 	const powerToolsFlows = [
