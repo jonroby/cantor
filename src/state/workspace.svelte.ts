@@ -19,7 +19,7 @@ export const workspaceState: WorkspaceState = $state({
 });
 
 export function hydrate(layout: Partial<WorkspaceState>) {
-	workspaceState.panels = layout.panels ?? [];
+	workspaceState.panels = layout.panels?.length ? layout.panels : [{ type: 'chat' }];
 	workspaceState.sidebarOpen = layout.sidebarOpen ?? true;
 	workspaceState.expandedFolders = layout.expandedFolders ?? {};
 	workspaceState.selectedFileIdsByFolderId = layout.selectedFileIdsByFolderId ?? {};

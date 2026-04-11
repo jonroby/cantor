@@ -298,9 +298,10 @@
 							<Sidebar.MenuItem>
 								<Sidebar.MenuButton
 									size="default"
+									isActive={activeRoute === 'chat'}
 									tooltipContent="Classic view"
 									onclick={() => onNavigate?.('chat')}
-									class={`sidebar-primary-action ${activeRoute === 'chat' ? 'is-selected' : ''}`}
+									class="sidebar-primary-action"
 								>
 									<MessagesSquare size={16} class="shrink-0" />
 									<span>Classic</span>
@@ -309,9 +310,10 @@
 							<Sidebar.MenuItem>
 								<Sidebar.MenuButton
 									size="default"
+									isActive={activeRoute === 'canvas'}
 									tooltipContent="Canvas view"
 									onclick={() => onNavigate?.('canvas')}
-									class={`sidebar-primary-action ${activeRoute === 'canvas' ? 'is-selected' : ''}`}
+									class="sidebar-primary-action"
 								>
 									<Workflow size={16} class="shrink-0" />
 									<span>Canvas</span>
@@ -609,12 +611,6 @@
 	.sidebar-icon-btn:hover {
 		background: var(--sidebar-surface-tint);
 		color: var(--sidebar-icon-strong);
-	}
-
-	.is-selected {
-		border-color: hsl(193 78% 42% / 0.34);
-		background: linear-gradient(180deg, hsl(191 85% 95%), hsl(170 63% 94%));
-		color: hsl(191 67% 25%);
 	}
 
 	.sidebar-collapsed-header {

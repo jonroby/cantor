@@ -23,6 +23,9 @@ async function hydrateWebLLMModels() {
 }
 
 async function autoConnectOllama() {
+	const host = window.location.hostname;
+	if (host !== 'localhost' && host !== '127.0.0.1') return;
+
 	try {
 		const models = await external.providers.ollama.fetchAvailableModels(
 			external.providers.ollama.DEFAULT_OLLAMA_URL
