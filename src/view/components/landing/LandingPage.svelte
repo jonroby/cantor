@@ -149,7 +149,7 @@
 			<span class="alpha-badge">Alpha</span>
 		</div>
 		<div class="nav-btns">
-			<button class="btn-ghost">Request a Key</button>
+			<!-- <button class="btn-ghost">Request a Key</button> -->
 			<button class="btn-dark" onclick={goToApp}>
 				Get Started
 				<span class="btn-arrow"><ArrowRight size={12} /></span>
