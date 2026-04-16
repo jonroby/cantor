@@ -30,6 +30,7 @@
 
 	let composerValue = $state('');
 	let pendingImages: app.chat.ImageAttachment[] = $state([]);
+	let pendingAudio: { blob: Blob; mimeType: string; durationMs: number }[] = $state([]);
 	let paletteOpen = $state(false);
 	let agentPaletteOpen = $state(false);
 	let contextPaletteOpen = $state(false);
@@ -122,6 +123,7 @@
 
 		composerValue = '';
 		pendingImages = [];
+		pendingAudio = [];
 		if (!result.hasSideChildren) {
 			await tick();
 			onScrollToNode(result.id);
@@ -137,6 +139,7 @@
 	bind:this={composerRef}
 	bind:composerValue
 	bind:pendingImages
+	bind:pendingAudio
 	{agentMode}
 	{anchored}
 	inputMessage={null}

@@ -1,15 +1,23 @@
 <script lang="ts">
 	import { Button } from '@/view/primitives';
 	import * as Tooltip from '@/view/primitives/tooltip';
+	import { AudioRecorder } from '@/view/components/audio-recorder';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { ArrowUp, Square, Plus, X, Settings } from 'lucide-svelte';
 	import type * as app from '@/app';
 
 	type ImageAttachment = app.chat.ImageAttachment;
 
+	export interface AudioAttachment {
+		blob: Blob;
+		mimeType: string;
+		durationMs: number;
+	}
+
 	interface Props {
 		composerValue: string;
 		pendingImages: ImageAttachment[];
+		pendingAudio: AudioAttachment[];
 		agentMode: boolean;
 		inputMessage: string | null;
 		submitDisabledReason: string | null;
@@ -32,6 +40,7 @@
 	let {
 		composerValue = $bindable(),
 		pendingImages = $bindable(),
+		pendingAudio = $bindable(),
 		agentMode,
 		inputMessage,
 		submitDisabledReason,
@@ -100,6 +109,21 @@
 		pendingImages = pendingImages.filter((_, i) => i !== index);
 	}
 
+	function removeAudio(index: number) {
+		pendingAudio = pendingAudio.filter((_, i) => i !== index);
+	}
+
+	function handleRecorded(audio: { blob: Blob; mimeType: string; durationMs: number }) {
+		pendingAudio = [...pendingAudio, audio];
+	}
+
+	function formatDuration(ms: number): string {
+		const s = Math.round(ms / 1000);
+		const min = Math.floor(s / 60);
+		const sec = s % 60;
+		return `${min}:${sec.toString().padStart(2, '0')}`;
+	}
+
 	function fileToBase64(file: File): Promise<string> {
 		return new Promise((resolve, reject) => {
 			const reader = new FileReader();
@@ -145,6 +169,18 @@
 					{/each}
 				</div>
 			{/if}
+			{#if pendingAudio.length > 0}
+				<div class="composer-audio-list">
+					{#each pendingAudio as clip, i (i)}
+						<div class="composer-audio-chip">
+							<span class="composer-audio-label">Audio {formatDuration(clip.durationMs)}</span>
+							<button class="composer-image-remove" type="button" onclick={() => removeAudio(i)}>
+								<X size={12} />
+							</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
 			<div class="composer-row">
 				{#if inputMessage}
 					<span class="composer-message">{inputMessage}</span>
@@ -166,6 +202,7 @@
 							</Tooltip.Trigger>
 							<Tooltip.Content side="top">Attach image</Tooltip.Content>
 						</Tooltip.Root>
+						<AudioRecorder onRecorded={handleRecorded} disabled={!activeModelLabel} />
 					{/if}
 					<textarea
 						bind:this={textareaEl}
@@ -198,7 +235,7 @@
 						type="submit"
 						size="icon"
 						disabled={!!submitDisabledReason ||
-							(!composerValue.trim() && pendingImages.length === 0)}
+							(!composerValue.trim() && pendingImages.length === 0 && pendingAudio.length === 0)}
 						ariaLabel="Send message"
 					>
 						<ArrowUp size={15} strokeWidth={2.5} />
@@ -348,6 +385,29 @@
 
 	.composer-image-remove:hover {
 		background: hsl(var(--foreground));
+	}
+
+	.composer-audio-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		padding: 0.75rem 0.75rem 0;
+	}
+
+	.composer-audio-chip {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-color);
+		background: hsl(var(--muted));
+		font-size: var(--text-sm);
+		color: hsl(var(--foreground));
+	}
+
+	.composer-audio-label {
+		white-space: nowrap;
 	}
 
 	.composer-row {

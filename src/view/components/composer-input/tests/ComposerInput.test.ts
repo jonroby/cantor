@@ -8,6 +8,7 @@ function renderComposerInput(overrides: Partial<Parameters<typeof ComposerInput>
 	const props = {
 		composerValue: '',
 		pendingImages: [],
+		pendingAudio: [],
 		agentMode: false,
 		inputMessage: null,
 		submitDisabledReason: null,
