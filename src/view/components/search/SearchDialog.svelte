@@ -3,21 +3,26 @@
 	import { MessageCircle, X } from 'lucide-svelte';
 	import type * as app from '@/app';
 
-	interface Snippet {
+	interface SnippetSegment {
 		text: string;
-		matchStart: number;
-		matchEnd: number;
+		match: boolean;
+	}
+
+	interface Snippet {
+		field: 'prompt' | 'response';
+		segments: SnippetSegment[];
 	}
 
 	export interface SearchResult {
 		exchangeId: string;
 		chatIndex: number;
 		prompt: string;
-		snippets: Snippet[];
+		snippet: Snippet | null;
 	}
 
-	const SNIPPET_CONTEXT = 80;
-	const TRIGRAM_THRESHOLD = 0.15;
+	const SNIPPET_CONTEXT = 60;
+	const TRIGRAM_THRESHOLD = 0.35;
+	const SHORT_QUERY_MAX = 2;
 
 	interface SearchQuery {
 		raw: string;
@@ -84,46 +89,132 @@
 			}));
 	}
 
-	function scoreText(text: string, query: SearchQuery): number {
+	interface MatchRange {
+		start: number;
+		end: number;
+	}
+
+	interface FieldMatch {
+		score: number;
+		ranges: MatchRange[];
+	}
+
+	function matchShortQuery(normalizedText: string, normalized: string): FieldMatch {
+		const ranges: MatchRange[] = [];
+		let from = 0;
+		while (from <= normalizedText.length - normalized.length) {
+			const index = normalizedText.indexOf(normalized, from);
+			if (index === -1) break;
+			ranges.push({ start: index, end: index + normalized.length });
+			from = index + normalized.length;
+		}
+		return { score: ranges.length > 0 ? 1 : 0, ranges };
+	}
+
+	function mergeRanges(ranges: MatchRange[]): MatchRange[] {
+		if (ranges.length <= 1) return ranges;
+		ranges.sort((a, b) => a.start - b.start);
+		const merged: MatchRange[] = [ranges[0]];
+		for (let i = 1; i < ranges.length; i++) {
+			const last = merged[merged.length - 1];
+			const current = ranges[i];
+			if (current.start <= last.end) {
+				last.end = Math.max(last.end, current.end);
+			} else {
+				merged.push(current);
+			}
+		}
+		return merged;
+	}
+
+	function matchField(text: string, query: SearchQuery): FieldMatch {
+		if (text.length === 0 || query.normalized.length === 0) {
+			return { score: 0, ranges: [] };
+		}
 		const normalizedText = text.toLowerCase();
-		if (query.normalized.length < 3) {
-			return normalizedText.includes(query.normalized) ? 1 : 0;
+		if (query.normalized.length <= SHORT_QUERY_MAX) {
+			return matchShortQuery(normalizedText, query.normalized);
 		}
-
-		const textTrigrams = buildTrigrams(normalizedText);
-		let matches = 0;
-		for (const trigram of query.trigrams) {
-			if (textTrigrams.has(trigram)) matches += 1;
+		const ranges: MatchRange[] = [];
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const matchedTrigrams = new Set<string>();
+		for (let i = 0; i <= normalizedText.length - 3; i++) {
+			const trigram = normalizedText.slice(i, i + 3);
+			if (query.trigrams.has(trigram)) {
+				ranges.push({ start: i, end: i + 3 });
+				matchedTrigrams.add(trigram);
+			}
 		}
-		return matches / query.trigrams.size;
+		const score = matchedTrigrams.size / query.trigrams.size;
+		return { score, ranges: mergeRanges(ranges) };
 	}
 
-	function extractSnippet(text: string, query: SearchQuery): Snippet | null {
-		const matchIndex = text.toLowerCase().indexOf(query.normalized);
-		if (matchIndex === -1) return null;
-
-		const snippetStart = Math.max(0, matchIndex - SNIPPET_CONTEXT);
-		const snippetEnd = Math.min(text.length, matchIndex + query.raw.length + SNIPPET_CONTEXT);
-		const prefix = snippetStart > 0 ? '...' : '';
-		const suffix = snippetEnd < text.length ? '...' : '';
-		return {
-			text: `${prefix}${text.slice(snippetStart, snippetEnd)}${suffix}`,
-			matchStart: matchIndex - snippetStart + prefix.length,
-			matchEnd: matchIndex - snippetStart + query.raw.length + prefix.length
-		};
+	function pickSnippetWindow(
+		textLength: number,
+		ranges: MatchRange[],
+		contextRadius: number
+	): { start: number; end: number } {
+		if (ranges.length === 0) {
+			return { start: 0, end: Math.min(textLength, contextRadius * 2) };
+		}
+		// Find the densest cluster: walk with a sliding window of width = 2 * contextRadius
+		// and pick the window center that covers the most match ranges.
+		const windowWidth = contextRadius * 2;
+		let bestStart = Math.max(0, ranges[0].start - contextRadius);
+		let bestCount = 0;
+		for (const range of ranges) {
+			const candidateStart = Math.max(0, range.start - contextRadius);
+			const candidateEnd = Math.min(textLength, candidateStart + windowWidth);
+			let count = 0;
+			for (const other of ranges) {
+				if (other.start >= candidateStart && other.end <= candidateEnd) count += 1;
+			}
+			if (count > bestCount) {
+				bestCount = count;
+				bestStart = candidateStart;
+			}
+		}
+		const start = bestStart;
+		const end = Math.min(textLength, start + windowWidth);
+		return { start, end };
 	}
 
-	function buildSnippets(exchange: SearchableExchange, query: SearchQuery): Snippet[] {
-		const snippets: Snippet[] = [];
-		if (scoreText(exchange.prompt, query) >= TRIGRAM_THRESHOLD) {
-			const snippet = extractSnippet(exchange.prompt, query);
-			if (snippet) snippets.push(snippet);
+	function sliceSegments(
+		text: string,
+		windowStart: number,
+		windowEnd: number,
+		ranges: MatchRange[]
+	): SnippetSegment[] {
+		const segments: SnippetSegment[] = [];
+		let cursor = windowStart;
+		for (const range of ranges) {
+			if (range.end <= windowStart) continue;
+			if (range.start >= windowEnd) break;
+			const matchStart = Math.max(range.start, windowStart);
+			const matchEnd = Math.min(range.end, windowEnd);
+			if (cursor < matchStart) {
+				segments.push({ text: text.slice(cursor, matchStart), match: false });
+			}
+			segments.push({ text: text.slice(matchStart, matchEnd), match: true });
+			cursor = matchEnd;
 		}
-		if (scoreText(exchange.response, query) >= TRIGRAM_THRESHOLD) {
-			const snippet = extractSnippet(exchange.response, query);
-			if (snippet) snippets.push(snippet);
+		if (cursor < windowEnd) {
+			segments.push({ text: text.slice(cursor, windowEnd), match: false });
 		}
-		return snippets;
+		if (windowStart > 0) segments.unshift({ text: '…', match: false });
+		if (windowEnd < text.length) segments.push({ text: '…', match: false });
+		return segments;
+	}
+
+	function buildSnippet(
+		text: string,
+		field: 'prompt' | 'response',
+		match: FieldMatch
+	): Snippet | null {
+		if (match.ranges.length === 0) return null;
+		const window = pickSnippetWindow(text.length, match.ranges, SNIPPET_CONTEXT);
+		const segments = sliceSegments(text, window.start, window.end, match.ranges);
+		return { field, segments };
 	}
 
 	function getIndices(): number[] {
@@ -136,7 +227,7 @@
 				exchangeId: exchange.id,
 				chatIndex,
 				prompt: exchange.prompt,
-				snippets: []
+				snippet: null
 			}))
 		);
 	}
@@ -145,20 +236,26 @@
 		const searchQuery = buildSearchQuery(query);
 		if (searchQuery.normalized.length === 0) return [];
 
+		const effectiveThreshold =
+			searchQuery.normalized.length <= SHORT_QUERY_MAX ? 1 : TRIGRAM_THRESHOLD;
+
 		return [...new SvelteSet(getIndices())]
 			.flatMap((chatIndex) =>
 				getSearchableExchanges(chats[chatIndex]).flatMap((exchange) => {
-					const score = Math.max(
-						scoreText(exchange.prompt, searchQuery),
-						scoreText(exchange.response, searchQuery)
-					);
-					if (score < TRIGRAM_THRESHOLD) return [];
+					const promptMatch = matchField(exchange.prompt, searchQuery);
+					const responseMatch = matchField(exchange.response, searchQuery);
+					const score = Math.max(promptMatch.score, responseMatch.score);
+					if (score < effectiveThreshold) return [];
+					const snippet =
+						promptMatch.score >= responseMatch.score
+							? buildSnippet(exchange.prompt, 'prompt', promptMatch)
+							: buildSnippet(exchange.response, 'response', responseMatch);
 					return [
 						{
 							exchangeId: exchange.id,
 							chatIndex,
 							prompt: exchange.prompt,
-							snippets: buildSnippets(exchange, searchQuery),
+							snippet,
 							score
 						}
 					];
@@ -261,8 +358,15 @@
 						<MessageCircle size={16} class="search-result-icon" />
 						<div class="search-result-text">
 							<div class="search-result-prompt">{result.prompt}</div>
-							{#if result.snippets[0] && result.snippets[0].text !== result.prompt}
-								<div class="search-result-snippet">{result.snippets[0].text}</div>
+							{#if result.snippet}
+								<div class="search-result-snippet">
+									{#if result.snippet.field === 'response'}<span class="search-result-field"
+											>Response:</span
+										>
+									{/if}{#each result.snippet.segments as segment, i (i)}{#if segment.match}<mark
+												class="search-result-mark">{segment.text}</mark
+											>{:else}{segment.text}{/if}{/each}
+								</div>
 							{/if}
 						</div>
 					</button>
@@ -424,8 +528,24 @@
 	.search-result-snippet {
 		font-size: 0.8rem;
 		color: hsl(var(--muted-foreground));
-		white-space: nowrap;
+		line-height: 1.4;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
 		overflow: hidden;
-		text-overflow: ellipsis;
+		word-break: break-word;
+	}
+
+	.search-result-field {
+		font-weight: 600;
+		color: hsl(var(--muted-foreground) / 0.85);
+		margin-right: 0.3rem;
+	}
+
+	.search-result-mark {
+		background: hsl(var(--accent) / 0.35);
+		color: hsl(var(--foreground));
+		border-radius: 0.15rem;
+		padding: 0 0.1rem;
 	}
 </style>
