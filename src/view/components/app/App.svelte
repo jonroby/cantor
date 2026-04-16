@@ -52,11 +52,15 @@
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let _chatPanelIsFirst = $derived(workspaceState.panels[0]?.type === 'chat');
 	let composerPinned = $state<'left' | 'right'>('left');
-	let composerSide = $derived.by(() => {
-		if (!isSplit) return null;
-		const hasSideChat = workspaceState.panels.some((p) => p.type === 'side-chat');
-		if (hasSideChat) return 'right';
-		return composerPinned;
+	let composerSide = $derived(isSplit ? composerPinned : null);
+
+	let prevSideChatCount = 0;
+	$effect(() => {
+		const sideChatCount = workspaceState.panels.filter((p) => p.type === 'side-chat').length;
+		if (sideChatCount > prevSideChatCount) {
+			composerPinned = 'right';
+		}
+		prevSideChatCount = sideChatCount;
 	});
 	let activeViewRef = $derived.by(() => {
 		if (routerState.route === 'canvas') return canvasViewRef;
