@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { Zap, Bot, Sliders, FlaskConical, ArrowRight } from 'lucide-svelte';
+	import githubLogo from '@/view/assets/github.svg';
 	import { navigate } from '@/view/routes/router.svelte';
 	import ChapterSideChats from './flows/ChapterSideChats.svelte';
 	import ChapterAutoAsk from './flows/ChapterAutoAsk.svelte';
@@ -150,6 +151,15 @@
 		</div>
 		<div class="nav-btns">
 			<!-- <button class="btn-ghost">Request a Key</button> -->
+			<a
+				class="github-link"
+				href="https://github.com/jonroby/cantor"
+				target="_blank"
+				rel="noopener noreferrer"
+				aria-label="View Cantor on GitHub"
+			>
+				<img src={githubLogo} alt="" class="github-logo" />
+			</a>
 			<button class="btn-dark" onclick={goToApp}>
 				Get Started
 				<span class="btn-arrow"><ArrowRight size={12} /></span>
@@ -298,6 +308,30 @@
 
 	.btn-ghost:hover {
 		color: rgba(23, 23, 23, 0.9);
+	}
+
+	.github-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 999px;
+		opacity: 0.82;
+		transition:
+			opacity 0.15s,
+			background 0.15s;
+	}
+
+	.github-link:hover {
+		opacity: 1;
+		background: rgba(23, 23, 23, 0.06);
+	}
+
+	.github-logo {
+		width: 28px;
+		height: 28px;
+		display: block;
 	}
 
 	.btn-dark {
