@@ -6,18 +6,20 @@ UI notes:
 
 - local primitives are built in `src/view/primitives/`
 - interactive primitives use `bits-ui` under the hood where helpful
-- `shadcn-svelte` and Tailwind are no longer part of the app UI stack
 
 ## Features
 
 - Chat with Claude (via API), Gemini, local Ollama models, OpenAI-compatible endpoints, or WebLLM (in-browser)
-- **Workspaces** — independent top-level chat workspaces, managed in the sidebar
+- **Chats** — multiple independent top-level chats, managed in the sidebar
 - **Copies** — copy a conversation path into a new independent chat
 - **Side chats** — branch off any exchange for a quick thread (1 level deep)
 - **Agent mode** — tool-capable chat with document editing, folder management, and workspace actions
 - **Documents & folders** — rich document editing with code editors, drawing boards, and Python execution
-- Context strategies: full history, LRU (most recent within budget), or BM25 (relevance-scored)
+- **Split workspace** — open documents or folders side-by-side with the active chat
+- **Canvas view** — visual graph of the chat tree alongside the linear view
+- Context strategies: full history, LRU (most recent within budget), BM25 (relevance-scored), or embedding similarity
 - In-browser search across all conversations
+- Audio recording in the composer
 - Encrypted API key storage (PBKDF2 + AES-GCM) with session persistence
 
 ## Security
@@ -84,14 +86,17 @@ src/
 │   └── tree/          chat tree data model (exchanges, paths, branches)
 │
 ├── lib/           generic pure support code
-│   ├── validate-md/   markdown validation
-│   ├── bm25           relevance scoring
-│   ├── rename          dedup naming
-│   └── token-estimate  token counting
+│   ├── validate-md/            markdown validation
+│   ├── bm25                    relevance scoring
+│   ├── embedding-similarity    embedding-based relevance scoring
+│   ├── provider-defaults       default provider/model config
+│   ├── provider-types          shared provider type definitions
+│   ├── rename                  dedup naming
+│   └── token-estimate          token counting
 │
 ├── state/         app runtime state (Svelte 5 runes)
 │   ├── agent          agent run state
-│   ├── chats          chat records, active chat, context strategy
+│   ├── chats          chat records, active chat, context strategy, mode
 │   ├── documents      folders and files
 │   ├── providers      API keys, provider config
 │   └── workspace      layout, panels, sidebar
@@ -105,25 +110,31 @@ src/
 ├── app/           orchestration
 │   ├── agent/         agent loop, tool execution, system prompt
 │   ├── bootstrap/     app initialization
+│   ├── canvas/        canvas view selection and visibility
 │   ├── chat/          chat actions (submit, delete, fork, copy, export)
 │   ├── documents/     document/folder CRUD
 │   ├── providers/     provider management, vault
 │   └── workspace/     workspace actions (layout, panels)
 │
-├── view/          UI and presentation logic
-│   ├── routes/        ChatView
-│   ├── features/      code-editor, document, drawing-board, model-palette, python-editor
-│   ├── components/    app components
-│   ├── primitives/    local UI primitives built on Svelte + bits-ui
-│   ├── shared/        shared view utilities
-│   ├── css/           global stylesheets
-│   ├── lib/           view-specific helpers (katex)
-│   └── assets/        static assets
-│
-└── tests/         shared test infrastructure
-    ├── setup/         shared Vitest/browser setup
-    ├── contracts/     public API contract JSON files
-    ├── mocks/         shared mock factories
-    ├── fixtures/      Svelte test harness components
-    └── public-api/    public API enforcement tests
+└── view/          UI and presentation logic
+    ├── routes/        router
+    ├── components/    app, chat-view, canvas-view, composer, sidebar,
+    │                  code-editor, document, drawing-board, python-editor,
+    │                  model-palette, context-palette, agent-palette,
+    │                  agent-activity, audio-recorder, search, landing, …
+    ├── primitives/    local UI primitives built on Svelte + bits-ui
+    ├── css/           global stylesheets
+    ├── lib/           view-specific helpers (katex)
+    └── assets/        static assets
+```
+
+Shared test infrastructure lives at the repo root in `tests/`:
+
+```
+tests/
+├── setup/          shared Vitest/browser setup
+├── contracts/      public API contract JSON files
+├── mocks/          shared mock factories
+├── fixtures/       Svelte test harness components
+└── public-api/     public API enforcement tests
 ```

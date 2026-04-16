@@ -25,7 +25,6 @@ Do not use `npm`, `pnpm`, or `yarn` unless explicitly asked.
 - UI primitives live in `src/view/primitives`
 - use local primitives first before adding new third-party wrapper layers
 - `bits-ui` is allowed as the headless interaction/accessibility layer
-- `shadcn-svelte` and Tailwind are not part of the app UI stack anymore
 
 ## Architecture
 
