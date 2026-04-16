@@ -20,7 +20,7 @@
 <section class="panel">
 	<div class="title-block">
 		<h2 class="heading"><span class="accent">Agent</span> Mode</h2>
-		<p class="title-desc">Full agent control, document authoring, and inline visualizations.</p>
+		<p class="title-desc">Let an agent work with your documents and data.</p>
 	</div>
 
 	<div class="demo">

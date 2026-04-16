@@ -123,7 +123,7 @@
 	);
 
 	const descs: Record<string, string> = {
-		Frontier: 'Access every major frontier model — Claude, GPT, Gemini, and more.',
+		Frontier: 'Access every major frontier model. Claude, GPT, Gemini, and more.',
 		Ollama: 'Run any Ollama model locally, fully private and offline.',
 		WebLLM: 'Run models directly in the browser with no server required.'
 	};

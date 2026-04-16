@@ -172,12 +172,12 @@
 		},
 		{
 			label: 'Context Strategy',
-			desc: 'Choose between full history, recency, keyword, or semantic — and watch your estimated context window shrink.',
+			desc: 'Choose your preferred context strategy to save tokens.',
 			hint: ''
 		},
 		{
 			label: 'Agent Tools',
-			desc: 'Grant agents only the tools they need — nothing more.',
+			desc: 'Grant agents only the tools they need. Nothing more.',
 			hint: ''
 		}
 	];

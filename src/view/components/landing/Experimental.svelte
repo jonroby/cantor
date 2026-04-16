@@ -1,7 +1,7 @@
 <section class="panel">
 	<div class="title-block">
 		<h2 class="heading"><span class="accent">Experimental</span> View</h2>
-		<p class="title-desc">Chat Tree and other features in early development.</p>
+		<p class="title-desc">Try out the Chat Tree and other features in early development.</p>
 	</div>
 
 	<div class="demo">

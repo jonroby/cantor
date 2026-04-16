@@ -42,7 +42,7 @@
 		{
 			label: 'Agent Mode',
 			icon: Bot,
-			desc: 'Full agent control, document authoring, and inline visualizations.'
+			desc: 'Let an agent work with your documents and data.'
 		},
 		{
 			label: 'Context Control',
@@ -52,7 +52,7 @@
 		{
 			label: 'Experimental',
 			icon: FlaskConical,
-			desc: 'Chat Tree and other features in early development.'
+			desc: 'Try out the Chat Tree and other features in early development.'
 		}
 	];
 
@@ -160,7 +160,7 @@
 	<!-- ── Hero section (viewport height) ───────────────────── -->
 	<section class="hero-section">
 		<div class="hero-text">
-			<h1 class="tagline">LLMs for <span class="tagline-accent">Power Users</span></h1>
+			<h1 class="tagline">LLM Chat for <span class="tagline-accent">Power Users</span></h1>
 		</div>
 
 		<div class="viewport-wrap">
