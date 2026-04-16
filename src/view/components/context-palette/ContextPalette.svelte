@@ -34,6 +34,12 @@
 			label: 'BM25',
 			description:
 				'Select exchanges most relevant to your current prompt using keyword matching. Useful for long sessions.'
+		},
+		{
+			id: 'embedding',
+			label: 'Embedding Similarity',
+			description:
+				'Use embedding similarity to find the semantically closest exchanges to your current prompt.'
 		}
 	];
 </script>
@@ -73,8 +79,8 @@
 						<span class="token-stat-info">
 							<Info size={12} />
 							<span class="token-stat-tooltip"
-								>LRU and BM25 only reduce this when history exceeds the context window. With room to
-								spare, all strategies show the same estimate.</span
+								>LRU, BM25, and Embedding Similarity only reduce this when history exceeds the
+								context window. With room to spare, all strategies show the same estimate.</span
 							>
 						</span>
 					</span>

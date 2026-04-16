@@ -1,4 +1,5 @@
 export * as bm25 from './bm25';
+export * as embeddingSimilarity from './embedding-similarity';
 export * as providerDefaults from './provider-defaults';
 export * as providerTypes from './provider-types';
 export * as rename from './rename';

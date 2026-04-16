@@ -1,6 +1,6 @@
 import * as domain from '@/domain';
 
-export type ContextStrategy = 'full' | 'lru' | 'bm25';
+export type ContextStrategy = 'full' | 'lru' | 'bm25' | 'embedding';
 export type ChatMode = 'chat' | 'agent';
 
 export interface ChatRecord extends domain.tree.ChatTree {

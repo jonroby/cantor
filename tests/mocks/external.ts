@@ -22,17 +22,32 @@ export function createExternalMock(overrides?: DeepPartial<ExternalMock>): Exter
 			clearVaultStorage: mockFn<typeof external.persistence.clearVaultStorage>(),
 			deleteTrashItem: mockFn<typeof external.persistence.deleteTrashItem>(async () => {}),
 			emptyTrash: mockFn<typeof external.persistence.emptyTrash>(async () => {}),
+			getEmbedding: mockFn<typeof external.persistence.getEmbedding>(async () => null),
+			getEmbeddingsForExchanges: mockFn<typeof external.persistence.getEmbeddingsForExchanges>(
+				async () => new Map()
+			),
 			getPersistedLayout: mockFn<typeof external.persistence.getPersistedLayout>(() => ({})),
 			getTrashItem: mockFn<typeof external.persistence.getTrashItem>(async () => undefined),
 			getVaultStore: mockFn<typeof external.persistence.getVaultStore>(() => ({})),
 			loadFromStorage: mockFn<typeof external.persistence.loadFromStorage>(),
 			loadTrash: mockFn<typeof external.persistence.loadTrash>(async () => []),
+			putEmbedding: mockFn<typeof external.persistence.putEmbedding>(async () => {}),
 			saveToStorage: mockFn<typeof external.persistence.saveToStorage>(),
 			setPersistedLayout: mockFn<typeof external.persistence.setPersistedLayout>(),
 			setVaultStore: mockFn<typeof external.persistence.setVaultStore>(),
 			trashItem: mockFn<typeof external.persistence.trashItem>(async () => {})
 		},
 		providers: {
+			embedding: {
+				embed: mockFn<typeof external.providers.embedding.embed>(async () => []),
+				getEmbeddingModelName: mockFn<typeof external.providers.embedding.getEmbeddingModelName>(
+					() => 'Xenova/all-MiniLM-L6-v2'
+				),
+				isEmbeddingReady: mockFn<typeof external.providers.embedding.isEmbeddingReady>(() => false),
+				primeEmbeddingLib: mockFn<typeof external.providers.embedding.primeEmbeddingLib>(() =>
+					Promise.resolve(undefined)
+				)
+			},
 			catalog: {
 				CLAUDE_MODELS,
 				getModelContextLength: mockFn<typeof external.providers.catalog.getModelContextLength>(

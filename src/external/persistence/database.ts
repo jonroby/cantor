@@ -1,9 +1,10 @@
 import * as domain from '@/domain';
 
 const DB_NAME = 'cantor-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'snapshots';
 const TRASH_STORE_NAME = 'trash';
+const EMBEDDINGS_STORE_NAME = 'exchangeEmbeddings';
 const SNAPSHOT_KEY = 'main';
 
 const VAULT_KEY = 'byok_vault_v2';
@@ -16,7 +17,7 @@ interface PersistedChat {
 	rootId: string | null;
 	exchanges: domain.tree.ExchangeMap;
 	activeExchangeId: string | null;
-	contextStrategy: 'full' | 'lru' | 'bm25';
+	contextStrategy: 'full' | 'lru' | 'bm25' | 'embedding';
 	mode: 'chat' | 'agent';
 }
 
@@ -74,6 +75,9 @@ function openDB(): Promise<IDBDatabase> {
 			}
 			if (!db.objectStoreNames.contains(TRASH_STORE_NAME)) {
 				db.createObjectStore(TRASH_STORE_NAME, { keyPath: 'id' });
+			}
+			if (!db.objectStoreNames.contains(EMBEDDINGS_STORE_NAME)) {
+				db.createObjectStore(EMBEDDINGS_STORE_NAME, { keyPath: ['exchangeId', 'modelName'] });
 			}
 		};
 		request.onsuccess = () => resolve(request.result);
@@ -363,4 +367,85 @@ export function setVaultStore(store: VaultStore): void {
 
 export function clearVaultStorage(): void {
 	localStorage.removeItem(VAULT_KEY);
+}
+
+// --- Exchange embedding storage ---
+
+interface EmbeddingRecord {
+	exchangeId: string;
+	modelName: string;
+	vector: Float32Array;
+}
+
+export async function getEmbedding(
+	exchangeId: string,
+	modelName: string
+): Promise<Float32Array | null> {
+	const db = await openDB();
+	try {
+		const record = await new Promise<EmbeddingRecord | undefined>((resolve, reject) => {
+			const tx = db.transaction(EMBEDDINGS_STORE_NAME, 'readonly');
+			const store = tx.objectStore(EMBEDDINGS_STORE_NAME);
+			const request = store.get([exchangeId, modelName]);
+			request.onsuccess = () => resolve(request.result as EmbeddingRecord | undefined);
+			request.onerror = () => reject(request.error);
+		});
+		return record?.vector ?? null;
+	} finally {
+		db.close();
+	}
+}
+
+export async function getEmbeddingsForExchanges(
+	exchangeIds: string[],
+	modelName: string
+): Promise<Map<string, Float32Array>> {
+	if (exchangeIds.length === 0) return new Map();
+	const db = await openDB();
+	try {
+		return await new Promise<Map<string, Float32Array>>((resolve, reject) => {
+			const tx = db.transaction(EMBEDDINGS_STORE_NAME, 'readonly');
+			const store = tx.objectStore(EMBEDDINGS_STORE_NAME);
+			const result = new Map<string, Float32Array>();
+			let remaining = exchangeIds.length;
+			let failed = false;
+			for (const id of exchangeIds) {
+				const request = store.get([id, modelName]);
+				request.onsuccess = () => {
+					if (failed) return;
+					const record = request.result as EmbeddingRecord | undefined;
+					if (record) result.set(id, record.vector);
+					remaining--;
+					if (remaining === 0) resolve(result);
+				};
+				request.onerror = () => {
+					if (failed) return;
+					failed = true;
+					reject(request.error);
+				};
+			}
+		});
+	} finally {
+		db.close();
+	}
+}
+
+export async function putEmbedding(
+	exchangeId: string,
+	modelName: string,
+	vector: Float32Array
+): Promise<void> {
+	const db = await openDB();
+	try {
+		await new Promise<void>((resolve, reject) => {
+			const tx = db.transaction(EMBEDDINGS_STORE_NAME, 'readwrite');
+			const store = tx.objectStore(EMBEDDINGS_STORE_NAME);
+			const record: EmbeddingRecord = { exchangeId, modelName, vector };
+			const request = store.put(record);
+			request.onsuccess = () => resolve();
+			request.onerror = () => reject(request.error);
+		});
+	} finally {
+		db.close();
+	}
 }

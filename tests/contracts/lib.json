@@ -2,6 +2,10 @@
 	"bm25": {
 		"scoreBM25": true
 	},
+	"embeddingSimilarity": {
+		"cosine": true,
+		"scoreSimilarity": true
+	},
 	"providerDefaults": {
 		"DEFAULT_OLLAMA_URL": true,
 		"WEBLLM_CONTEXT_OPTIONS": true

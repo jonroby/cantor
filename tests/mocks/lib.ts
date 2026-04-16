@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import type * as lib from '@/lib';
 import * as bm25 from '@/lib/bm25';
+import * as embeddingSimilarity from '@/lib/embedding-similarity';
 import * as providerDefaults from '@/lib/provider-defaults';
 import * as providerTypes from '@/lib/provider-types';
 import * as tokenEstimate from '@/lib/token-estimate';
@@ -9,6 +10,7 @@ import * as validateMd from '@/lib/validate-md';
 export function createLibMock(actual?: typeof lib, overrides?: Partial<typeof lib>): typeof lib {
 	const base = {
 		bm25,
+		embeddingSimilarity,
 		providerDefaults,
 		providerTypes,
 		tokenEstimate,

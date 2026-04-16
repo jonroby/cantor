@@ -9,17 +9,26 @@
 		"clearVaultStorage": true,
 		"deleteTrashItem": true,
 		"emptyTrash": true,
+		"getEmbedding": true,
+		"getEmbeddingsForExchanges": true,
 		"getPersistedLayout": true,
 		"getTrashItem": true,
 		"getVaultStore": true,
 		"loadFromStorage": true,
 		"loadTrash": true,
+		"putEmbedding": true,
 		"saveToStorage": true,
 		"setPersistedLayout": true,
 		"setVaultStore": true,
 		"trashItem": true
 	},
 	"providers": {
+		"embedding": {
+			"embed": true,
+			"getEmbeddingModelName": true,
+			"isEmbeddingReady": true,
+			"primeEmbeddingLib": true
+		},
 		"catalog": {
 			"CLAUDE_MODELS": true,
 			"getModelContextLength": true,

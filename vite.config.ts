@@ -19,6 +19,12 @@ export default defineConfig({
 					) {
 						return 'webllm';
 					}
+					if (
+						id.includes('@xenova/transformers') ||
+						id.includes('/src/external/providers/embedding')
+					) {
+						return 'embedding';
+					}
 					if (id.includes('/node_modules/katex/')) return 'katex';
 					if (id.includes('/node_modules/bits-ui/')) return 'bits-ui';
 					if (id.includes('/node_modules/lucide-svelte/')) return 'lucide';
