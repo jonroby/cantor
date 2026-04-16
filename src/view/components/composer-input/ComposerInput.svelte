@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Button } from '@/view/primitives';
 	import * as Tooltip from '@/view/primitives/tooltip';
-	import { AudioRecorder } from '@/view/components/audio-recorder';
+	// TODO: restore once mic button is re-enabled in the composer
+	// import { AudioRecorder } from '@/view/components/audio-recorder';
 	import { PROVIDER_LOGOS } from '@/view/assets';
 	import { ArrowUp, Square, Plus, X, Settings } from 'lucide-svelte';
 	import type * as app from '@/app';
@@ -113,9 +114,10 @@
 		pendingAudio = pendingAudio.filter((_, i) => i !== index);
 	}
 
-	function handleRecorded(audio: { blob: Blob; mimeType: string; durationMs: number }) {
-		pendingAudio = [...pendingAudio, audio];
-	}
+	// TODO: restore once mic button is re-enabled in the composer
+	// function handleRecorded(audio: { blob: Blob; mimeType: string; durationMs: number }) {
+	// 	pendingAudio = [...pendingAudio, audio];
+	// }
 
 	function formatDuration(ms: number): string {
 		const s = Math.round(ms / 1000);
@@ -202,7 +204,8 @@
 							</Tooltip.Trigger>
 							<Tooltip.Content side="top">Attach image</Tooltip.Content>
 						</Tooltip.Root>
-						<AudioRecorder onRecorded={handleRecorded} disabled={!activeModelLabel} />
+						<!-- TODO: re-enable mic button once audio recording is implemented end-to-end -->
+						<!-- <AudioRecorder onRecorded={handleRecorded} disabled={!activeModelLabel} /> -->
 					{/if}
 					<textarea
 						bind:this={textareaEl}

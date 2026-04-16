@@ -7,35 +7,36 @@
 		disabled?: boolean;
 	}
 
-	let { onRecorded, disabled = false }: Props = $props();
+	let { onRecorded: _onRecorded, disabled = false }: Props = $props();
 
 	let recording = $state(false);
 	let mediaRecorder: MediaRecorder | null = $state(null);
-	let startTime = $state(0);
+	let _startTime = $state(0);
 
 	async function startRecording() {
-		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-			? 'audio/webm;codecs=opus'
-			: 'audio/webm';
-		const recorder = new MediaRecorder(stream, { mimeType: mime });
-		const chunks: Blob[] = [];
-
-		recorder.ondataavailable = (e) => {
-			if (e.data.size > 0) chunks.push(e.data);
-		};
-
-		recorder.onstop = () => {
-			stream.getTracks().forEach((t) => t.stop());
-			const blob = new Blob(chunks, { type: mime });
-			const durationMs = Date.now() - startTime;
-			onRecorded({ blob, mimeType: mime, durationMs });
-		};
-
-		mediaRecorder = recorder;
-		startTime = Date.now();
-		recorder.start();
-		recording = true;
+		// TODO: re-enable microphone access once the audio pipeline is wired up end-to-end.
+		// const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		// const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+		// 	? 'audio/webm;codecs=opus'
+		// 	: 'audio/webm';
+		// const recorder = new MediaRecorder(stream, { mimeType: mime });
+		// const chunks: Blob[] = [];
+		//
+		// recorder.ondataavailable = (e) => {
+		// 	if (e.data.size > 0) chunks.push(e.data);
+		// };
+		//
+		// recorder.onstop = () => {
+		// 	stream.getTracks().forEach((t) => t.stop());
+		// 	const blob = new Blob(chunks, { type: mime });
+		// 	const durationMs = Date.now() - startTime;
+		// 	onRecorded({ blob, mimeType: mime, durationMs });
+		// };
+		//
+		// mediaRecorder = recorder;
+		// startTime = Date.now();
+		// recorder.start();
+		// recording = true;
 	}
 
 	function stopRecording() {
