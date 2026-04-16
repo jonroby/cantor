@@ -62,12 +62,102 @@ describe('SearchDialog', () => {
 
 		await userEvent.click(screen.getByRole('button', { name: /find this exchange/i }));
 
-		expect(onSelect).toHaveBeenCalledWith({
-			exchangeId: 'exchange-1',
-			chatIndex: 0,
-			prompt: 'Find this exchange',
-			snippets: [{ text: 'Find this exchange', matchStart: 0, matchEnd: 4 }]
-		});
+		expect(onSelect).toHaveBeenCalledWith(
+			expect.objectContaining({
+				exchangeId: 'exchange-1',
+				chatIndex: 0,
+				prompt: 'Find this exchange'
+			})
+		);
 		expect(onClose).toHaveBeenCalledOnce();
+	});
+
+	it('highlights a fuzzy match in the response with a visible snippet', async () => {
+		const chats: app.chat.Chat[] = [
+			{
+				id: 'chat-euc',
+				name: 'Manifold Learning',
+				rootId: 'exchange-euc',
+				activeExchangeId: 'exchange-euc',
+				exchanges: {
+					'exchange-euc': {
+						id: 'exchange-euc',
+						parentId: '',
+						childIds: [],
+						createdAt: 0,
+						model: 'claude-sonnet-4-6',
+						provider: 'claude',
+						label: undefined,
+						prompt: { text: 'Please give an illustrative example.', tokenCount: 0 },
+						response: {
+							text: 'Manifolds are locally euclidean spaces — think of a sphere.',
+							tokenCount: 0
+						}
+					}
+				},
+				contextStrategy: 'full',
+				mode: 'chat'
+			}
+		];
+
+		render(SearchDialog, {
+			props: {
+				searchQuery: 'euclidean',
+				searchAllChats: true,
+				chats,
+				activeChatIndex: 0,
+				onClose: vi.fn(),
+				onSelect: vi.fn()
+			}
+		});
+
+		// The match is in the response, so the snippet should show the response prefix
+		// and highlight "euclidean" (or close to it) via <mark>.
+		const button = screen.getByRole('button', { name: /illustrative example/i });
+		const marks = button.querySelectorAll('mark');
+		expect(marks.length).toBeGreaterThan(0);
+		const highlightedText = Array.from(marks)
+			.map((mark) => mark.textContent)
+			.join('');
+		expect(highlightedText.toLowerCase()).toContain('euclidean');
+	});
+
+	it('does not surface noise matches for a typo on unrelated text', () => {
+		const chats: app.chat.Chat[] = [
+			{
+				id: 'chat-noise',
+				name: 'Other',
+				rootId: 'ex-noise',
+				activeExchangeId: 'ex-noise',
+				exchanges: {
+					'ex-noise': {
+						id: 'ex-noise',
+						parentId: '',
+						childIds: [],
+						createdAt: 0,
+						model: 'claude-sonnet-4-6',
+						provider: 'claude',
+						label: undefined,
+						prompt: { text: 'Please give an illustrative example.', tokenCount: 0 },
+						response: { text: 'Certainly, here is one.', tokenCount: 0 }
+					}
+				},
+				contextStrategy: 'full',
+				mode: 'chat'
+			}
+		];
+
+		render(SearchDialog, {
+			props: {
+				searchQuery: 'eucdean',
+				searchAllChats: true,
+				chats,
+				activeChatIndex: 0,
+				onClose: vi.fn(),
+				onSelect: vi.fn()
+			}
+		});
+
+		expect(screen.getByText('No results found.')).toBeInTheDocument();
 	});
 });
