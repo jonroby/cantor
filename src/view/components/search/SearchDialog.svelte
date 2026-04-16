@@ -65,7 +65,8 @@
 	}
 
 	function buildTrigrams(text: string): Set<string> {
-		const result = new SvelteSet<string>();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const result = new Set<string>();
 		for (let index = 0; index <= text.length - 3; index += 1) {
 			result.add(text.slice(index, index + 3));
 		}
@@ -192,8 +193,19 @@
 		return [...map.values()];
 	}
 
+	let debouncedQuery = $state(searchQuery);
+
+	$effect(() => {
+		const next = searchQuery;
+		if (next === debouncedQuery) return;
+		const handle = setTimeout(() => {
+			debouncedQuery = next;
+		}, 200);
+		return () => clearTimeout(handle);
+	});
+
 	let searchItems = $derived(
-		searchQuery.trim() ? searchItemsForQuery(searchQuery.trim()) : getDefaultItems()
+		debouncedQuery.trim() ? searchItemsForQuery(debouncedQuery.trim()) : getDefaultItems()
 	);
 
 	let grouped = $derived(groupByChat(searchItems.slice(0, 40)));
@@ -230,7 +242,7 @@
 	<div class="search-results">
 		{#if searchItems.length === 0}
 			<div class="search-empty">
-				{searchQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}
+				{debouncedQuery.trim().length > 0 ? 'No results found.' : 'No exchanges yet.'}
 			</div>
 		{:else}
 			{#each grouped as group (group.chatIndex)}
