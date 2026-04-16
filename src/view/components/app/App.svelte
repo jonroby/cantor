@@ -51,19 +51,12 @@
 	let agentMode = $derived(app.chat.getMode() === 'agent');
 	let activeDocSide = $state<'left' | 'right'>('left');
 	let _chatPanelIsFirst = $derived(workspaceState.panels[0]?.type === 'chat');
-	let composerPinned = $state<'left' | 'right' | null>(null);
+	let composerPinned = $state<'left' | 'right'>('left');
 	let composerSide = $derived.by(() => {
 		if (!isSplit) return null;
-		return composerPinned ?? 'left';
-	});
-
-	$effect(() => {
 		const hasSideChat = workspaceState.panels.some((p) => p.type === 'side-chat');
-		if (hasSideChat && composerPinned !== 'right') {
-			composerPinned = 'right';
-		} else if (!hasSideChat && composerPinned === 'right') {
-			composerPinned = null;
-		}
+		if (hasSideChat) return 'right';
+		return composerPinned;
 	});
 	let activeViewRef = $derived.by(() => {
 		if (routerState.route === 'canvas') return canvasViewRef;
