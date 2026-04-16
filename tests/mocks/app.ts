@@ -219,6 +219,7 @@ export function createAppMock(overrides?: DeepPartial<AppMock>): AppMock {
 			connect: mockFn<typeof app.providers.connect>(),
 			getState: mockFn<typeof app.providers.getState>(() => providerStateBacking),
 			initialize: mockFn<typeof app.providers.initialize>(),
+			primeEmbeddingLib: mockFn<typeof app.providers.primeEmbeddingLib>(),
 			removeCredential: mockFn<typeof app.providers.removeCredential>(),
 			removeCachedModel: mockFn<typeof app.providers.removeCachedModel>(),
 			resolveModelLabel: mockFn<typeof app.providers.resolveModelLabel>(() => undefined),

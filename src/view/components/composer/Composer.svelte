@@ -94,7 +94,7 @@
 
 		let result;
 		try {
-			result = app.chat.submitPrompt(
+			result = await app.chat.submitPrompt(
 				activeChat.id,
 				tree,
 				activeExchangeId,

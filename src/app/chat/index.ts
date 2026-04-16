@@ -3,7 +3,7 @@ import * as state from '@/state';
 import * as external from '@/external';
 import * as lib from '@/lib';
 import * as agent from '@/app/agent';
-import { selectExchanges, type ContextBudget } from './context';
+import { selectExchanges, selectExchangesSync, type ContextBudget } from './context';
 
 export type ContextStrategy = state.chats.ContextStrategy;
 export type ChatMode = state.chats.ChatMode;
@@ -145,9 +145,15 @@ export function getUsedTokens(
 	contextLength: number | null = null
 ): number {
 	const fullPath = domain.tree.getPath(tree, activeExchangeId);
-	const path = selectExchanges(fullPath, {
+	// The token-usage display is a sync read path. Semantic embedding ranking
+	// can't run synchronously, so for the estimate we fall back to LRU —
+	// both selections have the same token budget and exchange costs, so the
+	// count matches under the budget even though the chosen exchanges differ.
+	const effectiveStrategy: state.chats.ContextStrategy =
+		contextStrategy === 'embedding' ? 'lru' : contextStrategy;
+	const path = selectExchangesSync(fullPath, {
 		contextLength,
-		strategy: contextStrategy,
+		strategy: effectiveStrategy,
 		currentPrompt: ''
 	});
 	return path.reduce((total, exchange) => {
@@ -364,7 +370,7 @@ function buildHistory(exchanges: domain.tree.Exchange[]): domain.tree.Message[] 
 	});
 }
 
-export function submitPrompt(
+export async function submitPrompt(
 	chatId: string,
 	tree: domain.tree.ChatTree,
 	activeExchangeId: string | null,
@@ -372,7 +378,7 @@ export function submitPrompt(
 	model: domain.models.ActiveModel,
 	options?: SubmitOptions,
 	deps: Omit<ChatActionDeps, 'isStreaming'> = defaultDeps
-): { id: string; parentId: string; hasSideChildren: boolean } {
+): Promise<{ id: string; parentId: string; hasSideChildren: boolean }> {
 	const parentId = activeExchangeId ?? domain.tree.getMainChatTail(tree) ?? '';
 	const hasSideChildren =
 		activeExchangeId !== null && domain.tree.getChildren(tree, activeExchangeId).length > 0;
@@ -386,17 +392,19 @@ export function submitPrompt(
 		options?.images
 	);
 
+	// Render the user's new exchange immediately so they see their own prompt
+	// before the (potentially async) context selection runs.
+	deps.replaceActiveTree(created.tree);
+	deps.setActiveExchangeId(created.id);
+
 	const fullPath = domain.tree.getPath(created.tree, created.id);
 	const budget: ContextBudget = {
 		contextLength: options?.contextLength ?? null,
 		strategy: options?.contextStrategy ?? 'full',
 		currentPrompt: prompt
 	};
-	const selectedPath = selectExchanges(fullPath, budget);
+	const selectedPath = await selectExchanges(fullPath, budget);
 	const history = buildHistory(selectedPath);
-
-	deps.replaceActiveTree(created.tree);
-	deps.setActiveExchangeId(created.id);
 
 	const toolContext: agent.ToolContext | null = options?.agentMode
 		? {
@@ -454,7 +462,7 @@ export function quickAsk(
 	sourceText: string,
 	model: domain.models.ActiveModel,
 	deps: Omit<ChatActionDeps, 'isStreaming'> = defaultDeps
-): { id: string; parentId: string; hasSideChildren: boolean } {
+): Promise<{ id: string; parentId: string; hasSideChildren: boolean }> {
 	return submitPrompt(
 		chatId,
 		tree,

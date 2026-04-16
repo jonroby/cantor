@@ -1,4 +1,5 @@
 export * as catalog from './catalog';
+export * as embedding from './embedding';
 export * as claude from './claude';
 export * as gemini from './gemini';
 export * as ollama from './ollama';

@@ -110,6 +110,7 @@
 		"getState": true,
 		"initialize": true,
 		"lockAllCredentials": true,
+		"primeEmbeddingLib": true,
 		"removeCachedModel": true,
 		"removeCredential": true,
 		"resolveModelLabel": true,

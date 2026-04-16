@@ -345,10 +345,10 @@ describe('copyChat', () => {
 describe('submitPrompt', () => {
 	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
 
-	it('returns parentId so caller can expand the correct side chat parent', () => {
+	it('returns parentId so caller can expand the correct side chat parent', async () => {
 		const { tree, childId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = submitPrompt(
+		const result = await submitPrompt(
 			'chat-1',
 			tree,
 			childId,
@@ -360,10 +360,18 @@ describe('submitPrompt', () => {
 		expect(result.parentId).toBe(childId);
 	});
 
-	it('returns parentId as main chat tail when activeExchangeId is null', () => {
+	it('returns parentId as main chat tail when activeExchangeId is null', async () => {
 		const { tree, leafId } = buildLinearTree();
 		const deps = mockDeps();
-		const result = submitPrompt('chat-1', tree, null, 'new prompt', activeModel, undefined, deps);
+		const result = await submitPrompt(
+			'chat-1',
+			tree,
+			null,
+			'new prompt',
+			activeModel,
+			undefined,
+			deps
+		);
 		expect(result.parentId).toBe(leafId);
 	});
 });
@@ -371,11 +379,11 @@ describe('submitPrompt', () => {
 describe('quickAsk', () => {
 	const activeModel = { modelId: MODEL, provider: PROVIDER, label: MODEL };
 
-	it('wraps the source text in the quick ask prompt template', () => {
+	it('wraps the source text in the quick ask prompt template', async () => {
 		const { tree, childId } = buildLinearTree();
 		const deps = mockDeps();
 
-		quickAsk('chat-1', tree, childId, 'Selected paragraph', activeModel, deps);
+		await quickAsk('chat-1', tree, childId, 'Selected paragraph', activeModel, deps);
 
 		expect(deps.replaceActiveTree).toHaveBeenCalledOnce();
 		const createdTree = vi.mocked(deps.replaceActiveTree).mock.calls[0]![0];

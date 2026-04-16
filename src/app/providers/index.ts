@@ -408,6 +408,15 @@ export async function clearCachedModels(provider: Provider) {
 	syncContextLength(state.providers.providerState.activeModel);
 }
 
+/**
+ * Kick off the background download of the embedding library chunk so it's
+ * warm by the time the user selects the Embedding Similarity context
+ * strategy. Safe to call early at app boot — fails silently.
+ */
+export function primeEmbeddingLib(): void {
+	void external.providers.embedding.primeEmbeddingLib().catch(() => undefined);
+}
+
 export function streamText(
 	model: ActiveModel,
 	history: domain.tree.Message[],

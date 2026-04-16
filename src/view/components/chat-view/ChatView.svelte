@@ -252,14 +252,14 @@
 		openSidePanel(exchangeId);
 	}
 
-	function quickAsk(exchangeId: string, sourceText: string) {
+	async function quickAsk(exchangeId: string, sourceText: string) {
 		if (!activeExchanges || !providerState.activeModel) return;
 
 		const tree = { rootId: activeChat.rootId, exchanges: activeExchanges };
 
 		let result;
 		try {
-			result = app.chat.quickAsk(
+			result = await app.chat.quickAsk(
 				activeChat.id,
 				tree,
 				exchangeId,

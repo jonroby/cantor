@@ -19,7 +19,7 @@
 		usedTokens: number;
 		totalTokens: number;
 		contextLength: number | null;
-		contextStrategy: 'full' | 'lru' | 'bm25';
+		contextStrategy: 'full' | 'lru' | 'bm25' | 'embedding';
 		anchored?: boolean;
 		onSubmit: () => void;
 		onStop: () => void;
