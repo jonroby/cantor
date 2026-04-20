@@ -170,7 +170,7 @@
 	<!-- ── Hero section (viewport height) ───────────────────── -->
 	<section class="hero-section">
 		<div class="hero-text">
-			<h1 class="tagline">LLM Chat for <span class="tagline-accent">Power Users</span></h1>
+			<h1 class="tagline">An AI Assistant for <span class="tagline-accent">Power Users</span></h1>
 		</div>
 
 		<div class="viewport-wrap">
@@ -240,6 +240,7 @@
 	.page {
 		height: 100vh;
 		overflow-y: scroll;
+		overflow-x: clip;
 		scroll-snap-type: y mandatory;
 		background: white;
 		display: flex;
@@ -384,7 +385,6 @@
 	}
 
 	.hero-text {
-		height: 132px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -397,7 +397,7 @@
 		color: rgba(23, 23, 23, 0.92);
 		margin: 0;
 		letter-spacing: -0.06em;
-		line-height: 0.94;
+		line-height: 1.1;
 		text-align: center;
 	}
 
@@ -406,6 +406,8 @@
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
+		padding-right: 0.1em;
+		margin-right: -0.1em;
 	}
 
 	/* ── Viewport ─────────────────────────────────────────── */
