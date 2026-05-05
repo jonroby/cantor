@@ -600,6 +600,12 @@
 		</SidebarPrimitive.Inset>
 	</SidebarPrimitive.Provider>
 {/if}
+<div class="mobile-notice">
+	<div class="mobile-notice-content">
+		<h1>Desktop only</h1>
+		<p>Cantor is designed for desktop. Please open this site on a larger screen.</p>
+	</div>
+</div>
 <Toaster position="top-center" />
 
 <style>
@@ -660,5 +666,40 @@
 		font-size: 26px;
 		font-weight: var(--font-weight-medium);
 		color: hsl(var(--foreground));
+	}
+
+	.mobile-notice {
+		display: none;
+	}
+
+	@media (max-width: 1024px) {
+		.mobile-notice {
+			position: fixed;
+			inset: 0;
+			z-index: 9999;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 1.5rem;
+			background: hsl(var(--background));
+			color: hsl(var(--foreground));
+			text-align: center;
+		}
+
+		.mobile-notice-content {
+			max-width: 28rem;
+		}
+
+		.mobile-notice h1 {
+			font-size: 1.5rem;
+			font-weight: var(--font-weight-medium);
+			margin: 0 0 0.75rem;
+		}
+
+		.mobile-notice p {
+			font-size: 1rem;
+			margin: 0;
+			color: hsl(var(--muted-foreground));
+		}
 	}
 </style>
